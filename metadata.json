@@ -1,0 +1,6 @@
+{
+  "name": "Plataforma de Mantenimiento Inteligente",
+  "description": "Una plataforma que conecta a clientes con técnicos, gestiona recordatorios de mantenimiento para vehículos, hogares y tecnología, y ofrece diagnósticos básicos mediante IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
