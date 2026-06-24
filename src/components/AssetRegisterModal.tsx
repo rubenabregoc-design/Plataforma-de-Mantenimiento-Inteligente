@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Asset, AssetType } from '../types';
-import { Plus, X, Car, ShieldCheck, Cpu, Sliders, BatteryCharging, Zap, RotateCcw } from 'lucide-react';
+import { Plus, X, Car, ShieldCheck, Cpu, Sliders, BatteryCharging, Zap, RotateCcw, Edit2 } from 'lucide-react';
 
 interface AssetRegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (asset: Omit<Asset, 'id' | 'registeredAt'>) => void;
+  editingAsset?: Asset | null;
 }
 
-export default function AssetRegisterModal({ isOpen, onClose, onAdd }: AssetRegisterModalProps) {
+export default function AssetRegisterModal({ isOpen, onClose, onAdd, editingAsset }: AssetRegisterModalProps) {
   const [name, setName] = useState('');
   const [type, setType] = useState<AssetType>('car');
   const [details, setDetails] = useState('');
@@ -16,6 +17,26 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd }: AssetRegi
   const [usageHours, setUsageHours] = useState<number>(0);
   const [lastMaintenance, setLastMaintenance] = useState('');
   const [nextMaintenance, setNextMaintenance] = useState('');
+
+  useEffect(() => {
+    if (editingAsset) {
+      setName(editingAsset.name);
+      setType(editingAsset.type);
+      setDetails(editingAsset.details);
+      setMileage(editingAsset.mileage || 0);
+      setUsageHours(editingAsset.usageHours || 0);
+      setLastMaintenance(editingAsset.lastMaintenanceDate || '');
+      setNextMaintenance(editingAsset.nextMaintenanceDate || '');
+    } else {
+      setName('');
+      setType('car');
+      setDetails('');
+      setMileage(0);
+      setUsageHours(0);
+      setLastMaintenance('');
+      setNextMaintenance('');
+    }
+  }, [editingAsset, isOpen]);
 
   if (!isOpen) return null;
 
@@ -33,14 +54,6 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd }: AssetRegi
       nextMaintenanceDate: nextMaintenance,
     });
 
-    // Reset fields
-    setName('');
-    setType('car');
-    setDetails('');
-    setMileage(0);
-    setUsageHours(0);
-    setLastMaintenance('');
-    setNextMaintenance('');
     onClose();
   };
 
@@ -67,8 +80,8 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd }: AssetRegi
       <div className="w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100">
         <div className="flex justify-between items-center px-6 py-4 bg-gray-50 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <Plus className="w-5 h-5 text-indigo-600" />
-            Registrar Nuevo Equipo o Activo
+            {editingAsset ? <Edit2 className="w-5 h-5 text-indigo-600" /> : <Plus className="w-5 h-5 text-indigo-600" />}
+            {editingAsset ? 'Editar Equipo o Activo' : 'Registrar Nuevo Equipo o Activo'}
           </h2>
           <button onClick={onClose} className="p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600">
             <X className="w-5 h-5" />
@@ -191,7 +204,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd }: AssetRegi
               type="submit"
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-xs"
             >
-              Registrar Activo
+              {editingAsset ? 'Guardar Cambios' : 'Registrar Activo'}
             </button>
           </div>
         </form>

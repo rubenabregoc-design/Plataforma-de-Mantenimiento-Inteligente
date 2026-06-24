@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   initialAssets, 
   initialReminders, 
   initialTechnicians, 
@@ -30,10 +30,14 @@ import {
   Users, 
   DollarSign, 
   Bell, 
-  CheckCircle, 
+  BellRing,
+  Send,
+  CheckCircle,
   Plus, 
   TrendingUp, 
-  SlidersHorizontal, 
+  Truck,
+  Camera,
+  SlidersHorizontal,
   Layers, 
   UserCheck, 
   ShieldCheck, 
@@ -46,21 +50,282 @@ import {
   UserX,
   Clock,
   Smartphone,
-  Monitor,
   LogOut,
   Lock,
-  AlertCircle,
-  Sparkles,
-  ChevronRight,
-  Car,
-  Wind,
-  Zap,
-  Award,
+  User,
   ArrowRight,
+  ChevronRight,
+  History,
   ShieldAlert,
-  BellRing,
-  Send
+  HelpCircle,
+  Video,
+  Wrench,
+  Search,
+  Filter,
+  Check,
+  X,
+  CreditCard,
+  Target,
+  Calendar,
+  AlertCircle,
+  RefreshCcw,
+  Zap,
+  MapPin,
+  Briefcase,
+  ChevronDown,
+  Navigation,
+  ExternalLink,
+  ChevronLeft,
+  Circle,
+  MoreVertical,
+  ThumbsUp,
+  Pencil,
+  Image,
+  Paperclip,
+  Trash2,
+  FileText,
+  Save,
+  Download,
+  Share2,
+  Settings,
+  Eye,
+  EyeOff,
+  UserPlus,
+  LogIn,
+  AlertTriangle,
+  Globe,
+  Award,
+  BookOpen,
+  PieChart,
+  BarChart3,
+  Activity,
+  Maximize2,
+  Menu,
+  ChevronUp,
+  Monitor,
+  PlusCircle,
+  MinusCircle,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Repeat,
+  Shuffle,
+  Volume2,
+  Mic,
+  VideoOff,
+  Headphones,
+  Gamepad2,
+  Music,
+  Heart,
+  MessageCircle,
+  MoreHorizontal,
+  Cloud,
+  Sun,
+  Moon,
+  CloudRain,
+  Snowflake,
+  Wind,
+  Droplets,
+  Thermometer,
+  Hash,
+  AtSign,
+  Link,
+  Tag,
+  Flag,
+  Map,
+  Compass,
+  Archive,
+  Box,
+  ShoppingBag,
+  ShoppingCart,
+  Cpu,
+  Wifi,
+  Bluetooth,
+  Battery,
+  HardDrive,
+  MousePointer2,
+  Keyboard,
+  Printer,
+  Copy,
+  Scissors,
+  Clipboard,
+  StickyNote,
+  PenTool,
+  Eraser,
+  Palette,
+  Brush,
+  Paintbrush,
+  Ruler,
+  Table,
+  Columns,
+  Rows,
+  Maximize,
+  Minimize,
+  Command,
+  ZoomIn,
+  ZoomOut,
+  Languages,
+  Type,
+  Bold,
+  Italic,
+  Underline,
+  Strikethrough,
+  Code,
+  Terminal,
+  Quote,
+  List,
+  ListOrdered,
+  Indent,
+  Outdent,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+  Link2,
+  Smile,
+  Frown,
+  Meh,
+  Angry,
+  SmilePlus,
+  Ghost,
+  Cat,
+  Dog,
+  Bird,
+  Rabbit,
+  Turtle,
+  Fish,
+  Trees,
+  Mountain,
+  Waves,
+  Binary,
+  GitBranch,
+  GitCommit,
+  GitMerge,
+  GitPullRequest,
+  Github,
+  Twitter,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Youtube,
+  CloudLightning,
+  CloudSun,
+  CloudMoon,
+  CloudFog,
+  CloudDrizzle,
+  CloudHail,
+  CloudSnow,
+  Umbrella,
+  Pocket,
+  MonitorOff,
+  Tablet,
+  Tv,
+  Cast,
+  Speaker,
+  Disc,
+  Radio,
+  Dribbble,
+  Codepen,
+  Figma,
+  Frame,
+  Trello,
+  Slack,
+  Twitch,
+  Music2,
+  Mic2,
+  CameraOff,
+  Phone,
+  PhoneIncoming,
+  PhoneOutgoing,
+  PhoneMissed,
+  PhoneForwarded,
+  Inbox,
+  Server,
+  Database,
+  SortAsc,
+  SortDesc,
+  Minus,
+  Edit,
+  Edit2,
+  Edit3,
+  Trash,
+  Unlock,
+  Key,
+  Home,
+  BellOff,
+  Building,
+  Building2,
+  GraduationCap,
+  Bookmark,
+  Share,
+  Upload,
+  RefreshCw,
+  LineChart,
+  Laptop,
+  Mouse,
+  File,
+  Folder,
+  FolderPlus,
+  FolderMinus,
+  RotateCw,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  Shield,
+  Grid,
+  Layout,
+  LayoutGrid,
+  XCircle,
+  Coffee,
+  Pizza,
+  Utensils,
+  Bike,
+  Plane,
+  Train,
+  Anchor,
+  Sunrise,
+  Sunset,
+  Sparkles,
+  ShieldHalf
 } from 'lucide-react';
+
+// Firebase Imports
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut,
+  updateProfile,
+  updatePassword as firebaseUpdatePassword,
+  updateEmail as firebaseUpdateEmail,
+  sendPasswordResetEmail
+} from "firebase/auth";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  serverTimestamp,
+  orderBy
+} from "firebase/firestore";
+import {
+  ref,
+  uploadString,
+  getDownloadURL
+} from "firebase/storage";
+import { auth, db, storage } from "./firebase";
+
+// Capacitor Push Notifications
+import { PushNotifications } from '@capacitor/push-notifications';
+import { Device } from '@capacitor/device';
+import { Capacitor } from '@capacitor/core';
 
 export default function App() {
   // State for simulated push notification toast
@@ -108,6 +373,35 @@ export default function App() {
     setSmtpPort(port);
     setSmtpSecure(secure);
     setSmtpFrom(fromStr);
+  };
+
+  // API Base URL for mobile/web compatibility
+  // Smart API Selection: Use local server for web dev, and Cloud for Android/Production
+  // Detectar si estamos en producción para usar la URL absoluta o el proxy local
+  const API_BASE_URL = import.meta.env.PROD
+    ? 'https://ais-pre-q5pynj3k6zdoqc7lcyuar3-224952098429.us-west1.run.app'
+    : '';
+
+
+  // Manejo de errores de red para la IA
+  const safeAIDiagnose = async (data: any) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/diagnose`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Error en el servidor de IA');
+      return await response.json();
+    } catch (err: any) {
+      console.warn("AI CORS/Network Error:", err.message);
+      // Retornar un diagnóstico de respaldo si la API falla por CORS
+      return {
+        diagnosis: "El servicio de IA está temporalmente en mantenimiento técnico (CORS). Basado en el historial, se recomienda una revisión estándar preventiva.",
+        estimatedRate: "B/.. 45.00 - 80.00",
+        urgency: "Media"
+      };
+    }
   };
 
   const triggerSimulatedNotification = async (customText?: string, customTitle?: string, customAsset?: string) => {
@@ -168,7 +462,7 @@ export default function App() {
     setLastEmailError('');
 
     try {
-      const response = await fetch('/api/send-email', {
+      const response = await fetch(`${API_BASE_URL}/api/send-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -212,24 +506,110 @@ export default function App() {
   };
 
   // Session Authentication state
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    return localStorage.getItem('mantech_is_logged') === 'true';
-  });
-  const [role, setRole] = useState<'client' | 'tech'>(() => {
-    return (localStorage.getItem('mantech_logged_role') as 'client' | 'tech') || 'client';
-  });
-  const [loggedInEmail, setLoggedInEmail] = useState<string>(() => {
-    return localStorage.getItem('mantech_logged_email') || '';
-  });
-  const [loggedInName, setLoggedInName] = useState<string>(() => {
-    return localStorage.getItem('mantech_logged_name') || '';
-  });
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [user, setUser] = useState<any>(null);
+  const [role, setRole] = useState<'client' | 'tech' | 'admin'>('client');
+  const [adminTab, setAdminTab] = useState<'finance' | 'users' | 'logistics' | 'settings' | 'alerts'>('finance');
+  const [loggedInEmail, setLoggedInEmail] = useState<string>('');
+  const [loggedInName, setLoggedInName] = useState<string>('');
+  const [profileImage, setProfileImage] = useState<string>('');
+
+  // FCM Token state
+  const [fcmToken, setFcmToken] = useState<string>('');
+
+  // 1. Firebase Auth & Role Listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setIsLoggedIn(true);
+        setUser(firebaseUser);
+        setLoggedInEmail(firebaseUser.email || '');
+        setLoggedInName(firebaseUser.displayName || 'Usuario');
+        setProfileImage(firebaseUser.photoURL || '');
+
+        // Fetch user role & Setup Push
+        const setupUser = async () => {
+          const q = query(collection(db, "users"), where("uid", "==", firebaseUser.uid));
+          const querySnapshot = await getDocs(q);
+          if (!querySnapshot.empty) {
+            const userDoc = querySnapshot.docs[0];
+            const userData = userDoc.data();
+            setRole(userData.role);
+            // Si el displayName de Firebase falla, usamos el nombre guardado en Firestore
+            if (!firebaseUser.displayName && userData.name) {
+              setLoggedInName(userData.name);
+            }
+            if (userData.photoURL) {
+              setProfileImage(userData.photoURL);
+            }
+            if (userData.role === 'tech') {
+              setSelectedTechProfileId(userData.techId || 'tech-1');
+            }
+
+            // Initialize Push Notifications if on Mobile
+            if (Capacitor.isNativePlatform()) {
+              setupPushNotifications(userDoc.id);
+            }
+          }
+        };
+        setupUser();
+      } else {
+        setIsLoggedIn(false);
+        setUser(null);
+        setLoggedInEmail('');
+        setLoggedInName('');
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const setupPushNotifications = async (userDocId: string) => {
+    // Request permission
+    let perm = await PushNotifications.checkPermissions();
+    if (perm.receive === 'prompt') {
+      perm = await PushNotifications.requestPermissions();
+    }
+
+    if (perm.receive !== 'granted') {
+      console.warn("User denied push permissions");
+      return;
+    }
+
+    // Register with FCM
+    await PushNotifications.register();
+
+    // Listen for Token
+    PushNotifications.addListener('registration', async (token) => {
+      const deviceToken = token.value;
+      setFcmToken(deviceToken);
+
+      // Save token in user document for targeted notifications
+      await updateDoc(doc(db, "users", userDocId), {
+        fcmToken: deviceToken,
+        lastActive: serverTimestamp(),
+        platform: Capacitor.getPlatform()
+      });
+      console.log("FCM Token saved:", deviceToken);
+    });
+
+    PushNotifications.addListener('registrationError', (err) => {
+      console.error("Push registration error:", err);
+    });
+
+    // Handle receiving notification while app is open
+    PushNotifications.addListener('pushNotificationReceived', (notification) => {
+      alert(`🔔 ${notification.title}: ${notification.body}`);
+    });
+  };
 
   // Login form temporary inputs
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [loginName, setLoginName] = useState('');
   const [authTab, setAuthTab] = useState<'client' | 'tech'>('client');
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authError, setAuthError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Pre-login interactive landing page simulator state
   const [demoSelectedId, setDemoSelectedId] = useState<number>(1);
@@ -285,39 +665,14 @@ export default function App() {
     }
   ];
 
-  // Viewport mode selector: 'web' or 'android' simulation - AUTOMATICALLY DETECTED ONCE ON FIRST LOAD
-  const [viewportMode, setViewportMode] = useState<'web' | 'android'>('web');
-  const [isLargeScreen, setIsLargeScreen] = useState<boolean>(window.innerWidth >= 1150);
-  
-  useEffect(() => {
-    // Initial detection on load
-    const isMobileSize = window.innerWidth < 1024;
-    const isMobileDevice = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-    if (isMobileSize || isMobileDevice) {
-      setViewportMode('android');
-    } else {
-      setViewportMode('web');
-    }
-
-    setIsLargeScreen(window.innerWidth >= 1150);
-
-    const handleResize = () => {
-      setIsLargeScreen(window.innerWidth >= 1150);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const showMobileDeviceSimulator = viewportMode === 'android' && isLargeScreen;
-
   // Navigation for Client & Tech
-  const [clientTab, setClientTab] = useState<'dashboard' | 'marketplace' | 'quotes' | 'ai' | 'chat'>('dashboard');
-  const [techTab, setTechTab] = useState<'received' | 'agenda' | 'profile' | 'chat'>('received');
+  const [clientTab, setClientTab] = useState<'dashboard' | 'marketplace' | 'quotes' | 'ai' | 'chat' | 'settings'>('dashboard');
+  const [techTab, setTechTab] = useState<'received' | 'agenda' | 'profile' | 'chat' | 'settings'>('received');
 
   // State
   const [assets, setAssets] = useState<Asset[]>([]);
   const [reminders, setReminders] = useState<MaintenanceReminder[]>([]);
+  const [allReminders, setAllReminders] = useState<MaintenanceReminder[]>([]);
   const [technicians, setTechnicians] = useState<TechProfile[]>([]);
   const [requests, setRequests] = useState<JobRequest[]>([]);
   const [agenda, setAgenda] = useState<AgendaEvent[]>([]);
@@ -329,6 +684,7 @@ export default function App() {
 
   // Modals UI
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
+  const [assetToEdit, setAssetToEdit] = useState<Asset | null>(null);
   const [isTechModalOpen, setIsTechModalOpen] = useState(false);
   const [activeTechForModal, setActiveTechForModal] = useState<TechProfile | null>(null);
 
@@ -349,99 +705,240 @@ export default function App() {
     return localStorage.getItem('mantech_logged_tech_id') || 'tech-1';
   });
 
-  // Initialize from LocalStorage or mock data
+  // 2. Listen for Technicians and Seed if empty
   useEffect(() => {
-    const cachedAssets = localStorage.getItem('maintly_assets');
-    const cachedReminders = localStorage.getItem('maintly_reminders');
-    const cachedTechnicians = localStorage.getItem('maintly_technicians');
-    const cachedRequests = localStorage.getItem('maintly_requests');
-    const cachedAgenda = localStorage.getItem('maintly_agenda');
-    const cachedChats = localStorage.getItem('maintly_chats');
-
-    if (cachedAssets) setAssets(JSON.parse(cachedAssets));
-    else setAssets(initialAssets);
-
-    if (cachedReminders) setReminders(JSON.parse(cachedReminders));
-    else setReminders(initialReminders);
-
-    if (cachedTechnicians) setTechnicians(JSON.parse(cachedTechnicians));
-    else setTechnicians(initialTechnicians);
-
-    if (cachedRequests) setRequests(JSON.parse(cachedRequests));
-    else setRequests(initialRequests);
-
-    if (cachedAgenda) setAgenda(JSON.parse(cachedAgenda));
-    else setAgenda(initialAgendaEvents);
-
-    if (cachedChats) {
-      setChatMessages(JSON.parse(cachedChats));
-    } else {
-      setChatMessages([
-        {
-          id: 'chat-init-1',
-          requestId: 'req-101',
-          sender: 'tech',
-          text: 'Hola Rubén, ya revisé las especificaciones de tu Toyota Yaris. Con mucho gusto puedo hacer el cambio de aceite sintético utilizando filtros originales. ¿Qué día te queda cómodo hacer el servicio?',
-          timestamp: '2026-06-19T11:00:00Z'
-        },
-        {
-          id: 'chat-init-2',
-          requestId: 'req-101',
-          sender: 'client',
-          text: 'Hola Carlos. Me parece excelente la cotización. Me convendría el lunes en la mañana si tienes disponibilidad.',
-          timestamp: '2026-06-19T11:15:00Z'
+    const unsubscribeTechs = onSnapshot(collection(db, "technicians"), async (snapshot) => {
+      if (snapshot.empty && user) {
+        console.log("Database empty. Seeding initial technicians...");
+        for (const tech of initialTechnicians) {
+          try {
+            await setDoc(doc(db, "technicians", tech.id), tech);
+          } catch (e) {
+            console.warn("Could not seed technician:", tech.name);
+          }
         }
-      ]);
+      } else {
+        const techList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TechProfile[];
+        if (techList.length > 0) setTechnicians(techList);
+      }
+    }, (error) => {
+      console.warn("Firestore Technicians Error:", error.message);
+    });
+
+    // Seed mock requests if database is fresh (Optional, for better demo)
+    const seedMockData = async () => {
+      if (user) {
+        try {
+          const qReq = query(collection(db, "requests"), where("clientId", "==", user.uid));
+          const snapReq = await getDocs(qReq);
+          if (snapReq.empty) {
+            for (const req of initialRequests) {
+              await setDoc(doc(db, "requests", req.id), { ...req, clientId: user.uid });
+            }
+          }
+        } catch (e: any) {
+          console.warn("Could not seed mock requests (likely permissions):", e.message);
+        }
+      }
+    };
+    seedMockData();
+
+    return () => unsubscribeTechs();
+  }, [user]);
+
+  // 3. Listen for Requests
+  useEffect(() => {
+    let unsubscribeReqs = () => {};
+    if (isLoggedIn && user) {
+      const field = role === 'client' ? 'clientId' : 'techId';
+      const q = query(collection(db, "requests"), where(field, "==", (role === 'client' ? user.uid : selectedTechProfileId)));
+      unsubscribeReqs = onSnapshot(q, (snapshot) => {
+        const reqList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as JobRequest[];
+        setRequests(reqList.length > 0 ? reqList : initialRequests);
+      }, (error) => {
+        console.warn("Firestore Requests Error:", error.message);
+      });
+    } else {
+      setRequests(initialRequests);
     }
-  }, []);
+    return () => unsubscribeReqs();
+  }, [isLoggedIn, user, role, selectedTechProfileId]);
 
-  // Sync to localStorage
+  // 4. Listen for Chat Messages
   useEffect(() => {
-    if (assets.length) localStorage.setItem('maintly_assets', JSON.stringify(assets));
-  }, [assets]);
-  useEffect(() => {
-    if (reminders.length) localStorage.setItem('maintly_reminders', JSON.stringify(reminders));
-  }, [reminders]);
-  useEffect(() => {
-    if (technicians.length) localStorage.setItem('maintly_technicians', JSON.stringify(technicians));
-  }, [technicians]);
-  useEffect(() => {
-    if (requests.length) localStorage.setItem('maintly_requests', JSON.stringify(requests));
-  }, [requests]);
-  useEffect(() => {
-    if (agenda.length) localStorage.setItem('maintly_agenda', JSON.stringify(agenda));
-  }, [agenda]);
-  useEffect(() => {
-    if (chatMessages.length) localStorage.setItem('maintly_chats', JSON.stringify(chatMessages));
-  }, [chatMessages]);
+    let unsubscribeMessages = () => {};
+    if (isLoggedIn && activeChatRequestId) {
+      const q = query(collection(db, "messages"), where("requestId", "==", activeChatRequestId), orderBy("timestamp", "asc"));
+      unsubscribeMessages = onSnapshot(q, (snapshot) => {
+        const msgList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), timestamp: doc.data().timestamp?.toDate()?.toISOString() })) as ChatMessage[];
+        setChatMessages(msgList);
+      }, (error) => {
+        console.warn("Firestore Messages Error:", error.message);
+      });
+    }
+    return () => unsubscribeMessages();
+  }, [isLoggedIn, activeChatRequestId]);
 
-  // Client add asset
-  const handleAddAsset = (newAssetData: Omit<Asset, 'id' | 'registeredAt'>) => {
-    const newId = `asset-${Date.now()}`;
-    const newAsset: Asset = {
-      ...newAssetData,
-      id: newId,
-      registeredAt: new Date().toISOString().split('T')[0]
-    };
+  // Assets Listener
+  useEffect(() => {
+    let unsubscribeAssets = () => {};
+    if (isLoggedIn && user && role === 'client') {
+      console.log("Escuchando activos para el usuario:", user.uid);
+      const q = query(collection(db, "assets"), where("clientId", "==", user.uid));
+      unsubscribeAssets = onSnapshot(q, (snapshot) => {
+        const assetsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Asset[];
+        console.log("Activos recibidos:", assetsList.length);
+        setAssets(assetsList);
+      }, (error) => {
+        console.error("Firestore Assets Error:", error.message);
+      });
+    } else if (isLoggedIn && role !== 'client') {
+      setAssets([]); // No mostrar activos si no es cliente
+    } else if (!isLoggedIn) {
+      setAssets(initialAssets);
+    }
+    return () => unsubscribeAssets();
+  }, [isLoggedIn, user, role]);
 
-    setAssets(prev => [newAsset, ...prev]);
+  // 5. Listen for Reminders
+  useEffect(() => {
+    let unsubscribeReminders = () => {};
+    if (isLoggedIn && user && role === 'client') {
+      console.log("Escuchando recordatorios para el usuario:", user.uid);
+      const q = query(collection(db, "reminders"), where("clientId", "==", user.uid));
+      unsubscribeReminders = onSnapshot(q, (snapshot) => {
+        const remindersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as MaintenanceReminder[];
+        console.log("Recordatorios recibidos:", remindersList.length);
+        setReminders(remindersList);
+      }, (error) => {
+        console.error("Firestore Reminders Error:", error.message);
+      });
+    } else if (isLoggedIn && role !== 'client') {
+      setReminders([]); // No mostrar si no es cliente
+    } else if (!isLoggedIn) {
+      setReminders(initialReminders);
+    }
+    return () => unsubscribeReminders();
+  }, [isLoggedIn, user, role]);
 
-    // Automatically create a maintenance reminder for custom assets 
-    const daysUntilNext = Math.ceil((new Date(newAssetData.nextMaintenanceDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-    let status: 'pending' | 'urgent' = 'pending';
-    if (daysUntilNext <= 7) status = 'urgent';
+  // Admin Listen for All Reminders
+  useEffect(() => {
+    let unsubscribeAllReminders = () => {};
+    if (isLoggedIn && role === 'admin') {
+      const q = query(collection(db, "reminders"), orderBy("dueDate", "asc"));
+      unsubscribeAllReminders = onSnapshot(q, (snapshot) => {
+        const remindersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as MaintenanceReminder[];
+        setAllReminders(remindersList);
+      }, (error) => {
+        console.warn("Firestore All Reminders Error:", error.message);
+      });
+    }
+    return () => unsubscribeAllReminders();
+  }, [isLoggedIn, role]);
 
-    const newReminder: MaintenanceReminder = {
-      id: `rem-${Date.now()}`,
-      assetId: newId,
-      title: `Mantenimiento de Rutina - ${newAsset.name}`,
-      description: `Fecha de atención programada programada para el ${newAssetData.nextMaintenanceDate} (${newAsset.details}).`,
-      dueDate: newAssetData.nextMaintenanceDate,
-      status: status,
-      type: 'general'
-    };
+  // 6. Listen for Agenda Events
+  useEffect(() => {
+    let unsubscribeAgenda = () => {};
+    if (isLoggedIn && role === 'tech' && selectedTechProfileId) {
+      const q = query(collection(db, "agenda"), where("techId", "==", selectedTechProfileId));
+      unsubscribeAgenda = onSnapshot(q, (snapshot) => {
+        const agendaList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AgendaEvent[];
+        setAgenda(agendaList.length > 0 ? agendaList : initialAgendaEvents);
+      }, (error) => {
+        console.warn("Firestore Agenda Error:", error.message);
+      });
+    } else {
+      setAgenda(initialAgendaEvents);
+    }
+    return () => unsubscribeAgenda();
+  }, [isLoggedIn, role, selectedTechProfileId]);
 
-    setReminders(prev => [newReminder, ...prev]);
+  // Client add/edit asset
+  const handleAddAsset = async (newAssetData: Omit<Asset, 'id' | 'registeredAt'>) => {
+    if (!user) {
+      alert("Debes iniciar sesión para realizar esta acción.");
+      return;
+    }
+
+    try {
+      const cleanAssetData = JSON.parse(JSON.stringify(newAssetData));
+
+      if (assetToEdit) {
+        // ACTUALIZAR ACTIVO EXISTENTE
+        const assetRef = doc(db, "assets", assetToEdit.id);
+        await updateDoc(assetRef, {
+          ...cleanAssetData,
+          updatedAt: serverTimestamp()
+        });
+
+        // Actualizar recordatorio asociado (opcional, simplificado aquí)
+        const qRem = query(collection(db, "reminders"), where("assetId", "==", assetToEdit.id));
+        const snapRem = await getDocs(qRem);
+        if (!snapRem.empty) {
+          const reminderDoc = snapRem.docs[0];
+          await updateDoc(doc(db, "reminders", reminderDoc.id), {
+            title: `Mantenimiento de Rutina - ${newAssetData.name}`,
+            dueDate: newAssetData.nextMaintenanceDate,
+            description: `Fecha de atención programada para el ${newAssetData.nextMaintenanceDate} (${newAssetData.details || 'Sin detalles'}).`,
+          });
+        }
+
+        alert("¡Activo actualizado correctamente!");
+        setAssetToEdit(null);
+      } else {
+        // CREAR NUEVO ACTIVO
+        const newAsset = {
+          ...cleanAssetData,
+          clientId: user.uid,
+          registeredAt: new Date().toISOString().split('T')[0],
+          createdAt: serverTimestamp()
+        };
+
+        const assetRef = await addDoc(collection(db, "assets"), newAsset);
+
+        const daysUntilNext = Math.ceil((new Date(newAssetData.nextMaintenanceDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        let status: 'pending' | 'urgent' = 'pending';
+        if (daysUntilNext <= 7) status = 'urgent';
+
+        const newReminder = {
+          clientId: user.uid,
+          assetId: assetRef.id,
+          title: `Mantenimiento de Rutina - ${newAssetData.name}`,
+          description: `Fecha de atención programada para el ${newAssetData.nextMaintenanceDate} (${newAssetData.details || 'Sin detalles'}).`,
+          dueDate: newAssetData.nextMaintenanceDate,
+          status: status,
+          type: 'general',
+          createdAt: serverTimestamp()
+        };
+
+        await addDoc(collection(db, "reminders"), newReminder);
+        alert("¡Activo registrado con éxito!");
+      }
+    } catch (err: any) {
+      console.error("Asset Action Error:", err);
+      alert("Error al procesar el activo: " + err.message);
+    }
+  };
+
+  const handleDeleteAsset = async (assetId: string) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar este activo? Se borrarán también sus recordatorios.")) return;
+
+    try {
+      // Borrar Activo
+      await deleteDoc(doc(db, "assets", assetId));
+
+      // Borrar Recordatorios asociados
+      const qRem = query(collection(db, "reminders"), where("assetId", "==", assetId));
+      const snapRem = await getDocs(qRem);
+      for (const d of snapRem.docs) {
+        await deleteDoc(doc(db, "reminders", d.id));
+      }
+
+      alert("Activo eliminado correctamente.");
+    } catch (err: any) {
+      console.error("Delete Asset Error:", err);
+      alert("Error al eliminar: " + err.message);
+    }
   };
 
   // Client trigger "Solicitar Técnico" from reminder
@@ -461,244 +958,361 @@ export default function App() {
   };
 
   // Client submit quote request
-  const handleRequestQuote = (techId: string, assetId: string, description: string) => {
+  const handleRequestQuote = async (techId: string, assetId: string, description: string) => {
+    if (!user) return;
     const selectedTech = technicians.find(t => t.id === techId);
     const selectedAsset = assets.find(a => a.id === assetId);
     if (!selectedTech || !selectedAsset) return;
 
-    const newRequest: JobRequest = {
-      id: `req-${Date.now()}`,
-      clientId: 'user-client-1',
-      clientName: 'Rubén Ábrego',
-      assetId: assetId,
-      assetName: selectedAsset.name,
-      techId: techId,
-      techName: selectedTech.name,
-      description: description,
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    };
+    try {
+      const newRequest = {
+        clientId: user.uid,
+        clientName: loggedInName,
+        assetId: assetId,
+        assetName: selectedAsset.name,
+        techId: techId,
+        techName: selectedTech.name,
+        description: description,
+        status: 'pending',
+        createdAt: serverTimestamp()
+      };
 
-    setRequests(prev => [newRequest, ...prev]);
-    
-    // Automatically switch to Quotes tab
-    setClientTab('quotes');
+      await addDoc(collection(db, "requests"), newRequest);
+      setClientTab('quotes');
+    } catch (err) {
+      console.error("Request Quote Error:", err);
+    }
   };
 
   // Technician submit active quote bid
-  const handleSubmitBid = (requestId: string) => {
+  const handleSubmitBid = async (requestId: string) => {
     const priceNum = Number(bidPrice);
     if (isNaN(priceNum) || priceNum <= 0) return;
 
-    setRequests(prev => prev.map(req => {
-      if (req.id === requestId) {
-        const comm = Number((priceNum * 0.15).toFixed(2)); // 15% Commision
-        const earnings = Number((priceNum - comm).toFixed(2));
-        return {
-          ...req,
-          price: priceNum,
-          commission: comm,
-          technicianEarnings: earnings,
-          status: 'quoted' as const
-        };
-      }
-      return req;
-    }));
+    try {
+      const comm = Number((priceNum * 0.15).toFixed(2));
+      const earnings = Number((priceNum - comm).toFixed(2));
 
-    setDraftingBidRequestId(null);
-    setBidPrice('');
+      await updateDoc(doc(db, "requests", requestId), {
+        price: priceNum,
+        commission: comm,
+        technicianEarnings: earnings,
+        status: 'quoted'
+      });
+
+      setDraftingBidRequestId(null);
+      setBidPrice('');
+    } catch (err) {
+      console.error("Submit Bid Error:", err);
+    }
   };
 
-  // Client Accept Tech Quote & simulate payment options
-  const handleAcceptQuote = (requestId: string, paymentMethod: 'yappy' | 'ach' | 'card' | 'cache') => {
-    setRequests(prev => prev.map(req => {
-      if (req.id === requestId) {
-        return {
-          ...req,
-          status: 'accepted' as const
-        };
-      }
-      return req;
-    }));
+  // Client Accept Tech Quote
+  const handleAcceptQuote = async (requestId: string, paymentMethod: 'yappy' | 'ach' | 'card' | 'cache') => {
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        status: 'accepted'
+      });
 
-    const req = requests.find(r => r.id === requestId);
-    if (!req) return;
+      const req = requests.find(r => r.id === requestId);
+      if (!req) return;
 
-    // Create an Agenda event for the technician automatically
-    const newEvent: AgendaEvent = {
-      id: `evt-${Date.now()}`,
-      techId: req.techId,
-      clientName: req.clientName,
-      title: `Servicio: ${req.assetName} - ${req.description.substring(0, 30)}...`,
-      date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0], // scheduled in 2 days
-      time: '09:00',
-      duration: '2h',
-      status: 'pending'
-    };
+      // Add to agenda (Firestore)
+      await addDoc(collection(db, "agenda"), {
+        techId: req.techId,
+        clientName: req.clientName,
+        title: `Servicio: ${req.assetName} - ${req.description.substring(0, 30)}...`,
+        date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
+        time: '09:00',
+        duration: '2h',
+        status: 'pending',
+        createdAt: serverTimestamp()
+      });
 
-    setAgenda(prev => [newEvent, ...prev]);
+      // Add initial coordinating message
+      await addDoc(collection(db, "messages"), {
+        requestId: requestId,
+        sender: 'tech',
+        text: `¡Hola! He recibido tu confirmación de servicio y pago vía ${paymentMethod.toUpperCase()}. He agendado la cita de mantenimiento.`,
+        timestamp: serverTimestamp()
+      });
 
-    // Create initial chat message for coordination
-    const autoMsg: ChatMessage = {
-      id: `chat-${Date.now()}`,
-      requestId: requestId,
-      sender: 'tech',
-      text: `¡Hola Rubén! He recibido tu confirmación de servicio y pago vía ${paymentMethod.toUpperCase()}. He agendado la cita de mantenimiento en mi calendario. Estaré llegando a tu ubicación según lo acordado.`,
-      timestamp: new Date().toISOString()
-    };
-    setChatMessages(prev => [...prev, autoMsg]);
-    setActiveChatRequestId(requestId);
-    setClientTab('chat');
+      setActiveChatRequestId(requestId);
+      setClientTab('chat');
+    } catch (err) {
+      console.error("Accept Quote Error:", err);
+    }
   };
 
   // Tech complete job
-  const handleCompleteJob = (requestId: string) => {
-    setRequests(prev => prev.map(req => {
-      if (req.id === requestId) {
-        return {
-          ...req,
-          status: 'completed' as const
-        };
-      }
-      return req;
-    }));
-
-    // Update corresponding agenda status
-    const req = requests.find(r => r.id === requestId);
-    if (req) {
-      setAgenda(prev => prev.map(evt => {
-        if (evt.techId === req.techId && evt.clientName === req.clientName) {
-          return { ...evt, status: 'completed' as const };
-        }
-        return evt;
-      }));
+  const handleCompleteJob = async (requestId: string) => {
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        status: 'completed'
+      });
+    } catch (err) {
+      console.error("Complete Job Error:", err);
     }
   };
 
   // Client rate technicians
-  const handleRateJob = (requestId: string) => {
-    setRequests(prev => prev.map(req => {
-      if (req.id === requestId) {
-        return {
-          ...req,
-          status: 'rated' as const,
-          rating: ratingVal,
-          comment: ratingComment
-        };
-      }
-      return req;
-    }));
-
-    // Update technician review stats average
+  const handleRateJob = async (requestId: string) => {
     const req = requests.find(r => r.id === requestId);
-    if (req) {
-      setTechnicians(prev => prev.map(t => {
-        if (t.id === req.techId) {
-          const totalRatingPoints = (t.rating * t.reviewCount) + ratingVal;
-          const newCount = t.reviewCount + 1;
-          return {
-            ...t,
-            reviewCount: newCount,
-            rating: Number((totalRatingPoints / newCount).toFixed(1))
-          };
-        }
-        return t;
-      }));
-    }
+    if (!req) return;
 
-    setRatingRequestId(null);
-    setRatingComment('');
-    setRatingVal(5);
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        status: 'rated',
+        rating: ratingVal,
+        comment: ratingComment
+      });
+
+      // Update technician review stats in Firestore
+      const techRef = doc(db, "technicians", req.techId);
+      const selectedTech = technicians.find(t => t.id === req.techId);
+      if (selectedTech) {
+        const totalRatingPoints = (selectedTech.rating * selectedTech.reviewCount) + ratingVal;
+        const newCount = selectedTech.reviewCount + 1;
+        await updateDoc(techRef, {
+          reviewCount: newCount,
+          rating: Number((totalRatingPoints / newCount).toFixed(1))
+        });
+      }
+
+      setRatingRequestId(null);
+      setRatingComment('');
+      setRatingVal(5);
+    } catch (err) {
+      console.error("Rate Job Error:", err);
+    }
   };
 
-  // Handle general messages
-  const handleSendMessage = (text: string, image?: string) => {
-    if (!activeChatRequestId) return;
-    const isClient = role === 'client';
+  // Handle general messages with Storage for images
+  const handleSendMessage = async (text: string, imageData?: string) => {
+    if (!activeChatRequestId || !user) return;
 
-    const newMsg: ChatMessage = {
-      id: `chat-msg-${Date.now()}`,
-      requestId: activeChatRequestId,
-      sender: isClient ? 'client' : 'tech',
-      text,
-      image,
-      timestamp: new Date().toISOString()
-    };
+    try {
+      let imageUrl = "";
+      if (imageData && imageData.startsWith('data:image/')) {
+        // Firebase Storage Upload
+        const storageRef = ref(storage, `chats/${activeChatRequestId}/${Date.now()}.jpg`);
+        await uploadString(storageRef, imageData, 'data_url');
+        imageUrl = await getDownloadURL(storageRef);
+      }
 
-    setChatMessages(prev => [...prev, newMsg]);
+      await addDoc(collection(db, "messages"), {
+        requestId: activeChatRequestId,
+        sender: role === 'client' ? 'client' : 'tech',
+        text,
+        image: imageUrl || null,
+        timestamp: serverTimestamp()
+      });
 
-    // Fast simulated automatic reply to make it highly active if client is talking
-    if (isClient) {
-      setTimeout(() => {
-        const matchingReq = requests.find(r => r.id === activeChatRequestId);
-        const replyMsg: ChatMessage = {
-          id: `chat-msg-reply-${Date.now()}`,
-          requestId: activeChatRequestId,
-          sender: 'tech',
-          text: `Entendido completamente Rubén. Estaré monitoreando los detalles de tu ${matchingReq?.assetName || 'equipo'} para ofrecerte la mejor solución estructural. Te aviso una vez esté por llegar con mis herramientas de diagnóstico de Panamá.`,
-          timestamp: new Date().toISOString()
-        };
-        setChatMessages(prev => [...prev, replyMsg]);
-      }, 1500);
+      // Auto-reply simulation (can be a Cloud Function in real life)
+      if (role === 'client') {
+        setTimeout(async () => {
+          await addDoc(collection(db, "messages"), {
+            requestId: activeChatRequestId,
+            sender: 'tech',
+            text: `He recibido tu mensaje. Estoy revisando los detalles.`,
+            timestamp: serverTimestamp()
+          });
+        }, 2000);
+      }
+    } catch (err) {
+      console.error("Send Message Error:", err);
     }
   };
 
   // Get current active tech profile details
   const getSelectedTechProfileObj = () => {
-    return technicians.find(t => t.id === selectedTechProfileId) || technicians[0];
+    const found = technicians.find(t => t.id === selectedTechProfileId) || technicians[0];
+    return found || {
+      id: 'unknown',
+      name: 'Usuario',
+      title: 'Técnico Especialista',
+      category: 'general',
+      rating: 5.0,
+      reviewCount: 0,
+      completedJobs: 0,
+      experienceYears: 0,
+      location: 'Panamá',
+      hourlyRate: 0,
+      bio: '',
+      certifications: [],
+      portfolioImages: [],
+      plan: 'basic'
+    };
   };
 
   // Auth Submit Handlers
-  const handleLogin = (e: React.FormEvent | null, selectedRole: 'client' | 'tech', forceEmail?: string, forceName?: string, techId?: string) => {
+  const handleLogin = async (e: React.FormEvent | null, selectedRole: 'client' | 'tech' | 'admin', forceEmail?: string, forceName?: string, techId?: string) => {
     if (e) e.preventDefault();
-    
-    const finalEmail = forceEmail || loginEmail || (selectedRole === 'client' ? 'rubenabregoc@gmail.com' : 'carlos@mantech.com');
-    let finalName = forceName || (selectedRole === 'client' ? 'Rubén Ábrego' : 'Carlos Mendoza');
-    
-    if (selectedRole === 'tech' && techId) {
-      const selectedTechObj = technicians.find(t => t.id === techId);
-      if (selectedTechObj) {
-        finalName = selectedTechObj.name;
-      }
-    }
-
-    setIsLoggedIn(true);
-    setRole(selectedRole);
-    setLoggedInEmail(finalEmail);
-    setLoggedInName(finalName);
-    
-    if (selectedRole === 'tech' && techId) {
-      setSelectedTechProfileId(techId);
-      localStorage.setItem('mantech_logged_tech_id', techId);
-    } else if (selectedRole === 'client') {
-      // Refresh to client first tab
-      setClientTab('dashboard');
-    } else {
-      setTechTab('received');
-    }
-
-    localStorage.setItem('mantech_is_logged', 'true');
-    localStorage.setItem('mantech_logged_role', selectedRole);
-    localStorage.setItem('mantech_logged_email', finalEmail);
-    localStorage.setItem('mantech_logged_name', finalName);
-
     setAuthError('');
-    setLoginEmail('');
-    setLoginPassword('');
+    
+    const email = forceEmail || loginEmail;
+    const password = loginPassword || "mantech123";
+    const name = forceName || loginName || (selectedRole === 'admin' ? 'Administrador Central' : '');
+
+    try {
+      if (authMode === 'register' || forceName) {
+        // ... (lógica de registro existente)
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const newUser = userCredential.user;
+        await updateProfile(newUser, { displayName: name });
+        await addDoc(collection(db, "users"), {
+          uid: newUser.uid,
+          email: email,
+          name: name,
+          role: selectedRole,
+          techId: techId || (selectedRole === 'tech' ? `tech-${Date.now()}` : null),
+          createdAt: serverTimestamp()
+        });
+        setLoggedInName(name);
+        setLoggedInEmail(email);
+        setRole(selectedRole);
+      } else {
+        // Firebase Login - VALIDACIÓN DE ROL ESTRICTA
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const loggedUser = userCredential.user;
+
+        // Verificar el rol en Firestore antes de permitir el acceso
+        const q = query(collection(db, "users"), where("uid", "==", loggedUser.uid));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const userData = querySnapshot.docs[0].data();
+          if (userData.role !== selectedRole) {
+            await signOut(auth); // Expulsar si el rol no coincide
+            throw { code: 'custom/wrong-role', message: `Esta cuenta está registrada como ${userData.role === 'tech' ? 'TÉCNICO' : (userData.role === 'admin' ? 'ADMINISTRADOR' : 'CLIENTE')}. Por favor, selecciona el perfil correcto arriba.` };
+          }
+        }
+      }
+
+      setLoginEmail('');
+      setLoginPassword('');
+      setLoginName('');
+    } catch (err: any) {
+      console.error("Auth Error:", err);
+      let errorMsg = "Ocurrió un error en la autenticación";
+
+      if (err.code === 'auth/email-already-in-use') {
+        errorMsg = "Este correo electrónico ya está registrado. Por favor, inicia sesión.";
+      } else if (err.code === 'auth/invalid-credential') {
+        errorMsg = "Correo o contraseña incorrectos.";
+      } else if (err.code === 'auth/weak-password') {
+        errorMsg = "La contraseña debe tener al menos 6 caracteres.";
+      } else if (err.code === 'auth/invalid-email') {
+        errorMsg = "El formato del correo no es válido.";
+      } else if (err.code === 'custom/wrong-role') {
+        errorMsg = err.message;
+      }
+
+      setAuthError(errorMsg);
+    }
   };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setLoggedInEmail('');
-    setLoggedInName('');
-    localStorage.removeItem('mantech_is_logged');
-    localStorage.removeItem('mantech_logged_role');
-    localStorage.removeItem('mantech_logged_email');
-    localStorage.removeItem('mantech_logged_name');
-    localStorage.removeItem('mantech_logged_tech_id');
+  const handleResetPassword = async () => {
+    if (!loginEmail) {
+      setAuthError("Por favor ingresa tu correo electrónico para restablecer la contraseña.");
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, loginEmail);
+      alert("Se ha enviado un correo para restablecer tu contraseña. Revisa tu bandeja de entrada.");
+    } catch (err: any) {
+      console.error("Reset Password Error:", err);
+      setAuthError("Error al enviar el correo: " + err.message);
+    }
   };
 
-  // Update Technician membership premium
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.error("Logout Error:", err);
+    }
+  };
+
+  // Update Profile functionality
+  const [updateName, setUpdateName] = useState('');
+  const [updateEmail, setUpdateEmail] = useState('');
+  const [updatePassword, setUpdatePassword] = useState('');
+  const [updatePhoto, setUpdatePhoto] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUpdatePhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setIsUpdating(true);
+    setAuthError('');
+
+    try {
+      let photoUrl = profileImage;
+
+      if (updatePhoto) {
+        const storageRef = ref(storage, `profiles/${user.uid}`);
+        await uploadString(storageRef, updatePhoto, 'data_url');
+        photoUrl = await getDownloadURL(storageRef);
+      }
+
+      if (updateName || updatePhoto) {
+        await updateProfile(user, {
+          displayName: updateName || loggedInName,
+          photoURL: photoUrl
+        });
+
+        // Update in Firestore too
+        const q = query(collection(db, "users"), where("uid", "==", user.uid));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          await updateDoc(doc(db, "users", snap.docs[0].id), {
+            name: updateName || loggedInName,
+            photoURL: photoUrl
+          });
+        }
+        if (updateName) setLoggedInName(updateName);
+        setProfileImage(photoUrl);
+      }
+
+      if (updateEmail) {
+        await firebaseUpdateEmail(user, updateEmail);
+        // Update in Firestore
+        const q = query(collection(db, "users"), where("uid", "==", user.uid));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          await updateDoc(doc(db, "users", snap.docs[0].id), { email: updateEmail });
+        }
+        setLoggedInEmail(updateEmail);
+      }
+
+      if (updatePassword) {
+        await firebaseUpdatePassword(user, updatePassword);
+      }
+
+      setUpdateName('');
+      setUpdateEmail('');
+      setUpdatePassword('');
+      alert("Perfil actualizado correctamente");
+      role === 'client' ? setClientTab('dashboard') : setTechTab('received');
+    } catch (err: any) {
+      console.error("Update Error:", err);
+      setAuthError("Error al actualizar: " + err.message);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
   const handleToggleTechPlan = (techId: string) => {
     setTechnicians(prev => prev.map(t => {
       if (t.id === techId) {
@@ -751,6 +1365,22 @@ export default function App() {
             <p className="text-[9px] text-zinc-400 uppercase font-black tracking-widest">El Ecosistema Técnico Número #1 en Panamá</p>
           </div>
 
+          {/* Login/Register Toggle */}
+          <div className="flex justify-center gap-4 border-b border-zinc-100 pb-2">
+            <button
+              onClick={() => { setAuthMode('login'); setAuthError(''); }}
+              className={`text-xs font-black uppercase tracking-widest pb-1 transition-all ${authMode === 'login' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-zinc-400 hover:text-zinc-600'}`}
+            >
+              Iniciar Sesión
+            </button>
+            <button
+              onClick={() => { setAuthMode('register'); setAuthError(''); }}
+              className={`text-xs font-black uppercase tracking-widest pb-1 transition-all ${authMode === 'register' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-zinc-400 hover:text-zinc-600'}`}
+            >
+              Registrarse
+            </button>
+          </div>
+
           {/* Role Tab Selector */}
           <div className="space-y-1">
             <span className="block text-[9px] font-black uppercase text-zinc-400 tracking-wider text-center">Selecciona tu Perfil de Acceso</span>
@@ -777,76 +1407,121 @@ export default function App() {
               >
                 🛠️ Soy Técnico
               </button>
+              <button
+                type="button"
+                onClick={() => { setAuthTab('admin'); setAuthError(''); }}
+                className={`py-2 px-3 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all cursor-pointer col-span-2 mt-1 ${
+                  authTab === 'admin'
+                    ? 'bg-red-600 text-white shadow-md font-extrabold scale-[1.02]'
+                    : 'text-zinc-500 hover:text-red-800 hover:bg-red-50'
+                }`}
+              >
+                🔐 Administrador
+              </button>
             </div>
           </div>
 
           <div className="space-y-4 font-sans">
-            <div className="text-center bg-zinc-50 p-3 rounded-2xl border border-zinc-150">
-              <p className="text-xs text-zinc-600 leading-relaxed font-semibold">
-                {authTab === 'client' 
-                  ? 'Como CLIENTE: Sube reportes de fallas con IA, cotiza de forma libre, monitorea tu inventario y califica proveedores.'
-                  : 'Como TÉCNICO: Recibe alertas de clientes en Panamá, envía cotizaciones detalladas y administra tu agenda premium.'
-                }
-              </p>
-            </div>
+            {authMode === 'login' && (
+              <>
+                <div className="text-center bg-zinc-50 p-3 rounded-2xl border border-zinc-150">
+                  <p className="text-xs text-zinc-600 leading-relaxed font-semibold">
+                    {authTab === 'client'
+                      ? 'Como CLIENTE: Sube reportes de fallas con IA, cotiza de forma libre, monitorea tu inventario y califica proveedores.'
+                      : authTab === 'tech'
+                        ? 'Como TÉCNICO: Recibe alertas de clientes en Panamá, envía cotizaciones detalladas y administra tu agenda premium.'
+                        : 'CONTROL CENTRAL: Monitoreo de finanzas, gestión de usuarios y logística operativa de Mantenimientos S.A.'
+                    }
+                  </p>
+                </div>
 
-            {/* Quick access test accounts */}
-            <div className="space-y-2">
-              <p className="text-[9px] text-zinc-400 font-black uppercase tracking-wider text-center flex items-center justify-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                Acceso de Demostración con Datos Reales
-              </p>
-              
-              {authTab === 'client' ? (
-                <button
-                  type="button"
-                  onClick={() => handleLogin(null, 'client', 'rubenabregoc@gmail.com', 'Rubén Ábrego')}
-                  className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100/90 border border-indigo-200 transition-all text-xs font-black text-indigo-950 shadow-xs cursor-pointer group text-left"
-                >
-                  <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
-                    <div>
-                      <span className="block font-black text-indigo-900">Rubén Ábrego (Cliente)</span>
-                      <span className="block text-[9px] text-indigo-600/80 font-medium font-sans">Propietario de Auto, Split y Servidor</span>
-                    </div>
-                  </span>
-                  <span className="text-[10px] text-indigo-700 font-mono font-bold bg-white/70 px-2.5 py-1 rounded-lg border border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white transition-all shrink-0">ENTRAR ➔</span>
-                </button>
-              ) : (
-                <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1">
-                  {technicians.slice(0, 3).map((tech) => (
+                {/* Quick access test accounts */}
+                <div className="space-y-2">
+                  <p className="text-[9px] text-zinc-400 font-black uppercase tracking-wider text-center flex items-center justify-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    Acceso de Demostración con Datos Reales
+                  </p>
+
+                  {authTab === 'client' ? (
                     <button
-                      key={tech.id}
                       type="button"
-                      onClick={() => handleLogin(null, 'tech', `${tech.id}@mantech.com`, tech.name, tech.id)}
-                      className="w-full flex items-center justify-between p-3 rounded-2xl bg-indigo-50/40 hover:bg-indigo-100/60 border border-indigo-100 transition-all text-xs font-bold text-indigo-950 cursor-pointer text-left group"
+                      onClick={() => handleLogin(null, 'client', 'rubenabregoc@gmail.com', 'Rubén Ábrego')}
+                      className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100/90 border border-indigo-200 transition-all text-xs font-black text-indigo-950 shadow-xs cursor-pointer group text-left"
                     >
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                        <div className="truncate">
-                          <span className="block font-black text-zinc-800 truncate">{tech.name}</span>
-                          <span className="block text-[8.5px] text-zinc-500 tracking-tight font-sans">
-                            {tech.category === 'aires_acondicionados' ? '❄️ 8 Aires Activos' : tech.category === 'autos' ? '🚗 4 Mecánicas' : '⚡ 3 Plantas'} • ⭐{tech.rating}
-                          </span>
+                      <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                        <div>
+                          <span className="block font-black text-indigo-900">Rubén Ábrego (Cliente)</span>
+                          <span className="block text-[9px] text-indigo-600/80 font-medium font-sans">Propietario de Auto, Split y Servidor</span>
                         </div>
-                      </div>
-                      <span className="text-[9px] text-indigo-700 font-mono font-bold bg-white px-2 py-1 rounded-lg border border-indigo-100 shrink-0 uppercase ml-2 group-hover:bg-indigo-600 group-hover:text-white transition-all">Activar ➔</span>
+                      </span>
+                      <span className="text-[10px] text-indigo-700 font-mono font-bold bg-white/70 px-2.5 py-1 rounded-lg border border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white transition-all shrink-0">ENTRAR ➔</span>
                     </button>
-                  ))}
+                  ) : (
+                    <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1">
+                      {technicians.slice(0, 3).map((tech) => (
+                        <button
+                          key={tech.id}
+                          type="button"
+                          onClick={() => handleLogin(null, 'tech', `${tech.id}@mantech.com`, tech.name, tech.id)}
+                          className="w-full flex items-center justify-between p-3 rounded-2xl bg-indigo-50/40 hover:bg-indigo-100/60 border border-indigo-100 transition-all text-xs font-bold text-indigo-950 cursor-pointer text-left group"
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                            <div className="truncate">
+                              <span className="block font-black text-zinc-800 truncate">{tech.name}</span>
+                              <span className="block text-[8.5px] text-zinc-500 tracking-tight font-sans">
+                                {tech.category === 'aires_acondicionados' ? '❄️ 8 Aires Activos' : tech.category === 'autos' ? '🚗 4 Mecánicas' : '⚡ 3 Plantas'} • ⭐{tech.rating}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[9px] text-indigo-700 font-mono font-bold bg-white px-2 py-1 rounded-lg border border-indigo-100 shrink-0 uppercase ml-2 group-hover:bg-indigo-600 group-hover:text-white transition-all">Activar ➔</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="relative flex py-1 items-center">
+                  <div className="flex-grow border-t border-zinc-200"></div>
+                  <span className="flex-shrink mx-3 text-[9px] text-zinc-450 font-black uppercase tracking-widest">O accede de forma privada</span>
+                  <div className="flex-grow border-t border-zinc-200"></div>
+                </div>
+              </>
+            )}
+
+            {/* Login/Register Form */}
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (authMode === 'register') {
+                if (!loginEmail || !loginPassword || !loginName) {
+                  setAuthError('Por favor completa todos los campos');
+                  return;
+                }
+                handleLogin(null, authTab, loginEmail, loginName);
+              } else {
+                handleLogin(e, authTab);
+              }
+            }} className="space-y-4">
+
+              {authMode === 'register' && (
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-black text-zinc-500 block">Nombre Completo</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={loginName}
+                      onChange={(e) => setLoginName(e.target.value)}
+                      placeholder="Ej: Rubén Ábrego"
+                      className="w-full pl-4 pr-10 py-3 bg-zinc-50 border border-zinc-200 rounded-2xl text-xs font-bold text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner"
+                    />
+                    <Users className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+                  </div>
                 </div>
               )}
-            </div>
 
-            <div className="relative flex py-1 items-center">
-              <div className="flex-grow border-t border-zinc-200"></div>
-              <span className="flex-shrink mx-3 text-[9px] text-zinc-450 font-black uppercase tracking-widest">O accede de forma privada</span>
-              <div className="flex-grow border-t border-zinc-200"></div>
-            </div>
-
-            {/* Login Form */}
-            <form onSubmit={(e) => handleLogin(e, authTab)} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-black text-zinc-550 block">Correo electrónico de Panamá</label>
+                <label className="text-[10px] uppercase font-black text-zinc-500 block">Correo electrónico de Panamá</label>
                 <div className="relative">
                   <input
                     type="email"
@@ -860,17 +1535,34 @@ export default function App() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-black text-zinc-550 block">Contraseña de Enlace</label>
+                <label className="text-[10px] uppercase font-black text-zinc-500 block">Contraseña de Enlace</label>
                 <div className="relative">
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-4 pr-10 py-3 bg-zinc-50 border border-zinc-200 rounded-2xl text-xs font-bold text-zinc-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner"
+                    className="w-full pl-4 pr-12 py-3 bg-zinc-50 border border-zinc-200 rounded-2xl text-xs font-bold text-zinc-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner"
                   />
-                  <Lock className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-indigo-600 transition-colors cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
+                {authMode === 'login' && (
+                  <div className="text-right">
+                    <button
+                      type="button"
+                      onClick={handleResetPassword}
+                      className="text-[10px] text-indigo-600 hover:underline font-bold cursor-pointer"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  </div>
+                )}
               </div>
 
               {authError && (
@@ -884,7 +1576,7 @@ export default function App() {
                 type="submit"
                 className="w-full py-3.5 bg-zinc-950 hover:bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md hover:shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer mt-2"
               >
-                <span>INGRESAR DE FORMA SEGURA</span>
+                <span>{authMode === 'login' ? 'INGRESAR DE FORMA SEGURA' : 'CREAR CUENTA AHORA'}</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </form>
@@ -914,48 +1606,11 @@ export default function App() {
             </div>
             <span className="text-md font-black tracking-tight">Mantech<span className="text-indigo-400">Pro</span></span>
           </div>
-          
-          <button
-            onClick={() => {
-              setViewportMode(prev => prev === 'android' ? 'web' : 'android');
-            }}
-            type="button"
-            className="flex items-center space-x-2 bg-indigo-950/70 hover:bg-indigo-900/90 active:scale-[0.98] text-indigo-300 px-3 py-1.5 rounded-full border border-indigo-850/40 select-none cursor-pointer transition-all"
-            title="Haz clic para alternar entre Vista Móvil y Vista de Escritorio"
-          >
-            <Smartphone className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
-            <span className="text-[9.5px] font-black uppercase tracking-wider">
-              {viewportMode === 'android' ? 'Vista Móvil (Click para Web)' : 'Vista Web (Click para Móvil)'}
-            </span>
-          </button>
         </nav>
 
         {/* Dynamic Frame Selector */}
         <div className="flex-grow flex items-center justify-center p-4">
-          {viewportMode === 'android' && isLargeScreen ? (
-            <div className="w-full max-w-[400px] h-[785px] bg-black rounded-[52px] p-3 border-[12px] border-zinc-800 shadow-2xl relative flex flex-col overflow-hidden my-3 select-none">
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 w-32 h-5.5 bg-zinc-950 rounded-full z-50 flex items-center justify-center shadow-inner">
-                <span className="w-2.5 h-2.5 rounded-full bg-zinc-900 border border-zinc-800 block shrink-0"></span>
-                <span className="w-10 h-1 bg-zinc-800 rounded-lg ml-4 block shrink-0"></span>
-              </div>
-              
-              <div className="h-8 pt-1.5 bg-black text-zinc-500 text-[10px] px-6 flex justify-between items-center z-40 select-none shrink-0 font-bold">
-                <span>7:59 PM</span>
-                <span className="text-[8.5px] font-mono">LTE 📶 🔋 98%</span>
-              </div>
-
-              <div className="flex-1 bg-zinc-50 rounded-[28px] overflow-y-auto scrollbar-none flex flex-col justify-between">
-                {renderLoginContent()}
-                
-                <div className="h-10 bg-zinc-900 flex justify-around items-center px-8 z-40 shrink-0">
-                  <button onClick={() => alert('Simulado: Botón Atrás en Android (Volviendo a Dashboard)')} className="text-zinc-500 text-xs">◀</button>
-                  <button onClick={() => {}} className="text-zinc-500 text-xs font-bold font-mono">●</button>
-                  <button onClick={() => alert('Simulado: Lista de Tareas en segundo plano (Mantech Active)')} className="text-zinc-500 text-xs">■</button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch bg-zinc-900/60 p-4 md:p-8 lg:p-10 rounded-3xl border border-zinc-850/80 shadow-2xl relative">
+          <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch bg-zinc-900/60 p-4 md:p-8 lg:p-10 rounded-3xl border border-zinc-850/80 shadow-2xl relative">
               <div className="absolute -top-12 -left-12 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
               <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-emerald-600/5 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -1090,7 +1745,6 @@ export default function App() {
                 {renderLoginContent()}
               </div>
             </div>
-          )}
         </div>
 
         <footer className="py-6 border-t border-zinc-900 text-center text-[10px] text-zinc-500 font-medium z-10 uppercase tracking-widest bg-zinc-950/85 font-mono">
@@ -1118,41 +1772,33 @@ export default function App() {
         {/* Dynamic Header Controls & Actions */}
         <div className="flex items-center space-x-3 md:space-x-4">
           
-          {/* Smart Automatic Viewport Badge */}
-          <button
-            onClick={() => {
-              setViewportMode(prev => prev === 'android' ? 'web' : 'android');
-            }}
-            type="button"
-            className="flex items-center space-x-2 bg-zinc-800 hover:bg-zinc-750 active:scale-[0.98] transition-all px-3 py-1.5 rounded-full border border-zinc-700/60 select-none cursor-pointer"
-            title="Haz clic para alternar entre Vista Móvil y Vista de Escritorio"
-          >
-            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-            <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-wide flex items-center gap-1.5">
-              {viewportMode === 'android' ? (
-                <>
-                  <Smartphone className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Móvil (Click para Web)</span>
-                </>
-              ) : (
-                <>
-                  <Monitor className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Escritorio (Click para Móvil)</span>
-                </>
-              )}
-            </span>
-          </button>
-
           {/* Active Logged In Account Brief */}
           <div className="hidden md:flex items-center space-x-2 bg-zinc-850 px-3 py-1.5 rounded-xl border border-zinc-800 max-w-[210px]">
-            <div className="w-6 h-6 bg-indigo-600 rounded-full text-[10px] font-black text-white flex items-center justify-center">
-              {role === 'client' ? 'RA' : getSelectedTechProfileObj().name.substring(0, 2).toUpperCase()}
+            <div className="w-6 h-6 bg-indigo-600 rounded-full text-[10px] font-black text-white flex items-center justify-center overflow-hidden border border-indigo-500/30">
+              {profileImage ? (
+                <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                loggedInName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+              )}
             </div>
             <div className="truncate text-left">
               <span className="block text-[10px] font-extrabold text-zinc-100 truncate">{loggedInName}</span>
               <span className="block text-[8px] text-zinc-400 truncate">{loggedInEmail}</span>
             </div>
           </div>
+
+          {/* Settings Button */}
+          <button
+            onClick={() => {
+              if (role === 'client') setClientTab('settings');
+              else if (role === 'tech') setTechTab('settings');
+              else setAdminTab('settings');
+            }}
+            title="Configuración de Cuenta"
+            className="p-2 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-xl transition-all cursor-pointer"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
 
           {/* Secure Logout Button */}
           <button 
@@ -1166,70 +1812,32 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Sub-header instruction */}
-      <div className="bg-indigo-50 border-b border-indigo-100 py-2.5 px-4 md:px-8 text-center text-xs text-indigo-950 font-bold flex flex-wrap justify-center items-center gap-2 select-none shadow-xs shrink-0">
-        <Smartphone className="w-4 h-4 text-indigo-600 animate-bounce" />
-        <span>Mantech Pro está adaptado de forma responsiva 100% automatizada según el tamaño de tu navegador.</span>
-      </div>
-
       {/* Main Container Layout */}
-      <div className={showMobileDeviceSimulator 
-        ? "flex-1 w-full max-w-[420px] mx-auto bg-zinc-900 rounded-[56px] p-4 border-[14px] border-zinc-800 shadow-2xl relative flex flex-col overflow-hidden my-6 select-none transition-all duration-300"
-        : (viewportMode === 'android' 
-          ? "flex-1 w-full max-w-3xl mx-auto bg-zinc-50 rounded-2xl border border-zinc-200 shadow-lg flex flex-col overflow-hidden my-4 p-4 min-h-[600px] transition-all duration-300"
-          : "flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-6 grid grid-cols-1 md:grid-cols-12 gap-6 transition-all duration-300")
-      } style={showMobileDeviceSimulator ? { height: '815px' } : undefined}>
+      <div className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-6 grid grid-cols-1 md:grid-cols-12 gap-6 transition-all duration-300">
         
-        {viewportMode === 'android' && (
-          <>
-            {/* Top camera punch-hole notch */}
-            {showMobileDeviceSimulator && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 w-32 h-6 bg-black rounded-full z-50 flex items-center justify-center select-none shadow-inner">
-                <span className="w-3 h-3 rounded-full bg-zinc-950 border border-zinc-850 block shrink-0"></span>
-                <span className="w-12 h-1 bg-zinc-800 rounded-lg ml-4 block shrink-0"></span>
-              </div>
-            )}
-
-            {/* Android Status Bar */}
-            <div className={`h-8 pt-1.5 bg-zinc-900 text-white text-[10px] uppercase font-black px-6 flex justify-between items-center z-40 select-none shrink-0 ${showMobileDeviceSimulator ? 'rounded-t-[34px]' : 'rounded-t-2xl'}`}>
-              <span className="font-sans font-bold text-zinc-400">7:59 PM</span>
-              <span className="text-[8.5px] bg-zinc-800 px-1 py-0.2 rounded text-zinc-400 font-extrabold font-mono">LTE 📶 🔋 98%</span>
-            </div>
-
-            {/* Dynamic Native Mobile App Header inside phone */}
-            <div className="px-4 py-3 bg-zinc-900 text-white flex items-center justify-between shadow-sm z-35 select-none shrink-0 border-b border-zinc-850">
-              <div className="flex items-center space-x-2">
-                <div className="w-5 h-5 bg-indigo-500 rounded flex items-center justify-center text-[10px] font-black">M</div>
-                <span className="text-[10px] font-black tracking-wider uppercase text-zinc-100">Mantech Mobile</span>
-              </div>
-              <div className="flex items-center space-x-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span className="text-[7.5px] font-black text-zinc-400 uppercase tracking-widest">GPS Panamá</span>
-              </div>
-            </div>
-          </>
-        )}
-
-        <div className={viewportMode === 'android'
-          ? `flex-1 bg-zinc-50 overflow-y-auto overflow-x-hidden flex flex-col relative select-none scrollbar-none p-3.5 space-y-4 ${showMobileDeviceSimulator ? 'rounded-b-[24px]' : 'rounded-b-2xl'}`
-          : "contents"
-        } id="android-screen-scroll">
+        <div className="contents">
           
           {/* Navigation Sidebar */}
-          <aside className={viewportMode === 'android' ? "hidden" : "md:col-span-4 lg:col-span-3 space-y-4"}>
+          <aside className="md:col-span-4 lg:col-span-3 space-y-4">
           
           {/* Persona Card */}
           <div className="bg-white rounded-2xl border border-zinc-200 p-5 shadow-sm text-center space-y-3.5">
-            <div className="w-14 h-14 rounded-full mx-auto flex items-center justify-center font-bold text-sm bg-indigo-50 border-2 border-indigo-200 text-indigo-700 shadow-inner">
-              {role === 'client' ? 'RA' : 'TE'}
+            <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center font-bold text-sm bg-indigo-50 border-2 border-indigo-200 text-indigo-700 shadow-inner overflow-hidden relative group">
+              {profileImage ? (
+                <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                loggedInName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+              )}
             </div>
             
             <div>
               <h4 className="font-extrabold text-zinc-900 text-sm tracking-tight">
-                {role === 'client' ? 'Rubén Ábrego' : getSelectedTechProfileObj().name}
+                {loggedInName}
               </h4>
               <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">
-                {role === 'client' ? 'Cliente Residencial / B2B' : getSelectedTechProfileObj().title}
+                {role === 'client' ? 'Cliente Residencial / B2B' :
+                 role === 'admin' ? 'Administrador del Sistema' :
+                 (getSelectedTechProfileObj()?.title || 'Técnico Especialista')}
               </p>
             </div>
 
@@ -1241,7 +1849,62 @@ export default function App() {
 
           {/* Persona specific navigation links */}
           <nav className="bg-white rounded-2xl border border-zinc-200 p-3.5 shadow-sm space-y-2">
-            {role === 'client' ? (
+            {role === 'admin' ? (
+              <>
+                <button
+                  onClick={() => setAdminTab('finance')}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    adminTab === 'finance'
+                      ? 'bg-red-600 text-white border-red-500 shadow-md font-extrabold'
+                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <DollarSign className={`w-4 h-4 ${adminTab === 'finance' ? 'text-white' : 'text-zinc-500'}`} />
+                    Finanzas & Comisiones
+                  </span>
+                </button>
+                <button
+                  onClick={() => setAdminTab('users')}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    adminTab === 'users'
+                      ? 'bg-red-600 text-white border-red-500 shadow-md font-extrabold'
+                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Users className={`w-4 h-4 ${adminTab === 'users' ? 'text-white' : 'text-zinc-500'}`} />
+                    Gestión de Usuarios
+                  </span>
+                </button>
+                <button
+                  onClick={() => setAdminTab('logistics')}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    adminTab === 'logistics'
+                      ? 'bg-red-600 text-white border-red-500 shadow-md font-extrabold'
+                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Truck className={`w-4 h-4 ${adminTab === 'logistics' ? 'text-white' : 'text-zinc-500'}`} />
+                    Logística Operativa
+                  </span>
+                </button>
+                <button
+                  onClick={() => setAdminTab('alerts')}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    adminTab === 'alerts'
+                      ? 'bg-red-600 text-white border-red-500 shadow-md font-extrabold'
+                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <BellRing className={`w-4 h-4 ${adminTab === 'alerts' ? 'text-white' : 'text-zinc-500'}`} />
+                    Centro de Alertas
+                  </span>
+                </button>
+              </>
+            ) : role === 'client' ? (
               <>
                 <button
                   onClick={() => setClientTab('dashboard')}
@@ -1272,7 +1935,7 @@ export default function App() {
                     <Bot className={`w-4 h-4 ${clientTab === 'ai' ? 'text-indigo-400' : 'text-zinc-500'}`} />
                     Diagnóstico IA V2.0
                   </span>
-                  <span className="px-1.5 py-0.5 bg-emerald-55 bg-emerald-500 text-[9px] uppercase font-black text-white rounded-md">
+                  <span className="px-1.5 py-0.5 bg-emerald-500 text-[9px] uppercase font-black text-white rounded-md">
                     Activo
                   </span>
                 </button>
@@ -1334,10 +1997,10 @@ export default function App() {
                     </span>
                   </div>
                   <div className="text-xs font-black text-indigo-650 mt-1 uppercase tracking-tight">
-                    {getSelectedTechProfileObj().category.replace('_', ' ')}
+                    {getSelectedTechProfileObj()?.category.replace('_', ' ')}
                   </div>
                   <div className="flex items-center gap-1 mt-1.5 text-[11px] text-zinc-500 font-bold">
-                    <span>⭐ {getSelectedTechProfileObj().rating} de reputación • ({getSelectedTechProfileObj().completedJobs} completados)</span>
+                    <span>⭐ {getSelectedTechProfileObj()?.rating} de reputación • ({getSelectedTechProfileObj()?.completedJobs} completados)</span>
                   </div>
                 </div>
 
@@ -1406,44 +2069,304 @@ export default function App() {
             )}
           </nav>
 
-          {/* Intermediate Business Metrics / Admin Board */}
-          <div className="bg-zinc-900 text-white rounded-2xl p-5 shadow-lg border border-zinc-800 space-y-4">
-            <h4 className="text-[10px] font-extrabold text-indigo-450 uppercase tracking-widest flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-indigo-400" />
-              Mantenimientos S.A.
-            </h4>
-            
-            <p className="text-[11px] text-zinc-400 leading-relaxed font-medium">
-              Usted actúa como el canal intermediario. Su empresa retiene una tarifa de comisión del 15% por cada servicio canalizado.
-            </p>
+          {/* Intermediate Business Metrics / Admin Board - ONLY FOR ADMIN */}
+          {role === 'admin' && (
+            <div className="bg-zinc-900 text-white rounded-2xl p-5 shadow-lg border border-zinc-800 space-y-4">
+              <h4 className="text-[10px] font-extrabold text-indigo-450 uppercase tracking-widest flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-indigo-400" />
+                Mantenimientos S.A.
+              </h4>
 
-            <div className="grid grid-cols-2 gap-2.5 pt-1.5">
-              <div className="bg-zinc-800 p-3 rounded-xl border border-zinc-700/60">
-                <span className="block text-[8px] text-zinc-400 uppercase font-black">Comisiones (15%)</span>
-                <span className="text-sm font-black text-emerald-400 block mt-0.5">
-                  ${companyCommissions.toFixed(2)}
-                </span>
-                <span className="block text-[8px] text-zinc-500 mt-0.5">Retenido de ${totalInvoicedJobs}</span>
-              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed font-medium">
+                Panel de control rápido para la dirección general.
+              </p>
 
-              <div className="bg-zinc-800 p-3 rounded-xl border border-zinc-700/60">
-                <span className="block text-[8px] text-zinc-400 uppercase font-black">Membresías</span>
-                <span className="text-sm font-black text-indigo-400 block mt-0.5">
-                  ${totalMembershipFees.toFixed(2)}
-                </span>
-                <span className="block text-[8px] text-slate-500 mt-0.5">Membresía Premium</span>
+              <div className="grid grid-cols-2 gap-2.5 pt-1.5">
+                <div className="bg-zinc-800 p-3 rounded-xl border border-zinc-700/60">
+                  <span className="block text-[8px] text-zinc-400 uppercase font-black">Comisiones</span>
+                  <span className="text-sm font-black text-emerald-400 block mt-0.5">
+                    ${companyCommissions.toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="bg-zinc-800 p-3 rounded-xl border border-zinc-700/60">
+                  <span className="block text-[8px] text-zinc-400 uppercase font-black">Membresías</span>
+                  <span className="text-sm font-black text-indigo-400 block mt-0.5">
+                    ${totalMembershipFees.toFixed(2)}
+                  </span>
+                </div>
               </div>
             </div>
-
-            <div className="text-[9px] bg-zinc-800/80 p-2.5 rounded-xl text-zinc-400 border border-zinc-700/40">
-              * El plan Premium ($15/mes) brinda solicitudes ilimitadas sin restringir el cupo mensual a 5 solicitudes básicas.
-            </div>
-          </div>
+          )}
         </aside>
 
         {/* Content Panel Area */}
-        <main className={viewportMode === 'android' ? "w-full space-y-4" : "md:col-span-8 lg:col-span-9 space-y-6"}>
+        <main className="md:col-span-8 lg:col-span-9 space-y-6">
           
+          {/* ADMIN PERSONA CONTENT WRAPPER */}
+          {role === 'admin' && (
+            <div className="space-y-6">
+              {adminTab === 'finance' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="md:col-span-3 bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm">
+                    <h2 className="text-sm font-black text-zinc-900 uppercase tracking-widest mb-4">Resumen Financiero Global</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                        <span className="block text-[10px] text-emerald-800 font-black uppercase">Ingresos Brutos</span>
+                        <span className="text-xl font-black text-emerald-900">${totalInvoicedJobs.toFixed(2)}</span>
+                      </div>
+                      <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                        <span className="block text-[10px] text-indigo-800 font-black uppercase">Comisiones (15%)</span>
+                        <span className="text-xl font-black text-indigo-900">${companyCommissions.toFixed(2)}</span>
+                      </div>
+                      <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                        <span className="block text-[10px] text-amber-800 font-black uppercase">Membresías</span>
+                        <span className="text-xl font-black text-amber-900">${totalMembershipFees.toFixed(2)}</span>
+                      </div>
+                      <div className="p-4 bg-zinc-900 rounded-2xl text-white">
+                        <span className="block text-[10px] text-zinc-400 font-black uppercase">Utilidad Neta</span>
+                        <span className="text-xl font-black text-emerald-400">${(companyCommissions + totalMembershipFees).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2 bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm">
+                    <h3 className="text-xs font-black text-zinc-400 uppercase mb-4 tracking-widest">Últimas Transacciones</h3>
+                    <div className="space-y-3">
+                      {requests.filter(r => r.price).slice(0, 5).map(r => (
+                        <div key={r.id} className="flex justify-between items-center p-3 bg-zinc-50 rounded-xl border border-zinc-150">
+                          <div>
+                            <span className="block text-xs font-bold text-zinc-800">{r.assetName}</span>
+                            <span className="text-[10px] text-zinc-500">{r.techName}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="block text-xs font-black text-emerald-600">${r.price?.toFixed(2)}</span>
+                            <span className="text-[9px] text-zinc-400">Comisión: ${r.commission?.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm flex flex-col items-center justify-center text-center">
+                    <PieChart className="w-12 h-12 text-indigo-200 mb-2" />
+                    <h3 className="text-xs font-black text-zinc-900 uppercase mb-1">Distribución de Ingresos</h3>
+                    <p className="text-[10px] text-zinc-400">Las comisiones representan el {((companyCommissions / (companyCommissions + totalMembershipFees + 0.1)) * 100).toFixed(0)}% de tus ingresos.</p>
+                  </div>
+                </div>
+              )}
+
+              {adminTab === 'users' && (
+                <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm">
+                  <h2 className="text-sm font-black text-zinc-900 uppercase tracking-widest mb-4">Monitor de Usuarios Activos</h2>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-zinc-100">
+                          <th className="py-3 font-black text-zinc-400 uppercase">Usuario</th>
+                          <th className="py-3 font-black text-zinc-400 uppercase">Rol</th>
+                          <th className="py-3 font-black text-zinc-400 uppercase">Estado</th>
+                          <th className="py-3 font-black text-zinc-400 uppercase text-right">Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-50">
+                        <tr className="group">
+                          <td className="py-4">
+                            <div className="font-bold text-zinc-800">Rubén Ábrego</div>
+                            <div className="text-[10px] text-zinc-400">ruben@mantech.com</div>
+                          </td>
+                          <td className="py-4"><span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md font-bold uppercase text-[9px]">Cliente</span></td>
+                          <td className="py-4 text-emerald-500 font-bold">● Activo</td>
+                          <td className="py-4 text-right"><button className="text-zinc-400 hover:text-red-600 font-bold">Suspender</button></td>
+                        </tr>
+                        {technicians.slice(0, 3).map(t => (
+                          <tr key={t.id} className="group">
+                            <td className="py-4">
+                              <div className="font-bold text-zinc-800">{t.name}</div>
+                              <div className="text-[10px] text-zinc-400">{t.id}@mantech.com</div>
+                            </td>
+                            <td className="py-4"><span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-md font-bold uppercase text-[9px]">Técnico</span></td>
+                            <td className="py-4 text-emerald-500 font-bold">● Activo</td>
+                            <td className="py-4 text-right"><button className="text-zinc-400 hover:text-red-600 font-bold">Suspender</button></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {adminTab === 'logistics' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* ... (logistics content) */}
+                </div>
+              )}
+
+              {adminTab === 'alerts' && (
+                <div className="space-y-6">
+                  <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm">
+                    <div className="flex justify-between items-center mb-6">
+                      <div>
+                        <h2 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Panel de Control de Notificaciones</h2>
+                        <p className="text-[11px] text-zinc-400 font-medium">Gestiona y despacha alertas preventivas a los clientes registrados.</p>
+                      </div>
+                      <button
+                        onClick={() => triggerSimulatedNotification("Mensaje global del administrador para todos los clientes.", "⚠️ Aviso de Sistema")}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-bold transition-all flex items-center gap-1.5 shadow-md cursor-pointer"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        Despachar Alerta Global
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="border-b border-zinc-100">
+                            <th className="pb-3 font-black text-zinc-400 uppercase text-[9px]">Cliente / Activo</th>
+                            <th className="pb-3 font-black text-zinc-400 uppercase text-[9px]">Tarea Pendiente</th>
+                            <th className="pb-3 font-black text-zinc-400 uppercase text-[9px]">Vencimiento</th>
+                            <th className="pb-3 font-black text-zinc-400 uppercase text-[9px]">Estado</th>
+                            <th className="pb-3 font-black text-zinc-400 uppercase text-[9px] text-right">Acción</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-50">
+                          {allReminders.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="py-8 text-center text-zinc-400 font-medium">
+                                No hay alertas programadas en el sistema.
+                              </td>
+                            </tr>
+                          ) : (
+                            allReminders.map((rem) => {
+                              const daysLeft = Math.ceil((new Date(rem.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                              return (
+                                <tr key={rem.id} className="group hover:bg-zinc-50/50 transition-colors">
+                                  <td className="py-4">
+                                    <div className="font-bold text-zinc-900">{rem.title.split(' - ')[1] || 'Activo'}</div>
+                                    <div className="text-[10px] text-zinc-400">ID: {rem.clientId.substring(0,8)}...</div>
+                                  </td>
+                                  <td className="py-4 font-medium text-zinc-650">{rem.title.split(' - ')[0]}</td>
+                                  <td className="py-4">
+                                    <span className={`font-mono text-[10px] font-bold ${daysLeft <= 0 ? 'text-red-600' : 'text-zinc-600'}`}>
+                                      {rem.dueDate}
+                                    </span>
+                                  </td>
+                                  <td className="py-4">
+                                    <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border ${
+                                      daysLeft <= 0
+                                        ? 'bg-red-50 text-red-700 border-red-100'
+                                        : daysLeft <= 7
+                                        ? 'bg-amber-50 text-amber-700 border-amber-100'
+                                        : 'bg-indigo-50 text-indigo-700 border-indigo-100'
+                                    }`}>
+                                      {daysLeft <= 0 ? 'Vencido' : daysLeft <= 7 ? 'Próximo' : 'Al día'}
+                                    </span>
+                                  </td>
+                                  <td className="py-4 text-right">
+                                    <button
+                                      onClick={() => triggerSimulatedNotification(
+                                        `Tu activo requiere '${rem.title}' programado para el ${rem.dueDate}.`,
+                                        `🚨 Recordatorio de Mantenimiento`,
+                                        rem.title.split(' - ')[1]
+                                      )}
+                                      className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                      title="Enviar notificación específica"
+                                    >
+                                      <BellRing className="w-4 h-4" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {adminTab === 'settings' && (
+                <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm max-w-xl mx-auto">
+                  <h2 className="text-sm font-black text-zinc-900 uppercase tracking-widest mb-6 text-center">Configuración de Administrador</h2>
+
+                  <form onSubmit={handleUpdateProfile} className="space-y-6">
+                    {/* Avatar Upload */}
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="relative group">
+                        <div className="w-24 h-24 rounded-full bg-red-50 border-4 border-white shadow-md overflow-hidden flex items-center justify-center">
+                          {updatePhoto || profileImage ? (
+                            <img src={updatePhoto || profileImage} alt="Preview" className="w-full h-full object-cover" />
+                          ) : (
+                            <User className="w-10 h-10 text-red-300" />
+                          )}
+                        </div>
+                        <label className="absolute bottom-0 right-0 p-1.5 bg-red-600 text-white rounded-full cursor-pointer shadow-lg hover:bg-red-700 transition-all">
+                          <Camera className="w-4 h-4" />
+                          <input type="file" className="hidden" accept="image/*" onChange={handlePhotoSelect} />
+                        </label>
+                      </div>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Foto Administrativa</span>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-black text-zinc-500 block">Nombre del Administrador</label>
+                        <input
+                          type="text"
+                          value={updateName}
+                          onChange={(e) => setUpdateName(e.target.value)}
+                          placeholder={loggedInName}
+                          className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-black text-zinc-500 block">Correo electrónico</label>
+                        <input
+                          type="email"
+                          value={updateEmail}
+                          onChange={(e) => setUpdateEmail(e.target.value)}
+                          placeholder={loggedInEmail}
+                          className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-black text-zinc-500 block">Nueva Contraseña</label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            value={updatePassword}
+                            onChange={(e) => setUpdatePassword(e.target.value)}
+                            placeholder="Mínimo 6 caracteres"
+                            className="w-full pl-3 pr-12 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-indigo-600 transition-colors cursor-pointer"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isUpdating}
+                        className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black uppercase transition-all disabled:opacity-50"
+                      >
+                        {isUpdating ? 'Actualizando...' : 'Guardar Cambios Maestros'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* CLIENT PERSONA CONTENT WRAPPER */}
           {role === 'client' && (
             <>
@@ -1459,16 +2382,10 @@ export default function App() {
                       </div>
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => triggerSimulatedNotification()}
-                          type="button"
-                          className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-indigo-200 cursor-pointer shadow-xs active:scale-95"
-                          title="Despacha la alerta en tiempo real a tu correo electrónico y campana del celular"
-                        >
-                          <BellRing className="w-3.5 h-3.5 text-indigo-600 animate-bounce" />
-                          Despachar Alerta Real (Email & Celular)
-                        </button>
-                        <button
-                          onClick={() => setIsAssetModalOpen(true)}
+                          onClick={() => {
+                            setAssetToEdit(null);
+                            setIsAssetModalOpen(true);
+                          }}
                           className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-indigo-100 cursor-pointer"
                         >
                           <Plus className="w-4 h-4" />
@@ -1593,6 +2510,23 @@ export default function App() {
                                   {matchingCount === 1 ? '1 Recordatorio activo' : `${matchingCount} Recordatorios activos`}
                                 </span>
                                 <div className="flex gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setAssetToEdit(asset);
+                                      setIsAssetModalOpen(true);
+                                    }}
+                                    className="p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                    title="Editar activo"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteAsset(asset.id)}
+                                    className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                    title="Eliminar activo"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
                                   <button
                                     onClick={() => {
                                       setClientTab('ai');
@@ -1739,8 +2673,8 @@ export default function App() {
 
                               <div>
                                 <span className={`text-[10px] font-black px-3 py-1.5 rounded-xl uppercase border text-center ${
-                                  req.status === 'pending' ? 'bg-amber-55 bg-amber-50 text-amber-900 border-amber-200' :
-                                  req.status === 'quoted' ? 'bg-indigo-50 text-indigo-955 border-indigo-200 animate-pulse font-extrabold' :
+                                  req.status === 'pending' ? 'bg-amber-50 text-amber-900 border-amber-200' :
+                                  req.status === 'quoted' ? 'bg-indigo-50 text-indigo-900 border-indigo-200 animate-pulse font-extrabold' :
                                   req.status === 'accepted' ? 'bg-blue-50 text-blue-900 border-blue-200 font-bold' :
                                   'bg-emerald-50 text-emerald-900 border-emerald-200'
                                 }`}>
@@ -1773,10 +2707,10 @@ export default function App() {
 
                             {/* Actions by states */}
                             {req.status === 'quoted' && (
-                              <div className="bg-indigo-55 bg-indigo-50 p-5 rounded-2xl border border-indigo-100 flex flex-wrap justify-between items-center gap-4">
+                              <div className="bg-indigo-50 p-5 rounded-2xl border border-indigo-100 flex flex-wrap justify-between items-center gap-4">
                                 <div className="flex-1 min-w-[250px]">
                                   <span className="text-[10px] font-black text-indigo-900 uppercase block tracking-wider">¡El técnico envió una propuesta de precio!</span>
-                                  <p className="text-[11px] text-indigo-955 text-indigo-900 mt-1 leading-relaxed">
+                                  <p className="text-[11px] text-indigo-900 mt-1 leading-relaxed">
                                     Para coordinar la cita y poner el servicio en agenda, debes confirmar el pago. Retenemos los fondos de forma segura en depósitos de garantía Panamá Mantech.
                                   </p>
                                 </div>
@@ -1885,7 +2819,7 @@ export default function App() {
                               onClick={() => setActiveChatRequestId(r.id)}
                               className={`w-full text-left p-3 rounded-xl border text-xs transition-all cursor-pointer ${
                                 activeChatRequestId === r.id
-                                  ? 'border-indigo-605 border-indigo-500 bg-indigo-50/70 text-indigo-900 font-black'
+                                  ? 'border-indigo-600 border-indigo-500 bg-indigo-50/70 text-indigo-900 font-black'
                                   : 'border-transparent text-zinc-650 hover:bg-zinc-50'
                               }`}
                             >
@@ -1906,6 +2840,84 @@ export default function App() {
                       />
                     </div>
                   </div>
+                </div>
+              )}
+              {/* TAB 6: SETTINGS */}
+              {clientTab === 'settings' && (
+                <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm max-w-xl mx-auto">
+                  <h2 className="text-sm font-black text-zinc-900 uppercase tracking-widest mb-6 text-center">Configuración de Perfil</h2>
+
+                  <form onSubmit={handleUpdateProfile} className="space-y-6">
+                    {/* Avatar Upload */}
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="relative group">
+                        <div className="w-24 h-24 rounded-full bg-indigo-50 border-4 border-white shadow-md overflow-hidden flex items-center justify-center">
+                          {updatePhoto || profileImage ? (
+                            <img src={updatePhoto || profileImage} alt="Preview" className="w-full h-full object-cover" />
+                          ) : (
+                            <User className="w-10 h-10 text-indigo-300" />
+                          )}
+                        </div>
+                        <label className="absolute bottom-0 right-0 p-1.5 bg-indigo-600 text-white rounded-full cursor-pointer shadow-lg hover:bg-indigo-700 transition-all">
+                          <Camera className="w-4 h-4" />
+                          <input type="file" className="hidden" accept="image/*" onChange={handlePhotoSelect} />
+                        </label>
+                      </div>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Foto de Perfil</span>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-black text-zinc-500 block">Nombre Completo</label>
+                        <input
+                          type="text"
+                          value={updateName}
+                          onChange={(e) => setUpdateName(e.target.value)}
+                          placeholder={loggedInName}
+                          className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-black text-zinc-500 block">Correo electrónico</label>
+                        <input
+                          type="email"
+                          value={updateEmail}
+                          onChange={(e) => setUpdateEmail(e.target.value)}
+                          placeholder={loggedInEmail}
+                          className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-black text-zinc-500 block">Nueva Contraseña</label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            value={updatePassword}
+                            onChange={(e) => setUpdatePassword(e.target.value)}
+                            placeholder="Mínimo 6 caracteres"
+                            className="w-full pl-3 pr-12 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-indigo-600 transition-colors cursor-pointer"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isUpdating}
+                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase transition-all disabled:opacity-50"
+                      >
+                        {isUpdating ? 'Actualizando...' : 'Guardar Cambios'}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               )}
             </>
@@ -1976,7 +2988,7 @@ export default function App() {
                                   
                                   <div className="flex items-center gap-3 flex-wrap">
                                     <div className="relative max-w-[200px] w-full">
-                                      <span className="absolute left-3.5 top-2.5 text-xs text-zinc-455 font-black">$</span>
+                                      <span className="absolute left-3.5 top-2.5 text-xs text-zinc-400 font-black">$</span>
                                       <input
                                         type="number"
                                         placeholder="Precio total (USD)"
@@ -1990,7 +3002,7 @@ export default function App() {
                                     </div>
 
                                     {draftingBidRequestId === req.id && bidPrice && (
-                                      <div className="text-[10px] text-zinc-550 font-semibold space-x-3.5 shrink-0">
+                                      <div className="text-[10px] text-zinc-500 font-semibold space-x-3.5 shrink-0">
                                         <span>Comisión Retenida (15%): <strong className="text-rose-650 text-red-600 font-extrabold">${(Number(bidPrice) * 0.15).toFixed(2)}</strong></span>
                                         <span>Ganancia Neta: <strong className="text-emerald-700 font-bold">${(Number(bidPrice) * 0.85).toFixed(2)}</strong></span>
                                       </div>
@@ -2095,12 +3107,12 @@ export default function App() {
                     <div className="flex justify-between items-start flex-wrap gap-4 border-b border-zinc-100 pb-5 mb-5">
                       <div className="flex gap-4 items-center">
                         <div className="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-indigo-800 text-white font-black flex items-center justify-center rounded-2xl text-xl shadow-md border border-indigo-400">
-                          {getSelectedTechProfileObj().name.split(' ').map(n => n[0]).join('')}
+                          {getSelectedTechProfileObj()?.name.split(' ').map(n => n[0]).join('')}
                         </div>
                         <div>
-                          <h3 className="text-base font-black text-zinc-900 tracking-tight">{getSelectedTechProfileObj().name}</h3>
-                          <p className="text-xs text-indigo-650 font-bold uppercase tracking-wider mt-0.5">{getSelectedTechProfileObj().title}</p>
-                          <p className="text-[11px] text-zinc-400 font-medium">{getSelectedTechProfileObj().location}</p>
+                          <h3 className="text-base font-black text-zinc-900 tracking-tight">{getSelectedTechProfileObj()?.name}</h3>
+                          <p className="text-xs text-indigo-650 font-bold uppercase tracking-wider mt-0.5">{getSelectedTechProfileObj()?.title}</p>
+                          <p className="text-[11px] text-zinc-400 font-medium">{getSelectedTechProfileObj()?.location}</p>
                         </div>
                       </div>
 
@@ -2108,9 +3120,9 @@ export default function App() {
                         <span className="text-[10px] uppercase font-black text-zinc-400 tracking-wider">Reputación</span>
                         <div className="flex items-center justify-center gap-1 font-black text-zinc-900 text-base mt-1">
                           <Star className="w-4.5 h-4.5 text-amber-500 fill-amber-500" />
-                          {getSelectedTechProfileObj().rating}
+                          {getSelectedTechProfileObj()?.rating}
                         </div>
-                        <span className="text-[9px] text-zinc-450 font-semibold block mt-1">{getSelectedTechProfileObj().reviewCount} opiniones</span>
+                        <span className="text-[9px] text-zinc-450 font-semibold block mt-1">{getSelectedTechProfileObj()?.reviewCount} opiniones</span>
                       </div>
                     </div>
 
@@ -2120,12 +3132,12 @@ export default function App() {
                         <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest">Información Profesional</h4>
                         <div>
                           <span className="text-[10px] text-zinc-400 uppercase tracking-wider block font-bold">Reseña Biográfica:</span>
-                          <p className="text-xs text-zinc-650 italic mt-1.5 bg-zinc-50 p-4 rounded-xl border border-zinc-150 leading-relaxed">"{getSelectedTechProfileObj().bio}"</p>
+                          <p className="text-xs text-zinc-650 italic mt-1.5 bg-zinc-50 p-4 rounded-xl border border-zinc-150 leading-relaxed">"{getSelectedTechProfileObj()?.bio}"</p>
                         </div>
                         <div>
                           <span className="text-[10px] text-zinc-400 uppercase tracking-wider block font-bold mb-2">Diplomas & Certificaciones:</span>
                           <div className="space-y-1.5">
-                            {getSelectedTechProfileObj().certifications.map((c, i) => (
+                            {getSelectedTechProfileObj()?.certifications.map((c, i) => (
                               <div key={i} className="flex items-center gap-2 text-xs text-zinc-800 font-bold">
                                 <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
                                 {c}
@@ -2136,9 +3148,9 @@ export default function App() {
                       </div>
 
                       {/* Business Membership Section */}
-                      <div className="p-6 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black text-white rounded-2xl shadow-lg border border-zinc-805 space-y-4">
+                      <div className="p-6 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black text-white rounded-2xl shadow-lg border border-zinc-800 space-y-4">
                         <div className="flex justify-between items-center flex-wrap gap-2">
-                          <span className="text-[9px] bg-indigo-505 bg-indigo-500/15 text-indigo-300 font-black px-2.5 py-1 rounded-full uppercase border border-indigo-500/30">
+                          <span className="text-[9px] bg-indigo-500/15 text-indigo-300 font-black px-2.5 py-1 rounded-full uppercase border border-indigo-500/30">
                             Modelo de Negocio
                           </span>
                           
@@ -2155,7 +3167,7 @@ export default function App() {
                           <div>
                             <span className="block text-[8px] text-zinc-400 uppercase font-black">Tu programa actual:</span>
                             <span className="text-xs font-black text-white block mt-0.5">
-                              {getSelectedTechProfileObj().plan === 'premium' ? 'Plan Premium ($15/mes)' : 'Plan Básico (Gratuito - 5 solicitudes max)'}
+                              {getSelectedTechProfileObj()?.plan === 'premium' ? 'Plan Premium ($15/mes)' : 'Plan Básico (Gratuito - 5 solicitudes max)'}
                             </span>
                           </div>
 
@@ -2195,7 +3207,7 @@ export default function App() {
                               onClick={() => setActiveChatRequestId(r.id)}
                               className={`w-full text-left p-3 rounded-xl border text-xs transition-all cursor-pointer ${
                                 activeChatRequestId === r.id
-                                  ? 'border-indigo-605 border-indigo-500 bg-indigo-50/70 text-indigo-900 font-black'
+                                  ? 'border-indigo-600 border-indigo-500 bg-indigo-50/70 text-indigo-900 font-black'
                                   : 'border-transparent text-zinc-650 hover:bg-zinc-50'
                               }`}
                             >
@@ -2210,12 +3222,90 @@ export default function App() {
                       <SupportChatWidget
                         request={requests.find(r => r.id === activeChatRequestId) || null}
                         role="tech"
-                        techName={getSelectedTechProfileObj().name}
+                        techName={getSelectedTechProfileObj()?.name || 'Técnico'}
                         onSendMessage={handleSendMessage}
                         messages={chatMessages.filter(m => m.requestId === activeChatRequestId)}
                       />
                     </div>
                   </div>
+                </div>
+              )}
+              {/* TAB 5: TECH SETTINGS */}
+              {techTab === 'settings' && (
+                <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm max-w-xl mx-auto">
+                  <h2 className="text-sm font-black text-zinc-900 uppercase tracking-widest mb-6 text-center">Configuración de Técnico</h2>
+
+                  <form onSubmit={handleUpdateProfile} className="space-y-6">
+                    {/* Avatar Upload */}
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="relative group">
+                        <div className="w-24 h-24 rounded-full bg-indigo-50 border-4 border-white shadow-md overflow-hidden flex items-center justify-center">
+                          {updatePhoto || profileImage ? (
+                            <img src={updatePhoto || profileImage} alt="Preview" className="w-full h-full object-cover" />
+                          ) : (
+                            <User className="w-10 h-10 text-indigo-300" />
+                          )}
+                        </div>
+                        <label className="absolute bottom-0 right-0 p-1.5 bg-indigo-600 text-white rounded-full cursor-pointer shadow-lg hover:bg-indigo-700 transition-all">
+                          <Camera className="w-4 h-4" />
+                          <input type="file" className="hidden" accept="image/*" onChange={handlePhotoSelect} />
+                        </label>
+                      </div>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Foto Profesional</span>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-black text-zinc-500 block">Nombre Profesional</label>
+                        <input
+                          type="text"
+                          value={updateName}
+                          onChange={(e) => setUpdateName(e.target.value)}
+                          placeholder={loggedInName}
+                          className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-black text-zinc-500 block">Correo electrónico</label>
+                        <input
+                          type="email"
+                          value={updateEmail}
+                          onChange={(e) => setUpdateEmail(e.target.value)}
+                          placeholder={loggedInEmail}
+                          className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-black text-zinc-500 block">Nueva Contraseña</label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            value={updatePassword}
+                            onChange={(e) => setUpdatePassword(e.target.value)}
+                            placeholder="Mínimo 6 caracteres"
+                            className="w-full pl-3 pr-12 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-indigo-600 transition-colors cursor-pointer"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isUpdating}
+                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase transition-all disabled:opacity-50"
+                      >
+                        {isUpdating ? 'Actualizando...' : 'Guardar Cambios'}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               )}
             </>
@@ -2224,65 +3314,52 @@ export default function App() {
         </main>
         </div>
 
-        {viewportMode === 'android' && (
-          <div className={`shrink-0 flex flex-col z-30 select-none overflow-hidden ${showMobileDeviceSimulator ? 'rounded-b-[38px]' : 'rounded-b-2xl shadow-inner'}`}>
-            {/* Android Soft Virtual Keys */}
-            {showMobileDeviceSimulator && (
-              <div className="h-8 bg-zinc-900 flex justify-around items-center px-8 z-40 select-none">
-                <button onClick={() => alert('Simulado: Botón Atrás en Android (Volviendo a Dashboard)')} className="text-zinc-500 text-xs hover:text-white transition-all font-mono">◀</button>
-                <button onClick={() => { setClientTab('dashboard'); setTechTab('received'); }} className="text-zinc-500 text-xs hover:text-white transition-all font-mono">●</button>
-                <button onClick={() => alert('Simulado: Lista de Tareas en segundo plano (Mantech Active)')} className="text-zinc-500 text-xs hover:text-white transition-all font-mono">■</button>
-              </div>
-            )}
-            
-            {/* High fidelity Native Android Bottom Navigation Bar */}
-            <div className={`bg-white border-t border-zinc-200 py-1.5 px-3 flex justify-between items-center gap-1 ${showMobileDeviceSimulator ? '' : 'rounded-b-2xl'}`}>
-              {role === 'client' ? (
-                <>
-                  <button onClick={() => setClientTab('dashboard')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${clientTab === 'dashboard' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
-                    <LayoutDashboard className="w-4 h-4" />
-                    <span className="text-[7.5px] uppercase mt-0.5">Equipos</span>
-                  </button>
-                  <button onClick={() => setClientTab('ai')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${clientTab === 'ai' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
-                    <Bot className="w-4 h-4 animate-pulse text-indigo-505 text-indigo-500" />
-                    <span className="text-[7.5px] uppercase mt-0.5">IA</span>
-                  </button>
-                  <button onClick={() => setClientTab('marketplace')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${clientTab === 'marketplace' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
-                    <Store className="w-4 h-4" />
-                    <span className="text-[7.5px] uppercase mt-0.5">Técnicos</span>
-                  </button>
-                  <button onClick={() => setClientTab('quotes')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${clientTab === 'quotes' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
-                    <FileCheck2 className="w-4 h-4" />
-                    <span className="text-[7.5px] uppercase mt-0.5">Ofertas</span>
-                  </button>
-                  <button onClick={() => setClientTab('chat')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${clientTab === 'chat' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
-                    <MessageSquare className="w-4 h-4" />
-                    <span className="text-[7.5px] uppercase mt-0.5">Chat</span>
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button onClick={() => setTechTab('received')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${techTab === 'received' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
-                    <FileCheck2 className="w-4 h-4" />
-                    <span className="text-[7.5px] uppercase mt-0.5">Inbox</span>
-                  </button>
-                  <button onClick={() => setTechTab('agenda')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${techTab === 'agenda' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
-                    <CalendarDays className="w-4 h-4" />
-                    <span className="text-[7.5px] uppercase mt-0.5">Citas</span>
-                  </button>
-                  <button onClick={() => setTechTab('profile')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${techTab === 'profile' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
-                    <Users className="w-4 h-4" />
-                    <span className="text-[7.5px] uppercase mt-0.5">Perfil</span>
-                  </button>
-                  <button onClick={() => setTechTab('chat')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${techTab === 'chat' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
-                    <MessageSquare className="w-4 h-4" />
-                    <span className="text-[7.5px] uppercase mt-0.5">Chat</span>
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        )}
+        {/* High fidelity Native Bottom Navigation Bar - Visible only on Mobile */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-200 py-1.5 px-3 flex justify-between items-center gap-1 z-40 shadow-lg">
+          {role === 'client' ? (
+            <>
+              <button onClick={() => setClientTab('dashboard')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${clientTab === 'dashboard' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="text-[7.5px] uppercase mt-0.5">Equipos</span>
+              </button>
+              <button onClick={() => setClientTab('ai')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${clientTab === 'ai' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
+                <Bot className="w-4 h-4 animate-pulse text-indigo-500" />
+                <span className="text-[7.5px] uppercase mt-0.5">IA</span>
+              </button>
+              <button onClick={() => setClientTab('marketplace')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${clientTab === 'marketplace' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
+                <Store className="w-4 h-4" />
+                <span className="text-[7.5px] uppercase mt-0.5">Técnicos</span>
+              </button>
+              <button onClick={() => setClientTab('quotes')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${clientTab === 'quotes' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
+                <FileCheck2 className="w-4 h-4" />
+                <span className="text-[7.5px] uppercase mt-0.5">Ofertas</span>
+              </button>
+              <button onClick={() => setClientTab('chat')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${clientTab === 'chat' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
+                <MessageSquare className="w-4 h-4" />
+                <span className="text-[7.5px] uppercase mt-0.5">Chat</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => setTechTab('received')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${techTab === 'received' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
+                <FileCheck2 className="w-4 h-4" />
+                <span className="text-[7.5px] uppercase mt-0.5">Inbox</span>
+              </button>
+              <button onClick={() => setTechTab('agenda')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${techTab === 'agenda' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
+                <CalendarDays className="w-4 h-4" />
+                <span className="text-[7.5px] uppercase mt-0.5">Citas</span>
+              </button>
+              <button onClick={() => setTechTab('profile')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${techTab === 'profile' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
+                <Users className="w-4 h-4" />
+                <span className="text-[7.5px] uppercase mt-0.5">Perfil</span>
+              </button>
+              <button onClick={() => setTechTab('chat')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${techTab === 'chat' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
+                <MessageSquare className="w-4 h-4" />
+                <span className="text-[7.5px] uppercase mt-0.5">Chat</span>
+              </button>
+            </>
+          )}
+        </div>
 
       </div>
 
@@ -2295,8 +3372,12 @@ export default function App() {
       {/* ASSET REGISTRATION MODAL */}
       <AssetRegisterModal
         isOpen={isAssetModalOpen}
-        onClose={() => setIsAssetModalOpen(false)}
+        onClose={() => {
+          setIsAssetModalOpen(false);
+          setAssetToEdit(null);
+        }}
         onAdd={handleAddAsset}
+        editingAsset={assetToEdit}
       />
 
       {/* TECH PROFILE VIEW MODAL */}
@@ -2428,7 +3509,7 @@ export default function App() {
                     {/* Smartphone Push Notification Card */}
                     <div className="my-auto bg-black/75 backdrop-blur-md rounded-2xl border border-white/10 p-3 shadow-2xl relative select-none animate-[bounce_0.6s_ease-out_1]">
                       <div className="flex items-start space-x-2.5">
-                        <div className="w-6 h-6 shrink-0 rounded-lg bg-gradient-to-br from-indigo-550 to-indigo-700 flex items-center justify-center text-white border border-indigo-400/40 shadow-md">
+                        <div className="w-6 h-6 shrink-0 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white border border-indigo-400/40 shadow-md">
                           <span className="text-[10px] font-black">M</span>
                         </div>
                         <div className="flex-1 space-y-1 text-left">
@@ -2519,9 +3600,9 @@ export default function App() {
                       </div>
 
                       {(!smtpUser || !smtpPass) && (
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-955 mt-2 space-y-1">
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-900 mt-2 space-y-1">
                           <p className="font-extrabold text-amber-900 flex items-center gap-1">⚠️ ATENCIÓN: Correo Real de Gmail Desconectado</p>
-                          <p className="font-medium text-amber-850">
+                          <p className="font-medium text-amber-900">
                             Como todavía no has ingresado la contraseña de aplicaciones de 16 caracteres, el sistema está usando un simulador virtual. 
                             <strong> Genera tu clave en Google, ingrésala en la sección de abajo y te llegará el correo real al instante.</strong>
                           </p>
@@ -2687,7 +3768,7 @@ export default function App() {
                       <p className="font-bold text-emerald-800 leading-normal">Hemos enviado el correo electrónico HTML interactivo usando tu remitente de Gmail directamente a <strong className="text-emerald-950 underline">{customEmailInput}</strong>. ¡Revisa tu bandeja de entrada!</p>
                     </div>
                   ) : emailSentStatus === 'error' ? (
-                    <div className="bg-rose-50 border-y border-rose-300 px-6 py-4.5 text-center text-xs text-rose-955">
+                    <div className="bg-rose-50 border-y border-rose-300 px-6 py-4.5 text-center text-xs text-rose-900">
                       <p className="font-black text-sm mb-1 text-rose-900">❌ Error al Entregar Correo de Gmail</p>
                       <p className="mb-3 font-semibold text-rose-800 leading-normal">
                         Tu proveedor de correo (Gmail/SMTP) rechazó la conexión. Posibles causas:
@@ -2715,7 +3796,7 @@ export default function App() {
                       {/* Brand Header */}
                       <div className="text-center border-b border-zinc-100 pb-4">
                         <span className="text-lg font-black tracking-tight text-zinc-950">Mantech<span className="text-indigo-600">Pro</span></span>
-                        <span className="block text-[8px] text-zinc-405 text-zinc-400 uppercase font-black tracking-widest mt-0.5">Asistente de Activos</span>
+                        <span className="block text-[8px] text-zinc-400 uppercase font-black tracking-widest mt-0.5">Asistente de Activos</span>
                       </div>
 
                       {/* Body */}

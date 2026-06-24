@@ -1,20 +1,50 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# ⚙️ MantechPro: Plataforma de Mantenimiento Inteligente
 
-# Run and deploy your AI Studio app
+**MantechPro** es una solución integral diseñada para optimizar la gestión de mantenimiento preventivo y correctivo de activos críticos (vehículos, sistemas de climatización, infraestructura TI y energía solar). La plataforma combina inteligencia artificial, automatización de alertas y un marketplace de técnicos certificados.
 
-This contains everything you need to run your app locally.
+## 🚀 Características Principales
 
-View your app in AI Studio: https://ai.studio/apps/5ad7dc96-bd44-4868-9b5b-6f99fb50ae9a
+*   **Diagnóstico con IA (Gemini):** Analiza fallas mediante descripciones técnicas y fotos, proporcionando causas probables, nivel de urgencia y presupuestos estimados.
+*   **Gestión de Activos:** Registro y seguimiento detallado de vehículos (millaje), aires acondicionados, servidores y plantas eléctricas.
+*   **Alertas Automatizadas:** Sistema de notificaciones vía **Email (SMTP)** y **Web Push** para recordar mantenimientos próximos o vencidos.
+*   **Marketplace de Técnicos:** Conecta con profesionales idóneos en Ciudad de Panamá (Mecánicos, Eléctricos, HVAC, TI) con sistema de valoraciones y perfiles premium.
+*   **Agendamiento en 1-Clic:** Flujo optimizado para convertir una alerta de mantenimiento en una cita técnica inmediata.
 
-## Run Locally
+## 🛠️ Stack Tecnológico
 
-**Prerequisites:**  Node.js
+*   **Frontend:** React 19, TypeScript, Tailwind CSS, Lucide React, Framer Motion.
+*   **Backend:** Node.js, Express.
+*   **IA:** Google Gemini API (@google/genai).
+*   **Notificaciones:** Nodemailer (SMTP) y Web Push API.
+*   **Build Tool:** Vite.
 
+## 📦 Instalación y Configuración
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+1.  **Clonar el repositorio e instalar dependencias:**
+    ```bash
+    npm install
+    ```
+
+2.  **Configurar Variables de Entorno:**
+    Crea un archivo `.env` en la raíz (usa `.env.example` como guía):
+    ```env
+    GEMINI_API_KEY=tu_api_key_aquí
+    SMTP_USER=tu_correo@gmail.com
+    SMTP_PASS=tu_password_de_aplicacion
+    APP_URL=http://localhost:3000
+    ```
+
+3.  **Ejecutar en modo desarrollo:**
+    ```bash
+    npm run dev
+    ```
+
+## 📋 Estructura del Proyecto
+
+*   `/src/components`: Componentes modulares (Modales de registro, Vista de IA, Chat).
+*   `/src/mockData.ts`: Base de datos simulada de activos, técnicos y solicitudes.
+*   `server.ts`: Servidor Express que maneja la API de diagnóstico IA y el despacho de correos electrónicos.
+*   `types.ts`: Definiciones de interfaces TypeScript para todo el ecosistema.
+
+---
+**Desarrollado para la optimización operativa y la tranquilidad del propietario.**

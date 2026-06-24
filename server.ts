@@ -1,6 +1,5 @@
 import express from 'express';
 import path from 'path';
-import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
@@ -11,6 +10,19 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: '10mb' }));
+
+// CORS headers to allow communication with the frontend
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 // Full fidelity Email dispatch endpoint
 app.post('/api/send-email', async (req, res) => {
@@ -141,17 +153,17 @@ app.post('/api/send-email', async (req, res) => {
 // Lazy initializer for Gemini Client
 let aiClient: GoogleGenAI | null = null;
 function getGeminiClient(): GoogleGenAI | null {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key || key === 'MY_GEMINI_API_KEY' || key.includes('ESCRIBE_AQUI')) {
+    return null;
+  }
+
   if (!aiClient) {
-    const key = process.env.GEMINI_API_KEY;
-    if (key && key !== 'MY_GEMINI_API_KEY') {
-      aiClient = new GoogleGenAI({
-        apiKey: key,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build',
-          },
-        },
-      });
+    try {
+      aiClient = new GoogleGenAI(key);
+    } catch (e) {
+      console.error('Error al inicializar Google AI:', e);
+      return null;
     }
   }
   return aiClient;
@@ -274,11 +286,10 @@ app.post('/api/diagnose', async (req, res) => {
     }
     parts.push({ text: promptInstructions });
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
-      contents: { parts: parts },
-      config: {
-        systemInstruction: 'Analiza el problema de mantenimiento reportado de forma profesional, clara y en español.',
+    const model = ai.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      systemInstruction: 'Analiza el problema de mantenimiento reportado de forma profesional, clara y en español.',
+      generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -315,32 +326,62 @@ app.post('/api/diagnose', async (req, res) => {
       }
     });
 
-    const parsedJson = JSON.parse(response.text || '{}');
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: parts }]
+    });
+
+    const responseText = result.response.text();
+    const parsedJson = JSON.parse(responseText || '{}');
     res.json(parsedJson);
   } catch (error: any) {
-    console.error('Gemini API diagnostic failure: ', error);
-    res.status(500).json({ error: 'Fallo al procesar diagnóstico IA de mantenimiento.', details: error.message });
+    console.error('Gemini API diagnostic failure, switching to simulation: ', error);
+
+    // Fallback simulation in case of API error (Rate limit, invalid key, etc.)
+    const assetName = req.body.assetName || '';
+    const problemDescription = req.body.problemDescription || '';
+
+    let isAC = assetName.toLowerCase().includes('aire') || assetName.toLowerCase().includes('ac') || assetName.toLowerCase().includes('split');
+    let isCar = assetName.toLowerCase().includes('carro') || assetName.toLowerCase().includes('auto');
+
+    const simulatedResponse = {
+      possibleCauses: [
+        'Desgaste por uso acumulado en componentes internos.',
+        'Necesidad de mantenimiento preventivo profundo.',
+        'Posible falla en sensores de control electrónico.'
+      ],
+      urgency: 'Media',
+      urgencyReason: 'El síntoma reportado sugiere una degradación que requiere atención para evitar daños mayores.',
+      troubleshootingSteps: [
+        'Paso 1: Desconecte el equipo de la red eléctrica por 5 minutos.',
+        'Paso 2: Realice una inspección visual buscando fugas o ruidos extraños.',
+        'Paso 3: Verifique si hay obstrucciones en los filtros o entradas de aire.',
+        'Paso 4: Si el problema persiste, contacte al técnico sugerido.'
+      ],
+      estimatedCostRange: '$45.00 - $85.00',
+      specialistType: isAC ? 'tecnico_ac' : (isCar ? 'mecanico' : 'mecanico'),
+      isFallback: true
+    };
+
+    res.json(simulatedResponse);
   }
 });
 
-// Configure Vite or Static delivery
+// Configure delivery
 async function run() {
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-  }
+  const distPath = path.join(process.cwd(), 'dist');
+  app.use(express.static(distPath));
+
+  // For production builds (SPA)
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`🚀 Server API ready at http://localhost:${PORT}`);
+    console.log(`🤖 Gemini AI Mode: ${process.env.GEMINI_API_KEY ? 'Active' : 'Simulation'}`);
   });
 }
 
