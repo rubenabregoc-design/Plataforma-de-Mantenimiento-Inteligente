@@ -11,7 +11,7 @@
         "source": "/api/**",
         "run": {
           "serviceId": "ais-pre-q5pynj3k6zdoqc7lcyuar3",
-          "region": "us-west1"
+          "region": "us-east4"
         }
       },
       {

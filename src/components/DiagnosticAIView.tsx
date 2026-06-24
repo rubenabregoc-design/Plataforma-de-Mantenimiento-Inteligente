@@ -95,9 +95,7 @@ export default function DiagnosticAIView({ assets, onFindTechnicians }: Diagnost
       });
     }, 1500);
 
-    const API_BASE_URL = import.meta.env.PROD
-      ? 'https://ais-pre-q5pynj3k6zdoqc7lcyuar3-224952098429.us-west1.run.app'
-      : '';
+    const API_BASE_URL = ''; // Usar rutas relativas para evitar CORS via proxy/rewrites
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/diagnose`, {

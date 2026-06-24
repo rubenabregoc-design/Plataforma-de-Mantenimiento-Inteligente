@@ -376,11 +376,8 @@ export default function App() {
   };
 
   // API Base URL for mobile/web compatibility
-  // Smart API Selection: Use local server for web dev, and Cloud for Android/Production
-  // Detectar si estamos en producción para usar la URL absoluta o el proxy local
-  const API_BASE_URL = import.meta.env.PROD
-    ? 'https://ais-pre-q5pynj3k6zdoqc7lcyuar3-690946125913.us-east4.run.app'
-    : '';
+  // Smart API Selection: Use relative paths for web (handled by Vite proxy/Firebase rewrites)
+  const API_BASE_URL = '';
 
 
   // Manejo de errores de red para la IA
@@ -543,7 +540,32 @@ export default function App() {
               setProfileImage(userData.photoURL);
             }
             if (userData.role === 'tech') {
-              setSelectedTechProfileId(userData.techId || 'tech-1');
+              const tId = userData.techId || `tech-${firebaseUser.uid}`;
+              setSelectedTechProfileId(tId);
+
+              // ASEGURAR QUE EL PERFIL DE TÉCNICO EXISTA EN LA COLECCIÓN 'technicians'
+              const techRef = doc(db, "technicians", tId);
+              const techSnap = await getDocs(query(collection(db, "technicians"), where("id", "==", tId)));
+
+              if (techSnap.empty) {
+                console.log("Creando perfil técnico faltante para:", userData.name);
+                await setDoc(techRef, {
+                  id: tId,
+                  name: userData.name || 'Técnico',
+                  category: 'mecanico',
+                  title: 'Mecánico Automotriz Certificado - ASE', // Título por defecto según tu imagen
+                  rating: 4.9,
+                  reviewCount: 0,
+                  experienceYears: 5,
+                  location: 'Ciudad de Panamá',
+                  hourlyRate: 25,
+                  bio: 'Técnico profesional especializado en soluciones de mantenimiento preventivo y correctivo.',
+                  certifications: ['Certificación Técnica'],
+                  portfolioImages: [],
+                  plan: 'premium',
+                  userId: firebaseUser.uid
+                });
+              }
             }
 
             // Initialize Push Notifications if on Mobile
@@ -1134,8 +1156,30 @@ export default function App() {
 
   // Get current active tech profile details
   const getSelectedTechProfileObj = () => {
-    const found = technicians.find(t => t.id === selectedTechProfileId) || technicians[0];
-    return found || {
+    const found = technicians.find(t => t.id === selectedTechProfileId);
+    if (found) return found;
+
+    // Si no se encuentra pero el usuario está logueado como tech, mostrar sus datos básicos
+    if (role === 'tech') {
+      return {
+        id: selectedTechProfileId,
+        name: loggedInName,
+        title: 'Técnico Especialista',
+        category: 'mecanico',
+        rating: 5.0,
+        reviewCount: 0,
+        completedJobs: 0,
+        experienceYears: 5,
+        location: 'Ciudad de Panamá',
+        hourlyRate: 25,
+        bio: '',
+        certifications: [],
+        portfolioImages: [],
+        plan: 'basic'
+      };
+    }
+
+    return technicians[0] || {
       id: 'unknown',
       name: 'Usuario',
       title: 'Técnico Especialista',
@@ -1168,14 +1212,36 @@ export default function App() {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const newUser = userCredential.user;
         await updateProfile(newUser, { displayName: name });
+        const techId = (selectedRole === 'tech' ? `tech-${Date.now()}` : null);
+
         await addDoc(collection(db, "users"), {
           uid: newUser.uid,
           email: email,
           name: name,
           role: selectedRole,
-          techId: techId || (selectedRole === 'tech' ? `tech-${Date.now()}` : null),
+          techId: techId,
           createdAt: serverTimestamp()
         });
+
+        // SI ES TÉCNICO, CREAR PERFIL PROFESIONAL AUTOMÁTICO
+        if (selectedRole === 'tech' && techId) {
+          await setDoc(doc(db, "technicians", techId), {
+            id: techId,
+            name: name,
+            category: 'mecanico', // Por defecto
+            title: 'Técnico Especialista en Mantenimiento',
+            rating: 5.0,
+            reviewCount: 0,
+            experienceYears: 0,
+            location: 'Ciudad de Panamá',
+            hourlyRate: 20,
+            bio: 'Nuevo técnico registrado en la plataforma. Especialista en soluciones integrales.',
+            certifications: [],
+            portfolioImages: [],
+            plan: 'basic',
+            userId: newUser.uid
+          });
+        }
         setLoggedInName(name);
         setLoggedInEmail(email);
         setRole(selectedRole);
