@@ -1,13 +1,13 @@
 import express from 'express';
 import path from 'path';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080; // Forzar 8080 si PORT no está definido para Cloud Run
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -68,7 +68,7 @@ app.post('/api/send-email', async (req, res) => {
       isDemoAccount = true;
     }
 
-    const appUrl = process.env.APP_URL || 'https://ais-pre-q5pynj3k6zdoqc7lcyuar3-224952098429.us-west1.run.app';
+    const appUrl = process.env.APP_URL || 'https://ais-pre-q5pynj3k6zdoqc7lcyuar3-690946125913.us-east4.run.app';
 
     const htmlContent = `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f6f8; padding: 40px 10px; margin: 0; width: 100%;">

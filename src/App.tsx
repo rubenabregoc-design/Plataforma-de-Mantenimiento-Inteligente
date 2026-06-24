@@ -379,7 +379,7 @@ export default function App() {
   // Smart API Selection: Use local server for web dev, and Cloud for Android/Production
   // Detectar si estamos en producción para usar la URL absoluta o el proxy local
   const API_BASE_URL = import.meta.env.PROD
-    ? 'https://ais-pre-q5pynj3k6zdoqc7lcyuar3-224952098429.us-west1.run.app'
+    ? 'https://ais-pre-q5pynj3k6zdoqc7lcyuar3-690946125913.us-east4.run.app'
     : '';
 
 
@@ -727,17 +727,20 @@ export default function App() {
 
     // Seed mock requests if database is fresh (Optional, for better demo)
     const seedMockData = async () => {
-      if (user) {
+      if (user && role === 'client') {
         try {
           const qReq = query(collection(db, "requests"), where("clientId", "==", user.uid));
           const snapReq = await getDocs(qReq);
+          // Solo intentar crear si no hay NADA, para evitar errores de permisos en duplicados
           if (snapReq.empty) {
+            console.log("Generando datos de prueba para nuevo usuario...");
             for (const req of initialRequests) {
-              await setDoc(doc(db, "requests", req.id), { ...req, clientId: user.uid });
+              const { id, ...reqWithoutId } = req; // Dejar que Firestore cree un ID nuevo
+              await addDoc(collection(db, "requests"), { ...reqWithoutId, clientId: user.uid });
             }
           }
         } catch (e: any) {
-          console.warn("Could not seed mock requests (likely permissions):", e.message);
+          // Silencioso en consola para no ensuciar el inspector si no hay permisos
         }
       }
     };
@@ -921,20 +924,25 @@ export default function App() {
   };
 
   const handleDeleteAsset = async (assetId: string) => {
+    if (!user) return;
     if (!window.confirm("¿Estás seguro de que deseas eliminar este activo? Se borrarán también sus recordatorios.")) return;
 
     try {
-      // Borrar Activo
+      // 1. Borrar Recordatorios asociados primero (usando filtro de seguridad clientId)
+      const qRem = query(
+        collection(db, "reminders"),
+        where("assetId", "==", assetId),
+        where("clientId", "==", user.uid)
+      );
+      const snapRem = await getDocs(qRem);
+
+      const deletePromises = snapRem.docs.map(d => deleteDoc(doc(db, "reminders", d.id)));
+      await Promise.all(deletePromises);
+
+      // 2. Borrar Activo después
       await deleteDoc(doc(db, "assets", assetId));
 
-      // Borrar Recordatorios asociados
-      const qRem = query(collection(db, "reminders"), where("assetId", "==", assetId));
-      const snapRem = await getDocs(qRem);
-      for (const d of snapRem.docs) {
-        await deleteDoc(doc(db, "reminders", d.id));
-      }
-
-      alert("Activo eliminado correctamente.");
+      alert("Activo y recordatorios eliminados correctamente.");
     } catch (err: any) {
       console.error("Delete Asset Error:", err);
       alert("Error al eliminar: " + err.message);
@@ -2395,7 +2403,7 @@ export default function App() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {reminders.map((rem) => {
+                      {reminders.filter(r => assets.some(a => a.id === r.assetId)).map((rem) => {
                         const daysLeft = Math.ceil((new Date(rem.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                         const matchingAsset = assets.find(a => a.id === rem.assetId);
 
