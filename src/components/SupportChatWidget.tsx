@@ -14,6 +14,8 @@ export default function SupportChatWidget({ request, role, onSendMessage, messag
   const [text, setText] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -25,13 +27,29 @@ export default function SupportChatWidget({ request, role, onSendMessage, messag
     setText('');
   };
 
-  const handleAttachMock = (type: 'photo' | 'doc' | 'location') => {
-    if (type === 'photo') {
-      onSendMessage('Adjunción: Evidencia fotográfica de los serpentines.', 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&auto=format&fit=crop&q=60');
-    } else if (type === 'doc') {
-      onSendMessage('Adjunción: Copia digital del manual de especificaciones (PDF).');
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        onSendMessage('', reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleShareLocation = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const { latitude, longitude } = position.coords;
+        const locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        onSendMessage(`📍 Mi ubicación actual: ${locationUrl}`);
+      }, (error) => {
+        console.error("Error al obtener ubicación:", error);
+        alert("No se pudo obtener la ubicación. Asegúrate de dar permisos al navegador.");
+      });
     } else {
-      onSendMessage('Ubicación compartida: Vía Argentina, Bella Vista, Ciudad de Panamá.');
+      alert("Tu navegador no soporta geolocalización.");
     }
   };
 
@@ -89,11 +107,11 @@ export default function SupportChatWidget({ request, role, onSendMessage, messag
               <div
                 className={`p-3.5 rounded-2xl text-xs leading-relaxed ${
                   isMe
-                    ? 'bg-indigo-650 text-white rounded-tr-none shadow-md shadow-indigo-100'
+                    ? 'bg-indigo-600 text-white rounded-tr-none shadow-md shadow-indigo-100'
                     : 'bg-white text-zinc-800 rounded-tl-none shadow-xs border border-zinc-200'
                 }`}
               >
-                {msg.text}
+                {msg.text && <p>{msg.text}</p>}
 
                 {msg.image && (
                   <div className="mt-2.5 rounded-xl overflow-hidden border border-black/10">
@@ -112,29 +130,29 @@ export default function SupportChatWidget({ request, role, onSendMessage, messag
         <div ref={chatEndRef} />
       </div>
 
-      {/* Quick attachments */}
+      {/* Real attachments */}
       <div className="px-4.5 py-2 border-t border-zinc-100 bg-white flex items-center gap-2 overflow-x-auto">
-        <span className="text-[9px] text-zinc-400 uppercase font-black tracking-widest shrink-0">Simular:</span>
+        <span className="text-[9px] text-zinc-400 uppercase font-black tracking-widest shrink-0">Acciones:</span>
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+        />
         <button
-          onClick={() => handleAttachMock('photo')}
+          onClick={() => fileInputRef.current?.click()}
           className="flex items-center gap-1.5 p-1.5 px-3 border border-zinc-200 rounded-xl hover:bg-zinc-50 text-[10px] text-zinc-650 transition-all font-bold whitespace-nowrap cursor-pointer hover:border-zinc-300"
         >
           <ImageIcon className="w-3.5 h-3.5 text-indigo-500" />
-          Foto de Falla
+          Enviar Foto Real
         </button>
         <button
-          onClick={() => handleAttachMock('doc')}
-          className="flex items-center gap-1.5 p-1.5 px-3 border border-zinc-200 rounded-xl hover:bg-zinc-50 text-[10px] text-zinc-650 transition-all font-bold whitespace-nowrap cursor-pointer hover:border-zinc-300"
-        >
-          <FileText className="w-3.5 h-3.5 text-emerald-500" />
-          Manual de Instrucciones
-        </button>
-        <button
-          onClick={() => handleAttachMock('location')}
+          onClick={handleShareLocation}
           className="flex items-center gap-1.5 p-1.5 px-3 border border-zinc-200 rounded-xl hover:bg-zinc-50 text-[10px] text-zinc-650 transition-all font-bold whitespace-nowrap cursor-pointer hover:border-zinc-300"
         >
           <MapPin className="w-3.5 h-3.5 text-rose-500" />
-          Compartir Ubicación
+          Compartir Mi Ubicación
         </button>
       </div>
 
@@ -150,7 +168,7 @@ export default function SupportChatWidget({ request, role, onSendMessage, messag
         <button
           type="submit"
           disabled={!text.trim()}
-          className="p-3 bg-indigo-650 hover:bg-indigo-750 disabled:opacity-40 text-white rounded-xl transition-all shadow-sm cursor-pointer"
+          className="p-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white rounded-xl transition-all shadow-sm cursor-pointer"
         >
           <Send className="w-3.5 h-3.5" />
         </button>

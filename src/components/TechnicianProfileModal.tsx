@@ -8,12 +8,20 @@ interface TechnicianProfileModalProps {
   onClose: () => void;
   assets: Asset[];
   onRequestQuote: (techId: string, assetId: string, description: string) => void;
+  prefilledDescription?: string;
 }
 
-export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, onRequestQuote }: TechnicianProfileModalProps) {
+export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, onRequestQuote, prefilledDescription }: TechnicianProfileModalProps) {
   const [selectedAssetId, setSelectedAssetId] = useState('');
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(prefilledDescription || '');
   const [quoteSent, setQuoteSent] = useState(false);
+
+  // Sincronizar descripción si cambia el prefilled (cuando se abre el modal desde recordatorio)
+  React.useEffect(() => {
+    if (isOpen && prefilledDescription) {
+      setDescription(prefilledDescription);
+    }
+  }, [isOpen, prefilledDescription]);
 
   if (!isOpen || !tech) return null;
 
@@ -66,11 +74,11 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
               <div className="flex items-center text-amber-500 font-bold gap-0.5">
                 <Star className="w-4 h-4 fill-amber-500" />
                 {tech.rating}
-                <span className="text-gray-400 font-normal">({tech.reviewCount})</span>
+                <span className="text-gray-400 font-normal">({tech.reviewCount} reseñas)</span>
               </div>
-              <div className="text-gray-500 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-gray-400" />
-                {tech.experienceYears} años exp.
+              <div className="text-zinc-500 font-bold flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                {tech.completedJobs || 0} trabajos realizados
               </div>
             </div>
 

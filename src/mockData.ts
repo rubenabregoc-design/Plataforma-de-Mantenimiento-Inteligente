@@ -88,7 +88,8 @@ export const initialTechnicians: TechProfile[] = [
       'https://images.unsplash.com/photo-1486006920555-c77dce18193b?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
       'https://images.unsplash.com/photo-1517524206127-48bbd363f3d7?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'
     ],
-    plan: 'premium'
+    plan: 'premium',
+    completedJobs: 85
   },
   {
     id: 'tech-2',
@@ -105,7 +106,8 @@ export const initialTechnicians: TechProfile[] = [
     portfolioImages: [
       'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'
     ],
-    plan: 'premium'
+    plan: 'premium',
+    completedJobs: 120
   },
   {
     id: 'tech-3',
@@ -122,7 +124,8 @@ export const initialTechnicians: TechProfile[] = [
     portfolioImages: [
       'https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'
     ],
-    plan: 'basic'
+    plan: 'basic',
+    completedJobs: 42
   },
   {
     id: 'tech-4',
@@ -139,7 +142,8 @@ export const initialTechnicians: TechProfile[] = [
     portfolioImages: [
       'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'
     ],
-    plan: 'premium'
+    plan: 'premium',
+    completedJobs: 56
   },
   {
     id: 'tech-5',
@@ -156,7 +160,8 @@ export const initialTechnicians: TechProfile[] = [
     portfolioImages: [
       'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'
     ],
-    plan: 'premium'
+    plan: 'premium',
+    completedJobs: 34
   }
 ];
 

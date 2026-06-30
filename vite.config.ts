@@ -16,10 +16,10 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'https://ais-pre-q5pynj3k6zdoqc7lcyuar3-224952098429.us-west1.run.app',
+        target: 'http://127.0.0.1:8080',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api'),
-        secure: false, // Útil para evitar errores de certificados en desarrollo
+        secure: false,
       }
     }
   },

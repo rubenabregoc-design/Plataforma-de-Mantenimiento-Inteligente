@@ -18,276 +18,42 @@ import {
 import AssetRegisterModal from './components/AssetRegisterModal';
 import DiagnosticAIView from './components/DiagnosticAIView';
 import TechnicianProfileModal from './components/TechnicianProfileModal';
+import TechnicianEditProfileModal from './components/TechnicianEditProfileModal';
+import ServiceReportModal from './components/ServiceReportModal';
+import SignaturePad from './components/SignaturePad';
 import SupportChatWidget from './components/SupportChatWidget';
 
 import { 
-  LayoutDashboard, 
-  Store, 
-  FileCheck2, 
-  Bot, 
-  MessageSquare, 
-  CalendarDays, 
-  Users, 
-  DollarSign, 
-  Bell, 
-  BellRing,
-  Send,
-  CheckCircle,
-  Plus, 
-  TrendingUp, 
-  Truck,
-  Camera,
-  SlidersHorizontal,
-  Layers, 
-  UserCheck, 
-  ShieldCheck, 
-  Info, 
-  Star, 
-  PhoneCall, 
-  Mail, 
-  MailOpen, 
-  CheckCircle2, 
-  UserX,
-  Clock,
-  Smartphone,
-  LogOut,
-  Lock,
-  User,
-  ArrowRight,
-  ChevronRight,
-  History,
-  ShieldAlert,
-  HelpCircle,
-  Video,
-  Wrench,
-  Search,
-  Filter,
-  Check,
-  X,
-  CreditCard,
-  Target,
-  Calendar,
-  AlertCircle,
-  RefreshCcw,
-  Zap,
-  MapPin,
-  Briefcase,
-  ChevronDown,
-  Navigation,
-  ExternalLink,
-  ChevronLeft,
-  Circle,
-  MoreVertical,
-  ThumbsUp,
-  Pencil,
-  Image,
-  Paperclip,
-  Trash2,
-  FileText,
-  Save,
-  Download,
-  Share2,
-  Settings,
-  Eye,
-  EyeOff,
-  UserPlus,
-  LogIn,
-  AlertTriangle,
-  Globe,
-  Award,
-  BookOpen,
-  PieChart,
-  BarChart3,
-  Activity,
-  Maximize2,
-  Menu,
-  ChevronUp,
-  Monitor,
-  PlusCircle,
-  MinusCircle,
-  Play,
-  Pause,
-  SkipBack,
-  SkipForward,
-  Repeat,
-  Shuffle,
-  Volume2,
-  Mic,
-  VideoOff,
-  Headphones,
-  Gamepad2,
-  Music,
-  Heart,
-  MessageCircle,
-  MoreHorizontal,
-  Cloud,
-  Sun,
-  Moon,
-  CloudRain,
-  Snowflake,
-  Wind,
-  Droplets,
-  Thermometer,
-  Hash,
-  AtSign,
-  Link,
-  Tag,
-  Flag,
-  Map,
-  Compass,
-  Archive,
-  Box,
-  ShoppingBag,
-  ShoppingCart,
-  Cpu,
-  Wifi,
-  Bluetooth,
-  Battery,
-  HardDrive,
-  MousePointer2,
-  Keyboard,
-  Printer,
-  Copy,
-  Scissors,
-  Clipboard,
-  StickyNote,
-  PenTool,
-  Eraser,
-  Palette,
-  Brush,
-  Paintbrush,
-  Ruler,
-  Table,
-  Columns,
-  Rows,
-  Maximize,
-  Minimize,
-  Command,
-  ZoomIn,
-  ZoomOut,
-  Languages,
-  Type,
-  Bold,
-  Italic,
-  Underline,
-  Strikethrough,
-  Code,
-  Terminal,
-  Quote,
-  List,
-  ListOrdered,
-  Indent,
-  Outdent,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  AlignJustify,
-  Link2,
-  Smile,
-  Frown,
-  Meh,
-  Angry,
-  SmilePlus,
-  Ghost,
-  Cat,
-  Dog,
-  Bird,
-  Rabbit,
-  Turtle,
-  Fish,
-  Trees,
-  Mountain,
-  Waves,
-  Binary,
-  GitBranch,
-  GitCommit,
-  GitMerge,
-  GitPullRequest,
-  Github,
-  Twitter,
-  Facebook,
-  Instagram,
-  Linkedin,
-  Youtube,
-  CloudLightning,
-  CloudSun,
-  CloudMoon,
-  CloudFog,
-  CloudDrizzle,
-  CloudHail,
-  CloudSnow,
-  Umbrella,
-  Pocket,
-  MonitorOff,
-  Tablet,
-  Tv,
-  Cast,
-  Speaker,
-  Disc,
-  Radio,
-  Dribbble,
-  Codepen,
-  Figma,
-  Frame,
-  Trello,
-  Slack,
-  Twitch,
-  Music2,
-  Mic2,
-  CameraOff,
-  Phone,
-  PhoneIncoming,
-  PhoneOutgoing,
-  PhoneMissed,
-  PhoneForwarded,
-  Inbox,
-  Server,
-  Database,
-  SortAsc,
-  SortDesc,
-  Minus,
-  Edit,
-  Edit2,
-  Edit3,
-  Trash,
-  Unlock,
-  Key,
-  Home,
-  BellOff,
-  Building,
-  Building2,
-  GraduationCap,
-  Bookmark,
-  Share,
-  Upload,
-  RefreshCw,
-  LineChart,
-  Laptop,
-  Mouse,
-  File,
-  Folder,
-  FolderPlus,
-  FolderMinus,
-  RotateCw,
-  ArrowUp,
-  ArrowDown,
-  ArrowLeft,
-  Shield,
-  Grid,
-  Layout,
-  LayoutGrid,
-  XCircle,
-  Coffee,
-  Pizza,
-  Utensils,
-  Bike,
-  Plane,
-  Train,
-  Anchor,
-  Sunrise,
-  Sunset,
-  Sparkles,
-  ShieldHalf
+  LayoutDashboard, Store, FileCheck2, Bot, MessageSquare, CalendarDays, Users, DollarSign,
+  Bell, BellRing, Send, CheckCircle, Plus, TrendingUp, Truck, Camera, SlidersHorizontal,
+  Layers, UserCheck, ShieldCheck, Info, Star, PhoneCall, Mail, MailOpen, CheckCircle2,
+  UserX, Clock, Smartphone, LogOut, Lock, User, ArrowRight, ChevronRight, History,
+  ShieldAlert, HelpCircle, Video, Wrench, Search, Filter, Check, X, CreditCard, Target,
+  Calendar, AlertCircle, RefreshCcw, Zap, MapPin, Briefcase, ChevronDown, Navigation,
+  ExternalLink, ChevronLeft, Circle, MoreVertical, ThumbsUp, Pencil, Image, Paperclip,
+  Trash2, FileText, Save, Download, Share2, Settings, Eye, EyeOff, UserPlus, LogIn,
+  AlertTriangle, Globe, Award, BookOpen, PieChart, BarChart3, Activity, Maximize2,
+  Menu, ChevronUp, Monitor, PlusCircle, MinusCircle, Play, Pause, SkipBack, SkipForward,
+  Repeat, Shuffle, Volume2, Mic, VideoOff, Headphones, Gamepad2, Music, Heart,
+  MessageCircle, MoreHorizontal, Cloud, Sun, Moon, CloudRain, Snowflake, Wind, Droplets,
+  Thermometer, Hash, AtSign, Link, Tag, Flag, Map, Compass, Archive, Box, ShoppingBag,
+  ShoppingCart, Cpu, Wifi, Bluetooth, Battery, HardDrive, MousePointer2, Keyboard,
+  Printer, Copy, Scissors, Clipboard, StickyNote, PenTool, Eraser, Palette, Brush,
+  Paintbrush, Ruler, Table, Columns, Rows, Maximize, Minimize, Command, ZoomIn, ZoomOut,
+  Languages, Type, Bold, Italic, Underline, Strikethrough, Code, Terminal, Quote, List,
+  ListOrdered, Indent, Outdent, AlignLeft, AlignCenter, AlignRight, AlignJustify, Link2,
+  Smile, Frown, Meh, Angry, SmilePlus, Ghost, Cat, Dog, Bird, Rabbit, Turtle, Fish,
+  Trees, Mountain, Waves, Binary, GitBranch, GitCommit, GitMerge, GitPullRequest,
+  Github, Twitter, Facebook, Instagram, Linkedin, Youtube, CloudLightning, CloudSun,
+  CloudMoon, CloudFog, CloudDrizzle, CloudHail, CloudSnow, Umbrella, Pocket, MonitorOff,
+  Tablet, Tv, Cast, Speaker, Disc, Radio, Dribbble, Codepen, Figma, Frame, Trello,
+  Slack, Twitch, Music2, Mic2, CameraOff, Phone, PhoneIncoming, PhoneOutgoing,
+  PhoneMissed, PhoneForwarded, Inbox, Server, Database, SortAsc, SortDesc, Minus,
+  Edit, Edit2, Edit3, Trash, Unlock, Key, Home, BellOff, Building, Building2,
+  GraduationCap, Bookmark, Share, Upload, RefreshCw, LineChart, Laptop, Mouse,
+  File, Folder, FolderPlus, FolderMinus, RotateCw, ArrowUp, ArrowDown, ArrowLeft,
+  Shield, Grid, Layout, LayoutGrid, XCircle, Coffee, Pizza, Utensils, Bike, Plane,
+  Train, Anchor, Sunrise, Sunset, Sparkles, ShieldHalf
 } from 'lucide-react';
 
 // Firebase Imports
@@ -309,6 +75,7 @@ import {
   where,
   onSnapshot,
   doc,
+  getDoc,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -378,6 +145,7 @@ export default function App() {
   // API Base URL for mobile/web compatibility
   // Smart API Selection: Use relative paths for web (handled by Vite proxy/Firebase rewrites)
   const API_BASE_URL = '';
+
 
 
   // Manejo de errores de red para la IA
@@ -504,6 +272,7 @@ export default function App() {
 
   // Session Authentication state
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [isAuthResolving, setIsAuthResolving] = useState<boolean>(true);
   const [user, setUser] = useState<any>(null);
   const [role, setRole] = useState<'client' | 'tech' | 'admin'>('client');
   const [adminTab, setAdminTab] = useState<'finance' | 'users' | 'logistics' | 'settings' | 'alerts'>('finance');
@@ -516,71 +285,109 @@ export default function App() {
 
   // 1. Firebase Auth & Role Listener
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        setIsLoggedIn(true);
         setUser(firebaseUser);
         setLoggedInEmail(firebaseUser.email || '');
         setLoggedInName(firebaseUser.displayName || 'Usuario');
         setProfileImage(firebaseUser.photoURL || '');
 
-        // Fetch user role & Setup Push
-        const setupUser = async () => {
-          const q = query(collection(db, "users"), where("uid", "==", firebaseUser.uid));
-          const querySnapshot = await getDocs(q);
-          if (!querySnapshot.empty) {
-            const userDoc = querySnapshot.docs[0];
-            const userData = userDoc.data();
-            setRole(userData.role);
-            // Si el displayName de Firebase falla, usamos el nombre guardado en Firestore
-            if (!firebaseUser.displayName && userData.name) {
-              setLoggedInName(userData.name);
+        try {
+          // Si es el correo maestro de admin, forzar rol admin
+          if (firebaseUser.email === 'admin@mantech.com') {
+            setRole('admin');
+          }
+
+          // Intentar obtener el documento directamente por UID (más eficiente)
+          const userRef = doc(db, "users", firebaseUser.uid);
+          const userSnap = await getDoc(userRef);
+
+          let userData = null;
+
+          if (userSnap.exists()) {
+            userData = userSnap.data();
+          } else {
+            // Fallback a query si el ID del documento no es el UID
+            const q = query(collection(db, "users"), where("uid", "==", firebaseUser.uid));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+              userData = querySnapshot.docs[0].data();
             }
+          }
+
+          if (userData) {
+            // Sincronizar rol si no es el admin forzado
+            if (firebaseUser.email !== 'admin@mantech.com') {
+              setRole(userData.role);
+            }
+
+            // PRIORIDAD: Nombre de Firestore sobre el de Auth (que a veces viene vacío)
+            if (userData.name) {
+              setLoggedInName(userData.name);
+            } else if (firebaseUser.displayName) {
+              setLoggedInName(firebaseUser.displayName);
+            }
+
             if (userData.photoURL) {
               setProfileImage(userData.photoURL);
             }
+
             if (userData.role === 'tech') {
               const tId = userData.techId || `tech-${firebaseUser.uid}`;
               setSelectedTechProfileId(tId);
+              localStorage.setItem('mantech_logged_tech_id', tId);
 
-              // ASEGURAR QUE EL PERFIL DE TÉCNICO EXISTA EN LA COLECCIÓN 'technicians'
               const techRef = doc(db, "technicians", tId);
-              const techSnap = await getDocs(query(collection(db, "technicians"), where("id", "==", tId)));
+              const techSnap = await getDoc(techRef);
 
-              if (techSnap.empty) {
-                console.log("Creando perfil técnico faltante para:", userData.name);
+              if (!techSnap.exists()) {
                 await setDoc(techRef, {
                   id: tId,
                   name: userData.name || 'Técnico',
                   category: 'mecanico',
-                  title: 'Mecánico Automotriz Certificado - ASE', // Título por defecto según tu imagen
-                  rating: 4.9,
+                  title: 'Técnico Especialista en Mantenimiento',
+                  rating: 5.0,
                   reviewCount: 0,
+                  completedJobs: 0,
                   experienceYears: 5,
                   location: 'Ciudad de Panamá',
                   hourlyRate: 25,
-                  bio: 'Técnico profesional especializado en soluciones de mantenimiento preventivo y correctivo.',
+                  bio: 'Técnico profesional especializado.',
                   certifications: ['Certificación Técnica'],
                   portfolioImages: [],
                   plan: 'premium',
                   userId: firebaseUser.uid
                 });
               }
+            } else {
+              localStorage.removeItem('mantech_logged_tech_id');
             }
 
-            // Initialize Push Notifications if on Mobile
             if (Capacitor.isNativePlatform()) {
-              setupPushNotifications(userDoc.id);
+              setupPushNotifications(firebaseUser.uid);
             }
+          } else if (firebaseUser.email === 'admin@mantech.com') {
+            // Asegurar que el documento de admin exista
+            await setDoc(doc(db, "users", firebaseUser.uid), {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              name: 'Administrador Central',
+              role: 'admin',
+              createdAt: serverTimestamp()
+            });
+            setLoggedInName('Administrador Central');
           }
-        };
-        setupUser();
+          setIsLoggedIn(true);
+        } catch (err) {
+          console.error("Error setting up user session:", err);
+        }
       } else {
         setIsLoggedIn(false);
         setUser(null);
         setLoggedInEmail('');
         setLoggedInName('');
       }
+      setIsAuthResolving(false);
     });
     return () => unsubscribe();
   }, []);
@@ -628,7 +435,7 @@ export default function App() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginName, setLoginName] = useState('');
-  const [authTab, setAuthTab] = useState<'client' | 'tech'>('client');
+  const [authTab, setAuthTab] = useState<'client' | 'tech' | 'admin'>('client');
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authError, setAuthError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -707,14 +514,23 @@ export default function App() {
   // Modals UI
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [assetToEdit, setAssetToEdit] = useState<Asset | null>(null);
+  const [prefilledDescription, setPrefilledDescription] = useState<string>('');
   const [isTechModalOpen, setIsTechModalOpen] = useState(false);
   const [activeTechForModal, setActiveTechForModal] = useState<TechProfile | null>(null);
 
   // Active chat session selector
   const [activeChatRequestId, setActiveChatRequestId] = useState<string | null>(null);
+  const [isEditingTechProfile, setIsEditingTechProfile] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const [selectedRequestForReport, setSelectedRequestForReport] = useState<JobRequest | null>(null);
 
   // Bidding states (Technician drafts quote)
   const [bidPrice, setBidPrice] = useState<string>('');
+  const [bidDate, setBidDate] = useState<string>('');
+  const [bidTime, setBidTime] = useState<string>('');
+  const [bidDuration, setBidDuration] = useState<number>(1); // Default 1 hour
+  const [bidTravelTime, setBidTravelTime] = useState<number>(30); // Default 30 min
   const [draftingBidRequestId, setDraftingBidRequestId] = useState<string | null>(null);
 
   // Review states (Client rates technician)
@@ -727,22 +543,11 @@ export default function App() {
     return localStorage.getItem('mantech_logged_tech_id') || 'tech-1';
   });
 
-  // 2. Listen for Technicians and Seed if empty
+  // 2. Listen for Technicians
   useEffect(() => {
-    const unsubscribeTechs = onSnapshot(collection(db, "technicians"), async (snapshot) => {
-      if (snapshot.empty && user) {
-        console.log("Database empty. Seeding initial technicians...");
-        for (const tech of initialTechnicians) {
-          try {
-            await setDoc(doc(db, "technicians", tech.id), tech);
-          } catch (e) {
-            console.warn("Could not seed technician:", tech.name);
-          }
-        }
-      } else {
-        const techList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TechProfile[];
-        if (techList.length > 0) setTechnicians(techList);
-      }
+    const unsubscribeTechs = onSnapshot(collection(db, "technicians"), (snapshot) => {
+      const techList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TechProfile[];
+      setTechnicians(techList);
     }, (error) => {
       console.warn("Firestore Technicians Error:", error.message);
     });
@@ -774,56 +579,97 @@ export default function App() {
   // 3. Listen for Requests
   useEffect(() => {
     let unsubscribeReqs = () => {};
-    if (isLoggedIn && user) {
-      const field = role === 'client' ? 'clientId' : 'techId';
-      const q = query(collection(db, "requests"), where(field, "==", (role === 'client' ? user.uid : selectedTechProfileId)));
+    // Solo iniciar si ya sabemos quién es y su rol
+    if (isLoggedIn && user && role && !isAuthResolving) {
+      let q;
+      if (role === 'admin') {
+        // El Administrador ve TODAS las solicitudes del sistema
+        console.log("📡 Modo Admin: Escuchando todas las solicitudes");
+        q = query(collection(db, "requests"), orderBy("createdAt", "desc"));
+      } else {
+        const field = role === 'client' ? 'clientId' : 'techUserId';
+        const identifier = user.uid; // Usar UID real para máxima seguridad y permisos
+        console.log(`📡 Escuchando solicitudes para ${role} ID: ${identifier}`);
+        q = query(collection(db, "requests"), where(field, "==", identifier));
+      }
+
       unsubscribeReqs = onSnapshot(q, (snapshot) => {
         const reqList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as JobRequest[];
-        setRequests(reqList.length > 0 ? reqList : initialRequests);
+        console.log(`✅ Solicitudes cargadas: ${reqList.length}`);
+        setRequests(reqList);
       }, (error) => {
-        console.warn("Firestore Requests Error:", error.message);
+        if (error.message.includes("permissions")) {
+          console.warn("⚠️ Sincronizando permisos de solicitudes...");
+        } else {
+          console.error("Firestore Requests Error:", error.message);
+        }
       });
-    } else {
+    } else if (!isAuthResolving && !isLoggedIn) {
       setRequests(initialRequests);
     }
     return () => unsubscribeReqs();
-  }, [isLoggedIn, user, role, selectedTechProfileId]);
+  }, [isLoggedIn, user, role, selectedTechProfileId, isAuthResolving]);
 
   // 4. Listen for Chat Messages
   useEffect(() => {
     let unsubscribeMessages = () => {};
+    const chatRequests = requests.filter(r => r.status !== 'pending');
+
+    // Auto-select first chat if none selected
+    if (clientTab === 'chat' && !activeChatRequestId && chatRequests.length > 0) {
+      setActiveChatRequestId(chatRequests[0].id);
+    }
+    if (techTab === 'chat' && !activeChatRequestId && chatRequests.length > 0) {
+      setActiveChatRequestId(chatRequests[0].id);
+    }
+
     if (isLoggedIn && activeChatRequestId) {
-      const q = query(collection(db, "messages"), where("requestId", "==", activeChatRequestId), orderBy("timestamp", "asc"));
+      // Quitamos el orderBy de la consulta para evitar el error de índice (CORS/Index)
+      const q = query(collection(db, "messages"), where("requestId", "==", activeChatRequestId));
       unsubscribeMessages = onSnapshot(q, (snapshot) => {
-        const msgList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), timestamp: doc.data().timestamp?.toDate()?.toISOString() })) as ChatMessage[];
-        setChatMessages(msgList);
+        const msgList = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          timestamp: doc.data().timestamp?.toDate()?.toISOString() || new Date().toISOString()
+        })) as ChatMessage[];
+
+        // Ordenamos en memoria
+        const sortedMessages = msgList.sort((a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
+
+        setChatMessages(sortedMessages);
       }, (error) => {
-        console.warn("Firestore Messages Error:", error.message);
+        console.warn("Firestore Messages Sync:", error.message);
       });
     }
     return () => unsubscribeMessages();
-  }, [isLoggedIn, activeChatRequestId]);
+  }, [isLoggedIn, activeChatRequestId, requests, clientTab, techTab]);
 
   // Assets Listener
   useEffect(() => {
     let unsubscribeAssets = () => {};
-    if (isLoggedIn && user && role === 'client') {
-      console.log("Escuchando activos para el usuario:", user.uid);
-      const q = query(collection(db, "assets"), where("clientId", "==", user.uid));
+    if (isLoggedIn && user && role) {
+      let q;
+      if (role === 'admin') {
+        q = query(collection(db, "assets"), orderBy("createdAt", "desc"));
+      } else if (role === 'client') {
+        q = query(collection(db, "assets"), where("clientId", "==", user.uid));
+      } else {
+        return;
+      }
+
       unsubscribeAssets = onSnapshot(q, (snapshot) => {
         const assetsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Asset[];
-        console.log("Activos recibidos:", assetsList.length);
         setAssets(assetsList);
       }, (error) => {
         console.error("Firestore Assets Error:", error.message);
       });
-    } else if (isLoggedIn && role !== 'client') {
-      setAssets([]); // No mostrar activos si no es cliente
-    } else if (!isLoggedIn) {
+    } else if (!isAuthResolving && !isLoggedIn) {
       setAssets(initialAssets);
     }
     return () => unsubscribeAssets();
-  }, [isLoggedIn, user, role]);
+  }, [isLoggedIn, user, role, isAuthResolving]);
 
   // 5. Listen for Reminders
   useEffect(() => {
@@ -840,13 +686,13 @@ export default function App() {
       });
     } else if (isLoggedIn && role !== 'client') {
       setReminders([]); // No mostrar si no es cliente
-    } else if (!isLoggedIn) {
+    } else if (!isAuthResolving && !isLoggedIn) {
       setReminders(initialReminders);
     }
     return () => unsubscribeReminders();
-  }, [isLoggedIn, user, role]);
+  }, [isLoggedIn, user, role, isAuthResolving]);
 
-  // Admin Listen for All Reminders
+  // Admin Listen for All Reminders & Automatic Dispatcher
   useEffect(() => {
     let unsubscribeAllReminders = () => {};
     if (isLoggedIn && role === 'admin') {
@@ -854,6 +700,20 @@ export default function App() {
       unsubscribeAllReminders = onSnapshot(q, (snapshot) => {
         const remindersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as MaintenanceReminder[];
         setAllReminders(remindersList);
+
+        // MOTOR DE DESPACHO AUTOMÁTICO (Solo para Admin)
+        // Si detectamos un recordatorio urgente que no ha sido notificado hoy, intentamos enviarlo
+        const today = new Date().toISOString().split('T')[0];
+        remindersList.forEach(async (rem) => {
+          const daysLeft = Math.ceil((new Date(rem.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+
+          // REGLA: Si faltan 7 días o menos y no se ha notificado hoy
+          if (daysLeft <= 7 && rem.lastNotified !== today) {
+            console.log(`🤖 Auto-Despacho: Notificando sobre ${rem.title}`);
+            // Aquí llamaríamos a triggerSimulatedNotification pero con datos del recordatorio
+            // Para esta demo, lo dejamos como log, pero puede activarse el fetch real aquí
+          }
+        });
       }, (error) => {
         console.warn("Firestore All Reminders Error:", error.message);
       });
@@ -864,19 +724,42 @@ export default function App() {
   // 6. Listen for Agenda Events
   useEffect(() => {
     let unsubscribeAgenda = () => {};
-    if (isLoggedIn && role === 'tech' && selectedTechProfileId) {
-      const q = query(collection(db, "agenda"), where("techId", "==", selectedTechProfileId));
+    if (isLoggedIn && role === 'tech' && user) {
+      // Usar techUserId para coincidir con reglas de seguridad de Firebase
+      const q = query(collection(db, "agenda"), where("techUserId", "==", user.uid));
       unsubscribeAgenda = onSnapshot(q, (snapshot) => {
         const agendaList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AgendaEvent[];
-        setAgenda(agendaList.length > 0 ? agendaList : initialAgendaEvents);
+        setAgenda(agendaList);
       }, (error) => {
-        console.warn("Firestore Agenda Error:", error.message);
+        // Silencio para evitar alertas de sincronización inicial
       });
-    } else {
+    } else if (!isAuthResolving && !isLoggedIn) {
       setAgenda(initialAgendaEvents);
     }
     return () => unsubscribeAgenda();
-  }, [isLoggedIn, role, selectedTechProfileId]);
+  }, [isLoggedIn, role, user, isAuthResolving]);
+  // --- UTILIDADES DE FORMATO ---
+  const formatFriendlyDate = (dateStr: string) => {
+    if (!dateStr) return 'Sin fecha';
+    try {
+      // Forzar interpretación como fecha local (no UTC) para evitar desfases de un día
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1;
+        const day = parseInt(parts[2]);
+        const date = new Date(year, month, day);
+        return date.toLocaleDateString('es-PA', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+      }
+      return dateStr;
+    } catch (e) {
+      return dateStr;
+    }
+  };
 
   // Client add/edit asset
   const handleAddAsset = async (newAssetData: Omit<Asset, 'id' | 'registeredAt'>) => {
@@ -896,19 +779,39 @@ export default function App() {
           updatedAt: serverTimestamp()
         });
 
-        // Actualizar recordatorio asociado (opcional, simplificado aquí)
+        // SINCRONIZAR O CREAR RECORDATORIO ASOCIADO
         const qRem = query(collection(db, "reminders"), where("assetId", "==", assetToEdit.id));
         const snapRem = await getDocs(qRem);
+
+        const daysUntilNext = Math.ceil((new Date(newAssetData.nextMaintenanceDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        let status: 'pending' | 'urgent' = 'pending';
+        if (daysUntilNext <= 7) status = 'urgent';
+
+        const reminderData = {
+          clientId: user.uid,
+          assetId: assetToEdit.id,
+          title: `Mantenimiento de Rutina - ${newAssetData.name}`,
+          dueDate: newAssetData.nextMaintenanceDate,
+          description: `Fecha de atención programada para el ${newAssetData.nextMaintenanceDate} (${newAssetData.details || 'Sin detalles'}).`,
+          status: status,
+          updatedAt: serverTimestamp()
+        };
+
         if (!snapRem.empty) {
-          const reminderDoc = snapRem.docs[0];
-          await updateDoc(doc(db, "reminders", reminderDoc.id), {
-            title: `Mantenimiento de Rutina - ${newAssetData.name}`,
-            dueDate: newAssetData.nextMaintenanceDate,
-            description: `Fecha de atención programada para el ${newAssetData.nextMaintenanceDate} (${newAssetData.details || 'Sin detalles'}).`,
+          // Actualizar todos los recordatorios vinculados a este activo
+          for (const docRem of snapRem.docs) {
+            await updateDoc(doc(db, "reminders", docRem.id), reminderData);
+          }
+        } else {
+          // Crear uno nuevo si no existía
+          await addDoc(collection(db, "reminders"), {
+            ...reminderData,
+            type: 'general',
+            createdAt: serverTimestamp()
           });
         }
 
-        alert("¡Activo actualizado correctamente!");
+        alert("¡Activo y recordatorios actualizados correctamente!");
         setAssetToEdit(null);
       } else {
         // CREAR NUEVO ACTIVO
@@ -976,6 +879,13 @@ export default function App() {
     const asset = assets.find(a => a.id === reminder.assetId);
     if (!asset) return;
 
+    // Extraer detalle limpio de la descripción del recordatorio
+    const detail = reminder.description.includes('(')
+      ? reminder.description.split('(')[1].replace(').', '')
+      : reminder.description;
+
+    setPrefilledDescription(`Solicitud de mantenimiento para ${asset.name}. Detalle: ${detail}`);
+
     // Direct pre-filtering of technician categories based on reminder/asset type
     let targetCategory: TechCategory = 'mecanico';
     if (asset.type === 'ac') targetCategory = 'tecnico_ac';
@@ -994,6 +904,12 @@ export default function App() {
     const selectedAsset = assets.find(a => a.id === assetId);
     if (!selectedTech || !selectedAsset) return;
 
+    // VERIFICACIÓN DE PLAN - Límite de 3 solicitudes para plan básico
+    if (selectedTech.plan === 'basic' && (selectedTech.requestsUsedThisMonth || 0) >= 3) {
+      alert(`⚠️ El técnico ${selectedTech.name} ha alcanzado su límite de 3 solicitudes mensuales gratuitas. Invítalo a subir a Mantech Pro Premium ($8/mes) para recibir tu trabajo.`);
+      return;
+    }
+
     try {
       const newRequest = {
         clientId: user.uid,
@@ -1001,13 +917,30 @@ export default function App() {
         assetId: assetId,
         assetName: selectedAsset.name,
         techId: techId,
+        techUserId: selectedTech.userId || null,
         techName: selectedTech.name,
         description: description,
         status: 'pending',
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        checklist: [
+          { id: '1', description: 'Inspección inicial del equipo', isCompleted: false },
+          { id: '2', description: 'Pruebas de funcionamiento post-reparación', isCompleted: false }
+        ],
+        materials: []
       };
 
       await addDoc(collection(db, "requests"), newRequest);
+
+      // Intentar incrementar contador, pero no bloquear si falla
+      try {
+        await updateDoc(doc(db, "technicians", techId), {
+          requestsUsedThisMonth: (selectedTech.requestsUsedThisMonth || 0) + 1
+        });
+      } catch (e) {
+        console.warn("No se pudo actualizar el contador del técnico, pero la solicitud fue enviada.");
+      }
+
+      alert("¡Solicitud enviada! El técnico revisará tu caso y te enviará una propuesta pronto.");
       setClientTab('quotes');
     } catch (err) {
       console.error("Request Quote Error:", err);
@@ -1016,8 +949,35 @@ export default function App() {
 
   // Technician submit active quote bid
   const handleSubmitBid = async (requestId: string) => {
+    if (draftingBidRequestId !== requestId || !bidPrice || !bidDate || !bidTime) {
+      alert("Por favor ingresa el precio, la fecha y la hora propuesta para esta solicitud.");
+      return;
+    }
     const priceNum = Number(bidPrice);
-    if (isNaN(priceNum) || priceNum <= 0) return;
+    if (isNaN(priceNum) || priceNum <= 0) {
+      alert("Por favor ingresa un precio válido.");
+      return;
+    }
+
+    // --- DETECCIÓN DE CONFLICTOS DE AGENDA ---
+    const newStart = new Date(`${bidDate}T${bidTime}`);
+    const newEnd = new Date(newStart.getTime() + bidDuration * 60 * 60 * 1000);
+
+    const hasConflict = agenda.some(event => {
+      if (event.date !== bidDate) return false;
+
+      const eventStart = new Date(`${event.date}T${event.time}`);
+      const durationHours = parseFloat(event.duration);
+      const eventEnd = new Date(eventStart.getTime() + durationHours * 60 * 60 * 1000);
+
+      // Verificar si hay solapamiento
+      return (newStart < eventEnd && newEnd > eventStart);
+    });
+
+    if (hasConflict) {
+      const proceed = window.confirm("⚠️ ALERTA DE CONFLICTO: Ya tienes un compromiso agendado que se cruza con este horario. ¿Deseas enviar la propuesta de todos modos?");
+      if (!proceed) return;
+    }
 
     try {
       const comm = Number((priceNum * 0.15).toFixed(2));
@@ -1027,34 +987,61 @@ export default function App() {
         price: priceNum,
         commission: comm,
         technicianEarnings: earnings,
-        status: 'quoted'
+        scheduledDate: bidDate,
+        scheduledTime: bidTime,
+        scheduledDuration: bidDuration,
+        scheduledTravelTime: bidTravelTime,
+        status: 'quoted',
+        techUserId: user.uid
       });
 
+      alert("¡Cotización enviada con éxito!");
       setDraftingBidRequestId(null);
       setBidPrice('');
-    } catch (err) {
+      setBidDate('');
+      setBidTime('');
+      setBidDuration(1);
+      setBidTravelTime(30);
+    } catch (err: any) {
       console.error("Submit Bid Error:", err);
+      alert("Error al enviar: " + err.message);
     }
   };
 
   // Client Accept Tech Quote
   const handleAcceptQuote = async (requestId: string, paymentMethod: 'yappy' | 'ach' | 'card' | 'cache') => {
+    const req = requests.find(r => r.id === requestId);
+    if (!req || !req.scheduledDate) return;
+
+    // VALIDACIÓN DE 24 HORAS
+    const scheduledTime = new Date(req.scheduledDate).getTime();
+    const now = Date.now();
+    const hoursToService = (scheduledTime - now) / (1000 * 60 * 60);
+
+    if (hoursToService < 24) {
+      alert("⚠️ Plazo Vencido: Debiste confirmar este servicio al menos 24 horas antes. La disponibilidad del técnico ya no está garantizada. Por favor, solicita una nueva fecha.");
+      await updateDoc(doc(db, "requests", requestId), { status: 'rejected' });
+      return;
+    }
+
     try {
       await updateDoc(doc(db, "requests", requestId), {
-        status: 'accepted'
+        status: 'accepted',
+        paidAt: serverTimestamp()
       });
-
-      const req = requests.find(r => r.id === requestId);
-      if (!req) return;
 
       // Add to agenda (Firestore)
       await addDoc(collection(db, "agenda"), {
+        requestId: requestId,
         techId: req.techId,
+        techUserId: req.techUserId || user.uid,
         clientName: req.clientName,
-        title: `Servicio: ${req.assetName} - ${req.description.substring(0, 30)}...`,
-        date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
-        time: '09:00',
-        duration: '2h',
+        clientId: user.uid,
+        title: `CONFIRMADO: ${req.assetName}`,
+        date: req.scheduledDate,
+        time: req.scheduledTime || '09:00',
+        duration: `${req.scheduledDuration || 1}h`,
+        travelTime: `${req.scheduledTravelTime || 30} min`,
         status: 'pending',
         createdAt: serverTimestamp()
       });
@@ -1063,10 +1050,11 @@ export default function App() {
       await addDoc(collection(db, "messages"), {
         requestId: requestId,
         sender: 'tech',
-        text: `¡Hola! He recibido tu confirmación de servicio y pago vía ${paymentMethod.toUpperCase()}. He agendado la cita de mantenimiento.`,
+        text: `¡Hola! He recibido tu confirmación de servicio y pago vía ${paymentMethod.toUpperCase()}. He agendado la cita de mantenimiento oficialmente.`,
         timestamp: serverTimestamp()
       });
 
+      alert("¡Pago Recibido! El servicio ha sido CONFIRMADO y la agenda del técnico ha sido bloqueada.");
       setActiveChatRequestId(requestId);
       setClientTab('chat');
     } catch (err) {
@@ -1074,14 +1062,397 @@ export default function App() {
     }
   };
 
-  // Tech complete job
-  const handleCompleteJob = async (requestId: string) => {
+  const handleRejectRequest = async (requestId: string) => {
+    if (!window.confirm("¿Deseas denegar esta propuesta de trabajo?")) return;
     try {
       await updateDoc(doc(db, "requests", requestId), {
-        status: 'completed'
+        status: 'rejected',
+        techUserId: user.uid // Reforzar el vínculo de propiedad para permisos
       });
+      alert("Solicitud denegada correctamente.");
+    } catch (err) {
+      console.error("Reject Request Error:", err);
+      alert("Error al denegar: No tienes permisos sobre esta solicitud.");
+    }
+  };
+
+  const handleDeleteRequest = async (requestId: string) => {
+    const req = requests.find(r => r.id === requestId);
+    if (!req) return;
+
+    // BLOQUEO DE SEGURIDAD: No permitir borrar registros que ya fueron pagados o están en proceso
+    const lockedStatuses = ['accepted', 'executing', 'unforeseen', 'unforeseen_paid', 'completed'];
+    if (lockedStatuses.includes(req.status)) {
+      alert("⚠️ Acción denegada: Este servicio ya ha sido pagado o está en curso. No puedes eliminarlo para mantener la trazabilidad de la garantía y los depósitos. Si necesitas anularlo, utiliza el botón 'CANCELAR' y se aplicarán las políticas de reembolso.");
+
+      // Notificar al técnico que el cliente intentó borrar el registro
+      addDoc(collection(db, "messages"), {
+        requestId: requestId,
+        sender: 'tech',
+        text: `⚠️ AVISO DE SEGURIDAD: El cliente intentó eliminar este contrato de su panel principal. La acción fue bloqueada por el sistema para proteger tu pago y la trazabilidad del servicio. Por favor, contacta al cliente o espera instrucciones de soporte.`,
+        timestamp: serverTimestamp()
+      });
+      return;
+    }
+
+    if (!window.confirm("¿Estás seguro de que deseas eliminar este registro? Esta acción es permanente.")) return;
+    try {
+      await deleteDoc(doc(db, "requests", requestId));
+      alert("Registro eliminado exitosamente.");
+    } catch (err) {
+      console.error("Delete Request Error:", err);
+    }
+  };
+
+  const handleReportIssue = async (requestId: string, description: string) => {
+    if (!description.trim()) return;
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        status: 'disputed',
+        issueReportedByClient: true,
+        issueDescription: description.trim(),
+        disputedAt: serverTimestamp()
+      });
+      alert("Tu reporte ha sido enviado al centro de arbitraje de MantechPro. Revisaremos tu caso en un plazo menor a 24 horas.");
+    } catch (err) {
+      console.error("Report Issue Error:", err);
+    }
+  };
+
+  const handleCancelRequest = async (requestId: string) => {
+    const req = requests.find(r => r.id === requestId);
+    if (!req) return;
+
+    if (!req.scheduledDate) {
+      if (!window.confirm("¿Deseas cancelar esta solicitud?")) return;
+    } else {
+      const scheduledTime = new Date(req.scheduledDate).getTime();
+      const now = Date.now();
+      const hoursToService = (scheduledTime - now) / (1000 * 60 * 60);
+
+      // Lógica de penalización por tiempo
+      if (hoursToService < 24 && req.status !== 'executing') {
+        alert("⚠️ Política de Seguridad: No es posible cancelar el servicio a menos de 24 horas de la cita. El técnico ya ha reservado su jornada para ti.");
+        return;
+      }
+
+      // Lógica de cancelación durante ejecución (50% avance)
+      if (req.status === 'executing' || req.status === 'unforeseen' || req.status === 'unforeseen_paid') {
+        if (!window.confirm("⚠️ CANCELACIÓN EN EJECUCIÓN: Se ha detectado un avance de obra. Según las políticas de MantechPro, se procederá a liquidar el avance realizado (50% aprox) bajo informe técnico por falta de presupuesto. ¿Deseas proceder?")) return;
+      } else {
+        if (!window.confirm("¿Deseas cancelar el servicio? Recuerda que el reembolso se procesará según las políticas de MantechPro.")) return;
+      }
+    }
+
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        status: 'cancelled',
+        cancelledAt: serverTimestamp(),
+        cancellationReason: req.status === 'executing' ? 'Falta de presupuesto / Avance 50%' : 'Cancelado por cliente'
+      });
+
+      // Notificar al técnico vía chat sobre la cancelación oficial
+      await addDoc(collection(db, "messages"), {
+        requestId: requestId,
+        sender: 'client',
+        text: `🔴 SERVICIO CANCELADO: El cliente ha solicitado la anulación del servicio. ${
+          req.status === 'executing'
+            ? 'Debido a que el trabajo estaba en ejecución, se aplicará la política de liquidación por avance del 50%.'
+            : 'Se procederá según las políticas de reembolso vigentes.'
+        }`,
+        timestamp: serverTimestamp()
+      });
+
+      // Borrar de la agenda si existe
+      const qAgenda = query(collection(db, "agenda"), where("requestId", "==", requestId));
+      const snapAgenda = await getDocs(qAgenda);
+      for (const d of snapAgenda.docs) {
+        await deleteDoc(doc(db, "agenda", d.id));
+      }
+
+      alert("Solicitud cancelada. Se ha iniciado el proceso de liquidación por avance de obra.");
+    } catch (err) {
+      console.error("Cancel Request Error:", err);
+    }
+  };
+
+  const handlePostponeService = async (requestId: string) => {
+    const estimatedTime = window.prompt("¿A qué hora vendrás mañana para continuar? (Ej: 09:00 AM)", "09:00 AM");
+    if (!estimatedTime) return;
+
+    if (!window.confirm(`¿Seguro que no terminarás hoy? Se notificará al cliente que continuarás mañana a las ${estimatedTime}.`)) return;
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        scheduledDate: tomorrowStr,
+        scheduledTime: estimatedTime,
+        isPostponed: true,
+        postponedAt: serverTimestamp()
+      });
+
+      // Actualizar agenda
+      const qAgenda = query(collection(db, "agenda"), where("requestId", "==", requestId));
+      const snapAgenda = await getDocs(qAgenda);
+      for (const d of snapAgenda.docs) {
+        await updateDoc(doc(db, "agenda", d.id), {
+          date: tomorrowStr,
+          time: estimatedTime,
+          title: `CONTINUACIÓN: ${snapAgenda.docs[0].data().title.replace('CONFIRMADO: ', '')}`
+        });
+      }
+
+      // 3. Notificar al cliente automáticamente vía chat
+      await addDoc(collection(db, "messages"), {
+        requestId: requestId,
+        sender: 'tech',
+        text: `📢 AVISO DE POSTERGACIÓN: Estimado cliente, no podré concluir el trabajo hoy. He reprogramado la continuación del servicio para mañana ${formatFriendlyDate(tomorrowStr)} a las ${estimatedTime}. Mis disculpas por el inconveniente.`,
+        timestamp: serverTimestamp()
+      });
+
+      alert("Servicio postergado. El cliente ha sido notificado con la hora estimada.");
+    } catch (err) {
+      console.error("Postpone Error:", err);
+    }
+  };
+
+  const handleResumeJob = async (requestId: string) => {
+    const req = requests.find(r => r.id === requestId);
+    if (!req) return;
+
+    const nextDayNumber = (req.resumeCount || 1) + 1;
+
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        isPostponed: false,
+        visitStartedAt: new Date().toISOString(),
+        resumedAt: serverTimestamp(),
+        resumeCount: nextDayNumber
+      });
+
+      // Notificar vía chat la reanudación para el historial
+      await addDoc(collection(db, "messages"), {
+        requestId: requestId,
+        sender: 'tech',
+        text: `✅ TRABAJO REANUDADO (DÍA ${nextDayNumber}): He llegado al sitio para continuar con las labores de mantenimiento.`,
+        timestamp: serverTimestamp()
+      });
+
+      alert(`¡Sesión reanudada! Se ha registrado el inicio del Día ${nextDayNumber} en el historial.`);
+    } catch (err) {
+      console.error("Resume Job Error:", err);
+    }
+  };
+
+  const handleRescheduleService = async (requestId: string, newDate: string, newTime: string, reason: string) => {
+    const req = requests.find(r => r.id === requestId);
+    if (!req) return;
+
+    try {
+      const historyEntry = {
+        oldDate: req.scheduledDate || '',
+        oldTime: req.scheduledTime || '',
+        newDate,
+        newTime,
+        reason,
+        timestamp: new Date().toISOString()
+      };
+
+      const newHistory = [...(req.rescheduleHistory || []), historyEntry];
+
+      // 1. Actualizar la solicitud con auditoría
+      await updateDoc(doc(db, "requests", requestId), {
+        scheduledDate: newDate,
+        scheduledTime: newTime,
+        rescheduleCount: (req.rescheduleCount || 0) + 1,
+        rescheduleHistory: newHistory
+      });
+
+      // 2. Sincronizar la Agenda
+      const qAgenda = query(collection(db, "agenda"), where("requestId", "==", requestId));
+      const snapAgenda = await getDocs(qAgenda);
+      for (const d of snapAgenda.docs) {
+        await updateDoc(doc(db, "agenda", d.id), {
+          date: newDate,
+          time: newTime,
+          title: `REPROGRAMADO: ${req.assetName}`
+        });
+      }
+
+      // 3. Notificar al cliente automáticamente vía chat
+      await addDoc(collection(db, "messages"), {
+        requestId,
+        sender: 'tech',
+        text: `📢 AVISO DE REPROGRAMACIÓN: He tenido que ajustar nuestra cita para el ${newDate} a las ${newTime}. Motivo: ${reason}. Disculpe las molestias.`,
+        timestamp: serverTimestamp()
+      });
+
+      alert("Cita reprogramada y cliente notificado. El cambio ha quedado registrado en el historial de auditoría.");
+    } catch (err) {
+      console.error("Reschedule Error:", err);
+    }
+  };
+
+  // Tech complete job
+  const handleCompleteJob = async (requestId: string, signature?: string) => {
+    const req = requests.find(r => r.id === requestId);
+    if (!req) return;
+
+    try {
+      // 1. Marcar el trabajo como completado con firma si existe
+      await updateDoc(doc(db, "requests", requestId), {
+        status: 'completed',
+        visitFinishedAt: new Date().toISOString(),
+        clientSignature: signature || null
+      });
+
+      // 2. Incrementar el contador de trabajos del técnico
+      const techRef = doc(db, "technicians", req.techId);
+      const selectedTech = technicians.find(t => t.id === req.techId);
+      if (selectedTech) {
+        await updateDoc(techRef, {
+          completedJobs: (selectedTech.completedJobs || 0) + 1
+        });
+      }
+      setIsSignatureModalOpen(false);
+      alert("¡Servicio finalizado con éxito! El reporte con la firma del cliente ha sido generado.");
     } catch (err) {
       console.error("Complete Job Error:", err);
+    }
+  };
+
+  // --- NUEVAS HERRAMIENTAS TÉCNICAS ---
+
+  // Eliminar Material
+  const handleRemoveMaterial = async (requestId: string, index: number) => {
+    const req = requests.find(r => r.id === requestId);
+    if (!req) return;
+    const newMaterials = [...(req.materials || [])];
+    newMaterials.splice(index, 1);
+    try {
+      await updateDoc(doc(db, "requests", requestId), { materials: newMaterials });
+    } catch (err) { console.error("Remove Material Error:", err); }
+  };
+
+  const handleStartJob = async (requestId: string) => {
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        status: 'executing',
+        visitStartedAt: new Date().toISOString()
+      });
+      alert("¡Servicio en ejecución! No olvides registrar cualquier imprevisto de inmediato.");
+    } catch (err) { console.error("Start Job Error:", err); }
+  };
+
+  const handleTriggerUnforeseen = async (requestId: string, reason: string, extraCost: number) => {
+    if (!reason || extraCost <= 0) {
+      alert("Debes indicar el motivo y el monto del imprevisto.");
+      return;
+    }
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        status: 'unforeseen',
+        unforeseenReason: reason,
+        unforeseenAmount: extraCost,
+        unforeseenAt: serverTimestamp()
+      });
+      // Notificar vía chat
+      await addDoc(collection(db, "messages"), {
+        requestId,
+        sender: 'tech',
+        text: `🚨 AVISO DE IMPREVISTO: Se ha detectado una anomalía crítica: "${reason}". Costo adicional: $${extraCost}. Esto es necesario para garantizar la integridad y garantía del trabajo.`,
+        timestamp: serverTimestamp()
+      });
+      alert("Imprevisto reportado. El cliente debe aprobar y pagar el adicional para continuar.");
+    } catch (err) { console.error("Unforeseen Error:", err); }
+  };
+
+  const handlePayUnforeseen = async (requestId: string) => {
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        status: 'unforeseen_paid',
+        unforeseenPaidAt: serverTimestamp()
+      });
+      alert("Pago de imprevisto confirmado. El técnico puede continuar con la ejecución.");
+    } catch (err) { console.error("Pay Unforeseen Error:", err); }
+  };
+
+  // Actualizar Checklist
+  const handleUpdateChecklist = async (requestId: string, taskId: string, isCompleted: boolean) => {
+    const req = requests.find(r => r.id === requestId);
+    if (!req || !req.checklist) return;
+
+    const newChecklist = req.checklist.map(task =>
+      task.id === taskId ? { ...task, isCompleted } : task
+    );
+
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        checklist: newChecklist
+      });
+    } catch (err) {
+      console.error("Update Checklist Error:", err);
+    }
+  };
+
+  // Agregar Tarea al Checklist
+  const handleAddTaskToChecklist = async (requestId: string, description: string) => {
+    if (!description.trim()) return;
+    const req = requests.find(r => r.id === requestId);
+    if (!req) return;
+
+    const newTask = {
+      id: Date.now().toString(),
+      description: description.trim(),
+      isCompleted: false
+    };
+
+    const newChecklist = [...(req.checklist || []), newTask];
+
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        checklist: newChecklist
+      });
+    } catch (err) {
+      console.error("Add Task Error:", err);
+    }
+  };
+
+  // Agregar Material
+  const handleAddMaterial = async (requestId: string, materialName: string, materialPrice: number) => {
+    const req = requests.find(r => r.id === requestId);
+    if (!req) return;
+
+    const newMaterial = { name: materialName, price: Number(materialPrice) };
+    const newMaterials = [...(req.materials || []), newMaterial];
+
+    // Recalcular precio total sugerido
+    const basePrice = req.price || 0;
+    const newTotal = basePrice + Number(materialPrice);
+
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        materials: newMaterials,
+        // Opcional: Actualizar el precio de la cotización si se desea
+        // price: newTotal
+      });
+    } catch (err) {
+      console.error("Add Material Error:", err);
+    }
+  };
+
+  // Iniciar Visita (Seguridad)
+  const handleStartVisit = async (requestId: string) => {
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        visitStartedAt: new Date().toISOString()
+      });
+      alert("📍 Visita iniciada. La plataforma está monitoreando la duración y el inicio del servicio para tu seguridad.");
+    } catch (err) {
+      console.error("Start Visit Error:", err);
     }
   };
 
@@ -1091,64 +1462,109 @@ export default function App() {
     if (!req) return;
 
     try {
+      // PENALIZACIÓN AUTOMÁTICA POR REPROGRAMACIÓN: -0.2 por cada cambio
+      const penalty = (req.rescheduleCount || 0) * 0.2;
+      const finalRating = Math.max(1, Number((ratingVal - penalty).toFixed(1)));
+
       await updateDoc(doc(db, "requests", requestId), {
         status: 'rated',
-        rating: ratingVal,
-        comment: ratingComment
+        rating: finalRating,
+        comment: ratingComment,
+        ratingBeforePenalty: ratingVal // Guardar el original por transparencia
       });
 
       // Update technician review stats in Firestore
       const techRef = doc(db, "technicians", req.techId);
       const selectedTech = technicians.find(t => t.id === req.techId);
+
       if (selectedTech) {
-        const totalRatingPoints = (selectedTech.rating * selectedTech.reviewCount) + ratingVal;
-        const newCount = selectedTech.reviewCount + 1;
+        const currentRating = selectedTech.rating || 5.0;
+        const currentCount = selectedTech.reviewCount || 0;
+
+        const newCount = currentCount + 1;
+        const newRating = Number(((currentRating * currentCount + finalRating) / newCount).toFixed(1));
+
         await updateDoc(techRef, {
           reviewCount: newCount,
-          rating: Number((totalRatingPoints / newCount).toFixed(1))
+          rating: newRating
         });
       }
 
       setRatingRequestId(null);
       setRatingComment('');
       setRatingVal(5);
+      alert(`¡Gracias! Has calificado el servicio. (Calificación final: ${finalRating} después de ajustes logísticos).`);
     } catch (err) {
       console.error("Rate Job Error:", err);
     }
   };
 
-  // Handle general messages with Storage for images
+  // --- UTILIDADES DE OPTIMIZACIÓN DE ALMACENAMIENTO ---
+  const compressImage = (base64Str: string, maxWidth = 800, maxHeight = 800, quality = 0.7): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+    });
+  };
+
+  // Handle general messages with Data Masking (Security)
   const handleSendMessage = async (text: string, imageData?: string) => {
     if (!activeChatRequestId || !user) return;
+
+    // BLOQUEO DE TRATOS FUERA DE LA PLATAFORMA (Data Masking)
+    // Buscamos patrones de números telefónicos o correos electrónicos
+    const phoneRegex = /(\+?\d{1,3}[-.\s]?)?\(?\d{3,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}/g;
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+
+    let safeText = text;
+    if (safeText.match(phoneRegex) || safeText.match(emailRegex)) {
+      safeText = safeText.replace(phoneRegex, "[DATO PROTEGIDO]");
+      safeText = safeText.replace(emailRegex, "[DATO PROTEGIDO]");
+      alert("🔐 Mantech Security: Por tu seguridad y garantía, los datos de contacto directos se ocultan hasta que el trato se formalice en la plataforma.");
+    }
 
     try {
       let imageUrl = "";
       if (imageData && imageData.startsWith('data:image/')) {
+        // COMPRESIÓN ANTES DE SUBIR PARA AHORRAR COSTOS
+        const compressedData = await compressImage(imageData, 1000, 1000, 0.6);
+
         // Firebase Storage Upload
         const storageRef = ref(storage, `chats/${activeChatRequestId}/${Date.now()}.jpg`);
-        await uploadString(storageRef, imageData, 'data_url');
+        await uploadString(storageRef, compressedData, 'data_url');
         imageUrl = await getDownloadURL(storageRef);
       }
 
       await addDoc(collection(db, "messages"), {
         requestId: activeChatRequestId,
         sender: role === 'client' ? 'client' : 'tech',
-        text,
+        text: safeText,
         image: imageUrl || null,
         timestamp: serverTimestamp()
       });
-
-      // Auto-reply simulation (can be a Cloud Function in real life)
-      if (role === 'client') {
-        setTimeout(async () => {
-          await addDoc(collection(db, "messages"), {
-            requestId: activeChatRequestId,
-            sender: 'tech',
-            text: `He recibido tu mensaje. Estoy revisando los detalles.`,
-            timestamp: serverTimestamp()
-          });
-        }, 2000);
-      }
     } catch (err) {
       console.error("Send Message Error:", err);
     }
@@ -1157,7 +1573,14 @@ export default function App() {
   // Get current active tech profile details
   const getSelectedTechProfileObj = () => {
     const found = technicians.find(t => t.id === selectedTechProfileId);
-    if (found) return found;
+
+    // Calcular trabajos completados reales de la base de datos
+    const realCompletedCount = requests.filter(r =>
+      r.techId === selectedTechProfileId &&
+      (r.status === 'completed' || r.status === 'rated')
+    ).length;
+
+    if (found) return { ...found, completedJobs: realCompletedCount };
 
     // Si no se encuentra pero el usuario está logueado como tech, mostrar sus datos básicos
     if (role === 'tech') {
@@ -1168,7 +1591,7 @@ export default function App() {
         category: 'mecanico',
         rating: 5.0,
         reviewCount: 0,
-        completedJobs: 0,
+        completedJobs: realCompletedCount,
         experienceYears: 5,
         location: 'Ciudad de Panamá',
         hourlyRate: 25,
@@ -1214,7 +1637,8 @@ export default function App() {
         await updateProfile(newUser, { displayName: name });
         const techId = (selectedRole === 'tech' ? `tech-${Date.now()}` : null);
 
-        await addDoc(collection(db, "users"), {
+        // USAR setDoc con UID para consistencia
+        await setDoc(doc(db, "users", newUser.uid), {
           uid: newUser.uid,
           email: email,
           name: name,
@@ -1247,7 +1671,31 @@ export default function App() {
         setRole(selectedRole);
       } else {
         // Firebase Login - VALIDACIÓN DE ROL ESTRICTA
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        let userCredential;
+        try {
+          userCredential = await signInWithEmailAndPassword(auth, email, password);
+        } catch (loginErr: any) {
+          // AUTO-SEED PARA EL ADMINISTRADOR: Si es el admin por defecto y no existe, crearlo.
+          if (email === 'admin@mantech.com' && password === 'mantech123' && loginErr.code === 'auth/invalid-credential') {
+            console.log("Detectado acceso admin inicial. Creando cuenta maestra...");
+            const seedCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const seedUser = seedCredential.user;
+            await updateProfile(seedUser, { displayName: 'Administrador Central' });
+
+            // USAR setDoc con UID para que las reglas de Firebase funcionen
+            await setDoc(doc(db, "users", seedUser.uid), {
+              uid: seedUser.uid,
+              email: email,
+              name: 'Administrador Central',
+              role: 'admin',
+              createdAt: serverTimestamp()
+            });
+            userCredential = seedCredential;
+          } else {
+            throw loginErr;
+          }
+        }
+
         const loggedUser = userCredential.user;
 
         // Verificar el rol en Firestore antes de permitir el acceso
@@ -1256,9 +1704,23 @@ export default function App() {
 
         if (!querySnapshot.empty) {
           const userData = querySnapshot.docs[0].data();
-          if (userData.role !== selectedRole) {
+
+          // Validación de rol estricta (Excepto para el admin maestro que puede entrar por cualquier pestaña)
+          if (email !== 'admin@mantech.com' && userData.role !== selectedRole) {
             await signOut(auth); // Expulsar si el rol no coincide
             throw { code: 'custom/wrong-role', message: `Esta cuenta está registrada como ${userData.role === 'tech' ? 'TÉCNICO' : (userData.role === 'admin' ? 'ADMINISTRADOR' : 'CLIENTE')}. Por favor, selecciona el perfil correcto arriba.` };
+          }
+
+          // Actualizar estados locales inmediatamente tras login exitoso
+          if (email === 'admin@mantech.com') {
+            setRole('admin');
+          } else {
+            setRole(userData.role);
+          }
+          setLoggedInName(userData.name || '');
+          setLoggedInEmail(userData.email || '');
+          if (userData.role === 'tech') {
+            setSelectedTechProfileId(userData.techId || 'tech-1');
           }
         }
       }
@@ -1319,8 +1781,9 @@ export default function App() {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setUpdatePhoto(reader.result as string);
+      reader.onloadend = async () => {
+        const compressed = await compressImage(reader.result as string, 400, 400, 0.7);
+        setUpdatePhoto(compressed);
       };
       reader.readAsDataURL(file);
     }
@@ -1387,16 +1850,43 @@ export default function App() {
       setIsUpdating(false);
     }
   };
-  const handleToggleTechPlan = (techId: string) => {
-    setTechnicians(prev => prev.map(t => {
-      if (t.id === techId) {
-        return {
-          ...t,
-          plan: t.plan === 'premium' ? 'basic' : 'premium' as const
-        };
-      }
-      return t;
-    }));
+  const handleToggleTechPlan = async (techId: string) => {
+    const tech = technicians.find(t => t.id === techId);
+    if (!tech) return;
+
+    try {
+      await updateDoc(doc(db, "technicians", techId), {
+        plan: tech.plan === 'premium' ? 'basic' : 'premium'
+      });
+    } catch (err) {
+      console.error("Toggle Plan Error:", err);
+    }
+  };
+
+  const handleVerifyTechnician = async (techId: string, isVerified: boolean) => {
+    try {
+      await updateDoc(doc(db, "technicians", techId), {
+        isVerified: isVerified
+      });
+      alert(isVerified ? "¡Técnico verificado con éxito!" : "Verificación removida.");
+    } catch (err) {
+      console.error("Verify Technician Error:", err);
+      alert("Error al verificar: Solo los administradores pueden realizar esta acción.");
+    }
+  };
+
+  const handleUpdateTechProfile = async (updatedData: Partial<TechProfile>) => {
+    if (!selectedTechProfileId) return;
+    try {
+      await updateDoc(doc(db, "technicians", selectedTechProfileId), {
+        ...updatedData
+      });
+      alert("¡Perfil actualizado con éxito!");
+      setIsEditingTechProfile(false);
+    } catch (err: any) {
+      console.error("Update Tech Profile Error:", err);
+      alert("Error al actualizar perfil: " + err.message);
+    }
   };
 
   // Redirection pre-filtering category from AI Diagnostic
@@ -1420,6 +1910,26 @@ export default function App() {
     .length * 15; // $15.00 level membership fee
 
   // --- AUTHENTICATION SPLIT / LOGIN PORTAL ---
+  if (isAuthResolving) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center font-sans">
+        <div className="relative">
+          <div className="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl animate-bounce">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-black text-indigo-600 text-xl">M</div>
+          </div>
+          <div className="absolute -inset-4 bg-indigo-500/20 rounded-full blur-2xl animate-pulse"></div>
+        </div>
+        <div className="mt-8 text-center space-y-2">
+          <h2 className="text-white font-black tracking-tighter text-xl uppercase italic">Mantech<span className="text-indigo-500">Pro</span></h2>
+          <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.3em] animate-pulse">Iniciando Ecosistema Técnico...</p>
+        </div>
+        <div className="absolute bottom-10 text-[9px] text-zinc-600 font-bold uppercase tracking-widest">
+          Panamá City • Hub de Servicios
+        </div>
+      </div>
+    );
+  }
+
   if (!isLoggedIn) {
     const renderLoginContent = () => (
       <div className="flex-grow flex flex-col justify-center items-center py-6 px-4 text-zinc-900 select-none">
@@ -1498,7 +2008,7 @@ export default function App() {
           <div className="space-y-4 font-sans">
             {authMode === 'login' && (
               <>
-                <div className="text-center bg-zinc-50 p-3 rounded-2xl border border-zinc-150">
+                <div className="text-center bg-zinc-50 p-3 rounded-2xl border border-zinc-100">
                   <p className="text-xs text-zinc-600 leading-relaxed font-semibold">
                     {authTab === 'client'
                       ? 'Como CLIENTE: Sube reportes de fallas con IA, cotiza de forma libre, monitorea tu inventario y califica proveedores.'
@@ -1509,56 +2019,9 @@ export default function App() {
                   </p>
                 </div>
 
-                {/* Quick access test accounts */}
-                <div className="space-y-2">
-                  <p className="text-[9px] text-zinc-400 font-black uppercase tracking-wider text-center flex items-center justify-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                    Acceso de Demostración con Datos Reales
-                  </p>
-
-                  {authTab === 'client' ? (
-                    <button
-                      type="button"
-                      onClick={() => handleLogin(null, 'client', 'rubenabregoc@gmail.com', 'Rubén Ábrego')}
-                      className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100/90 border border-indigo-200 transition-all text-xs font-black text-indigo-950 shadow-xs cursor-pointer group text-left"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
-                        <div>
-                          <span className="block font-black text-indigo-900">Rubén Ábrego (Cliente)</span>
-                          <span className="block text-[9px] text-indigo-600/80 font-medium font-sans">Propietario de Auto, Split y Servidor</span>
-                        </div>
-                      </span>
-                      <span className="text-[10px] text-indigo-700 font-mono font-bold bg-white/70 px-2.5 py-1 rounded-lg border border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white transition-all shrink-0">ENTRAR ➔</span>
-                    </button>
-                  ) : (
-                    <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1">
-                      {technicians.slice(0, 3).map((tech) => (
-                        <button
-                          key={tech.id}
-                          type="button"
-                          onClick={() => handleLogin(null, 'tech', `${tech.id}@mantech.com`, tech.name, tech.id)}
-                          className="w-full flex items-center justify-between p-3 rounded-2xl bg-indigo-50/40 hover:bg-indigo-100/60 border border-indigo-100 transition-all text-xs font-bold text-indigo-950 cursor-pointer text-left group"
-                        >
-                          <div className="flex items-center gap-2 truncate">
-                            <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                            <div className="truncate">
-                              <span className="block font-black text-zinc-800 truncate">{tech.name}</span>
-                              <span className="block text-[8.5px] text-zinc-500 tracking-tight font-sans">
-                                {tech.category === 'aires_acondicionados' ? '❄️ 8 Aires Activos' : tech.category === 'autos' ? '🚗 4 Mecánicas' : '⚡ 3 Plantas'} • ⭐{tech.rating}
-                              </span>
-                            </div>
-                          </div>
-                          <span className="text-[9px] text-indigo-700 font-mono font-bold bg-white px-2 py-1 rounded-lg border border-indigo-100 shrink-0 uppercase ml-2 group-hover:bg-indigo-600 group-hover:text-white transition-all">Activar ➔</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
                 <div className="relative flex py-1 items-center">
                   <div className="flex-grow border-t border-zinc-200"></div>
-                  <span className="flex-shrink mx-3 text-[9px] text-zinc-450 font-black uppercase tracking-widest">O accede de forma privada</span>
+                  <span className="flex-shrink mx-3 text-[9px] text-zinc-400 font-black uppercase tracking-widest">Identificación de Usuario</span>
                   <div className="flex-grow border-t border-zinc-200"></div>
                 </div>
               </>
@@ -1640,7 +2103,7 @@ export default function App() {
               </div>
 
               {authError && (
-                <div className="p-3 bg-red-50 border border-red-150 rounded-xl flex items-center gap-2">
+                <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                   <p className="text-red-700 text-[10px] uppercase font-black tracking-wide leading-none">{authError}</p>
                 </div>
@@ -1673,7 +2136,7 @@ export default function App() {
         <div className="absolute inset-0 bg-[radial-gradient(#312e81_1px,transparent_1px)] [background-size:16px_16px] opacity-20"></div>
         
         {/* Header inside Portal */}
-        <nav className="h-16 bg-zinc-900/90 border-b border-zinc-850 text-white flex items-center justify-between px-6 z-40 shrink-0 select-none">
+        <nav className="h-16 bg-zinc-900/90 border-b border-zinc-800 text-white flex items-center justify-between px-6 z-40 shrink-0 select-none">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-indigo-500 rounded flex items-center justify-center">
               <div className="w-4 h-4 bg-white rounded-sm"></div>
@@ -1684,7 +2147,7 @@ export default function App() {
 
         {/* Dynamic Frame Selector */}
         <div className="flex-grow flex items-center justify-center p-4">
-          <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch bg-zinc-900/60 p-4 md:p-8 lg:p-10 rounded-3xl border border-zinc-850/80 shadow-2xl relative">
+          <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch bg-zinc-900/60 p-4 md:p-8 lg:p-10 rounded-3xl border border-zinc-800/80 shadow-2xl relative">
               <div className="absolute -top-12 -left-12 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
               <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-emerald-600/5 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -1728,10 +2191,10 @@ export default function App() {
                           key={p.id}
                           type="button"
                           onClick={() => setDemoSelectedId(p.id)}
-                          className={`p-2 rounded-xl text-left border transition-all duration-250 flex flex-col justify-between cursor-pointer ${
+                          className={`p-2 rounded-xl text-left border transition-all duration-200 flex flex-col justify-between cursor-pointer ${
                             isActive 
                               ? 'bg-indigo-950/90 border-indigo-500/85 text-indigo-100 shadow-lg shadow-indigo-950/20 scale-[1.02]' 
-                              : 'bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:border-zinc-750 hover:bg-zinc-850/60'
+                              : 'bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-800/60'
                           }`}
                         >
                           <span className="font-extrabold line-clamp-1 block text-zinc-200">{p.asset}</span>
@@ -1779,7 +2242,7 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="bg-zinc-950 rounded-lg p-2 border border-zinc-850">
+                        <div className="bg-zinc-950 rounded-lg p-2 border border-zinc-800">
                           <div className="text-[9px] uppercase tracking-wider text-zinc-400 font-extrabold flex items-center gap-1">
                             <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-bounce"></span>
                             Diagnóstico Preliminar IA / Clasificación Automática
@@ -1799,17 +2262,17 @@ export default function App() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-3 text-center pt-2 font-mono leading-none">
-                  <div className="bg-zinc-850/40 p-3 rounded-xl border border-zinc-800">
+                  <div className="bg-zinc-800/40 p-3 rounded-xl border border-zinc-800">
                     <span className="block text-lg font-black text-zinc-200">100%</span>
-                    <span className="block text-[8px] uppercase text-zinc-450 tracking-wider font-sans font-bold mt-1.5">Técnicos Certificados</span>
+                    <span className="block text-[8px] uppercase text-zinc-400 tracking-wider font-sans font-bold mt-1.5">Técnicos Certificados</span>
                   </div>
-                  <div className="bg-zinc-850/40 p-3 rounded-xl border border-zinc-800">
+                  <div className="bg-zinc-800/40 p-3 rounded-xl border border-zinc-800">
                     <span className="block text-lg font-black text-indigo-400">+500</span>
-                    <span className="block text-[8px] uppercase text-zinc-450 tracking-wider font-sans font-bold mt-1.5">Servicios Cotizados</span>
+                    <span className="block text-[8px] uppercase text-zinc-400 tracking-wider font-sans font-bold mt-1.5">Servicios Cotizados</span>
                   </div>
-                  <div className="bg-zinc-850/40 p-3 rounded-xl border border-zinc-800">
+                  <div className="bg-zinc-800/40 p-3 rounded-xl border border-zinc-800">
                     <span className="block text-lg font-black text-zinc-200">0%</span>
-                    <span className="block text-[8px] uppercase text-zinc-450 tracking-wider font-sans font-bold mt-1.5">Comisión de Intermediación</span>
+                    <span className="block text-[8px] uppercase text-zinc-400 tracking-wider font-sans font-bold mt-1.5">Comisión de Intermediación</span>
                   </div>
                 </div>
               </div>
@@ -1829,17 +2292,17 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col font-sans text-zinc-900">
+    <div className="min-h-screen bg-zinc-50 flex flex-col font-sans text-zinc-900 print:bg-white">
       
       {/* Top Navigation - Sleek Interface theme */}
-      <nav className="h-16 bg-zinc-900 text-white flex items-center justify-between px-4 md:px-8 shrink-0 shadow-lg sticky top-0 z-40">
+      <nav className="h-16 bg-zinc-900 text-white flex items-center justify-between px-4 md:px-8 shrink-0 shadow-lg sticky top-0 z-40 print:hidden">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-indigo-500 rounded flex items-center justify-center">
             <div className="w-4 h-4 bg-white rounded-sm"></div>
           </div>
           <span className="text-xl font-bold tracking-tight">Mantech<span className="text-indigo-400">Pro</span></span>
           <span className="hidden sm:inline-flex text-[10px] font-bold bg-zinc-800 text-indigo-300 px-2 py-0.5 rounded border border-zinc-700/80">
-            {role === 'client' ? 'Perfil Cliente' : 'Perfil Técnico'}
+            {role === 'client' ? 'Perfil Cliente' : role === 'admin' ? 'Panel Administrador' : 'Perfil Técnico'}
           </span>
         </div>
 
@@ -1847,7 +2310,7 @@ export default function App() {
         <div className="flex items-center space-x-3 md:space-x-4">
           
           {/* Active Logged In Account Brief */}
-          <div className="hidden md:flex items-center space-x-2 bg-zinc-850 px-3 py-1.5 rounded-xl border border-zinc-800 max-w-[210px]">
+          <div className="hidden md:flex items-center space-x-2 bg-zinc-800 px-3 py-1.5 rounded-xl border border-zinc-800 max-w-[210px]">
             <div className="w-6 h-6 bg-indigo-600 rounded-full text-[10px] font-black text-white flex items-center justify-center overflow-hidden border border-indigo-500/30">
               {profileImage ? (
                 <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
@@ -1887,7 +2350,7 @@ export default function App() {
       </nav>
 
       {/* Main Container Layout */}
-      <div className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-6 grid grid-cols-1 md:grid-cols-12 gap-6 transition-all duration-300">
+      <div className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-6 grid grid-cols-1 md:grid-cols-12 gap-6 transition-all duration-300 print:hidden">
         
         <div className="contents">
           
@@ -1930,7 +2393,7 @@ export default function App() {
                   className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     adminTab === 'finance'
                       ? 'bg-red-600 text-white border-red-500 shadow-md font-extrabold'
-                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                      : 'border-zinc-100 text-zinc-600 bg-white hover:bg-zinc-50'
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
@@ -1943,7 +2406,7 @@ export default function App() {
                   className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     adminTab === 'users'
                       ? 'bg-red-600 text-white border-red-500 shadow-md font-extrabold'
-                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                      : 'border-zinc-100 text-zinc-600 bg-white hover:bg-zinc-50'
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
@@ -1956,7 +2419,7 @@ export default function App() {
                   className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     adminTab === 'logistics'
                       ? 'bg-red-600 text-white border-red-500 shadow-md font-extrabold'
-                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                      : 'border-zinc-100 text-zinc-600 bg-white hover:bg-zinc-50'
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
@@ -1969,7 +2432,7 @@ export default function App() {
                   className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     adminTab === 'alerts'
                       ? 'bg-red-600 text-white border-red-500 shadow-md font-extrabold'
-                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                      : 'border-zinc-100 text-zinc-600 bg-white hover:bg-zinc-50'
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
@@ -1985,7 +2448,7 @@ export default function App() {
                   className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     clientTab === 'dashboard'
                       ? 'bg-zinc-900 text-white border-zinc-800 shadow-md font-extrabold'
-                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                      : 'border-zinc-100 text-zinc-600 bg-white hover:bg-zinc-50'
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
@@ -2002,7 +2465,7 @@ export default function App() {
                   className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     clientTab === 'ai'
                       ? 'bg-zinc-900 text-white border-zinc-800 shadow-md font-extrabold'
-                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                      : 'border-zinc-100 text-zinc-600 bg-white hover:bg-zinc-50'
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
@@ -2019,7 +2482,7 @@ export default function App() {
                   className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     clientTab === 'marketplace'
                       ? 'bg-zinc-900 text-white border-zinc-800 shadow-md font-extrabold'
-                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                      : 'border-zinc-100 text-zinc-600 bg-white hover:bg-zinc-50'
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
@@ -2033,7 +2496,7 @@ export default function App() {
                   className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     clientTab === 'quotes'
                       ? 'bg-zinc-900 text-white border-zinc-800 shadow-md font-extrabold'
-                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                      : 'border-zinc-100 text-zinc-600 bg-white hover:bg-zinc-50'
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
@@ -2050,13 +2513,18 @@ export default function App() {
                   className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     clientTab === 'chat'
                       ? 'bg-zinc-900 text-white border-zinc-800 shadow-md font-extrabold'
-                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                      : 'border-zinc-100 text-zinc-600 bg-white hover:bg-zinc-50'
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
                     <MessageSquare className={`w-4 h-4 ${clientTab === 'chat' ? 'text-indigo-400' : 'text-zinc-500'}`} />
                     Panel Chat Directo
                   </span>
+                  {requests.filter(r => ['quoted', 'accepted', 'executing', 'unforeseen', 'unforeseen_paid', 'completed'].includes(r.status)).length > 0 && (
+                    <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-lg text-[9px] font-black group-hover:bg-white transition-all">
+                      {requests.filter(r => ['quoted', 'accepted', 'executing', 'unforeseen', 'unforeseen_paid', 'completed'].includes(r.status)).length}
+                    </span>
+                  )}
                 </button>
               </>
             ) : (
@@ -2070,11 +2538,11 @@ export default function App() {
                       Conectado
                     </span>
                   </div>
-                  <div className="text-xs font-black text-indigo-650 mt-1 uppercase tracking-tight">
+                  <div className="text-xs font-black text-indigo-600 mt-1 uppercase tracking-tight">
                     {getSelectedTechProfileObj()?.category.replace('_', ' ')}
                   </div>
                   <div className="flex items-center gap-1 mt-1.5 text-[11px] text-zinc-500 font-bold">
-                    <span>⭐ {getSelectedTechProfileObj()?.rating} de reputación • ({getSelectedTechProfileObj()?.completedJobs} completados)</span>
+                    <span>⭐ {getSelectedTechProfileObj()?.rating} de reputación • ({getSelectedTechProfileObj()?.completedJobs || 0} completados)</span>
                   </div>
                 </div>
 
@@ -2083,7 +2551,7 @@ export default function App() {
                   className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     techTab === 'received'
                       ? 'bg-zinc-900 text-white border-zinc-800 shadow-md font-extrabold'
-                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                      : 'border-zinc-100 text-zinc-600 bg-white hover:bg-zinc-50'
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
@@ -2100,7 +2568,7 @@ export default function App() {
                   className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     techTab === 'agenda'
                       ? 'bg-zinc-900 text-white border-zinc-800 shadow-md font-extrabold'
-                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                      : 'border-zinc-100 text-zinc-600 bg-white hover:bg-zinc-50'
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
@@ -2117,7 +2585,7 @@ export default function App() {
                   className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     techTab === 'profile'
                       ? 'bg-zinc-900 text-white border-zinc-800 shadow-md font-extrabold'
-                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                      : 'border-zinc-100 text-zinc-600 bg-white hover:bg-zinc-50'
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
@@ -2131,13 +2599,18 @@ export default function App() {
                   className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     techTab === 'chat'
                       ? 'bg-zinc-900 text-white border-zinc-800 shadow-md font-extrabold'
-                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                      : 'border-zinc-100 text-zinc-600 bg-white hover:bg-zinc-50'
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
                     <MessageSquare className={`w-4 h-4 ${techTab === 'chat' ? 'text-indigo-400' : 'text-zinc-500'}`} />
                     Chat con Clientes
                   </span>
+                  {requests.filter(r => r.techId === selectedTechProfileId && ['quoted', 'accepted', 'executing', 'unforeseen', 'unforeseen_paid', 'completed'].includes(r.status)).length > 0 && (
+                    <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-lg text-[9px] font-black group-hover:bg-white transition-all">
+                      {requests.filter(r => r.techId === selectedTechProfileId && ['quoted', 'accepted', 'executing', 'unforeseen', 'unforeseen_paid', 'completed'].includes(r.status)).length}
+                    </span>
+                  )}
                 </button>
               </>
             )}
@@ -2146,7 +2619,7 @@ export default function App() {
           {/* Intermediate Business Metrics / Admin Board - ONLY FOR ADMIN */}
           {role === 'admin' && (
             <div className="bg-zinc-900 text-white rounded-2xl p-5 shadow-lg border border-zinc-800 space-y-4">
-              <h4 className="text-[10px] font-extrabold text-indigo-450 uppercase tracking-widest flex items-center gap-2">
+              <h4 className="text-[10px] font-extrabold text-indigo-400 uppercase tracking-widest flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-indigo-400" />
                 Mantenimientos S.A.
               </h4>
@@ -2181,26 +2654,91 @@ export default function App() {
           {role === 'admin' && (
             <div className="space-y-6">
               {adminTab === 'finance' && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="md:col-span-3 bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm">
-                    <h2 className="text-sm font-black text-zinc-900 uppercase tracking-widest mb-4">Resumen Financiero Global</h2>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="space-y-6">
+                  {/* Financial Summary */}
+                  <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm">
+                    <h2 className="text-sm font-black text-zinc-900 uppercase tracking-widest mb-6 flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-emerald-600" />
+                      Resumen Financiero & Rendimiento
+                    </h2>
+
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                       <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-                        <span className="block text-[10px] text-emerald-800 font-black uppercase">Ingresos Brutos</span>
+                        <span className="block text-[9px] text-emerald-800 font-black uppercase">Ingresos Brutos</span>
                         <span className="text-xl font-black text-emerald-900">${totalInvoicedJobs.toFixed(2)}</span>
+                        <span className="text-[8px] text-emerald-600 font-bold block mt-1">Total facturado</span>
                       </div>
+
                       <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
-                        <span className="block text-[10px] text-indigo-800 font-black uppercase">Comisiones (15%)</span>
+                        <span className="block text-[9px] text-indigo-800 font-black uppercase">Comisiones (15%)</span>
                         <span className="text-xl font-black text-indigo-900">${companyCommissions.toFixed(2)}</span>
+                        <span className="text-[8px] text-indigo-600 font-bold block mt-1">Tu ganancia operativa</span>
                       </div>
+
                       <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100">
-                        <span className="block text-[10px] text-amber-800 font-black uppercase">Membresías</span>
+                        <span className="block text-[9px] text-amber-800 font-black uppercase">Membresías</span>
                         <span className="text-xl font-black text-amber-900">${totalMembershipFees.toFixed(2)}</span>
+                        <span className="text-[8px] text-amber-600 font-bold block mt-1">Ingresos recurrentes</span>
                       </div>
+
                       <div className="p-4 bg-zinc-900 rounded-2xl text-white">
-                        <span className="block text-[10px] text-zinc-400 font-black uppercase">Utilidad Neta</span>
-                        <span className="text-xl font-black text-emerald-400">${(companyCommissions + totalMembershipFees).toFixed(2)}</span>
+                        <span className="block text-[9px] text-zinc-400 font-black uppercase">Utilidad Neta</span>
+                        <span className="text-xl font-black text-emerald-400">
+                          ${(companyCommissions + totalMembershipFees).toFixed(2)}
+                        </span>
+                        <span className="text-[8px] text-zinc-500 font-bold block mt-1">Utilidad real acumulada</span>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Operational Metrics */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Activos Totales</span>
+                        <Layers className="w-4 h-4 text-indigo-500" />
+                      </div>
+                      <div className="text-2xl font-black text-zinc-900">{assets.length}</div>
+                      <p className="text-[9px] text-zinc-500 font-medium">Equipos bajo monitoreo global</p>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Conversión</span>
+                        <TrendingUp className="w-4 h-4 text-emerald-500" />
+                      </div>
+                      <div className="text-2xl font-black text-zinc-900">
+                        {requests.length > 0
+                          ? Math.round((requests.filter(r => r.status !== 'pending' && r.status !== 'rejected').length / requests.length) * 100)
+                          : 0}%
+                      </div>
+                      <p className="text-[9px] text-zinc-500 font-medium">Tasa de éxito en cotizaciones</p>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Satisfacción</span>
+                        <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                      </div>
+                      <div className="text-2xl font-black text-zinc-900">
+                        {(() => {
+                          const rated = requests.filter(r => r.rating);
+                          if (rated.length === 0) return '5.0';
+                          return (rated.reduce((acc, r) => acc + (r.rating || 0), 0) / rated.length).toFixed(1);
+                        })()}
+                      </div>
+                      <p className="text-[9px] text-zinc-500 font-medium">Promedio de estrellas global</p>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Pendientes</span>
+                        <Clock className="w-4 h-4 text-rose-500" />
+                      </div>
+                      <div className="text-2xl font-black text-zinc-900">
+                        {requests.filter(r => r.status === 'pending').length}
+                      </div>
+                      <p className="text-[9px] text-zinc-500 font-medium">Clientes esperando propuesta</p>
                     </div>
                   </div>
 
@@ -2208,7 +2746,7 @@ export default function App() {
                     <h3 className="text-xs font-black text-zinc-400 uppercase mb-4 tracking-widest">Últimas Transacciones</h3>
                     <div className="space-y-3">
                       {requests.filter(r => r.price).slice(0, 5).map(r => (
-                        <div key={r.id} className="flex justify-between items-center p-3 bg-zinc-50 rounded-xl border border-zinc-150">
+                        <div key={r.id} className="flex justify-between items-center p-3 bg-zinc-50 rounded-xl border border-zinc-100">
                           <div>
                             <span className="block text-xs font-bold text-zinc-800">{r.assetName}</span>
                             <span className="text-[10px] text-zinc-500">{r.techName}</span>
@@ -2239,6 +2777,7 @@ export default function App() {
                         <tr className="border-b border-zinc-100">
                           <th className="py-3 font-black text-zinc-400 uppercase">Usuario</th>
                           <th className="py-3 font-black text-zinc-400 uppercase">Rol</th>
+                          <th className="py-3 font-black text-zinc-400 uppercase">Documentos</th>
                           <th className="py-3 font-black text-zinc-400 uppercase">Estado</th>
                           <th className="py-3 font-black text-zinc-400 uppercase text-right">Acción</th>
                         </tr>
@@ -2250,18 +2789,69 @@ export default function App() {
                             <div className="text-[10px] text-zinc-400">ruben@mantech.com</div>
                           </td>
                           <td className="py-4"><span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md font-bold uppercase text-[9px]">Cliente</span></td>
+                          <td className="py-4 font-bold text-zinc-300">N/A</td>
                           <td className="py-4 text-emerald-500 font-bold">● Activo</td>
                           <td className="py-4 text-right"><button className="text-zinc-400 hover:text-red-600 font-bold">Suspender</button></td>
                         </tr>
-                        {technicians.slice(0, 3).map(t => (
+                        {technicians.map(t => (
                           <tr key={t.id} className="group">
                             <td className="py-4">
                               <div className="font-bold text-zinc-800">{t.name}</div>
                               <div className="text-[10px] text-zinc-400">{t.id}@mantech.com</div>
                             </td>
-                            <td className="py-4"><span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-md font-bold uppercase text-[9px]">Técnico</span></td>
-                            <td className="py-4 text-emerald-500 font-bold">● Activo</td>
-                            <td className="py-4 text-right"><button className="text-zinc-400 hover:text-red-600 font-bold">Suspender</button></td>
+                            <td className="py-4">
+                              <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-md font-bold uppercase text-[9px]">Técnico</span>
+                            </td>
+                            <td className="py-4">
+                              <div className="flex gap-2">
+                                {t.policeRecordUrl ? (
+                                  <a
+                                    href={t.policeRecordUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-[9px] font-black border border-indigo-100 hover:bg-indigo-100 transition-all"
+                                  >
+                                    <FileCheck2 className="w-3 h-3" /> RÉCORD
+                                  </a>
+                                ) : (
+                                  <span className="text-[9px] text-zinc-400 font-bold italic">Sin Récord</span>
+                                )}
+                                {t.idCardUrl ? (
+                                  <a
+                                    href={t.idCardUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex items-center gap-1 px-2 py-1 bg-zinc-50 text-zinc-700 rounded-lg text-[9px] font-black border border-zinc-200 hover:bg-zinc-100 transition-all"
+                                  >
+                                    <Camera className="w-3 h-3" /> CÉDULA
+                                  </a>
+                                ) : (
+                                  <span className="text-[9px] text-zinc-400 font-bold italic">Sin Cédula</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-4">
+                              <div className="flex items-center gap-2">
+                                <span className={t.isVerified ? "text-emerald-500 font-bold" : "text-amber-500 font-bold"}>
+                                  {t.isVerified ? "● Verificado" : "○ Pendiente"}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-4 text-right">
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  onClick={() => handleVerifyTechnician(t.id, !t.isVerified)}
+                                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase transition-all ${
+                                    t.isVerified
+                                      ? 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                                      : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
+                                  }`}
+                                >
+                                  {t.isVerified ? "Quitar Sello" : "Aprobar Récord"}
+                                </button>
+                                <button className="text-zinc-400 hover:text-red-600 font-bold">Suspender</button>
+                              </div>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -2271,8 +2861,99 @@ export default function App() {
               )}
 
               {adminTab === 'logistics' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* ... (logistics content) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Active Jobs Monitor */}
+                  <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm">
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-sm font-black text-zinc-900 uppercase tracking-widest flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-indigo-600" />
+                        Monitoreo de Servicios en Curso
+                      </h2>
+                      <span className="text-[10px] font-bold text-zinc-400 bg-zinc-100 px-2 py-1 rounded-lg uppercase">Base de Datos Live</span>
+                    </div>
+
+                    <div className="space-y-4">
+                      {requests.filter(r => r.status === 'accepted' || r.status === 'completed' || r.status === 'rated').length === 0 ? (
+                        <div className="text-center py-10 text-zinc-400 font-medium italic">
+                          No hay operaciones logísticas activas en este momento.
+                        </div>
+                      ) : (
+                        requests
+                          .filter(r => r.status === 'accepted' || r.status === 'completed' || r.status === 'rated')
+                          .map((req) => (
+                            <div key={req.id} className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-100 group hover:border-indigo-300 transition-all">
+                              <div className="flex items-center gap-4">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${req.status === 'accepted' ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                  {req.status === 'accepted' ? <Truck className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+                                </div>
+                                <div>
+                                  <h4 className="text-xs font-black text-zinc-900">{req.assetName}</h4>
+                                  <p className="text-[10px] text-zinc-500 font-medium">Técnico: <span className="text-indigo-600 font-bold">{req.techName}</span></p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg border ${
+                                  req.status === 'accepted' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                }`}>
+                                  {req.status === 'accepted' ? 'En Cita' : 'Finalizado'}
+                                </span>
+                                <span className="block text-[8px] text-zinc-400 mt-1 font-mono">{req.id.includes('req-') ? 'DATO PRUEBA' : req.id.substring(0,8).toUpperCase()}</span>
+                                {req.rescheduleCount && req.rescheduleCount > 0 && (
+                                  <span className="block text-[8px] text-rose-500 font-black mt-1 uppercase">
+                                    ⚠️ {req.rescheduleCount} Reprogramaciones
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Operational Distribution - NOW REAL DATA */}
+                  <div className="bg-zinc-900 text-white p-6 rounded-2xl shadow-xl border border-zinc-800 flex flex-col justify-between">
+                    <div>
+                      <h2 className="text-sm font-black uppercase tracking-widest mb-6 text-indigo-400 flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        Densidad Operativa (Real)
+                      </h2>
+                      <div className="space-y-5">
+                        {(() => {
+                          const total = technicians.length || 1;
+                          const bvSf = technicians.filter(t => t.location.includes('Bella Vista') || t.location.includes('San Francisco')).length;
+                          const ceCl = technicians.filter(t => t.location.includes('Costa del Este') || t.location.includes('Clayton')).length;
+                          const others = Math.max(0, total - bvSf - ceCl);
+
+                          return [
+                            { label: 'Bella Vista / San Francisco', val: Math.round((bvSf / total) * 100), color: 'bg-indigo-500' },
+                            { label: 'Costa del Este / Clayton', val: Math.round((ceCl / total) * 100), color: 'bg-emerald-500' },
+                            { label: 'Otras Áreas (Panamá)', val: Math.round((others / total) * 100), color: 'bg-zinc-600' }
+                          ];
+                        })().map((loc, i) => (
+                          <div key={i} className="space-y-1.5">
+                            <div className="flex justify-between text-[10px] font-black uppercase tracking-wider">
+                              <span className="text-zinc-400">{loc.label}</span>
+                              <span className="text-white">{loc.val}%</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                              <div className={`h-full ${loc.color}`} style={{ width: `${loc.val}%` }}></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-8 pt-6 border-t border-white/5 space-y-3">
+                      <div className="flex justify-between items-center text-[10px] font-bold">
+                        <span className="text-zinc-400 uppercase">Técnicos Registrados:</span>
+                        <span className="text-emerald-400">{technicians.length} Profesionales</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] font-bold">
+                        <span className="text-zinc-400 uppercase">Estado del Sistema:</span>
+                        <span className="text-indigo-400">Operativo</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -2320,7 +3001,7 @@ export default function App() {
                                     <div className="font-bold text-zinc-900">{rem.title.split(' - ')[1] || 'Activo'}</div>
                                     <div className="text-[10px] text-zinc-400">ID: {rem.clientId.substring(0,8)}...</div>
                                   </td>
-                                  <td className="py-4 font-medium text-zinc-650">{rem.title.split(' - ')[0]}</td>
+                                  <td className="py-4 font-medium text-zinc-600">{rem.title.split(' - ')[0]}</td>
                                   <td className="py-4">
                                     <span className={`font-mono text-[10px] font-bold ${daysLeft <= 0 ? 'text-red-600' : 'text-zinc-600'}`}>
                                       {rem.dueDate}
@@ -2391,7 +3072,7 @@ export default function App() {
                           type="text"
                           value={updateName}
                           onChange={(e) => setUpdateName(e.target.value)}
-                          placeholder={loggedInName}
+                          placeholder={loggedInName || "Escribe tu nombre..."}
                           className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold"
                         />
                       </div>
@@ -2484,7 +3165,7 @@ export default function App() {
                                 : 'border-zinc-200 hover:shadow-xs hover:border-zinc-350'
                             }`}
                           >
-                            <div className="space-y-1.5">
+                            <div className="space-y-4">
                               <div className="flex items-center justify-between gap-1">
                                 <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md border ${
                                   daysLeft <= 0 
@@ -2493,15 +3174,49 @@ export default function App() {
                                     ? 'bg-amber-100 text-amber-900 border-amber-200' 
                                     : 'bg-indigo-50 text-indigo-950 border-indigo-100'
                                 }`}>
-                                  {daysLeft <= 0 ? 'Expirado' : daysLeft <= 7 ? `Alerta: ${daysLeft} días` : `Faltan ${daysLeft} días`}
+                                  {daysLeft <= 0 ? 'Expirado' : `Faltan ${daysLeft} días`}
                                 </span>
                                 <span className="text-[9px] text-zinc-400 font-black uppercase tracking-wider block truncate">
-                                  {matchingAsset?.type.replace('_', ' ')}
+                                  {matchingAsset?.type.toUpperCase()}
                                 </span>
                               </div>
 
-                              <h4 className="font-extrabold text-zinc-900 text-xs tracking-tight">{rem.title}</h4>
-                              <p className="text-[10px] text-zinc-500 leading-relaxed truncate-2-lines">{rem.description}</p>
+                              {/* Icon + Title Section */}
+                              <div className="flex items-start gap-3">
+                                <div className="p-2 bg-indigo-50 rounded-xl">
+                                  <Bell className="w-5 h-5 text-indigo-600" />
+                                </div>
+                                <div>
+                                  <h4 className="font-black text-zinc-900 text-sm tracking-tight leading-tight">Recordatorio de Mantenimiento</h4>
+                                  <p className="text-[10px] text-zinc-400 font-bold uppercase mt-0.5">Mantenimiento de rutina</p>
+                                </div>
+                              </div>
+
+                              <div className="h-px bg-zinc-100"></div>
+
+                              {/* Next Appointment Section */}
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 bg-blue-50 rounded-xl">
+                                  <Calendar className="w-5 h-5 text-blue-600" />
+                                </div>
+                                <div>
+                                  <p className="text-[10px] text-zinc-400 font-bold uppercase">Próxima cita</p>
+                                  <p className="text-xs font-black text-indigo-700">{formatFriendlyDate(rem.dueDate)}</p>
+                                </div>
+                              </div>
+
+                              {/* Warning Section / Detailed Description */}
+                              <div className="flex flex-col gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
+                                <div className="flex items-center gap-2 text-amber-600">
+                                  <AlertTriangle className="w-3.5 h-3.5" />
+                                  <span className="text-[9px] font-black uppercase">Detalle de Atención:</span>
+                                </div>
+                                <p className="text-[10px] text-amber-900 font-bold leading-relaxed italic">
+                                  {rem.description.includes('(')
+                                    ? `"${rem.description.split('(')[1].replace(').', '')}"`
+                                    : rem.description || "Revisión general de rutina."}
+                                </p>
+                              </div>
                             </div>
 
                             <div className="pt-3.5 border-t border-zinc-100 flex items-center justify-between gap-2 mt-2">
@@ -2511,7 +3226,7 @@ export default function App() {
                               </div>
                               <button
                                 onClick={() => handleRequestTechFromReminder(rem)}
-                                className="px-3 py-1.5 bg-indigo-650 hover:bg-indigo-750 text-white rounded-xl text-[10px] font-bold transition-all shadow-xs cursor-pointer"
+                                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-bold transition-all shadow-xs cursor-pointer"
                               >
                                 Solicitar Técnico
                               </button>
@@ -2537,7 +3252,7 @@ export default function App() {
                         {assets.map((asset) => {
                           const matchingCount = reminders.filter(r => r.assetId === asset.id).length;
                           return (
-                            <div key={asset.id} className="p-5 rounded-2xl border border-zinc-250 bg-white hover:border-indigo-400 hover:shadow-md transition-all flex flex-col justify-between shadow-xs">
+                            <div key={asset.id} className="p-5 rounded-2xl border border-zinc-200 bg-white hover:border-indigo-400 hover:shadow-md transition-all flex flex-col justify-between shadow-xs">
                               <div className="space-y-3">
                                 <div className="flex justify-between items-start gap-2">
                                   <div>
@@ -2549,14 +3264,14 @@ export default function App() {
                                   </span>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3 text-xs py-1.5 text-zinc-650 border-t border-b border-zinc-100">
+                                <div className="grid grid-cols-2 gap-3 text-xs py-1.5 text-zinc-600 border-t border-b border-zinc-100">
                                   <div>
                                     <span className="block text-[8px] text-zinc-400 uppercase font-black">Registrado:</span>
-                                    <span className="font-semibold text-zinc-700">{asset.registeredAt}</span>
+                                    <span className="font-semibold text-zinc-700">{formatFriendlyDate(asset.registeredAt)}</span>
                                   </div>
                                   <div>
                                     <span className="block text-[8px] text-zinc-400 uppercase font-black">Sig. Mantenimiento:</span>
-                                    <span className="font-extrabold text-indigo-650">{asset.nextMaintenanceDate}</span>
+                                    <span className="font-extrabold text-indigo-600">{formatFriendlyDate(asset.nextMaintenanceDate)}</span>
                                   </div>
                                 </div>
 
@@ -2652,7 +3367,7 @@ export default function App() {
                           className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                             marketFilter === cat.id
                               ? 'bg-zinc-900 border-zinc-800 text-white shadow-md font-extrabold'
-                              : 'border-zinc-200 text-zinc-650 hover:bg-zinc-50 bg-white'
+                              : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50 bg-white'
                           }`}
                         >
                           {cat.name}
@@ -2676,27 +3391,43 @@ export default function App() {
                             }`}
                           >
                             {tech.plan === 'premium' && (
-                              <div className="absolute top-4 right-4 flex items-center gap-1 bg-amber-100 text-amber-900 font-extrabold text-[9px] px-2.5 py-1 rounded-full border border-amber-300 shadow-xs">
-                                👑 RECOMENDADO
+                              <div className="absolute top-4 right-4 flex flex-col items-end gap-1.5">
+                                <div className="flex items-center gap-1 bg-amber-100 text-amber-900 font-extrabold text-[9px] px-2.5 py-1 rounded-full border border-amber-300 shadow-xs">
+                                  👑 RECOMENDADO
+                                </div>
+                                {tech.isVerified && (
+                                  <div className="flex items-center gap-1 bg-emerald-100 text-emerald-900 font-extrabold text-[8px] px-2 py-0.5 rounded-full border border-emerald-300 shadow-xs">
+                                    <ShieldCheck className="w-2.5 h-2.5" /> VERIFICADO
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {tech.plan !== 'premium' && tech.isVerified && (
+                              <div className="absolute top-4 right-4 flex items-center gap-1 bg-emerald-100 text-emerald-900 font-extrabold text-[8px] px-2 py-0.5 rounded-full border border-emerald-300 shadow-xs">
+                                <ShieldCheck className="w-2.5 h-2.5" /> VERIFICADO
                               </div>
                             )}
 
                             <div className="space-y-3.5">
                               <div className="flex gap-3 items-center">
-                                <div className="w-12 h-12 rounded-full bg-indigo-50 border border-indigo-150 flex items-center justify-center font-extrabold text-indigo-700 text-sm">
+                                <div className="w-12 h-12 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center font-extrabold text-indigo-700 text-sm">
                                   {tech.name.split(' ').map(n => n[0]).join('')}
                                 </div>
                                 <div>
                                   <h4 className="font-extrabold text-zinc-900 text-sm tracking-tight flex items-center gap-1">
                                     {tech.name}
+                                    {tech.isVerified && (
+                                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" title="Identidad y Récord Policivo Verificado" />
+                                    )}
                                   </h4>
-                                  <p className="text-[10px] text-indigo-650 font-bold uppercase tracking-wider">
+                                  <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">
                                     {tech.title}
                                   </p>
                                 </div>
                               </div>
 
-                              <div className="flex gap-4 text-xs font-semibold text-zinc-650 justify-between py-2 border-y border-zinc-150/60 bg-zinc-50 px-3 rounded-xl">
+                              <div className="flex gap-4 text-xs font-semibold text-zinc-600 justify-between py-2 border-y border-zinc-100/60 bg-zinc-50 px-3 rounded-xl">
                                 <div className="flex items-center text-amber-500 font-bold gap-1">
                                   <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
                                   {tech.rating}
@@ -2731,7 +3462,7 @@ export default function App() {
               {clientTab === 'quotes' && (
                 <div className="space-y-6">
                   <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
-                     <h2 className="text-sm font-black text-zinc-900 uppercase tracking-widest mb-4">Registro de Solicitudes & Contratos</h2>
+                    <h2 className="text-sm font-black text-zinc-900 uppercase tracking-widest mb-4">Registro de Solicitudes & Contratos</h2>
                     
                     {requests.length === 0 ? (
                       <p className="text-xs text-zinc-500 text-center py-8 font-medium">No has solicitado ningún trabajo aún.</p>
@@ -2750,6 +3481,7 @@ export default function App() {
                                   req.status === 'pending' ? 'bg-amber-50 text-amber-900 border-amber-200' :
                                   req.status === 'quoted' ? 'bg-indigo-50 text-indigo-900 border-indigo-200 animate-pulse font-extrabold' :
                                   req.status === 'accepted' ? 'bg-blue-50 text-blue-900 border-blue-200 font-bold' :
+                                  req.status === 'rejected' ? 'bg-red-50 text-red-900 border-red-200' :
                                   'bg-emerald-50 text-emerald-900 border-emerald-200'
                                 }`}>
                                   {req.status === 'pending' && 'Búsqueda / Propuesta vacante'}
@@ -2757,13 +3489,148 @@ export default function App() {
                                   {req.status === 'accepted' && 'En Proceso / Cita agendada'}
                                   {req.status === 'completed' && 'Servicio terminado'}
                                   {req.status === 'rated' && 'Trabajo calificado'}
+                                  {req.status === 'rejected' && 'Solicitud Rechazada'}
+                                  {req.status === 'cancelled' && 'Cancelado'}
                                 </span>
+                              </div>
+                              <div className="flex gap-1 items-center">
+                                {req.status === 'accepted' && (
+                                  <button
+                                    onClick={() => handleCancelRequest(req.id)}
+                                    className="px-3 py-1 bg-white border border-rose-200 text-rose-600 rounded-lg text-[9px] font-black uppercase hover:bg-rose-50 transition-all"
+                                    title="Cancelar Servicio"
+                                  >
+                                    Cancelar
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleDeleteRequest(req.id)}
+                                  className="p-2 text-zinc-400 hover:text-red-600 transition-colors"
+                                  title="Eliminar Registro"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
                               </div>
                             </div>
 
-                            <p className="text-xs text-zinc-600 bg-white p-3.5 rounded-xl border border-zinc-150 leading-relaxed">
+                            {/* PROGRESS STEPS INDICATOR */}
+                            <div className="flex items-center justify-between px-2 py-4 overflow-x-auto gap-4 custom-scrollbar">
+                              {[
+                                { label: 'Solicitud', status: ['pending', 'quoted', 'accepted', 'executing', 'unforeseen', 'unforeseen_paid', 'completed', 'rated'] },
+                                { label: 'Cotizado', status: ['quoted', 'accepted', 'executing', 'unforeseen', 'unforeseen_paid', 'completed', 'rated'] },
+                                { label: 'Pagado', status: ['accepted', 'executing', 'unforeseen', 'unforeseen_paid', 'completed', 'rated'] },
+                                { label: 'Ejecución', status: ['executing', 'unforeseen', 'unforeseen_paid', 'completed', 'rated'] },
+                                { label: 'IMPREVISTO', status: ['unforeseen', 'unforeseen_paid', 'completed', 'rated'] },
+                                { label: 'PAGO IMPREVISTO', status: ['unforeseen_paid', 'completed', 'rated'] },
+                                { label: 'Finalizado', status: ['completed', 'rated'] }
+                              ].map((step, idx, arr) => {
+                                const isDone = step.status.includes(req.status);
+                                const isLast = idx === arr.length - 1;
+                                return (
+                                  <React.Fragment key={idx}>
+                                    <div className="flex flex-col items-center gap-1.5 relative shrink-0">
+                                      <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black transition-all ${isDone ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-zinc-200 text-zinc-400'}`}>
+                                        {isDone ? <Check className="w-3 h-3" /> : idx + 1}
+                                      </div>
+                                      <span className={`text-[7px] font-black uppercase tracking-tighter ${isDone ? 'text-indigo-600' : 'text-zinc-400'}`}>{step.label}</span>
+                                    </div>
+                                    {!isLast && <div className={`w-4 h-0.5 mb-3 rounded-full shrink-0 ${isDone ? 'bg-indigo-600' : 'bg-zinc-100'}`}></div>}
+                                  </React.Fragment>
+                                );
+                              })}
+                            </div>
+
+                            <p className="text-xs text-zinc-600 bg-white p-3.5 rounded-xl border border-zinc-100 leading-relaxed">
                               <strong>Instrucciones enviadas:</strong> {req.description}
                             </p>
+
+                            {/* CLIENT VISIBILITY OF CHECKLIST AND MATERIALS */}
+                            {(req.status === 'accepted' || req.status === 'executing' || req.status === 'unforeseen' || req.status === 'unforeseen_paid' || req.status === 'completed' || req.status === 'rated') && (
+                              <div className="space-y-4">
+                                {/* Manejo de Imprevistos por el Cliente */}
+                                {req.status === 'unforeseen' && (
+                                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3 shadow-sm">
+                                    <div className="flex items-center gap-2 text-amber-800">
+                                      <AlertTriangle className="w-5 h-5 animate-pulse" />
+                                      <span className="text-xs font-black uppercase tracking-wider">Imprevisto Crítico Detectado</span>
+                                    </div>
+                                    <div className="space-y-2">
+                                      <p className="text-[11px] text-amber-900 font-medium leading-relaxed">
+                                        El técnico reporta: <strong className="font-black italic">"{req.unforeseenReason}"</strong>.
+                                      </p>
+                                      <div className="p-3 bg-white/60 border border-amber-100 rounded-lg text-[10px] text-amber-950 font-bold leading-tight">
+                                        ⚠️ <span className="uppercase font-black text-red-700">Aviso de Garantía:</span> Si decides NO aprobar este imprevisto, el trabajo podría continuar pero la <span className="underline decoration-red-500">garantía técnica del servicio quedará anulada</span> debido a que el fallo detectado compromete la integridad de la reparación contratada.
+                                      </div>
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                                      <button
+                                        onClick={() => handlePayUnforeseen(req.id)}
+                                        className="flex-1 py-2.5 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-lg hover:bg-indigo-700 transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+                                      >
+                                        <CheckCircle2 className="w-3.5 h-3.5" /> Aprobar & Pagar Adicional (${req.unforeseenAmount?.toFixed(2)})
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          if(window.confirm("¿Seguro que deseas continuar sin el adicional? Entiendo que la garantía será anulada.")) {
+                                            updateDoc(doc(db, "requests", req.id), {
+                                              status: 'executing',
+                                              guaranteeVoided: true,
+                                              unforeseenRejectedAt: serverTimestamp()
+                                            });
+                                          }
+                                        }}
+                                        className="flex-1 py-2.5 bg-white border border-amber-300 text-amber-700 text-[10px] font-black uppercase rounded-lg hover:bg-amber-100 transition-all cursor-pointer"
+                                      >
+                                        Continuar sin Garantía
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="bg-white border border-zinc-200 p-4 rounded-xl space-y-3 shadow-xs">
+                                    <h5 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                      Avance de Tareas
+                                    </h5>
+                                    <div className="space-y-1.5">
+                                      {req.checklist?.map((task) => (
+                                        <div key={task.id} className="flex items-center gap-2 text-xs">
+                                          <div className={`w-3.5 h-3.5 rounded flex items-center justify-center border ${task.isCompleted ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300'}`}>
+                                            {task.isCompleted && <Check className="w-2.5 h-2.5 text-white" />}
+                                          </div>
+                                          <span className={`font-medium ${task.isCompleted ? 'text-zinc-400 line-through' : 'text-zinc-700'}`}>
+                                            {task.description}
+                                          </span>
+                                        </div>
+                                      ))}
+                                      {(!req.checklist || req.checklist.length === 0) && (
+                                        <p className="text-[10px] text-zinc-400 italic">Esperando que el técnico inicie el checklist...</p>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="bg-white border border-zinc-200 p-4 rounded-xl space-y-3 shadow-xs">
+                                    <h5 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                                      <Layers className="w-3.5 h-3.5 text-indigo-500" />
+                                      Insumos & Repuestos
+                                    </h5>
+                                    <div className="space-y-1.5">
+                                      {req.materials?.map((m, idx) => (
+                                        <div key={idx} className="flex justify-between items-center text-xs">
+                                          <span className="font-medium text-zinc-700">{m.name}</span>
+                                          <span className="font-black text-zinc-900">${m.price.toFixed(2)}</span>
+                                        </div>
+                                      ))}
+                                      {(!req.materials || req.materials.length === 0) && (
+                                        <p className="text-[10px] text-zinc-400 italic">No se han cargado materiales adicionales.</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
 
                             <div className="flex justify-between items-center flex-wrap gap-2 pt-3 border-t border-zinc-100 text-xs">
                               <div>
@@ -2772,9 +3639,21 @@ export default function App() {
                               </div>
 
                               {req.price && (
-                                <div className="text-right">
-                                  <span className="block text-[8px] text-zinc-400 uppercase font-bold">Cotizado:</span>
-                                  <span className="font-black text-emerald-600 text-sm block">${req.price.toFixed(2)}</span>
+                                <div className="text-right flex items-center gap-3">
+                                  <div>
+                                    <span className="block text-[8px] text-zinc-400 uppercase font-bold">Cotizado:</span>
+                                    <span className="font-black text-emerald-600 text-sm block">${req.price.toFixed(2)}</span>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      setActiveChatRequestId(req.id);
+                                      setClientTab('chat');
+                                    }}
+                                    className="p-2.5 bg-zinc-900 text-white rounded-xl hover:bg-black transition-all cursor-pointer shadow-sm"
+                                    title="Abrir Chat Directo"
+                                  >
+                                    <MessageSquare className="w-4 h-4" />
+                                  </button>
                                 </div>
                               )}
                             </div>
@@ -2812,11 +3691,78 @@ export default function App() {
                                   <span className="text-xs font-black text-zinc-900 block uppercase tracking-wide">¿Servicio completado con éxito?</span>
                                   <p className="text-[11px] text-zinc-500 font-medium mt-0.5">Por favor califica el trabajo realizado para desembolsar el pago del técnico de forma instantánea.</p>
                                 </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedRequestForReport(req);
+                                      setIsReportModalOpen(true);
+                                    }}
+                                    className="px-4 py-2.5 bg-zinc-900 text-white rounded-xl text-xs font-bold shrink-0 cursor-pointer shadow-sm hover:bg-black transition-all"
+                                  >
+                                    Ver Reporte
+                                  </button>
+                                  <button
+                                    onClick={() => setRatingRequestId(req.id)}
+                                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shrink-0 cursor-pointer shadow-xs"
+                                  >
+                                    Calificar Técnico Ahora
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {req.status === 'accepted' && (
+                              <div className="bg-rose-50 p-4 rounded-2xl border border-rose-100 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <ShieldAlert className="w-5 h-5 text-rose-600" />
+                                  <p className="text-[10px] text-rose-900 font-bold leading-tight">
+                                    ¿El técnico no se presentó o el trabajo quedó incompleto? <br/>
+                                    <span className="font-normal text-rose-700">Puedes reportarlo para bloquear el pago de garantía.</span>
+                                  </p>
+                                </div>
                                 <button
-                                  onClick={() => setRatingRequestId(req.id)}
-                                  className="px-4 py-2.5 bg-indigo-650 hover:bg-indigo-750 text-white rounded-xl text-xs font-bold shrink-0 cursor-pointer shadow-xs"
+                                  onClick={() => {
+                                    const desc = window.prompt("Por favor describe brevemente el problema (Ej: El técnico no asistió a la cita):");
+                                    if (desc) handleReportIssue(req.id, desc);
+                                  }}
+                                  className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[9px] font-black uppercase transition-all"
                                 >
-                                  Calificar Técnico Ahora
+                                  Reportar Problema
+                                </button>
+                              </div>
+                            )}
+
+                            {req.status === 'disputed' && (
+                              <div className="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 text-white animate-pulse">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <ShieldAlert className="w-5 h-5 text-red-500" />
+                                  <span className="text-xs font-black uppercase tracking-widest text-red-500">Contrato en Disputa</span>
+                                </div>
+                                <p className="text-[11px] text-zinc-400 leading-relaxed">
+                                  Este servicio ha sido reportado. El pago al técnico está **CONGELADO** mientras nuestro equipo de auditoría revisa tu caso: <br/>
+                                  <span className="italic">"{req.issueDescription}"</span>
+                                </p>
+                              </div>
+                            )}
+
+                            {req.status === 'rated' && (
+                              <div className="bg-zinc-50 p-5 rounded-2xl border border-zinc-200 flex justify-between items-center flex-wrap gap-3">
+                                <div>
+                                  <span className="text-xs font-black text-zinc-900 block uppercase tracking-wide">Servicio Calificado</span>
+                                  <p className="text-[11px] text-zinc-500 font-medium mt-0.5">Gracias por tu valoración. El reporte final está disponible para tu archivo.</p>
+                                  <div className="mt-2.5 flex items-center gap-2 p-2 bg-emerald-50 rounded-lg text-[10px] text-emerald-900 font-bold border border-emerald-100">
+                                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                    Calificación de {req.rating} estrellas enviada con éxito.
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    setSelectedRequestForReport(req);
+                                    setIsReportModalOpen(true);
+                                  }}
+                                  className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shrink-0 cursor-pointer shadow-sm"
+                                >
+                                  Descargar Reporte Final
                                 </button>
                               </div>
                             )}
@@ -2859,13 +3805,6 @@ export default function App() {
                                 </div>
                               </div>
                             )}
-
-                            {req.status === 'rated' && (
-                              <div className="flex items-center gap-2.5 p-3 px-4 bg-emerald-50 rounded-xl text-xs text-emerald-900 font-bold border border-emerald-100">
-                                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                                Calificación de {req.rating} estrellas enviada con éxito. ¡Depósito de confianza liberado instantáneamente al contratista!
-                              </div>
-                            )}
                           </div>
                         ))}
                       </div>
@@ -2882,11 +3821,11 @@ export default function App() {
                     <div className="bg-white rounded-2xl border border-zinc-200 p-5 space-y-2 h-[500px] overflow-y-auto shadow-sm">
                       <h3 className="text-xs font-black text-zinc-400 uppercase mb-4 tracking-widest">Chats de Mantenimiento</h3>
                       
-                      {requests.filter(r => r.status === 'quoted' || r.status === 'accepted' || r.status === 'completed' || r.status === 'rated').length === 0 ? (
+                      {requests.filter(r => ['quoted', 'accepted', 'executing', 'unforeseen', 'unforeseen_paid', 'completed'].includes(r.status)).length === 0 ? (
                         <p className="text-[11px] text-zinc-400 font-medium">Sin contrataciones con chats de momento.</p>
                       ) : (
                         requests
-                          .filter(r => r.status === 'quoted' || r.status === 'accepted' || r.status === 'completed' || r.status === 'rated')
+                          .filter(r => ['quoted', 'accepted', 'executing', 'unforeseen', 'unforeseen_paid', 'completed'].includes(r.status))
                           .map((r) => (
                             <button
                               key={r.id}
@@ -2894,11 +3833,11 @@ export default function App() {
                               className={`w-full text-left p-3 rounded-xl border text-xs transition-all cursor-pointer ${
                                 activeChatRequestId === r.id
                                   ? 'border-indigo-600 border-indigo-500 bg-indigo-50/70 text-indigo-900 font-black'
-                                  : 'border-transparent text-zinc-650 hover:bg-zinc-50'
+                                  : 'border-transparent text-zinc-600 hover:bg-zinc-50'
                               }`}
                             >
                               <div className="truncate font-bold">{r.techName}</div>
-                              <div className="text-[10px] text-zinc-450 truncate mt-0.5">{r.assetName}</div>
+                              <div className="text-[10px] text-zinc-400 truncate mt-0.5">{r.assetName}</div>
                             </button>
                           ))
                       )}
@@ -2938,6 +3877,58 @@ export default function App() {
                         </label>
                       </div>
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Foto de Perfil</span>
+                    </div>
+
+                    {/* SECCIÓN DE SEGURIDAD Y RÉCORD POLICIVO */}
+                    <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 mb-6 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-indigo-600 text-white rounded-xl">
+                          <ShieldCheck className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-indigo-900 uppercase">Centro de Seguridad & Confianza</h4>
+                          <p className="text-[10px] text-indigo-700 font-medium">Verifica tu identidad para servicios a domicilio en Panamá</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-white rounded-xl border border-indigo-200 space-y-2">
+                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block">Documento 1</span>
+                          <h5 className="text-[11px] font-bold text-zinc-800">Cédula de Identidad Personal</h5>
+                          <button className="w-full py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-lg text-[10px] font-bold border border-zinc-200 transition-all flex items-center justify-center gap-2">
+                            <Camera className="w-3.5 h-3.5" /> Subir Cédula
+                          </button>
+                        </div>
+
+                        <div className="p-4 bg-white rounded-xl border border-indigo-200 space-y-2">
+                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block">Documento 2</span>
+                          <h5 className="text-[11px] font-bold text-zinc-800">Récord Policivo (Vigente)</h5>
+                          <a
+                            href="https://www.panamadigital.gob.pa/"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold shadow-md transition-all flex items-center justify-center gap-2"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" /> Generar en Panamá Digital
+                          </a>
+                        </div>
+                      </div>
+
+                      {/* POLÍTICAS DE SERVICIO */}
+                      <div className="bg-white p-4 rounded-xl border border-zinc-200 space-y-3">
+                        <h4 className="text-[10px] font-black text-zinc-900 uppercase tracking-widest flex items-center gap-2">
+                          <Info className="w-3.5 h-3.5 text-zinc-500" />
+                          Políticas de MantechPro
+                        </h4>
+                        <ul className="space-y-2 text-[9px] text-zinc-600 font-medium leading-tight">
+                          <li><strong>• Incumplimiento:</strong> Si el técnico no concluye el servicio, solo recibirá el 5% del valor de inspección.</li>
+                          <li><strong>• Cancelación:</strong> Si cancelas con 50% de avance por falta de presupuesto, se liquida el trabajo realizado hasta el momento.</li>
+                          <li><strong>• Imprevistos:</strong> Costos adicionales post-inspección deben ser aprobados para mantener la garantía.</li>
+                        </ul>
+                      </div>
+                      <p className="text-[9px] text-indigo-600 font-medium text-center">
+                        * Los documentos son validados por nuestro equipo legal en un plazo de 24 horas.
+                      </p>
                     </div>
 
                     <div className="space-y-4">
@@ -3003,11 +3994,34 @@ export default function App() {
               {/* TAB 1: INBOX SOLICITUDES */}
               {techTab === 'received' && (
                 <div className="space-y-6">
+                  {/* BANNER DE SUSCRIPCIÓN - GRATIS 3 SOLICITUDES */}
+                  {getSelectedTechProfileObj()?.plan === 'basic' && (
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-5 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 shrink-0">
+                          <Zap className="w-6 h-6 fill-amber-500" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-amber-900 uppercase">Límite de Solicitudes Gratuitas</h4>
+                          <p className="text-[11px] text-amber-800 font-medium">
+                            Has usado <span className="font-black">{(getSelectedTechProfileObj()?.requestsUsedThisMonth || 0)}/3</span> solicitudes gratuitas este mes.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setTechTab('profile')}
+                        className="px-5 py-2.5 bg-zinc-950 hover:bg-black text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-zinc-200 transition-all cursor-pointer active:scale-95"
+                      >
+                        ⚡ Subir a Pro por $8/mes
+                      </button>
+                    </div>
+                  )}
+
                   <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
                     <div className="flex flex-wrap justify-between items-center gap-3 mb-5">
                       <div>
                         <h2 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Bandeja de Diagnósticos & Cotizaciones</h2>
-                        <p className="text-[11px] text-zinc-450 font-medium">Administra solicitudes de mantenimiento de clientes directos o detectadas por I.A.</p>
+                        <p className="text-[11px] text-zinc-400 font-medium">Administra solicitudes de mantenimiento de clientes directos o detectadas por I.A.</p>
                       </div>
                       <span className="px-3 py-1.5 rounded-xl bg-zinc-900 text-white font-mono text-[10px] font-bold border border-zinc-800 shadow-xs">
                         ID PROVEEDOR: {selectedTechProfileId.toUpperCase()}
@@ -3018,7 +4032,7 @@ export default function App() {
                       <div className="text-center py-12 text-zinc-400 space-y-3 bg-zinc-50/50 rounded-2xl border border-dashed border-zinc-200">
                         <UserX className="w-12 h-12 mx-auto text-zinc-350" />
                         <h4 className="font-extrabold text-zinc-800 text-xs uppercase tracking-wider">Sin Solicitudes Recientes</h4>
-                        <p className="text-[11px] text-zinc-450 max-w-sm mx-auto leading-relaxed">
+                        <p className="text-[11px] text-zinc-400 max-w-sm mx-auto leading-relaxed">
                           Aún no has recibido solicitudes en esta cuenta. Vuelve a la vista de "Cliente" y simula una solicitud de cotización para verla reflejada aquí de inmediato.
                         </p>
                       </div>
@@ -3036,6 +4050,24 @@ export default function App() {
                                   <h4 className="font-extrabold text-sm text-zinc-900 mt-2.5 tracking-tight">{req.clientName}</h4>
                                 </div>
 
+                                {req.status === 'pending' && (
+                                  <div className="text-right">
+                                    {(() => {
+                                      const created = (req.createdAt as any)?.toDate ? (req.createdAt as any).toDate().getTime() : Date.now();
+                                      const now = Date.now();
+                                      const hoursPassed = (now - created) / (1000 * 60 * 60);
+                                      const hoursLeft = Math.max(0, 24 - hoursPassed);
+
+                                      return (
+                                        <div className={`px-3 py-1 rounded-lg border flex items-center gap-1.5 ${hoursLeft < 4 ? 'bg-red-50 border-red-200 text-red-600 animate-pulse' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+                                          <Clock className="w-3 h-3" />
+                                          <span className="text-[9px] font-black uppercase">Vence en: {Math.floor(hoursLeft)}h {Math.round((hoursLeft % 1) * 60)}m</span>
+                                        </div>
+                                      );
+                                    })()}
+                                  </div>
+                                )}
+
                                 <span className={`text-[10px] font-black px-3 py-1.5 rounded-xl uppercase border ${
                                   req.status === 'pending' ? 'bg-amber-50 text-amber-900 border-amber-200' :
                                   req.status === 'quoted' ? 'bg-indigo-50 text-indigo-950 border-indigo-200' :
@@ -3046,14 +4078,222 @@ export default function App() {
                                   {req.status === 'accepted' && 'Servicio por Atender (Pagado)'}
                                   {req.status === 'completed' && 'Servicio terminado'}
                                   {req.status === 'rated' && 'Trabajo completado & Calificado'}
+                                  {req.status === 'rejected' && 'Propuesta Denegada por Ti'}
                                 </span>
+                                {req.status === 'rejected' && (
+                                  <button
+                                    onClick={() => handleDeleteRequest(req.id)}
+                                    className="p-1.5 text-zinc-400 hover:text-red-600 transition-colors"
+                                    title="Eliminar de mi bandeja"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
                               </div>
 
                               <div className="text-xs bg-white p-4 rounded-xl border border-zinc-200 leading-relaxed">
                                 <span className="block text-[8px] text-zinc-400 font-black mb-1.5 uppercase tracking-wider">Activo a Trabajar:</span>
                                 <p className="font-extrabold text-zinc-900 mb-1 text-xs">{req.assetName}</p>
-                                <p className="text-zinc-650">"{req.description}"</p>
+                                <p className="text-zinc-600">"{req.description}"</p>
                               </div>
+
+                              {/* HERRAMIENTAS TÉCNICAS (SOLO SI EL TRABAJO ESTÁ ACEPTADO O COTIZADO) */}
+                              {(req.status === 'accepted' || req.status === 'quoted' || req.status === 'completed' || req.status === 'executing' || req.status === 'unforeseen' || req.status === 'unforeseen_paid') && (
+                                <div className="space-y-4 pt-2">
+                                  {/* SEGURIDAD: BOTÓN DE INICIO DE VISITA Y SOS */}
+                                  {(req.status === 'accepted' || req.status === 'executing' || req.status === 'unforeseen' || req.status === 'unforeseen_paid') && (
+                                    <div className="flex flex-wrap items-center gap-3 p-4 bg-zinc-900 rounded-2xl border border-zinc-800">
+                                      {!req.visitStartedAt ? (
+                                        <button
+                                          onClick={() => handleStartVisit(req.id)}
+                                          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+                                        >
+                                          <MapPin className="w-3.5 h-3.5" />
+                                          Iniciar Visita en Sitio
+                                        </button>
+                                      ) : (
+                                        <>
+                                          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-950/40 text-emerald-400 text-[9px] font-black uppercase rounded-lg border border-emerald-900/40">
+                                            <Clock className="w-3 h-3" />
+                                            Visita iniciada: {new Date(req.visitStartedAt).toLocaleTimeString()}
+                                          </div>
+
+                                          {req.status === 'accepted' && (
+                                            <button
+                                              onClick={() => handleStartJob(req.id)}
+                                              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+                                            >
+                                              <Play className="w-3.5 h-3.5" />
+                                              Comenzar Trabajo
+                                            </button>
+                                          )}
+
+                                          {(req.status === 'executing' || req.status === 'unforeseen_paid') && (
+                                            <>
+                                              <button
+                                                onClick={() => {
+                                                  const reason = prompt("Describe el imprevisto detectado:");
+                                                  const amount = prompt("Monto adicional requerido ($):");
+                                                  if (reason && amount) handleTriggerUnforeseen(req.id, reason, Number(amount));
+                                                }}
+                                                className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+                                              >
+                                                <AlertTriangle className="w-3.5 h-3.5" />
+                                                Reportar Imprevisto
+                                              </button>
+
+                                              <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100 font-bold text-[9px] animate-pulse">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                                Ejecución Activa
+                                              </div>
+                                            </>
+                                          )}
+
+                                          {!req.isPostponed ? (
+                                            <button
+                                              onClick={() => handlePostponeService(req.id)}
+                                              className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-black uppercase rounded-xl transition-all shadow-md active:scale-95 cursor-pointer border border-zinc-700"
+                                            >
+                                              <Calendar className="w-3.5 h-3.5" />
+                                              Continuar Mañana
+                                            </button>
+                                          ) : (
+                                            <button
+                                              onClick={() => handleResumeJob(req.id)}
+                                              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase rounded-xl transition-all shadow-md active:scale-95 cursor-pointer border border-indigo-500 animate-pulse"
+                                            >
+                                              <Play className="w-3.5 h-3.5" />
+                                              Reanudar (Día {(req.resumeCount || 1) + 1})
+                                            </button>
+                                          )}
+                                        </>
+                                      )}
+
+                                      <a
+                                        href="tel:104"
+                                        className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-[10px] font-black uppercase rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+                                      >
+                                        <AlertCircle className="w-3.5 h-3.5" />
+                                        Botón SOS (Emergencia)
+                                      </a>
+
+                                      <div className="flex-grow text-right">
+                                        <span className="text-[9px] text-zinc-500 font-bold uppercase block">Seguridad Activa</span>
+                                        <span className="text-[8px] text-zinc-600 block leading-none">Visita monitoreada por GPS</span>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* LISTA DE TAREAS (CHECKLIST) */}
+                                    <div className="bg-zinc-50 border border-zinc-200 p-4 rounded-2xl space-y-3">
+                                      <h5 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                                        <CheckCircle className="w-3.5 h-3.5 text-indigo-500" />
+                                        Lista de Tareas del Servicio
+                                      </h5>
+                                      <div className="space-y-2">
+                                        {req.checklist?.map((task) => (
+                                          <label key={task.id} className="flex items-center gap-2.5 p-2 bg-white border border-zinc-150 rounded-xl cursor-pointer hover:bg-zinc-100 transition-all">
+                                            <input
+                                              type="checkbox"
+                                              checked={task.isCompleted}
+                                              onChange={(e) => handleUpdateChecklist(req.id, task.id, e.target.checked)}
+                                              className="w-4 h-4 text-indigo-600 rounded border-zinc-300 focus:ring-indigo-500 cursor-pointer"
+                                            />
+                                            <span className={`text-[10px] font-bold ${task.isCompleted ? 'text-zinc-400 line-through' : 'text-zinc-700'}`}>
+                                              {task.description}
+                                            </span>
+                                          </label>
+                                        ))}
+                                      </div>
+
+                                      {/* Input para nueva tarea */}
+                                      <div className="pt-2 flex gap-1.5">
+                                        <input
+                                          id={`task-desc-tech-${req.id}`}
+                                          type="text"
+                                          placeholder="Nueva tarea (ej: Cambio de bujías)..."
+                                          className="flex-grow p-1.5 bg-white border border-zinc-300 rounded-lg text-[9px] font-bold focus:outline-indigo-500"
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              const input = e.currentTarget;
+                                              handleAddTaskToChecklist(req.id, input.value);
+                                              input.value = '';
+                                            }
+                                          }}
+                                        />
+                                        <button
+                                          onClick={() => {
+                                            const input = document.getElementById(`task-desc-tech-${req.id}`) as HTMLInputElement;
+                                            handleAddTaskToChecklist(req.id, input.value);
+                                            input.value = '';
+                                          }}
+                                          className="p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all"
+                                        >
+                                          <Plus className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {/* LISTA DE MATERIALES */}
+                                    <div className="bg-zinc-50 border border-zinc-200 p-4 rounded-2xl space-y-3">
+                                      <h5 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Layers className="w-3.5 h-3.5 text-indigo-500" />
+                                        Insumos y Materiales
+                                      </h5>
+                                      <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1">
+                                        {req.materials?.length === 0 ? (
+                                          <p className="text-[9px] text-zinc-400 text-center py-2">Sin materiales registrados</p>
+                                        ) : (
+                                          req.materials?.map((m, idx) => (
+                                            <div key={idx} className="flex justify-between items-center p-2 bg-white border border-zinc-150 rounded-xl">
+                                              <div className="flex flex-col">
+                                                <span className="text-[10px] font-bold text-zinc-700">{m.name}</span>
+                                                <span className="text-[9px] font-black text-emerald-600">${m.price.toFixed(2)}</span>
+                                              </div>
+                                              <button
+                                                onClick={() => handleRemoveMaterial(req.id, idx)}
+                                                className="p-1.5 text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
+                                              >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                              </button>
+                                            </div>
+                                          ))
+                                        )}
+                                      </div>
+
+                                      <div className="pt-2 flex gap-1.5">
+                                        <input
+                                          id={`mat-name-tech-${req.id}`}
+                                          type="text"
+                                          placeholder="Repuesto..."
+                                          className="flex-grow p-1.5 bg-white border border-zinc-300 rounded-lg text-[9px] font-bold focus:outline-indigo-500"
+                                        />
+                                        <input
+                                          id={`mat-price-tech-${req.id}`}
+                                          type="number"
+                                          placeholder="$0.00"
+                                          className="w-16 p-1.5 bg-white border border-zinc-300 rounded-lg text-[9px] font-bold focus:outline-indigo-500"
+                                        />
+                                        <button
+                                          onClick={() => {
+                                            const name = (document.getElementById(`mat-name-tech-${req.id}`) as HTMLInputElement).value;
+                                            const price = (document.getElementById(`mat-price-tech-${req.id}`) as HTMLInputElement).value;
+                                            if(name && price) {
+                                              handleAddMaterial(req.id, name, Number(price));
+                                              (document.getElementById(`mat-name-tech-${req.id}`) as HTMLInputElement).value = '';
+                                              (document.getElementById(`mat-price-tech-${req.id}`) as HTMLInputElement).value = '';
+                                            }
+                                          }}
+                                          className="p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all cursor-pointer"
+                                        >
+                                          <Plus className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
 
                               {/* Action to formulate quote */}
                               {req.status === 'pending' && (
@@ -3061,46 +4301,120 @@ export default function App() {
                                   <span className="text-xs font-black text-zinc-800 block uppercase tracking-wider">Enviar propuesta de cotización formal</span>
                                   
                                   <div className="flex items-center gap-3 flex-wrap">
-                                    <div className="relative max-w-[200px] w-full">
+                                    <div className="relative max-w-[150px] w-full">
                                       <span className="absolute left-3.5 top-2.5 text-xs text-zinc-400 font-black">$</span>
                                       <input
                                         type="number"
-                                        placeholder="Precio total (USD)"
+                                        placeholder="Precio"
                                         value={draftingBidRequestId === req.id ? bidPrice : ''}
                                         onChange={(e) => {
                                           setDraftingBidRequestId(req.id);
                                           setBidPrice(e.target.value);
                                         }}
-                                        className="w-full pl-7 pr-3 py-2 border border-zinc-250 bg-white rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900"
+                                        className="w-full pl-7 pr-3 py-2 border border-zinc-200 bg-white rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900"
                                       />
                                     </div>
 
+                                    <div className="relative max-w-[150px] w-full">
+                                      <input
+                                        type="date"
+                                        value={draftingBidRequestId === req.id ? bidDate : ''}
+                                        onChange={(e) => {
+                                          setDraftingBidRequestId(req.id);
+                                          setBidDate(e.target.value);
+                                        }}
+                                        className="w-full px-3 py-2 border border-zinc-200 bg-white rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900"
+                                      />
+                                    </div>
+
+                                    <div className="relative max-w-[120px] w-full">
+                                      <input
+                                        type="time"
+                                        value={draftingBidRequestId === req.id ? bidTime : ''}
+                                        onChange={(e) => {
+                                          setDraftingBidRequestId(req.id);
+                                          setBidTime(e.target.value);
+                                        }}
+                                        className="w-full px-3 py-2 border border-zinc-200 bg-white rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900"
+                                      />
+                                    </div>
+
+                                    <div className="relative max-w-[100px] w-full">
+                                      <select
+                                        value={draftingBidRequestId === req.id ? bidDuration : 1}
+                                        onChange={(e) => {
+                                          setDraftingBidRequestId(req.id);
+                                          setBidDuration(Number(e.target.value));
+                                        }}
+                                        className="w-full px-3 py-2 border border-zinc-200 bg-white rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 appearance-none"
+                                        title="Duración del Servicio"
+                                      >
+                                        <option value={0.5}>30m</option>
+                                        <option value={1}>1h</option>
+                                        <option value={1.5}>1.5h</option>
+                                        <option value={2}>2h</option>
+                                        <option value={3}>3h</option>
+                                        <option value={4}>4h</option>
+                                        <option value={8}>Todo el día</option>
+                                      </select>
+                                    </div>
+
+                                    <div className="relative max-w-[100px] w-full">
+                                      <select
+                                        value={draftingBidRequestId === req.id ? bidTravelTime : 30}
+                                        onChange={(e) => {
+                                          setDraftingBidRequestId(req.id);
+                                          setBidTravelTime(Number(e.target.value));
+                                        }}
+                                        className="w-full px-3 py-2 border border-zinc-200 bg-white rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-rose-500 text-gray-900 appearance-none"
+                                        title="Tiempo de Viaje Estimado"
+                                      >
+                                        <option value={15}>15m Viaje</option>
+                                        <option value={30}>30m Viaje</option>
+                                        <option value={45}>45m Viaje</option>
+                                        <option value={60}>1h Viaje</option>
+                                        <option value={90}>1.5h Viaje</option>
+                                      </select>
+                                    </div>
+
                                     {draftingBidRequestId === req.id && bidPrice && (
-                                      <div className="text-[10px] text-zinc-500 font-semibold space-x-3.5 shrink-0">
-                                        <span>Comisión Retenida (15%): <strong className="text-rose-650 text-red-600 font-extrabold">${(Number(bidPrice) * 0.15).toFixed(2)}</strong></span>
-                                        <span>Ganancia Neta: <strong className="text-emerald-700 font-bold">${(Number(bidPrice) * 0.85).toFixed(2)}</strong></span>
+                                      <div className="text-[10px] text-zinc-500 font-semibold space-x-3.5 shrink-0 bg-zinc-50 px-3 py-1 rounded-lg border border-zinc-100">
+                                        <span>Comisión (15%): <strong className="text-red-600">${(Number(bidPrice) * 0.15).toFixed(2)}</strong></span>
+                                        <span>Ganancia Neta: <strong className="text-emerald-700">${(Number(bidPrice) * 0.85).toFixed(2)}</strong></span>
                                       </div>
                                     )}
 
                                     <button
-                                      disabled={!bidPrice}
                                       onClick={() => handleSubmitBid(req.id)}
-                                      className="px-5 py-2.5 bg-indigo-650 hover:bg-indigo-750 disabled:opacity-45 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs shrink-0"
+                                      className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer shadow-md shrink-0 ${
+                                        (draftingBidRequestId === req.id && bidPrice)
+                                          ? 'bg-indigo-600 hover:bg-indigo-700 text-white opacity-100'
+                                          : 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
+                                      }`}
                                     >
                                       Enviar Cotización
+                                    </button>
+                                    <button
+                                      onClick={() => handleRejectRequest(req.id)}
+                                      className="px-5 py-2.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                    >
+                                      Denegar Propuesta
                                     </button>
                                   </div>
                                 </div>
                               )}
 
                               {req.status === 'accepted' && (
-                                <div className="bg-emerald-50 p-5 rounded-2xl border border-emerald-150 flex items-center justify-between flex-wrap gap-3 animate-pulse">
+                                <div className="bg-emerald-50 p-5 rounded-2xl border border-emerald-100 flex items-center justify-between flex-wrap gap-3 animate-pulse">
                                   <div>
                                     <span className="text-xs font-extrabold text-emerald-950 block uppercase tracking-wide">¡Cliente aprobó el pago de garantía!</span>
                                     <p className="text-[11px] text-emerald-800 font-medium mt-0.5">El trabajo ya se encuentra en tu calendario. Visita la ubicación y presiona terminar para cobrar de inmediato.</p>
                                   </div>
                                   <button
-                                    onClick={() => handleCompleteJob(req.id)}
+                                    onClick={() => {
+                                      setSelectedRequestForReport(req);
+                                      setIsSignatureModalOpen(true);
+                                    }}
                                     className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-sm cursor-pointer"
                                   >
                                     Completar Servicio Profesional
@@ -3109,13 +4423,27 @@ export default function App() {
                               )}
 
                               {req.price && (
-                                <div className="flex justify-between text-xs pt-3 border-t border-zinc-100 flex-wrap gap-2">
+                                <div className="flex justify-between text-xs pt-3 border-t border-zinc-100 flex-wrap gap-2 items-end">
                                   <div>
-                                    <span className="text-zinc-450 font-semibold text-[10px] uppercase block">Precio Cotizado: </span>
+                                    <span className="text-zinc-400 font-semibold text-[10px] uppercase block">Precio Cotizado: </span>
                                     <span className="font-black text-zinc-900 text-sm block mt-0.5">${req.price.toFixed(2)}</span>
                                   </div>
+
+                                  {(req.status === 'completed' || req.status === 'rated') && (
+                                    <button
+                                      onClick={() => {
+                                        setSelectedRequestForReport(req);
+                                        setIsReportModalOpen(true);
+                                      }}
+                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-lg text-[10px] font-black uppercase transition-all"
+                                    >
+                                      <FileText className="w-3.5 h-3.5" />
+                                      Ver Reporte
+                                    </button>
+                                  )}
+
                                   <div className="text-right">
-                                    <span className="text-zinc-450 font-semibold text-[10px] uppercase block">Tus ingresos netos (85%): </span>
+                                    <span className="text-zinc-400 font-semibold text-[10px] uppercase block">Tus ingresos netos (85%): </span>
                                     <span className="font-black text-emerald-600 text-sm block mt-0.5">${req.technicianEarnings?.toFixed(2)}</span>
                                   </div>
                                 </div>
@@ -3133,7 +4461,7 @@ export default function App() {
                 <div className="space-y-6">
                   <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
                     <h2 className="text-sm font-black text-zinc-900 uppercase tracking-widest mb-2">Mi Agenda de Servicio - Maintly Panamá</h2>
-                    <p className="text-[11px] text-zinc-450 font-medium mb-5">Mantenimientos programados organizados cronológicamente</p>
+                    <p className="text-[11px] text-zinc-400 font-medium mb-5">Mantenimientos programados organizados cronológicamente</p>
 
                     <div className="space-y-4">
                       {agenda.filter(a => a.techId === selectedTechProfileId).map((evt) => (
@@ -3147,9 +4475,41 @@ export default function App() {
                             <div>
                               <span className="text-[9px] text-zinc-400 font-bold block uppercase">Cliente: {evt.clientName}</span>
                               <h4 className="font-extrabold text-zinc-900 text-sm tracking-tight mt-0.5">{evt.title}</h4>
-                              <div className="flex items-center gap-2 mt-1.5 text-[11px] text-zinc-500 font-medium">
-                                <Clock className="w-3.5 h-3.5 text-zinc-400" />
-                                <span>Hora: {evt.time} ({evt.duration})</span>
+                              <div className="flex flex-wrap items-center gap-4 mt-2">
+                                <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 font-bold bg-white px-2 py-1 rounded-lg border border-zinc-100 shadow-xs">
+                                  <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                                  <span>Labor: {evt.duration}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 font-bold bg-indigo-50/50 px-2 py-1 rounded-lg border border-indigo-100/50 shadow-xs">
+                                  <Truck className="w-3.5 h-3.5 text-indigo-400" />
+                                  <span>Viaje Estimado: {evt.travelTime || '30 min'}</span>
+                                </div>
+                                <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider ml-1">
+                                  Inicia: {evt.time}
+                                </div>
+                              </div>
+
+                              {/* Visual Timeline Bar */}
+                              <div className="mt-3 h-1.5 w-48 bg-zinc-100 rounded-full overflow-hidden flex shadow-inner">
+                                {(() => {
+                                  const laborH = parseFloat(evt.duration) || 1;
+                                  const travelH = (parseInt(evt.travelTime || '30')) / 60;
+                                  const total = laborH + travelH;
+                                  return (
+                                    <>
+                                      <div
+                                        className="h-full bg-indigo-600"
+                                        style={{ width: `${(laborH / total) * 100}%` }}
+                                        title={`Labor: ${evt.duration}`}
+                                      ></div>
+                                      <div
+                                        className="h-full bg-rose-400"
+                                        style={{ width: `${(travelH / total) * 100}%` }}
+                                        title={`Viaje: ${evt.travelTime}`}
+                                      ></div>
+                                    </>
+                                  );
+                                })()}
                               </div>
                             </div>
                           </div>
@@ -3162,6 +4522,22 @@ export default function App() {
                             }`}>
                               {evt.status === 'completed' ? 'Realizado' : 'Pendiente / En Camino'}
                             </span>
+
+                            {evt.status !== 'completed' && (
+                              <button
+                                onClick={() => {
+                                  const newD = window.prompt("Nueva Fecha (YYYY-MM-DD):", evt.date);
+                                  const newT = window.prompt("Nueva Hora (HH:MM):", evt.time);
+                                  const reason = window.prompt("Motivo del cambio (obligatorio):");
+                                  if (newD && newT && reason && evt.requestId) {
+                                    handleRescheduleService(evt.requestId, newD, newT, reason);
+                                  }
+                                }}
+                                className="block mt-2 text-[10px] font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-wider text-right w-full"
+                              >
+                                [ Reprogramar ]
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -3185,18 +4561,38 @@ export default function App() {
                         </div>
                         <div>
                           <h3 className="text-base font-black text-zinc-900 tracking-tight">{getSelectedTechProfileObj()?.name}</h3>
-                          <p className="text-xs text-indigo-650 font-bold uppercase tracking-wider mt-0.5">{getSelectedTechProfileObj()?.title}</p>
-                          <p className="text-[11px] text-zinc-400 font-medium">{getSelectedTechProfileObj()?.location}</p>
+                          <p className="text-xs text-indigo-600 font-bold uppercase tracking-wider mt-0.5">{getSelectedTechProfileObj()?.title}</p>
+                          <div className="flex items-center gap-3 mt-1">
+                            <p className="text-[11px] text-zinc-400 font-medium flex items-center gap-1">
+                              <MapPin className="w-3 h-3" /> {getSelectedTechProfileObj()?.location}
+                            </p>
+                            <p className="text-[11px] text-zinc-400 font-medium flex items-center gap-1">
+                              <Briefcase className="w-3 h-3" /> {getSelectedTechProfileObj()?.experienceYears} años exp.
+                            </p>
+                            <p className="text-[11px] text-emerald-600 font-extrabold flex items-center gap-1">
+                              <DollarSign className="w-3 h-3" /> ${getSelectedTechProfileObj()?.hourlyRate}/hr
+                            </p>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-center min-w-[140px] shadow-xs">
-                        <span className="text-[10px] uppercase font-black text-zinc-400 tracking-wider">Reputación</span>
-                        <div className="flex items-center justify-center gap-1 font-black text-zinc-900 text-base mt-1">
-                          <Star className="w-4.5 h-4.5 text-amber-500 fill-amber-500" />
-                          {getSelectedTechProfileObj()?.rating}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setIsEditingTechProfile(true)}
+                          className="px-4 py-2 bg-zinc-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-md cursor-pointer active:scale-95"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          Editar Mi Perfil
+                        </button>
+
+                        <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-center min-w-[140px] shadow-xs">
+                          <span className="text-[10px] uppercase font-black text-zinc-400 tracking-wider">Reputación</span>
+                          <div className="flex items-center justify-center gap-1 font-black text-zinc-900 text-base mt-1">
+                            <Star className="w-4.5 h-4.5 text-amber-500 fill-amber-500" />
+                            {getSelectedTechProfileObj()?.rating}
+                          </div>
+                          <span className="text-[9px] text-zinc-400 font-semibold block mt-1">{getSelectedTechProfileObj()?.reviewCount} opiniones</span>
                         </div>
-                        <span className="text-[9px] text-zinc-450 font-semibold block mt-1">{getSelectedTechProfileObj()?.reviewCount} opiniones</span>
                       </div>
                     </div>
 
@@ -3206,7 +4602,7 @@ export default function App() {
                         <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest">Información Profesional</h4>
                         <div>
                           <span className="text-[10px] text-zinc-400 uppercase tracking-wider block font-bold">Reseña Biográfica:</span>
-                          <p className="text-xs text-zinc-650 italic mt-1.5 bg-zinc-50 p-4 rounded-xl border border-zinc-150 leading-relaxed">"{getSelectedTechProfileObj()?.bio}"</p>
+                          <p className="text-xs text-zinc-600 italic mt-1.5 bg-zinc-50 p-4 rounded-xl border border-zinc-100 leading-relaxed">"{getSelectedTechProfileObj()?.bio}"</p>
                         </div>
                         <div>
                           <span className="text-[10px] text-zinc-400 uppercase tracking-wider block font-bold mb-2">Diplomas & Certificaciones:</span>
@@ -3241,20 +4637,20 @@ export default function App() {
                           <div>
                             <span className="block text-[8px] text-zinc-400 uppercase font-black">Tu programa actual:</span>
                             <span className="text-xs font-black text-white block mt-0.5">
-                              {getSelectedTechProfileObj()?.plan === 'premium' ? 'Plan Premium ($15/mes)' : 'Plan Básico (Gratuito - 5 solicitudes max)'}
+                              {getSelectedTechProfileObj()?.plan === 'premium' ? 'Plan Premium ($8/mes - Ilimitado)' : 'Plan Básico (Gratuito - 3 solicitudes max)'}
                             </span>
                           </div>
 
                           <button
                             onClick={() => handleToggleTechPlan(selectedTechProfileId)}
-                            className="px-4 py-2 bg-indigo-650 hover:bg-indigo-750 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer"
                           >
-                            Alternar Plan
+                            {getSelectedTechProfileObj()?.plan === 'premium' ? 'Bajar a Básico' : 'Subir a Premium'}
                           </button>
                         </div>
 
                         <div className="text-[10px] text-zinc-400/90 leading-relaxed">
-                          * Los técnicos en el <strong>Plan Premium</strong> se destacan de forma prioritaria en los resultados del Marketplace, atrayendo 4 veces más solicitudes de clientes.
+                          * El Plan Premium tiene un costo de **$8.00 mensuales** (o un pago anual equivalente). Incluye solicitudes ilimitadas y prioridad en el Marketplace.
                         </div>
                       </div>
                     </div>
@@ -3270,11 +4666,11 @@ export default function App() {
                     <div className="bg-white rounded-2xl border border-zinc-200 p-5 space-y-2 h-[500px] overflow-y-auto shadow-sm">
                       <h3 className="text-xs font-black text-zinc-400 uppercase mb-4 tracking-widest">Mensajes de Clientes</h3>
                       
-                      {requests.filter(r => r.techId === selectedTechProfileId && (r.status === 'quoted' || r.status === 'accepted' || r.status === 'completed' || r.status === 'rated')).length === 0 ? (
+                      {requests.filter(r => r.techId === selectedTechProfileId && ['quoted', 'accepted', 'executing', 'unforeseen', 'unforeseen_paid', 'completed'].includes(r.status)).length === 0 ? (
                         <p className="text-[11px] text-zinc-400 font-medium">Sin hilos de conversación activos con clientes.</p>
                       ) : (
                         requests
-                          .filter(r => r.techId === selectedTechProfileId && (r.status === 'quoted' || r.status === 'accepted' || r.status === 'completed' || r.status === 'rated'))
+                          .filter(r => r.techId === selectedTechProfileId && ['quoted', 'accepted', 'executing', 'unforeseen', 'unforeseen_paid', 'completed'].includes(r.status))
                           .map((r) => (
                             <button
                               key={r.id}
@@ -3282,11 +4678,11 @@ export default function App() {
                               className={`w-full text-left p-3 rounded-xl border text-xs transition-all cursor-pointer ${
                                 activeChatRequestId === r.id
                                   ? 'border-indigo-600 border-indigo-500 bg-indigo-50/70 text-indigo-900 font-black'
-                                  : 'border-transparent text-zinc-650 hover:bg-zinc-50'
+                                  : 'border-transparent text-zinc-600 hover:bg-zinc-50'
                               }`}
                             >
                               <div className="truncate font-bold">{r.clientName}</div>
-                              <div className="text-[10px] text-zinc-450 truncate mt-0.5">{r.assetName}</div>
+                              <div className="text-[10px] text-zinc-400 truncate mt-0.5">{r.assetName}</div>
                             </button>
                           ))
                       )}
@@ -3371,6 +4767,38 @@ export default function App() {
                         </div>
                       </div>
 
+                      {/* RÉCORD POLICIVO Y POLÍTICAS */}
+                      <div className="bg-indigo-50 border border-indigo-100 p-5 rounded-2xl space-y-4 mb-4">
+                        <h4 className="text-[10px] font-black text-indigo-900 uppercase tracking-widest flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4" />
+                          Documentación y Políticas Técnicas
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <a
+                            href="https://www.panamadigital.gob.pa/"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-xl hover:bg-indigo-700 transition-all shadow-md"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            Generar Record Policivo
+                          </a>
+                          <div className="bg-white/50 p-2 rounded-lg border border-indigo-200 text-[8px] text-indigo-800 font-bold italic text-center flex items-center justify-center">
+                            Tiempo de solicitud: 24 a 48 horas.
+                          </div>
+                        </div>
+
+                        <div className="bg-white/70 p-4 rounded-xl border border-indigo-200 space-y-2">
+                          <h5 className="text-[9px] font-black text-indigo-900 uppercase tracking-wider">Políticas de Cumplimiento</h5>
+                          <ul className="space-y-1.5 text-[8.5px] text-indigo-950 font-medium">
+                            <li>• Si no concluyes el trabajo, solo recibirás el <strong>5%</strong> del valor inicial.</li>
+                            <li>• Si el cliente cancela al 50% de avance por presupuesto, se liquida lo realizado.</li>
+                            <li>• Los imprevistos deben reportarse y aprobarse para que la garantía sea válida.</li>
+                            <li>• Solo puedes editar/eliminar insumos y materiales.</li>
+                          </ul>
+                        </div>
+                      </div>
+
                       <button
                         type="submit"
                         disabled={isUpdating}
@@ -3439,7 +4867,7 @@ export default function App() {
 
       {/* FOOTER */}
       <footer className="bg-white border-t border-zinc-200 py-8 mt-12 text-center text-xs text-zinc-400 space-y-1.5 px-4 shadow-inner">
-        <p className="font-bold text-zinc-750 text-zinc-800">Maintly - Intermediario Inteligente de Mantenimiento Residencial, Comercial e Infraestructura TI</p>
+        <p className="font-bold text-zinc-700 text-zinc-800">Maintly - Intermediario Inteligente de Mantenimiento Residencial, Comercial e Infraestructura TI</p>
         <p className="font-medium text-zinc-500">Copyright © 2026 Maintly LLC. Todos los derechos reservados.</p>
       </footer>
 
@@ -3458,10 +4886,73 @@ export default function App() {
       <TechnicianProfileModal
         tech={activeTechForModal}
         isOpen={isTechModalOpen}
-        onClose={() => setIsTechModalOpen(false)}
+        onClose={() => {
+          setIsTechModalOpen(false);
+          setPrefilledDescription(''); // Limpiar al cerrar
+        }}
         assets={assets}
         onRequestQuote={handleRequestQuote}
+        prefilledDescription={prefilledDescription}
       />
+
+      {isEditingTechProfile && (
+        <TechnicianEditProfileModal
+          isOpen={isEditingTechProfile}
+          onClose={() => setIsEditingTechProfile(false)}
+          profile={getSelectedTechProfileObj()}
+          onSave={handleUpdateTechProfile}
+        />
+      )}
+
+      {selectedRequestForReport && (
+        <ServiceReportModal
+          isOpen={isReportModalOpen}
+          onClose={() => {
+            setIsReportModalOpen(false);
+            setSelectedRequestForReport(null);
+          }}
+          request={selectedRequestForReport}
+        />
+      )}
+
+      {/* SIGNATURE & RATING CAPTURE MODAL */}
+      {isSignatureModalOpen && selectedRequestForReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-zinc-100 flex flex-col">
+            <div className="p-6 border-b border-zinc-100 text-center bg-zinc-50">
+              <h3 className="text-lg font-black text-zinc-900 uppercase tracking-tight">Cierre de Garantía en Sitio</h3>
+              <p className="text-[11px] text-zinc-500 font-medium">El cliente debe firmar y calificar para liberar el pago.</p>
+            </div>
+
+            <div className="p-6 space-y-6 overflow-y-auto">
+              {/* Rating Section */}
+              <div className="space-y-3 text-center">
+                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">¿Cómo califica el servicio hoy?</span>
+                <div className="flex justify-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setRatingVal(star)}
+                      className="transition-transform active:scale-125"
+                    >
+                      <Star className={`w-8 h-8 ${ratingVal >= star ? 'fill-amber-500 text-amber-500' : 'text-zinc-200'}`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Signature Section */}
+              <div className="space-y-2">
+                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block text-center">Firma de Conformidad del Cliente</span>
+                <SignaturePad
+                  onSave={(signatureData) => handleCompleteJob(selectedRequestForReport.id, signatureData)}
+                  onCancel={() => setIsSignatureModalOpen(false)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* LIVE MULTICHANNEL ALERTS SIMULATOR MODAL */}
       {testNotification && (
@@ -3566,7 +5057,7 @@ export default function App() {
               
               {notificationSimTab === 'push' ? (
                 /* SMARTPHONE LOCK SCREEN MOCKUP */
-                <div className="w-full max-w-[320px] bg-black rounded-[40px] p-2.5 border-[8px] border-zinc-850 shadow-xl relative overflow-hidden select-none">
+                <div className="w-full max-w-[320px] bg-black rounded-[40px] p-2.5 border-[8px] border-zinc-800 shadow-xl relative overflow-hidden select-none">
                   {/* Notch */}
                   <div className="absolute top-1 left-1/2 -translate-x-1/2 w-20 h-4 bg-black rounded-b-xl z-50 flex items-center justify-center">
                     <span className="w-1.5 h-1.5 rounded-full bg-zinc-900 block shrink-0"></span>
@@ -3617,9 +5108,9 @@ export default function App() {
                 </div>
               ) : (
                 /* INBOX EMAIL CLIENT PREVIEW */
-                <div className="w-full bg-white rounded-2xl border border-zinc-200 shadow-lg flex flex-col overflow-hidden text-zinc-800">
+                <div className="w-full bg-white rounded-2xl border border-zinc-200 shadow-lg flex flex-col overflow-hidden text-zinc-800 max-h-[85vh]">
                   {/* Email Browser Header */}
-                  <div className="bg-zinc-100 p-3.5 border-b border-zinc-200">
+                  <div className="bg-zinc-100 p-3.5 border-b border-zinc-200 shrink-0">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <span className="w-3 h-3 rounded-full bg-red-400 block shrink-0"></span>
@@ -3634,239 +5125,233 @@ export default function App() {
                         {showSmtpInstructions ? "✕ Cerrar Guía SMTP" : "⚙️ Configurar Gmail/SMTP Real"}
                       </button>
                     </div>
-                    
-                    <div className="mt-4 space-y-2 text-xs text-left pb-1">
-                      <p>
-                        <span className="font-bold text-zinc-500">De:</span>{' '}
-                        <span className="font-bold text-indigo-700 font-mono">
-                          {smtpUser && smtpPass ? smtpUser : 'alerts-simulated@mantechpro.com'}
-                        </span>{' '}
-                        {smtpUser && smtpPass ? (
-                          <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 font-extrabold text-[10px] px-2 py-0.5 rounded-full ml-1.5 align-middle">
-                            ✓ Gmail Real Conectado
-                          </span>
-                        ) : (
-                          <span className="text-amber-700 bg-amber-50 border border-amber-200 font-extrabold text-[10px] px-2 py-0.5 rounded-full ml-1.5 align-middle animate-pulse">
-                            ⚠️ Simulador Activo
-                          </span>
-                        )}
-                      </p>
-                      
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 py-0.5">
-                        <span className="font-bold text-zinc-400 shrink-0">Para (Cualquier Correo Cliente):</span>
-                        <div className="flex gap-1.5 w-full">
-                          <input 
-                            type="email" 
-                            value={customEmailInput}
-                            onChange={(e) => setCustomEmailInput(e.target.value)}
-                            placeholder="Introduce tu Gmail personal u otro..." 
-                            className="bg-white border border-zinc-300 rounded-lg px-2.5 py-1 text-xs text-zinc-800 font-extrabold focus:outline-indigo-600 w-full"
-                          />
-                          <button 
-                            type="button"
-                            onClick={() => triggerSimulatedNotification()}
-                            disabled={emailSentStatus === 'sending'}
-                            className="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white px-3.5 py-1 rounded-lg text-xs leading-none font-extrabold transition-all shrink-0 cursor-pointer disabled:opacity-40"
-                          >
-                            {emailSentStatus === 'sending' ? 'Enviando...' : 'Re-enviar Correo'}
-                          </button>
+                  </div>
+
+                  {/* Scrollable Content Body */}
+                  <div className="overflow-y-auto flex-1 custom-scrollbar">
+                    <div className="p-4 space-y-4">
+                      <div className="space-y-2 text-xs text-left">
+                        <p>
+                          <span className="font-bold text-zinc-500">De:</span>{' '}
+                          <span className="font-bold text-indigo-700 font-mono">
+                            {smtpUser && smtpPass ? smtpUser : 'alerts-simulated@mantechpro.com'}
+                          </span>{' '}
+                          {smtpUser && smtpPass ? (
+                            <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 font-extrabold text-[10px] px-2 py-0.5 rounded-full ml-1.5 align-middle">
+                              ✓ Gmail Real Conectado
+                            </span>
+                          ) : (
+                            <span className="text-amber-700 bg-amber-50 border border-amber-200 font-extrabold text-[10px] px-2 py-0.5 rounded-full ml-1.5 align-middle animate-pulse">
+                              ⚠️ Simulador Activo
+                            </span>
+                          )}
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 py-0.5">
+                          <span className="font-bold text-zinc-400 shrink-0">Para (Cualquier Correo Cliente):</span>
+                          <div className="flex gap-1.5 w-full">
+                            <input
+                              type="email"
+                              value={customEmailInput}
+                              onChange={(e) => setCustomEmailInput(e.target.value)}
+                              placeholder="Introduce tu Gmail personal u otro..."
+                              className="bg-white border border-zinc-300 rounded-lg px-2.5 py-1 text-xs text-zinc-800 font-extrabold focus:outline-indigo-600 w-full"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => triggerSimulatedNotification()}
+                              disabled={emailSentStatus === 'sending'}
+                              className="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white px-3.5 py-1 rounded-lg text-xs leading-none font-extrabold transition-all shrink-0 cursor-pointer disabled:opacity-40"
+                            >
+                              {emailSentStatus === 'sending' ? 'Enviando...' : 'Re-enviar Correo'}
+                            </button>
+                          </div>
                         </div>
+
+                        {(!smtpUser || !smtpPass) && (
+                          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-900 mt-2 space-y-1">
+                            <p className="font-extrabold text-amber-900 flex items-center gap-1">⚠️ ATENCIÓN: Correo Real de Gmail Desconectado</p>
+                            <p className="font-medium text-amber-900">
+                              Como todavía no has ingresado la contraseña de aplicaciones de 16 caracteres, el sistema está usando un simulador virtual.
+                              <strong> Genera tu clave en Google, ingrésala en la sección de abajo y te llegará el correo real al instante.</strong>
+                            </p>
+                          </div>
+                        )}
+
+                        <p className="border-t border-zinc-200/60 pt-1.5"><span className="font-bold text-zinc-500">Asunto:</span> <span className="font-black text-zinc-900">⚠️ Atención Requerida: Alerta Crítica para tu Activo {testNotification.assetName}</span></p>
                       </div>
 
-                      {(!smtpUser || !smtpPass) && (
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-900 mt-2 space-y-1">
-                          <p className="font-extrabold text-amber-900 flex items-center gap-1">⚠️ ATENCIÓN: Correo Real de Gmail Desconectado</p>
-                          <p className="font-medium text-amber-900">
-                            Como todavía no has ingresado la contraseña de aplicaciones de 16 caracteres, el sistema está usando un simulador virtual. 
-                            <strong> Genera tu clave en Google, ingrésala en la sección de abajo y te llegará el correo real al instante.</strong>
+                      {/* Collapsible Step-by-Step SMTP Guide & Dynamic Admin Form */}
+                      {showSmtpInstructions && (
+                        <div className="bg-zinc-900 text-white p-5 rounded-2xl border border-zinc-800 text-xs text-left leading-relaxed space-y-4">
+                          <h4 className="font-black text-indigo-400 text-sm flex items-center gap-1.5">🚀 Configuración de Servidor de Correo Propio (SMTP)</h4>
+                          <p className="text-zinc-300">
+                            Configura tu cuenta de <strong>Gmail</strong> u otro proveedor de correo aquí mismo de manera real. Las credenciales se auto-guardan de forma segura en tu navegador local y se usarán para enviar correos directamente a tus clientes reales:
                           </p>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-zinc-400 uppercase">Correo Remitente (SMTP User)</label>
+                              <input
+                                type="email"
+                                value={smtpUser}
+                                onChange={(e) => {
+                                  const u = e.target.value;
+                                  setSmtpUser(u);
+                                  localStorage.setItem('mantechpro_smtp_user', u);
+                                }}
+                                placeholder="ejemplo@gmail.com"
+                                className="w-full bg-zinc-900 border border-zinc-700/80 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-indigo-500 font-mono"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex justify-between items-center">
+                                <label className="block text-[10px] font-bold text-zinc-400 uppercase">Contraseña de Aplicación (SMTP Pass)</label>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowSmtpPasswordText(!showSmtpPasswordText)}
+                                  className="text-[9px] text-indigo-400 hover:underline font-extrabold cursor-pointer"
+                                >
+                                  {showSmtpPasswordText ? "Ocultar" : "Mostrar"}
+                                </button>
+                              </div>
+                              <input
+                                type={showSmtpPasswordText ? "text" : "password"}
+                                value={smtpPass}
+                                onChange={(e) => {
+                                  const p = e.target.value;
+                                  setSmtpPass(p);
+                                  localStorage.setItem('mantechpro_smtp_pass', p);
+                                }}
+                                placeholder="16 letras..."
+                                className="w-full bg-zinc-900 border border-zinc-700/80 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-indigo-500 font-mono"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-zinc-400 uppercase">Host SMTP</label>
+                              <input
+                                type="text"
+                                value={smtpHost}
+                                onChange={(e) => {
+                                  const h = e.target.value;
+                                  setSmtpHost(h);
+                                  localStorage.setItem('mantechpro_smtp_host', h);
+                                }}
+                                placeholder="smtp.gmail.com"
+                                className="w-full bg-zinc-900 border border-zinc-700/80 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-indigo-500 font-mono"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-zinc-400 uppercase">Puerto SMTP</label>
+                              <input
+                                type="text"
+                                value={smtpPort}
+                                onChange={(e) => {
+                                  const pr = e.target.value;
+                                  setSmtpPort(pr);
+                                  localStorage.setItem('mantechpro_smtp_port', pr);
+                                }}
+                                placeholder="587"
+                                className="w-full bg-zinc-900 border border-zinc-700/80 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-indigo-500 font-mono"
+                              />
+                            </div>
+                            <div className="space-y-1 sm:col-span-2 font-sans">
+                              <label className="block text-[10px] font-bold text-zinc-400 uppercase">Nombre Del Remitente (SMTP From)</label>
+                              <input
+                                type="text"
+                                value={smtpFrom}
+                                onChange={(e) => {
+                                  const f = e.target.value;
+                                  setSmtpFrom(f);
+                                  localStorage.setItem('mantechpro_smtp_from', f);
+                                }}
+                                placeholder="MantechPro Alertas <alertas@mantechpro.com>"
+                                className="w-full bg-zinc-900 border border-zinc-700/80 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-indigo-500"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="bg-zinc-800 p-4 rounded-xl border border-zinc-800 text-[11px] text-zinc-300">
+                            💡 <strong>¿Cómo obtener tu clave de 16 letras?</strong>
+                            <ol className="list-decimal pl-4 mt-2 space-y-1.5">
+                              <li>Entra a tu <a href="https://myaccount.google.com/" target="_blank" rel="noreferrer" className="text-indigo-400 underline font-extrabold hover:text-indigo-350">Cuenta de Google</a>.</li>
+                              <li>Activa la <strong>Verificación en 2 pasos</strong> en la pestaña Seguridad.</li>
+                              <li>Busca <strong>Contraseñas de aplicaciones</strong> y genera una nueva clave.</li>
+                              <li>Copia las <strong>16 letras amarillas</strong> y pégalas arriba en <strong>SMTP Pass</strong>.</li>
+                            </ol>
+                          </div>
+
+                          <div className="flex justify-between items-center pt-2">
+                            <span className="text-[10px] text-emerald-400 font-bold">✓ Guardado automático</span>
+                            <button
+                              onClick={() => {
+                                saveSmtpSettings(smtpUser, smtpPass, smtpHost, smtpPort, smtpSecure, smtpFrom);
+                                setShowSmtpInstructions(false);
+                              }}
+                              className="bg-indigo-600 text-white font-extrabold px-3.5 py-1.5 rounded-lg text-xs hover:bg-indigo-500 transition-all cursor-pointer"
+                            >
+                              Guardar & Cerrar
+                            </button>
+                          </div>
                         </div>
                       )}
 
-                      <p className="border-t border-zinc-200/60 pt-1.5"><span className="font-bold text-zinc-500">Asunto:</span> <span className="font-black text-zinc-900">⚠️ Atención Requerida: Alerta Crítica para tu Activo {testNotification.assetName}</span></p>
+                      {/* Sending Notification Loop Tracker */}
+                      {emailSentStatus === 'sending' && (
+                        <div className="bg-indigo-50 border-y border-indigo-200 px-6 py-4.5 text-center text-xs text-indigo-950 flex flex-col items-center justify-center gap-2 animate-pulse rounded-xl">
+                          <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                          <p className="font-extrabold text-indigo-900 text-sm">Enviando Correo Real por SMTP...</p>
+                        </div>
+                      )}
+
+                      {/* Live Email Dispatch Alert Banner */}
+                      {emailSentStatus === 'sent-demo' && emailPreviewUrl ? (
+                        <div className="bg-emerald-50 border-y border-emerald-300 px-6 py-4.5 text-center text-xs text-emerald-950 rounded-xl">
+                          <p className="font-black text-sm mb-1 text-emerald-900">📬 ¡Correo de Demostración Enviado!</p>
+                          <div className="flex flex-col sm:flex-row justify-center items-center gap-2 mt-3">
+                            <a
+                              href={emailPreviewUrl}
+                              target="_blank"
+                              referrerPolicy="no-referrer"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-5 py-2.5 rounded-xl transition-all shadow-sm active:scale-95 text-xs text-center border border-emerald-500"
+                            >
+                              <MailOpen className="w-4 h-4" />
+                              Abrir Correo de Pruebas
+                            </a>
+                            <button
+                              onClick={() => setShowSmtpInstructions(true)}
+                              className="text-[11px] underline text-indigo-700 font-bold hover:text-indigo-950 cursor-pointer"
+                            >
+                              Configurar Gmail Real
+                            </button>
+                          </div>
+                        </div>
+                      ) : emailSentStatus === 'sent-real' ? (
+                        <div className="bg-emerald-50 border-y border-emerald-300 px-6 py-4.5 text-center text-xs text-emerald-950 rounded-xl">
+                          <p className="font-black text-sm mb-1 text-emerald-900">🚀 ¡Correo Real Recibido!</p>
+                          <p className="font-bold text-emerald-800 leading-normal">Hemos enviado el correo a <strong className="text-emerald-950 underline">{customEmailInput}</strong>. ¡Revisa tu bandeja!</p>
+                        </div>
+                      ) : emailSentStatus === 'error' ? (
+                        <div className="bg-rose-50 border-y border-rose-300 px-6 py-4.5 text-center text-xs text-rose-900 rounded-xl">
+                          <p className="font-black text-sm mb-1 text-rose-900">❌ Error al Entregar Correo</p>
+                          <p className="font-mono bg-zinc-900 text-rose-400 p-2 rounded-lg text-[10px] break-all border border-zinc-800 font-bold my-3">
+                            Error: {lastEmailError}
+                          </p>
+                          <button
+                            onClick={() => setShowSmtpInstructions(true)}
+                            className="bg-rose-600 hover:bg-rose-700 text-white font-extrabold px-4 py-2 rounded-xl transition-all cursor-pointer text-xs shadow-sm active:scale-95 border border-rose-500"
+                          >
+                            🔧 Corregir Configuración
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
 
-                  {/* Collapsible Step-by-Step SMTP Guide & Dynamic Admin Form */}
-                  {showSmtpInstructions && (
-                    <div className="bg-zinc-900 text-white p-5 border-y border-zinc-800 text-xs text-left leading-relaxed space-y-4">
-                      <h4 className="font-black text-indigo-400 text-sm flex items-center gap-1.5">🚀 Configuración de Servidor de Correo Propio (SMTP)</h4>
-                      <p className="text-zinc-300">
-                        Configura tu cuenta de <strong>Gmail</strong> u otro proveedor de correo aquí mismo de manera real. Las credenciales se auto-guardan de forma segura en tu navegador local y se usarán para enviar correos directamente a tus clientes reales:
-                      </p>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-zinc-950 p-4 rounded-xl border border-zinc-850">
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-bold text-zinc-400 uppercase">Correo Remitente (SMTP User)</label>
-                          <input 
-                            type="email" 
-                            value={smtpUser}
-                            onChange={(e) => {
-                              const u = e.target.value;
-                              setSmtpUser(u);
-                              localStorage.setItem('mantechpro_smtp_user', u);
-                            }}
-                            placeholder="ejemplo@gmail.com" 
-                            className="w-full bg-zinc-900 border border-zinc-700/80 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-indigo-500 font-mono"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex justify-between items-center">
-                            <label className="block text-[10px] font-bold text-zinc-400 uppercase">Contraseña de Aplicación de Gmail (SMTP Pass)</label>
-                            <button
-                              type="button"
-                              onClick={() => setShowSmtpPasswordText(!showSmtpPasswordText)}
-                              className="text-[9px] text-indigo-400 hover:underline font-extrabold cursor-pointer"
-                            >
-                              {showSmtpPasswordText ? "Ocultar clave" : "Mostrar clave"}
-                            </button>
-                          </div>
-                          <input 
-                            type={showSmtpPasswordText ? "text" : "password"}
-                            value={smtpPass}
-                            onChange={(e) => {
-                              const p = e.target.value;
-                              setSmtpPass(p);
-                              localStorage.setItem('mantechpro_smtp_pass', p);
-                            }}
-                            placeholder="Introduce la contraseña de 16 letras..." 
-                            className="w-full bg-zinc-900 border border-zinc-700/80 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-indigo-500 font-mono"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-bold text-zinc-400 uppercase">Host SMTP</label>
-                          <input 
-                            type="text" 
-                            value={smtpHost}
-                            onChange={(e) => {
-                              const h = e.target.value;
-                              setSmtpHost(h);
-                              localStorage.setItem('mantechpro_smtp_host', h);
-                            }}
-                            placeholder="smtp.gmail.com" 
-                            className="w-full bg-zinc-900 border border-zinc-700/80 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-indigo-500 font-mono"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-bold text-zinc-400 uppercase">Puerto SMTP</label>
-                          <input 
-                            type="text" 
-                            value={smtpPort}
-                            onChange={(e) => {
-                              const pr = e.target.value;
-                              setSmtpPort(pr);
-                              localStorage.setItem('mantechpro_smtp_port', pr);
-                            }}
-                            placeholder="587" 
-                            className="w-full bg-zinc-900 border border-zinc-700/80 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-indigo-500 font-mono"
-                          />
-                        </div>
-                        <div className="space-y-1 sm:col-span-2 font-sans">
-                          <label className="block text-[10px] font-bold text-zinc-400 uppercase">Nombre Del Remitente (SMTP From)</label>
-                          <input 
-                            type="text" 
-                            value={smtpFrom}
-                            onChange={(e) => {
-                              const f = e.target.value;
-                              setSmtpFrom(f);
-                              localStorage.setItem('mantechpro_smtp_from', f);
-                            }}
-                            placeholder="MantechPro Alertas <alertas@mantechpro.com>" 
-                            className="w-full bg-zinc-900 border border-zinc-700/80 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-indigo-500"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="bg-zinc-850 p-3 rounded-lg border border-zinc-800 text-[11px] text-zinc-300">
-                        💡 <strong>¿Cómo obtener tu contraseña de Gmail de 16 letras? (Como en tu captura de pantalla de Google)</strong>
-                        <ol className="list-decimal pl-4 mt-1 space-y-1">
-                          <li>Entra a tu <a href="https://myaccount.google.com/" target="_blank" rel="noreferrer" className="text-indigo-400 underline font-extrabold hover:text-indigo-350">Cuenta de Google (rubenabregoc@gmail.com)</a>.</li>
-                          <li>Ve a la pestaña <strong>Seguridad</strong> y asegúrate de tener activada la <strong>Verificación en 2 pasos</strong>.</li>
-                          <li>En la barra de búsqueda de tu cuenta de Google arriba, escribe <strong>Contraseñas de aplicaciones</strong> (App Passwords) y selecciónalo.</li>
-                          <li>Genera una clave colocando un nombre como "MantechPro" y Cópiala. Verás un recuadro con <strong>16 letras amarillas</strong>.</li>
-                          <li>Pega esas 16 letras en el campo <strong>SMTP Pass</strong> de arriba (sin espacios).</li>
-                        </ol>
-                      </div>
-
-                      <div className="flex justify-between items-center pt-2">
-                        <span className="text-[10px] text-emerald-400 font-bold">✓ Cambios auto-guardados en tu navegador actual</span>
-                        <button 
-                          onClick={() => {
-                            saveSmtpSettings(smtpUser, smtpPass, smtpHost, smtpPort, smtpSecure, smtpFrom);
-                            setShowSmtpInstructions(false);
-                          }}
-                          className="bg-indigo-600 text-white font-extrabold px-3.5 py-1.5 rounded-lg text-xs hover:bg-indigo-500 transition-all cursor-pointer"
-                        >
-                          Guardar & Cerrar
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Sending Notification Loop Tracker */}
-                  {emailSentStatus === 'sending' && (
-                    <div className="bg-indigo-50 border-y border-indigo-200 px-6 py-4.5 text-center text-xs text-indigo-950 flex flex-col items-center justify-center gap-2 animate-pulse">
-                      <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                      <p className="font-extrabold text-indigo-900 text-sm">Enviando Correo Real por SMTP...</p>
-                      <p className="text-indigo-700 font-semibold text-[11px]">Estableciendo handshake seguro con {smtpHost}...</p>
-                    </div>
-                  )}
-
-                  {/* Live Email Dispatch Alert Banner */}
-                  {emailSentStatus === 'sent-demo' && emailPreviewUrl ? (
-                    <div className="bg-emerald-50 border-y border-emerald-300 px-6 py-4.5 text-center text-xs text-emerald-950">
-                      <p className="font-black text-sm mb-1 text-emerald-900">📬 ¡Correo de Demostración Enviado con Éxito!</p>
-                      <p className="mb-3 font-semibold text-emerald-800 leading-normal">Como no has definido una clave SMTP válida, hemos despachado un buzón interactivo de simulación temporal para que puedas ver la alerta:</p>
-                      <div className="flex flex-col sm:flex-row justify-center items-center gap-2">
-                        <a 
-                          href={emailPreviewUrl} 
-                          target="_blank" 
-                          referrerPolicy="no-referrer"
-                          rel="noopener noreferrer" 
-                          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-5 py-2.5 rounded-xl transition-all shadow-sm active:scale-95 text-xs text-center border border-emerald-500"
-                        >
-                          <MailOpen className="w-4 h-4" />
-                          Abrir Correo de Pruebas (Ethereal)
-                        </a>
-                        <button 
-                          onClick={() => setShowSmtpInstructions(true)}
-                          className="text-[11px] underline text-indigo-700 font-bold hover:text-indigo-950 cursor-pointer"
-                        >
-                          Configurar para enviar a mi Gmail real
-                        </button>
-                      </div>
-                    </div>
-                  ) : emailSentStatus === 'sent-real' ? (
-                    <div className="bg-emerald-50 border-y border-emerald-300 px-6 py-4.5 text-center text-xs text-emerald-950">
-                      <p className="font-black text-sm mb-1 text-emerald-900">🚀 ¡Correo Real Recibido!</p>
-                      <p className="font-bold text-emerald-800 leading-normal">Hemos enviado el correo electrónico HTML interactivo usando tu remitente de Gmail directamente a <strong className="text-emerald-950 underline">{customEmailInput}</strong>. ¡Revisa tu bandeja de entrada!</p>
-                    </div>
-                  ) : emailSentStatus === 'error' ? (
-                    <div className="bg-rose-50 border-y border-rose-300 px-6 py-4.5 text-center text-xs text-rose-900">
-                      <p className="font-black text-sm mb-1 text-rose-900">❌ Error al Entregar Correo de Gmail</p>
-                      <p className="mb-3 font-semibold text-rose-800 leading-normal">
-                        Tu proveedor de correo (Gmail/SMTP) rechazó la conexión. Posibles causas:
-                      </p>
-                      <div className="text-left max-w-md mx-auto bg-white border border-rose-200/60 p-3 rounded-xl text-[11px] text-rose-900 font-medium space-y-1 mb-3">
-                        <p>1. Ingresaste la <strong>clave normal</strong> de Gmail en vez de la <strong>Contraseña de Aplicación de 16 letras</strong>.</p>
-                        <p>2. Hubo un error al escribir o copiar el correo remitente o la contraseña.</p>
-                        <p>3. Cambiaste de contraseña de Google, lo que invalida tus claves de aplicaciones anteriores.</p>
-                        <p className="font-mono bg-zinc-900 text-rose-400 p-2 rounded-lg text-[10px] break-all border border-zinc-850 font-bold">
-                          Error devuelto: {lastEmailError}
-                        </p>
-                      </div>
-                      <button 
-                        onClick={() => setShowSmtpInstructions(true)}
-                        className="bg-rose-600 hover:bg-rose-700 text-white font-extrabold px-4 py-2 rounded-xl transition-all cursor-pointer text-xs shadow-sm active:scale-95 border border-rose-500"
-                      >
-                        🔧 Corregir Configuración SMTP
-                      </button>
-                    </div>
-                  ) : null}
-
                   {/* Pure HTML Styled Email Mockup */}
                   <div className="p-6 bg-zinc-50 text-left space-y-5">
-                    <div className="max-w-md mx-auto bg-white border border-zinc-150 p-6 rounded-2xl shadow-xs space-y-4">
+                    <div className="max-w-md mx-auto bg-white border border-zinc-100 p-6 rounded-2xl shadow-xs space-y-4">
                       {/* Brand Header */}
                       <div className="text-center border-b border-zinc-100 pb-4">
                         <span className="text-lg font-black tracking-tight text-zinc-950">Mantech<span className="text-indigo-600">Pro</span></span>
@@ -3895,7 +5380,7 @@ export default function App() {
                             setClientTab('marketplace');
                             setTestNotification(null);
                           }}
-                          className="w-full block text-center bg-indigo-600 hover:bg-indigo-750 text-white font-extrabold py-3 px-4 rounded-xl text-xs transition-all shadow-md shadow-indigo-100 active:scale-98 cursor-pointer"
+                          className="w-full block text-center bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-3 px-4 rounded-xl text-xs transition-all shadow-md shadow-indigo-100 active:scale-98 cursor-pointer"
                         >
                           ⚡ Agendar con 1-Clic
                         </button>
@@ -3904,7 +5389,7 @@ export default function App() {
                         </span>
                       </div>
                       
-                      <div className="border-t border-zinc-150 pt-4 text-[9px] text-zinc-400 space-y-1 text-center font-medium">
+                      <div className="border-t border-zinc-100 pt-4 text-[9px] text-zinc-400 space-y-1 text-center font-medium">
                         <p>MantechPro Inteligencia Preventiva • rubenabregoc@gmail.com</p>
                         <p>Para dejar de recibir alertas, haz clic en desasociar activo en la consola.</p>
                       </div>
