@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev:server": "tsx server.ts",
+    "dev:client": "vite",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "server": "tsx server.ts",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --outfile=dist/server.cjs --external:express --external:dotenv --external:nodemailer --external:@google/generative-ai",
     "start": "node dist/server.cjs",
@@ -37,6 +39,7 @@
     "@types/node": "^22.14.0",
     "@types/nodemailer": "^8.0.1",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^10.0.3",
     "esbuild": "^0.25.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",

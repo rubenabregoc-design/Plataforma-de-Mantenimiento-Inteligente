@@ -222,3 +222,43 @@ export const initialAgendaEvents: AgendaEvent[] = [
     status: 'pending'
   }
 ];
+
+export const initialInventory: InventoryItem[] = [
+  {
+    id: 'inv-1',
+    name: 'Filtro de Aceite Sintético',
+    category: 'filtros',
+    quantity: 2,
+    minStock: 1,
+    unit: 'unidades',
+    pricePerUnit: 12.50,
+    compatibleAssets: ['asset-1']
+  },
+  {
+    id: 'inv-2',
+    name: 'Aceite 5W-30 Full Synthetic',
+    category: 'aceites',
+    quantity: 1,
+    minStock: 2,
+    unit: 'galones',
+    pricePerUnit: 35.00,
+    compatibleAssets: ['asset-1']
+  },
+  {
+    id: 'inv-3',
+    name: 'Filtro de Aire AC 18k BTU',
+    category: 'filtros',
+    quantity: 5,
+    minStock: 2,
+    unit: 'unidades',
+    pricePerUnit: 8.00,
+    compatibleAssets: ['asset-2']
+  }
+];
+
+export const defaultInspectionSteps: Omit<InspectionStep, 'id'>[] = [
+  { label: 'Limpieza de área de trabajo', status: 'pending' },
+  { label: 'Verificación de voltajes/niveles', status: 'pending' },
+  { label: 'Inspección visual de fugas', status: 'pending' },
+  { label: 'Prueba de funcionamiento final', status: 'pending' }
+];

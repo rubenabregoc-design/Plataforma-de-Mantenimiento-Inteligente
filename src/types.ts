@@ -137,6 +137,31 @@ export interface ChatMessage {
   image?: string;
 }
 
+export interface InventoryItem {
+  id: string;
+  name: string;
+  category: 'filtros' | 'aceites' | 'frenos' | 'electricidad' | 'general';
+  quantity: number;
+  minStock: number;
+  unit: string;
+  pricePerUnit: number;
+  compatibleAssets: string[]; // IDs de equipos
+}
+
+export interface InspectionStep {
+  id: string;
+  label: string;
+  status: 'pending' | 'ok' | 'fail' | 'na';
+  observation?: string;
+}
+
+export interface ServiceChecklist {
+  id: string;
+  requestId: string;
+  steps: InspectionStep[];
+  completedAt?: string;
+}
+
 export interface AgendaEvent {
   id: string;
   techId: string;

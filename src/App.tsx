@@ -4,7 +4,9 @@ import {
   initialReminders, 
   initialTechnicians, 
   initialRequests, 
-  initialAgendaEvents 
+  initialAgendaEvents,
+  initialInventory,
+  defaultInspectionSteps
 } from './mockData';
 import { 
   Asset, 
@@ -13,7 +15,10 @@ import {
   JobRequest, 
   AgendaEvent, 
   ChatMessage, 
-  TechCategory 
+  TechCategory,
+  InventoryItem,
+  ServiceChecklist,
+  InspectionStep
 } from './types';
 import AssetRegisterModal from './components/AssetRegisterModal';
 import DiagnosticAIView from './components/DiagnosticAIView';
@@ -22,6 +27,9 @@ import TechnicianEditProfileModal from './components/TechnicianEditProfileModal'
 import ServiceReportModal from './components/ServiceReportModal';
 import SignaturePad from './components/SignaturePad';
 import SupportChatWidget from './components/SupportChatWidget';
+import InventoryModule from './components/InventoryModule';
+import AnalyticsModule from './components/AnalyticsModule';
+import InspectionChecklist from './components/InspectionChecklist';
 
 import { 
   LayoutDashboard, Store, FileCheck2, Bot, MessageSquare, CalendarDays, Users, DollarSign,
@@ -53,7 +61,7 @@ import {
   GraduationCap, Bookmark, Share, Upload, RefreshCw, LineChart, Laptop, Mouse,
   File, Folder, FolderPlus, FolderMinus, RotateCw, ArrowUp, ArrowDown, ArrowLeft,
   Shield, Grid, Layout, LayoutGrid, XCircle, Coffee, Pizza, Utensils, Bike, Plane,
-  Train, Anchor, Sunrise, Sunset, Sparkles, ShieldHalf
+  Train, Anchor, Sunrise, Sunset, Sparkles, ShieldHalf, Package
 } from 'lucide-react';
 
 // Firebase Imports
@@ -495,7 +503,7 @@ export default function App() {
   ];
 
   // Navigation for Client & Tech
-  const [clientTab, setClientTab] = useState<'dashboard' | 'marketplace' | 'quotes' | 'ai' | 'chat' | 'settings'>('dashboard');
+  const [clientTab, setClientTab] = useState<'dashboard' | 'marketplace' | 'quotes' | 'ai' | 'chat' | 'settings' | 'inventory' | 'analytics'>('dashboard');
   const [techTab, setTechTab] = useState<'received' | 'agenda' | 'profile' | 'chat' | 'settings'>('received');
 
   // State
@@ -506,6 +514,8 @@ export default function App() {
   const [requests, setRequests] = useState<JobRequest[]>([]);
   const [agenda, setAgenda] = useState<AgendaEvent[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [checklists, setChecklists] = useState<ServiceChecklist[]>([]);
   const [selectedTechId, setSelectedTechId] = useState<string | null>(null);
 
   // Filter for Marketplace
@@ -738,6 +748,25 @@ export default function App() {
     }
     return () => unsubscribeAgenda();
   }, [isLoggedIn, role, user, isAuthResolving]);
+
+  // 7. Inventory and Checklist Init (Local Storage for now)
+  useEffect(() => {
+    const cachedInv = localStorage.getItem('maintly_inventory');
+    if (cachedInv) setInventory(JSON.parse(cachedInv));
+    else setInventory(initialInventory);
+
+    const cachedChk = localStorage.getItem('maintly_checklists');
+    if (cachedChk) setChecklists(JSON.parse(cachedChk));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('maintly_inventory', JSON.stringify(inventory));
+  }, [inventory]);
+
+  useEffect(() => {
+    localStorage.setItem('maintly_checklists', JSON.stringify(checklists));
+  }, [checklists]);
+
   // --- UTILIDADES DE FORMATO ---
   const formatFriendlyDate = (dateStr: string) => {
     if (!dateStr) return 'Sin fecha';
@@ -2478,6 +2507,34 @@ export default function App() {
                 </button>
 
                 <button
+                  onClick={() => setClientTab('inventory')}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    clientTab === 'inventory'
+                      ? 'bg-zinc-900 text-white border-zinc-800 shadow-md font-extrabold'
+                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Package className={`w-4 h-4 ${clientTab === 'inventory' ? 'text-indigo-400' : 'text-zinc-500'}`} />
+                    Inventario de Repuestos
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setClientTab('analytics')}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    clientTab === 'analytics'
+                      ? 'bg-zinc-900 text-white border-zinc-800 shadow-md font-extrabold'
+                      : 'border-zinc-100 text-zinc-650 bg-white hover:bg-zinc-50'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <BarChart3 className={`w-4 h-4 ${clientTab === 'analytics' ? 'text-indigo-400' : 'text-zinc-500'}`} />
+                    Gastos & Analítica
+                  </span>
+                </button>
+
+                <button
                   onClick={() => setClientTab('marketplace')}
                   className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     clientTab === 'marketplace'
@@ -3343,6 +3400,32 @@ export default function App() {
                 />
               )}
 
+              {clientTab === 'inventory' && (
+                <InventoryModule
+                  items={inventory}
+                  assets={assets}
+                  onUpdateQuantity={(id, delta) => {
+                    setInventory(prev => prev.map(item =>
+                      item.id === id ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item
+                    ));
+                  }}
+                  onAddItem={(item) => {
+                    const newItem = { ...item, id: `inv-${Date.now()}` } as InventoryItem;
+                    setInventory(prev => [...prev, newItem]);
+                  }}
+                  onDeleteItem={(id) => {
+                    setInventory(prev => prev.filter(item => item.id !== id));
+                  }}
+                />
+              )}
+
+              {clientTab === 'analytics' && (
+                <AnalyticsModule
+                  requests={requests}
+                  assets={assets}
+                />
+              )}
+
               {/* TAB 3: MARKETPLACE */}
               {clientTab === 'marketplace' && (
                 <div className="space-y-6">
@@ -4094,7 +4177,31 @@ export default function App() {
                               <div className="text-xs bg-white p-4 rounded-xl border border-zinc-200 leading-relaxed">
                                 <span className="block text-[8px] text-zinc-400 font-black mb-1.5 uppercase tracking-wider">Activo a Trabajar:</span>
                                 <p className="font-extrabold text-zinc-900 mb-1 text-xs">{req.assetName}</p>
-                                <p className="text-zinc-600">"{req.description}"</p>
+                                <p className="text-zinc-600 mb-4">"{req.description}"</p>
+
+                                <div className="pt-4 border-t border-zinc-100">
+                                  <span className="block text-[8px] text-zinc-400 font-black mb-3 uppercase tracking-widest">Inspección de Seguridad & Calidad</span>
+                                  <InspectionChecklist
+                                    steps={checklists.find(c => c.requestId === req.id)?.steps || defaultInspectionSteps.map((s, i) => ({ ...s, id: `step-${req.id}-${i}` })) as InspectionStep[]}
+                                    onUpdateStep={(stepId, status) => {
+                                      setChecklists(prev => {
+                                        const existing = prev.find(c => c.requestId === req.id);
+                                        if (existing) {
+                                          return prev.map(c => c.requestId === req.id ? {
+                                            ...c,
+                                            steps: c.steps.map(s => s.id === stepId ? { ...s, status } : s)
+                                          } : c);
+                                        } else {
+                                          return [...prev, {
+                                            id: `chk-${Date.now()}`,
+                                            requestId: req.id,
+                                            steps: defaultInspectionSteps.map((s, i) => ({ ...s, id: `step-${req.id}-${i}`, status: s.label === defaultInspectionSteps.find(st => `step-${req.id}-${i}`.includes(st.label))?.label ? status : 'pending' })) as InspectionStep[]
+                                          }];
+                                        }
+                                      });
+                                    }}
+                                  />
+                                </div>
                               </div>
 
                               {/* HERRAMIENTAS TÉCNICAS (SOLO SI EL TRABAJO ESTÁ ACEPTADO O COTIZADO) */}
@@ -4835,6 +4942,14 @@ export default function App() {
               <button onClick={() => setClientTab('quotes')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${clientTab === 'quotes' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
                 <FileCheck2 className="w-4 h-4" />
                 <span className="text-[7.5px] uppercase mt-0.5">Ofertas</span>
+              </button>
+              <button onClick={() => setClientTab('inventory')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${clientTab === 'inventory' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
+                <Package className="w-4 h-4" />
+                <span className="text-[7.5px] uppercase mt-0.5">Stock</span>
+              </button>
+              <button onClick={() => setClientTab('analytics')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${clientTab === 'analytics' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
+                <BarChart3 className="w-4 h-4" />
+                <span className="text-[7.5px] uppercase mt-0.5">Gastos</span>
               </button>
               <button onClick={() => setClientTab('chat')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${clientTab === 'chat' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
                 <MessageSquare className="w-4 h-4" />
