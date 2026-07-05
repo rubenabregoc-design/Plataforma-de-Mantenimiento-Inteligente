@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import axios from 'axios';
+import nodemailer from 'nodemailer';
 
 dotenv.config();
 
@@ -140,7 +141,189 @@ app.post('/api/diagnose', (req, res) => {
   res.json(diagnostic);
 });
 
-app.post('/api/send-email', (req, res) => res.json({ success: true }));
+app.post('/api/send-email', async (req, res) => {
+  const { to, subject, assetName, title, dueDate, smtpConfig } = req.body;
+
+  try {
+    // Si no hay configuración SMTP, usamos un simulador de Etheral para pruebas
+    let transporter;
+    let isDemo = false;
+
+    if (smtpConfig && smtpConfig.user && smtpConfig.pass) {
+      transporter = nodemailer.createTransport({
+        host: smtpConfig.host || 'smtp.gmail.com',
+        port: parseInt(smtpConfig.port) || 587,
+        secure: smtpConfig.secure || false,
+        auth: {
+          user: smtpConfig.user,
+          pass: smtpConfig.pass,
+        },
+      });
+    } else {
+      // Fallback a cuenta de prueba de Ethereal
+      const testAccount = await nodemailer.createTestAccount();
+      transporter = nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass,
+        },
+      });
+      isDemo = true;
+    }
+
+    const htmlContent = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+        <h2 style="color: #4f46e5; text-align: center;">MantechPro: Alerta de Mantenimiento</h2>
+        <p>Hola,</p>
+        <p>Tu activo <strong>${assetName}</strong> requiere atención pronto.</p>
+        <div style="background: #fffbeb; border: 1px solid #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 0; font-weight: bold; color: #92400e;">⚠️ Tarea: ${title}</p>
+          <p style="margin: 5px 0 0 0; color: #b45309;">Fecha límite sugerida: ${dueDate}</p>
+        </div>
+        <p>Por favor, ingresa a la aplicación para cotizar con un técnico especializado.</p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        <p style="font-size: 12px; color: #9ca3af; text-align: center;">MantechPro Panamá - Sistema de Gestión Inteligente</p>
+      </div>
+    `;
+
+    const info = await transporter.sendMail({
+      from: smtpConfig?.from || '"MantechPro Alertas" <alertas@mantechpro.com>',
+      to,
+      subject,
+      html: htmlContent,
+    });
+
+    console.log('✅ Correo enviado:', info.messageId);
+
+    if (isDemo) {
+      return res.json({
+        success: true,
+        isDemo: true,
+        previewUrl: nodemailer.getTestMessageUrl(info)
+      });
+    }
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('❌ Error enviando email:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/send-report', async (req, res) => {
+  const { to, reportData } = req.body;
+
+  console.log(`📊 Generando reporte para: ${to}`);
+
+  try {
+    const smtpConfig = {
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    };
+
+    let transporter;
+    let isDemo = false;
+
+    // Lógica de transporte inteligente
+    if (smtpConfig.auth.user && smtpConfig.auth.pass) {
+      console.log("📨 Usando configuración SMTP real...");
+      transporter = nodemailer.createTransport({
+        host: smtpConfig.host || 'smtp.gmail.com',
+        port: smtpConfig.port,
+        secure: smtpConfig.port === 465,
+        auth: smtpConfig.auth
+      });
+    } else {
+      console.log("🧪 Configuración SMTP no detectada. Intentando simulador Ethereal...");
+      try {
+        const testAccount = await nodemailer.createTestAccount();
+        transporter = nodemailer.createTransport({
+          host: 'smtp.ethereal.email',
+          port: 587,
+          secure: false,
+          auth: { user: testAccount.user, pass: testAccount.pass },
+        });
+        isDemo = true;
+      } catch (etherealErr) {
+        console.warn("⚠️ No se pudo conectar con Ethereal (¿Sin internet?). Entrando en MODO LOCAL.");
+        return res.json({
+          success: true,
+          message: "Reporte generado localmente. No se pudo enviar email por falta de conexión al servidor SMTP.",
+          localMode: true
+        });
+      }
+    }
+
+    const htmlContent = `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0d0e12; padding: 40px; color: white;">
+        <div style="max-width: 600px; margin: auto; background: #121317; border: 1px solid #2a2b2f; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+          <div style="background: linear-gradient(to right, #5d3cfe, #c7bfff); padding: 40px; text-align: center;">
+            <h1 style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase; color: white;">Cierre de Mes</h1>
+            <p style="margin: 10px 0 0; font-weight: bold; opacity: 0.9; text-transform: uppercase; letter-spacing: 2px; font-size: 10px; color: white;">Nodo Central MantechPro</p>
+          </div>
+          <div style="padding: 40px;">
+            <p style="font-size: 16px; color: #c8c4d9;">Hola, <strong>Administrador Master</strong>,</p>
+            <p style="color: #c8c4d9;">Se ha generado con éxito la certificación financiera del periodo:</p>
+            <h2 style="color: #52ffac; font-size: 24px; margin: 20px 0;">${reportData.month.toUpperCase()} ${reportData.year}</h2>
+
+            <div style="background: #0d0e12; border: 1px solid #2a2b2f; border-radius: 16px; padding: 25px; margin: 30px 0;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 10px 0; color: #474556; font-size: 10px; font-weight: 900; text-transform: uppercase;">Comisiones</td>
+                  <td style="padding: 10px 0; text-align: right; font-weight: 900; color: white;">$${reportData.totalCommissions.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #474556; font-size: 10px; font-weight: 900; text-transform: uppercase;">Membresías</td>
+                  <td style="padding: 10px 0; text-align: right; font-weight: 900; color: white;">$${reportData.totalSubscriptions.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                </tr>
+                <tr style="border-top: 1px solid #2a2b2f;">
+                  <td style="padding: 20px 0 0; font-weight: 900; color: #52ffac; font-size: 14px;">UTILIDAD NETA</td>
+                  <td style="padding: 20px 0 0; text-align: right; font-weight: 900; color: #52ffac; font-size: 20px;">$${reportData.netUtility.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                </tr>
+              </table>
+            </div>
+
+            <p style="font-size: 12px; color: #474556; line-height: 1.6; text-align: center; font-style: italic;">
+              "Este reporte ha sido verificado digitalmente y es confidencial."
+            </p>
+          </div>
+          <div style="background: #1c1d21; padding: 20px; text-align: center; font-size: 10px; color: #474556; text-transform: uppercase; letter-spacing: 1px;">
+            MantechPro Industries Inc. • Ciudad de Panamá • ${new Date().getFullYear()}
+          </div>
+        </div>
+      </div>
+    `;
+
+    const info = await transporter.sendMail({
+      from: '"MantechPro Finanzas" <finanzas@mantechpro.com>',
+      to,
+      subject: `📜 REPORTE MASTER: Cierre de Mes ${reportData.month} ${reportData.year}`,
+      html: htmlContent,
+    });
+
+    if (isDemo) {
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+      console.log('🔗 URL de vista previa del reporte:', previewUrl);
+      return res.json({ success: true, previewUrl });
+    }
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('❌ Error crítico en el endpoint de reporte:', error);
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor al procesar el email.",
+      details: error.message
+    });
+  }
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 MantechPro: Diagnóstico Pseudo-Inteligente Activo en puerto ${PORT}`);

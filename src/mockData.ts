@@ -89,7 +89,20 @@ export const initialTechnicians: TechProfile[] = [
       'https://images.unsplash.com/photo-1517524206127-48bbd363f3d7?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'
     ],
     plan: 'premium',
-    completedJobs: 85
+    completedJobs: 156,
+    mantechId: {
+      status: 'verified',
+      idNumber: '8-888-8888',
+      verifiedAt: '2026-01-15'
+    },
+    wallet: {
+      balance: 450.25,
+      pendingBalance: 85.00,
+      transactions: [
+        { id: 'tx-1', amount: 80.00, type: 'credit', description: 'Cambio de aceite Toyota Yaris', timestamp: '2026-06-20', status: 'completed' },
+        { id: 'tx-2', amount: 120.00, type: 'credit', description: 'Mantenimiento preventivo', timestamp: '2026-06-18', status: 'completed' }
+      ]
+    }
   },
   {
     id: 'tech-2',

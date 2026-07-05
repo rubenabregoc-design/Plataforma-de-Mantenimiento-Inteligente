@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage, JobRequest } from '../types';
-import { Send, MapPin, Paperclip, CheckCheck, User, Wrench, Image as ImageIcon, FileText } from 'lucide-react';
+import { Send, MapPin, Paperclip, CheckCheck, User, Wrench, Image as ImageIcon, FileText, Maximize2, Minimize2, Video, Phone, QrCode } from 'lucide-react';
 
 interface SupportChatWidgetProps {
   request: JobRequest | null;
@@ -8,9 +8,23 @@ interface SupportChatWidgetProps {
   onSendMessage: (text: string, image?: string) => void;
   messages: ChatMessage[];
   techName?: string;
+  isMaximized?: boolean;
+  onToggleMaximize?: () => void;
+  onStartVideoCall?: (roomName: string, isVoiceOnly?: boolean) => void;
+  onOpenScanner?: () => void;
 }
 
-export default function SupportChatWidget({ request, role, onSendMessage, messages, techName }: SupportChatWidgetProps) {
+export default function SupportChatWidget({
+  request,
+  role,
+  onSendMessage,
+  messages,
+  techName,
+  isMaximized,
+  onToggleMaximize,
+  onStartVideoCall,
+  onOpenScanner
+}: SupportChatWidgetProps) {
   const [text, setText] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -55,10 +69,10 @@ export default function SupportChatWidget({ request, role, onSendMessage, messag
 
   if (!request) {
     return (
-      <div className="bg-white rounded-2xl border border-dashed border-zinc-200 p-8 text-center text-zinc-400 h-full flex flex-col justify-center items-center">
-        <User className="w-12 h-12 text-zinc-300 mb-2.5" />
-        <h4 className="font-extrabold text-zinc-800 text-xs uppercase tracking-wider">Sin Conversaciones Activas</h4>
-        <p className="text-[11px] text-zinc-450 max-w-xs mx-auto mt-1.5 leading-relaxed">
+      <div className="bg-[#1f1f24] rounded-2xl border border-dashed border-[#474556]/30 p-8 text-center text-[#c8c4d9] h-full flex flex-col justify-center items-center">
+        <User className="w-12 h-12 text-[#c7bfff]/30 mb-2.5" />
+        <h4 className="font-extrabold text-[#e3e2e8] text-xs uppercase tracking-wider">Sin Conversaciones Activas</h4>
+        <p className="text-[11px] text-[#c8c4d9]/70 max-w-xs mx-auto mt-1.5 leading-relaxed">
           Las salas de chat se habilitan automáticamente una vez que solicitas una cotización o inicias un servicio con un técnico.
         </p>
       </div>
@@ -66,34 +80,74 @@ export default function SupportChatWidget({ request, role, onSendMessage, messag
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm flex flex-col h-[500px] overflow-hidden">
+    <div className="bg-[#121317] flex flex-col h-full overflow-hidden border border-[#2a2b2f] rounded-[2rem] shadow-2xl">
       
       {/* Target header */}
-      <div className="px-5 py-4 border-b border-zinc-100 bg-zinc-50/80 flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
-            {role === 'client' ? <Wrench className="w-4 h-4" /> : <User className="w-4 h-4" />}
+      <div className="px-6 py-4 border-b border-[#2a2b2f] bg-[#0d0e12]/80 backdrop-blur-md flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-[#5d3cfe]/10 border border-[#5d3cfe]/30 flex items-center justify-center text-[#c7bfff]">
+            {role === 'client' ? <Wrench className="w-5 h-5" /> : <User className="w-5 h-5" />}
           </div>
           <div>
-            <span className="text-[10px] text-zinc-400 font-black uppercase tracking-widest block">
-              {role === 'client' ? 'Técnico Especialista' : 'Cliente Registrado'}
+            <span className="text-[9px] text-[#474556] font-black uppercase tracking-[0.2em] block">
+              {role === 'client' ? 'Canal Técnico' : 'Portal del Cliente'}
             </span>
-            <span className="text-sm font-black text-zinc-900 tracking-tight block mt-0.5">
+            <span className="text-sm font-black text-white tracking-tight block mt-0.5">
               {role === 'client' ? techName || request.techName : request.clientName}
             </span>
           </div>
         </div>
 
-        <div className="px-3 py-1 rounded-xl bg-indigo-50 text-[10px] font-extrabold text-indigo-700 border border-indigo-100 uppercase tracking-wide">
-          Servicio: {request.assetName}
+        <div className="flex items-center gap-2">
+          {role === 'client' && onOpenScanner && (
+            <button
+              onClick={onOpenScanner}
+              className="p-2.5 bg-[#1c1d21] border border-[#2a2b2f] rounded-xl text-[#52ffac] hover:bg-[#52ffac] hover:text-black transition-all shadow-lg group"
+              title="Escanear Credencial del Técnico"
+            >
+              <QrCode className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            </button>
+          )}
+          {onStartVideoCall && request && (
+            <>
+              <button
+                onClick={() => onStartVideoCall(`MantechPro_Room_${request.id}`, true)}
+                className="p-2.5 bg-[#1c1d21] border border-[#2a2b2f] rounded-xl text-[#c7bfff] hover:bg-[#5d3cfe] hover:text-white transition-all shadow-lg group"
+                title="Llamada de Voz Interna"
+              >
+                <Phone className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              </button>
+              <button
+                onClick={() => onStartVideoCall(`MantechPro_Room_${request.id}`, false)}
+                className="p-2.5 bg-[#1c1d21] border border-[#2a2b2f] rounded-xl text-[#52ffac] hover:bg-[#52ffac] hover:text-black transition-all shadow-lg group"
+                title="Videoasistencia Remota"
+              >
+                <Video className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              </button>
+            </>
+          )}
+          <div className="px-3 py-1.5 rounded-full bg-[#1c1d21] text-[8px] font-black text-[#c8c4d9] border border-[#2a2b2f] uppercase tracking-widest hidden sm:block">
+            Soporte: {request.assetName}
+          </div>
+          {onToggleMaximize && (
+            <button
+              onClick={onToggleMaximize}
+              className="p-2 bg-[#1c1d21] border border-[#2a2b2f] rounded-lg text-[#c8c4d9] hover:text-white transition-all shadow-lg"
+              title={isMaximized ? "Contraer" : "Expandir conversación"}
+            >
+              {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
+          )}
         </div>
       </div>
 
       {/* Messages layout */}
-      <div className="flex-1 p-4 overflow-y-auto space-y-3.5 bg-zinc-50/40">
-        <div className="text-center py-1">
-          <span className="text-[9px] bg-zinc-200/60 text-zinc-500 font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider">
-            Canal de comunicación encriptado
+      <div className="flex-1 p-6 overflow-y-auto space-y-8 bg-[#0d0e12]/40 custom-scrollbar">
+        <div className="text-center pb-4">
+          <span className="text-[7px] font-black text-[#474556] uppercase tracking-[0.4em] flex items-center justify-center gap-2">
+            <span className="w-6 h-px bg-[#2a2b2f]"></span>
+            Protocolo de Seguridad de Mensajería
+            <span className="w-6 h-px bg-[#2a2b2f]"></span>
           </span>
         </div>
 
@@ -102,27 +156,27 @@ export default function SupportChatWidget({ request, role, onSendMessage, messag
           return (
             <div
               key={msg.id}
-              className={`flex flex-col max-w-[78%] ${isMe ? 'ml-auto items-end' : 'mr-auto items-start'}`}
+              className={`flex flex-col max-w-[85%] ${isMe ? 'ml-auto items-end' : 'mr-auto items-start'} animate-fade-in-up`}
             >
               <div
-                className={`p-3.5 rounded-2xl text-xs leading-relaxed ${
+                className={`p-5 rounded-[1.5rem] text-sm font-medium leading-relaxed shadow-2xl transition-all hover:scale-[1.01] ${
                   isMe
-                    ? 'bg-indigo-600 text-white rounded-tr-none shadow-md shadow-indigo-100'
-                    : 'bg-white text-zinc-800 rounded-tl-none shadow-xs border border-zinc-200'
+                    ? 'bg-[#5d3cfe] text-white rounded-tr-none shadow-[#5d3cfe]/20'
+                    : 'bg-[#1c1d21] text-[#e3e2e8] rounded-tl-none border border-[#2a2b2f]'
                 }`}
               >
-                {msg.text && <p>{msg.text}</p>}
+                {msg.text && <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>}
 
                 {msg.image && (
-                  <div className="mt-2.5 rounded-xl overflow-hidden border border-black/10">
-                    <img src={msg.image} alt="Evidencia" className="w-full max-h-40 object-cover" />
+                  <div className="mt-4 rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
+                    <img src={msg.image} alt="Evidencia" className="w-full max-h-[500px] object-contain bg-black/20" />
                   </div>
                 )}
               </div>
               
-              <div className="flex items-center gap-1.5 mt-1 text-[9px] text-zinc-400 font-bold uppercase">
-                <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                {isMe && <CheckCheck className="w-3.5 h-3.5 text-indigo-500" />}
+              <div className={`flex items-center gap-2 mt-2 text-[9px] font-black uppercase tracking-widest ${isMe ? 'text-[#c7bfff]' : 'text-[#474556]'}`}>
+                <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                {isMe && <CheckCheck className="w-3.5 h-3.5 opacity-60" />}
               </div>
             </div>
           );
@@ -131,8 +185,7 @@ export default function SupportChatWidget({ request, role, onSendMessage, messag
       </div>
 
       {/* Real attachments */}
-      <div className="px-4.5 py-2 border-t border-zinc-100 bg-white flex items-center gap-2 overflow-x-auto">
-        <span className="text-[9px] text-zinc-400 uppercase font-black tracking-widest shrink-0">Acciones:</span>
+      <div className="px-6 py-2 border-t border-[#2a2b2f] bg-[#0d0e12]/80 flex items-center gap-3 overflow-x-auto custom-scrollbar shrink-0">
         <input
           type="file"
           accept="image/*"
@@ -142,35 +195,37 @@ export default function SupportChatWidget({ request, role, onSendMessage, messag
         />
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-1.5 p-1.5 px-3 border border-zinc-200 rounded-xl hover:bg-zinc-50 text-[10px] text-zinc-650 transition-all font-bold whitespace-nowrap cursor-pointer hover:border-zinc-300"
+          className="flex items-center gap-2 px-3 py-1.5 border border-[#2a2b2f] rounded-lg hover:border-[#5d3cfe]/50 text-[9px] font-black uppercase tracking-widest text-[#c8c4d9] transition-all cursor-pointer"
         >
-          <ImageIcon className="w-3.5 h-3.5 text-indigo-500" />
-          Enviar Foto Real
+          <ImageIcon className="w-3.5 h-3.5 text-[#5d3cfe]" />
+          Adjuntar Evidencia
         </button>
         <button
           onClick={handleShareLocation}
-          className="flex items-center gap-1.5 p-1.5 px-3 border border-zinc-200 rounded-xl hover:bg-zinc-50 text-[10px] text-zinc-650 transition-all font-bold whitespace-nowrap cursor-pointer hover:border-zinc-300"
+          className="flex items-center gap-2 px-3 py-1.5 border border-[#2a2b2f] rounded-lg hover:border-rose-500/50 text-[9px] font-black uppercase tracking-widest text-[#c8c4d9] transition-all cursor-pointer"
         >
           <MapPin className="w-3.5 h-3.5 text-rose-500" />
-          Compartir Mi Ubicación
+          Enviar GPS
         </button>
       </div>
 
       {/* Input box */}
-      <form onSubmit={handleSubmit} className="p-3 border-t border-zinc-100 bg-white flex items-center gap-2">
-        <input
-          type="text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Escribe un mensaje de coordinación..."
-          className="flex-1 px-3 py-2.5 border border-zinc-250 bg-white rounded-xl text-xs text-zinc-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-zinc-400"
-        />
+      <form onSubmit={handleSubmit} className="p-5 pt-2 border-t border-[#2a2b2f] bg-[#0d0e12]/90 flex items-center gap-3 shrink-0">
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Escriba aquí..."
+            className="w-full px-5 py-3 bg-[#121317] border border-[#2a2b2f] rounded-xl text-xs font-bold text-white focus:border-[#5d3cfe] outline-none transition-all placeholder-[#474556]"
+          />
+        </div>
         <button
           type="submit"
           disabled={!text.trim()}
-          className="p-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white rounded-xl transition-all shadow-sm cursor-pointer"
+          className="p-3 bg-[#5d3cfe] hover:brightness-110 disabled:opacity-20 text-white rounded-xl transition-all shadow-lg shadow-[#5d3cfe]/20 cursor-pointer active:scale-95"
         >
-          <Send className="w-3.5 h-3.5" />
+          <Send className="w-4 h-4" />
         </button>
       </form>
     </div>

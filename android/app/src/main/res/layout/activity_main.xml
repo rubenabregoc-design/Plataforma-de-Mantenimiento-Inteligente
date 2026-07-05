@@ -7,6 +7,17 @@
     tools:context=".MainActivity">
 
     <WebView
+        android:id="@+id/webview"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        android:visibility="gone"
+        app:layout_anchor="@id/webview"
+        app:layout_anchorGravity="top" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
