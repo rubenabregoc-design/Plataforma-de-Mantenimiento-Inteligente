@@ -49,8 +49,8 @@ export default function DiagnosticAIView({ assets, onFindTechnicians }: Diagnost
       <div className="bg-indigo-600 rounded-3xl p-6 md:p-8 text-white relative overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
         <div className="relative z-10">
-          <h1 className="text-2xl font-black uppercase tracking-tight mb-2">Asistente Técnico Predictivo</h1>
-          <p className="text-indigo-100 text-sm max-w-xl">Identifica fallas comunes y obtén cotizaciones estimadas basadas en el mercado de Panamá.</p>
+          <h1 className="text-2xl font-black uppercase tracking-tight mb-2">Asistente Técnico Especializado</h1>
+          <p className="text-indigo-100 text-sm max-w-xl">Identifica fallas comunes mediante nuestro motor de conocimiento y obtén cotizaciones estimadas basadas en el mercado de Panamá.</p>
         </div>
       </div>
 
@@ -131,7 +131,7 @@ export default function DiagnosticAIView({ assets, onFindTechnicians }: Diagnost
                   <div className="p-2 bg-indigo-600 rounded-xl text-white">
                     {activeIssue.icon}
                   </div>
-                  <h3 className="font-black text-zinc-900 uppercase text-xs">Evaluación de MantechPro</h3>
+                  <h3 className="font-black text-zinc-900 uppercase text-xs">Evaluación Técnica</h3>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${getUrgencyColor(activeIssue.urgency)}`}>
                   Urgencia {activeIssue.urgency}

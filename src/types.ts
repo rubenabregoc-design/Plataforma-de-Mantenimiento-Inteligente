@@ -51,6 +51,7 @@ export interface TechProfile {
   completedJobs: number;
   experienceYears: number;
   location: string;
+  companyName?: string; // Nombre de la empresa a la que pertenece
   hourlyRate: number;
   bio: string;
   certifications: string[];

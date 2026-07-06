@@ -1,10 +1,10 @@
-# ⚙️ MantechPro: Plataforma de Mantenimiento Inteligente
+# ⚙️ MantechPro: Plataforma de Mantenimiento Especializado
 
-**MantechPro** es una solución integral diseñada para optimizar la gestión de mantenimiento preventivo y correctivo de activos críticos (vehículos, sistemas de climatización, infraestructura TI y energía solar). La plataforma combina inteligencia artificial, automatización de alertas y un marketplace de técnicos certificados.
+**MantechPro** es una solución integral diseñada para optimizar la gestión de mantenimiento preventivo y correctivo de activos críticos (vehículos, sistemas de climatización, infraestructura TI y energía solar). La plataforma combina automatización de alertas, diagnósticos expertos y un marketplace de técnicos certificados.
 
 ## 🚀 Características Principales
 
-*   **Diagnóstico con IA (Gemini):** Analiza fallas mediante descripciones técnicas y fotos, proporcionando causas probables, nivel de urgencia y presupuestos estimados.
+*   **Diagnóstico Especializado:** Analiza fallas comunes mediante un motor de conocimiento técnico, proporcionando causas probables, nivel de urgencia y presupuestos estimados.
 *   **Gestión de Activos:** Registro y seguimiento detallado de vehículos (millaje), aires acondicionados, servidores y plantas eléctricas.
 *   **Alertas Automatizadas:** Sistema de notificaciones vía **Email (SMTP)** y **Web Push** para recordar mantenimientos próximos o vencidos.
 *   **Marketplace de Técnicos:** Conecta con profesionales idóneos en Ciudad de Panamá (Mecánicos, Eléctricos, HVAC, TI) con sistema de valoraciones y perfiles premium.
@@ -14,7 +14,6 @@
 
 *   **Frontend:** React 19, TypeScript, Tailwind CSS, Lucide React, Framer Motion.
 *   **Backend:** Node.js, Express.
-*   **IA:** Google Gemini API (@google/genai).
 *   **Notificaciones:** Nodemailer (SMTP) y Web Push API.
 *   **Build Tool:** Vite.
 
@@ -25,10 +24,9 @@
     npm install
     ```
 
-2.  **Configurar Variables de Entorno:**
+2.  **Configurar Variables de Envío:**
     Crea un archivo `.env` en la raíz (usa `.env.example` como guía):
     ```env
-    GEMINI_API_KEY=tu_api_key_aquí
     SMTP_USER=tu_correo@gmail.com
     SMTP_PASS=tu_password_de_aplicacion
     APP_URL=http://localhost:3000
@@ -41,9 +39,9 @@
 
 ## 📋 Estructura del Proyecto
 
-*   `/src/components`: Componentes modulares (Modales de registro, Vista de IA, Chat).
+*   `/src/components`: Componentes modulares (Modales de registro, Asistente Técnico, Chat).
 *   `/src/mockData.ts`: Base de datos simulada de activos, técnicos y solicitudes.
-*   `server.ts`: Servidor Express que maneja la API de diagnóstico IA y el despacho de correos electrónicos.
+*   `server.ts`: Servidor Express que maneja el motor de diagnóstico y el despacho de correos electrónicos.
 *   `types.ts`: Definiciones de interfaces TypeScript para todo el ecosistema.
 
 ---

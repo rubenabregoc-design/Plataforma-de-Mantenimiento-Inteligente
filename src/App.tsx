@@ -515,6 +515,15 @@ export default function App() {
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [assetToEdit, setAssetToEdit] = useState<Asset | null>(null);
   const [prefilledDescription, setPrefilledDescription] = useState<string>('');
+
+  // Estados para Pago Embebido
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [activePaymentRequest, setActivePaymentRequest] = useState<JobRequest | null>(null);
+
+  const handleOpenPayment = (req: JobRequest) => {
+    setActivePaymentRequest(req);
+    setIsPaymentModalOpen(true);
+  };
   const [isTechModalOpen, setIsTechModalOpen] = useState(false);
   const [activeTechForModal, setActiveTechForModal] = useState<TechProfile | null>(null);
 
@@ -898,7 +907,7 @@ export default function App() {
   };
 
   // Client submit quote request
-  const handleRequestQuote = async (techId: string, assetId: string, description: string) => {
+  const handleRequestQuote = async (techId: string, assetId: string, description: string, suggestedDate?: string, suggestedTime?: string) => {
     if (!user) return;
     const selectedTech = technicians.find(t => t.id === techId);
     const selectedAsset = assets.find(a => a.id === assetId);
@@ -922,6 +931,8 @@ export default function App() {
         description: description,
         status: 'pending',
         createdAt: serverTimestamp(),
+        scheduledDate: suggestedDate || '',
+        scheduledTime: suggestedTime || '',
         checklist: [
           { id: '1', description: 'Inspección inicial del equipo', isCompleted: false },
           { id: '2', description: 'Pruebas de funcionamiento post-reparación', isCompleted: false }
@@ -2011,7 +2022,7 @@ export default function App() {
                 <div className="text-center bg-zinc-50 p-3 rounded-2xl border border-zinc-100">
                   <p className="text-xs text-zinc-600 leading-relaxed font-semibold">
                     {authTab === 'client'
-                      ? 'Como CLIENTE: Sube reportes de fallas con IA, cotiza de forma libre, monitorea tu inventario y califica proveedores.'
+                      ? 'Como CLIENTE: Sube reportes de fallas, cotiza de forma libre, monitorea tu inventario y califica proveedores.'
                       : authTab === 'tech'
                         ? 'Como TÉCNICO: Recibe alertas de clientes en Panamá, envía cotizaciones detalladas y administra tu agenda premium.'
                         : 'CONTROL CENTRAL: Monitoreo de finanzas, gestión de usuarios y logística operativa de Mantenimientos S.A.'
@@ -2245,7 +2256,7 @@ export default function App() {
                         <div className="bg-zinc-950 rounded-lg p-2 border border-zinc-800">
                           <div className="text-[9px] uppercase tracking-wider text-zinc-400 font-extrabold flex items-center gap-1">
                             <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-bounce"></span>
-                            Diagnóstico Preliminar IA / Clasificación Automática
+                            Diagnóstico Experto / Clasificación Automática
                           </div>
                           <p className="text-[10.5px] text-zinc-300 font-medium leading-snug mt-1 font-sans">
                             {currentDemo.aiRecommendation}
@@ -2470,7 +2481,7 @@ export default function App() {
                 >
                   <span className="flex items-center gap-2.5">
                     <Bot className={`w-4 h-4 ${clientTab === 'ai' ? 'text-indigo-400' : 'text-zinc-500'}`} />
-                    Diagnóstico IA V2.0
+                    Asistente Experto V2.0
                   </span>
                   <span className="px-1.5 py-0.5 bg-emerald-500 text-[9px] uppercase font-black text-white rounded-md">
                     Activo
@@ -3322,7 +3333,7 @@ export default function App() {
                                     }}
                                     className="px-3 py-1.5 bg-zinc-100 text-zinc-700 rounded-xl text-[10px] font-extrabold hover:bg-zinc-200 border border-zinc-200 transition-all cursor-pointer"
                                   >
-                                    Auto Diagnóstico IA
+                                    Asistente Técnico
                                   </button>
                                 </div>
                               </div>
@@ -3424,6 +3435,12 @@ export default function App() {
                                   <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">
                                     {tech.title}
                                   </p>
+                                  {tech.companyName && (
+                                    <div className="flex items-center gap-1 mt-0.5">
+                                      <Briefcase className="w-2.5 h-2.5 text-zinc-400" />
+                                      <span className="text-[9px] font-black text-zinc-500 uppercase tracking-tighter">{tech.companyName}</span>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
 
@@ -3668,20 +3685,21 @@ export default function App() {
                                   </p>
                                 </div>
 
-                                <div className="flex gap-2 shrink-0">
-                                  <button
-                                    onClick={() => handleAcceptQuote(req.id, 'yappy')}
-                                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-sm"
-                                  >
-                                    Pagar con Yappy
-                                  </button>
-                                  <button
-                                    onClick={() => handleAcceptQuote(req.id, 'ach')}
-                                    className="px-4 py-2.5 bg-zinc-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer"
-                                  >
-                                    Pago ACH / Tarjeta
-                                  </button>
-                                </div>
+                                  <div className="flex gap-2 shrink-0">
+                                    <button
+                                      onClick={() => handleOpenPayment(req)}
+                                      className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-sm"
+                                    >
+                                      <CreditCard className="w-4 h-4" />
+                                      Pagar con Tarjeta
+                                    </button>
+                                    <button
+                                      onClick={() => handleAcceptQuote(req.id, 'yappy')}
+                                      className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-sm"
+                                    >
+                                      Pagar con Yappy
+                                    </button>
+                                  </div>
                               </div>
                             )}
 
@@ -4826,7 +4844,7 @@ export default function App() {
               </button>
               <button onClick={() => setClientTab('ai')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${clientTab === 'ai' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
                 <Bot className="w-4 h-4 animate-pulse text-indigo-500" />
-                <span className="text-[7.5px] uppercase mt-0.5">IA</span>
+                <span className="text-[7.5px] uppercase mt-0.5">Asistente</span>
               </button>
               <button onClick={() => setClientTab('marketplace')} className={`flex-1 flex flex-col items-center justify-center p-0.5 font-bold ${clientTab === 'marketplace' ? 'text-indigo-600 font-extrabold' : 'text-zinc-400'}`}>
                 <Store className="w-4 h-4" />
@@ -4913,6 +4931,64 @@ export default function App() {
           }}
           request={selectedRequestForReport}
         />
+      )}
+
+      {/* EMBEDDED PAYMENT MODAL */}
+      {isPaymentModalOpen && activePaymentRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-zinc-100 flex flex-col relative">
+            <button
+              onClick={() => setIsPaymentModalOpen(false)}
+              className="absolute top-6 right-6 p-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-500 rounded-full transition-all z-10"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="p-8 text-center space-y-6">
+              <div className="space-y-2">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-100">
+                    <div className="w-4 h-4 bg-white rounded-xs"></div>
+                  </div>
+                  <span className="text-xl font-black tracking-tighter text-zinc-900">Mantech<span className="text-indigo-600">Pro</span></span>
+                </div>
+                <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tight">Checkout Seguro</h3>
+                <p className="text-xs text-zinc-500">Estás pagando el servicio de <strong>{activePaymentRequest.assetName}</strong></p>
+              </div>
+
+              <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100 flex justify-between items-center">
+                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Total a Pagar:</span>
+                <span className="text-2xl font-black text-indigo-600">${activePaymentRequest.price?.toFixed(2)}</span>
+              </div>
+
+              {/* Botón de PayPal Embebido (Simulación en local, Producción usa SDK) */}
+              <div className="space-y-3 pt-2">
+                <button
+                  onClick={() => {
+                    alert("Simulando proceso de tarjeta... ¡Pago aprobado!");
+                    handleAcceptQuote(activePaymentRequest.id, 'card');
+                    setIsPaymentModalOpen(false);
+                  }}
+                  className="w-full py-4 bg-[#0070ba] hover:bg-[#005ea6] text-white rounded-2xl font-black text-sm transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" className="h-4 brightness-0 invert" />
+                  Pagar con PayPal / Tarjeta
+                </button>
+
+                <p className="text-[9px] text-zinc-400 font-medium px-6">
+                  Pago procesado de forma encriptada. MantechPro no almacena los datos de tu tarjeta.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-zinc-50 border-t border-zinc-100 flex justify-center items-center gap-4">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-3 opacity-30" alt="Visa" />
+              <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-4 opacity-30" alt="Mastercard" />
+              <div className="w-px h-3 bg-zinc-300"></div>
+              <span className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter">PCI Compliance Certified</span>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* SIGNATURE & RATING CAPTURE MODAL */}

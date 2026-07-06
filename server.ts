@@ -62,23 +62,7 @@ const getSmartFallback = (asset: string, problem: string) => {
 
 app.post('/api/diagnose', async (req, res) => {
   const { assetName, problemDescription } = req.body;
-  const apiKey = (process.env.GEMINI_API_KEY || '').trim();
-
-  try {
-    const model = 'gemini-1.5-flash';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-    const response = await axios.post(url, {
-      contents: [{ parts: [{ text: `Actúa como experto. Analiza: ${assetName} - ${problemDescription}. Responde en JSON: {"possibleCauses":[], "urgency":"", "urgencyReason":"", "troubleshootingSteps":[], "estimatedCostRange":"", "specialistType":""}` }] }],
-      generationConfig: { responseMimeType: "application/json" }
-    }, { timeout: 5000 });
-
-    res.json(JSON.parse(response.data.candidates[0].content.parts[0].text));
-
-  } catch (error: any) {
-    // Si Google falla por créditos, usamos la inteligencia local coherente
-    res.json(getSmartFallback(assetName, problemDescription));
-  }
+  res.json(getSmartFallback(assetName, problemDescription));
 });
 
 app.post('/api/send-email', (req, res) => res.json({ success: true }));

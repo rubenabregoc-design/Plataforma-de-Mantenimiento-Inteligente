@@ -16,6 +16,7 @@ export default function TechnicianEditProfileModal({ isOpen, onClose, profile, o
   const [experienceYears, setExperienceYears] = useState(profile.experienceYears);
   const [hourlyRate, setHourlyRate] = useState(profile.hourlyRate);
   const [location, setLocation] = useState(profile.location);
+  const [companyName, setCompanyName] = useState(profile.companyName || '');
   const [bio, setBio] = useState(profile.bio);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -27,6 +28,7 @@ export default function TechnicianEditProfileModal({ isOpen, onClose, profile, o
       setExperienceYears(profile.experienceYears);
       setHourlyRate(profile.hourlyRate);
       setLocation(profile.location);
+      setCompanyName(profile.companyName || '');
       setBio(profile.bio);
     }
   }, [isOpen, profile]);
@@ -44,6 +46,7 @@ export default function TechnicianEditProfileModal({ isOpen, onClose, profile, o
         experienceYears: Number(experienceYears),
         hourlyRate: Number(hourlyRate),
         location,
+        companyName,
         bio
       });
       onClose();
@@ -151,6 +154,19 @@ export default function TechnicianEditProfileModal({ isOpen, onClose, profile, o
                 required
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
+                className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-zinc-900 font-bold"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-black text-zinc-500 flex items-center gap-1.5">
+                <Briefcase className="w-3 h-3" /> Empresa / Taller
+              </label>
+              <input
+                type="text"
+                placeholder="Nombre de la empresa o independiente..."
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
                 className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-zinc-900 font-bold"
               />
             </div>

@@ -1,25 +1,33 @@
 import React, { useState } from 'react';
 import { TechProfile, Asset } from '../types';
-import { X, Star, MapPin, Award, CheckCircle2, Clock, DollarSign, Send, ShieldPlus } from 'lucide-react';
+import { X, Star, MapPin, Award, CheckCircle2, Clock, DollarSign, Send, ShieldPlus, Briefcase } from 'lucide-react';
 
 interface TechnicianProfileModalProps {
   tech: TechProfile | null;
   isOpen: boolean;
   onClose: () => void;
   assets: Asset[];
-  onRequestQuote: (techId: string, assetId: string, description: string) => void;
+  onRequestQuote: (techId: string, assetId: string, description: string, suggestedDate?: string, suggestedTime?: string) => void;
   prefilledDescription?: string;
 }
 
 export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, onRequestQuote, prefilledDescription }: TechnicianProfileModalProps) {
   const [selectedAssetId, setSelectedAssetId] = useState('');
   const [description, setDescription] = useState(prefilledDescription || '');
+  const [suggestedDate, setSuggestedDate] = useState('');
+  const [suggestedTime, setSuggestedTime] = useState('');
   const [quoteSent, setQuoteSent] = useState(false);
 
   // Sincronizar descripción si cambia el prefilled (cuando se abre el modal desde recordatorio)
   React.useEffect(() => {
-    if (isOpen && prefilledDescription) {
-      setDescription(prefilledDescription);
+    if (isOpen) {
+      if (prefilledDescription) setDescription(prefilledDescription);
+
+      // Default to tomorrow for suggested date
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      setSuggestedDate(tomorrow.toISOString().split('T')[0]);
+      setSuggestedTime('09:00');
     }
   }, [isOpen, prefilledDescription]);
 
@@ -29,7 +37,7 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
     e.preventDefault();
     if (!selectedAssetId || !description.trim()) return;
 
-    onRequestQuote(tech.id, selectedAssetId, description);
+    onRequestQuote(tech.id, selectedAssetId, description, suggestedDate, suggestedTime);
     setQuoteSent(true);
 
     setTimeout(() => {
@@ -37,6 +45,8 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
       setQuoteSent(false);
       setDescription('');
       setSelectedAssetId('');
+      setSuggestedDate('');
+      setSuggestedTime('');
       onClose();
     }, 2000);
   };
@@ -68,6 +78,12 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
             <div>
               <h3 className="text-lg font-bold text-gray-950">{tech.name}</h3>
               <p className="text-xs font-semibold text-indigo-600">{tech.title}</p>
+              {tech.companyName && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <Briefcase className="w-3.5 h-3.5 text-zinc-400" />
+                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-tight">{tech.companyName}</span>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-4 text-xs">
@@ -163,6 +179,28 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
                           </option>
                         ))}
                       </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        ¿Cuándo prefieres el servicio? (Sugerencia)
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="date"
+                          required
+                          value={suggestedDate}
+                          onChange={(e) => setSuggestedDate(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-gray-900 bg-gray-50 focus:outline-hidden"
+                        />
+                        <input
+                          type="time"
+                          required
+                          value={suggestedTime}
+                          onChange={(e) => setSuggestedTime(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-gray-900 bg-gray-50 focus:outline-hidden"
+                        />
+                      </div>
                     </div>
 
                     <div>
