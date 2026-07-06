@@ -57,6 +57,8 @@ export interface TechProfile {
   certifications: string[];
   portfolioImages: string[];
   plan: 'basic' | 'premium';
+  companyName?: string; // Nombre de la empresa del técnico
+  adminNotes?: string; // Solo editable por el admin
   requestsUsedThisMonth: number;
   isVerified: boolean;
   // Documents for verification
@@ -68,6 +70,9 @@ export interface TechProfile {
 export interface MaterialItem {
   name: string;
   price: number;
+  quantity: number;
+  category?: string;
+  addedAt?: string;
 }
 
 export interface TaskItem {
@@ -136,6 +141,105 @@ export interface ChatMessage {
   text: string;
   timestamp: string;
   image?: string;
+}
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  category: 'filtros' | 'aceites' | 'frenos' | 'electricidad' | 'general';
+  quantity: number;
+  minStock: number;
+  unit: string;
+  pricePerUnit: number;
+  compatibleAssets: string[]; // IDs de equipos
+}
+
+export interface InspectionStep {
+  id: string;
+  label: string;
+  status: 'pending' | 'ok' | 'fail' | 'na';
+  observation?: string;
+}
+
+export interface ServiceChecklist {
+  id: string;
+  requestId: string;
+  steps: InspectionStep[];
+  completedAt?: string;
+}
+
+// NUEVOS TIPOS V4: NEGOCIO Y ESCALABILIDAD
+export interface MantechID {
+  status: 'unverified' | 'pending' | 'verified' | 'rejected';
+  idNumber: string;
+  documentUrl?: string;
+  policeRecordUrl?: string;
+  verifiedAt?: string;
+}
+
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  price: number;
+  interval: 'monthly' | 'yearly';
+  features: string[];
+  maxAssets: number;
+}
+
+export interface UserSubscription {
+  planId: string;
+  status: 'active' | 'expired' | 'canceled';
+  startDate: string;
+  nextBillingDate: string;
+}
+
+export interface WalletTransaction {
+  id: string;
+  amount: number;
+  type: 'credit' | 'debit';
+  description: string;
+  timestamp: string;
+  status: 'pending' | 'completed';
+}
+
+export interface TechWallet {
+  balance: number;
+  pendingBalance: number;
+  transactions: WalletTransaction[];
+}
+
+export interface TechProfile {
+  id: string;
+  name: string;
+  category: TechCategory;
+  title: string;
+  rating: number;
+  reviewCount: number;
+  experienceYears: number;
+  location: string;
+  hourlyRate: number;
+  bio: string;
+  certifications: string[];
+  portfolioImages: string[];
+  plan: 'basic' | 'premium';
+  mantechId?: MantechID; // Seguridad Verificada
+  wallet?: TechWallet; // Pagos y Billetera
+  completedJobs: number;
+}
+
+export interface Asset {
+  id: string;
+  name: string;
+  type: AssetType;
+  details: string;
+  registeredAt: string;
+  mileage?: number;
+  usageHours?: number;
+  lastMaintenanceDate: string;
+  nextMaintenanceDate: string;
+  ownerId?: string; // Para Modo Flota
+  location?: string; // Para Modo Flota (Ej: Provincia/Sede)
+  observations?: string; // Nuevas observaciones del equipo
 }
 
 export interface AgendaEvent {

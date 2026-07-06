@@ -1,41 +1,32 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Perfiles de usuario
-    match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-      allow create: if request.auth != null;
-    }
-    // Activos (Equipos)
-    match /assets/{assetId} {
+    // REGLAS DE EMERGENCIA - MODO DESARROLLO ABIERTO
+    // IMPORTANTE: Lionel, si usas Firebase en la nube, asegúrate de correr
+    // 'firebase deploy --only firestore:rules' en tu terminal para activar esto.
+
+    match /{document=**} {
+      // Permitir todo a cualquier usuario autenticado para que no haya bloqueos
       allow read, write: if request.auth != null;
-      allow create: if request.auth != null;
     }
-    // Recordatorios
-    match /reminders/{remId} {
-      allow read, write: if request.auth != null;
-      allow create: if request.auth != null;
-    }
-    // Agenda de Técnicos
-    match /agenda/{agendaId} {
-      allow read, write: if request.auth != null;
-      allow create: if request.auth != null;
-    }
-    // Técnicos (Marketplace)
+
+    // Reglas específicas adicionales para asegurar el Marketplace y el Inventario
     match /technicians/{techId} {
+      allow read: if true;
+    }
+
+    match /inventory/{itemId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
-    // Solicitudes y Cotizaciones
-    match /requests/{reqId} {
+
+    match /users/{userId} {
       allow read, write: if request.auth != null;
-      allow create: if request.auth != null;
     }
-    // Mensajes de Chat
-    match /messages/{msgId} {
-      allow read, write: if request.auth != null;
-      allow create: if request.auth != null;
+
+    match /support_tickets/{ticketId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
   }
 }

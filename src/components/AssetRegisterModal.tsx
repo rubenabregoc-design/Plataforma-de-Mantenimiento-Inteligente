@@ -1,212 +1,136 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Asset, AssetType } from '../types';
-import { Plus, X, Car, ShieldCheck, Cpu, Sliders, BatteryCharging, Zap, RotateCcw, Edit2 } from 'lucide-react';
+import { Plus, X, Car, ShieldCheck, Cpu, Sliders, BatteryCharging, Zap, Boxes, Home, Edit2 } from 'lucide-react';
 
 interface AssetRegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (asset: Omit<Asset, 'id' | 'registeredAt'>) => void;
-  editingAsset?: Asset | null;
+  assetToEdit?: Asset | null;
 }
 
-export default function AssetRegisterModal({ isOpen, onClose, onAdd, editingAsset }: AssetRegisterModalProps) {
-  const [name, setName] = useState('');
-  const [type, setType] = useState<AssetType>('car');
-  const [details, setDetails] = useState('');
-  const [mileage, setMileage] = useState<number>(0);
-  const [usageHours, setUsageHours] = useState<number>(0);
-  const [lastMaintenance, setLastMaintenance] = useState('');
-  const [nextMaintenance, setNextMaintenance] = useState('');
+export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit }: AssetRegisterModalProps) {
+  const [name, setName] = React.useState(assetToEdit?.name || '');
+  const [type, setType] = React.useState<AssetType>(assetToEdit?.type || 'car');
+  const [details, setDetails] = React.useState(assetToEdit?.details || '');
+  const [mileage, setMileage] = React.useState<number>(assetToEdit?.mileage || 0);
+  const [lastMaintenance, setLastMaintenance] = React.useState(assetToEdit?.lastMaintenanceDate || '');
+  const [nextMaintenance, setNextMaintenance] = React.useState(assetToEdit?.nextMaintenanceDate || '');
+  const [observations, setObservations] = React.useState(assetToEdit?.observations || '');
 
-  useEffect(() => {
-    if (editingAsset) {
-      setName(editingAsset.name);
-      setType(editingAsset.type);
-      setDetails(editingAsset.details);
-      setMileage(editingAsset.mileage || 0);
-      setUsageHours(editingAsset.usageHours || 0);
-      setLastMaintenance(editingAsset.lastMaintenanceDate || '');
-      setNextMaintenance(editingAsset.nextMaintenanceDate || '');
+  React.useEffect(() => {
+    if (assetToEdit) {
+      setName(assetToEdit.name);
+      setType(assetToEdit.type);
+      setDetails(assetToEdit.details);
+      setMileage(assetToEdit.mileage || 0);
+      setLastMaintenance(assetToEdit.lastMaintenanceDate);
+      setNextMaintenance(assetToEdit.nextMaintenanceDate);
+      setObservations(assetToEdit.observations || '');
     } else {
       setName('');
       setType('car');
       setDetails('');
       setMileage(0);
-      setUsageHours(0);
       setLastMaintenance('');
       setNextMaintenance('');
+      setObservations('');
     }
-  }, [editingAsset, isOpen]);
+  }, [assetToEdit, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !lastMaintenance || !nextMaintenance) return;
-
     onAdd({
-      name,
-      type,
-      details,
-      mileage: type === 'car' || type === 'moto' ? Number(mileage) : undefined,
-      usageHours: type === 'generator' || type === 'industrial_equip' ? Number(usageHours) : undefined,
+      name, type, details,
+      mileage: (type === 'car' || type === 'moto') ? Number(mileage) : undefined,
       lastMaintenanceDate: lastMaintenance,
       nextMaintenanceDate: nextMaintenance,
+      observations
     });
-
     onClose();
   };
 
-  const getAssetIcon = (assetType: AssetType) => {
-    switch (assetType) {
-      case 'car':
-      case 'moto':
-        return <Car className="w-5 h-5 text-indigo-500" />;
-      case 'ac':
-        return <Sliders className="w-5 h-5 text-sky-500" />;
-      case 'computer':
-        return <Cpu className="w-5 h-5 text-emerald-500" />;
-      case 'generator':
-        return <Zap className="w-5 h-5 text-amber-500" />;
-      case 'solar_panels':
-        return <BatteryCharging className="w-5 h-5 text-orange-500" />;
-      default:
-        return <ShieldCheck className="w-5 h-5 text-teal-500" />;
+  const getAssetIcon = (t: AssetType) => {
+    const cls = "w-4 h-4";
+    switch(t) {
+      case 'car': return <Car className={cls} />;
+      case 'ac': return <Sliders className={cls} />;
+      case 'computer': return <Cpu className={cls} />;
+      case 'generator': return <Zap className={cls} />;
+      case 'solar_panels': return <BatteryCharging className={cls} />;
+      case 'industrial_equip': return <Boxes className={cls} />;
+      case 'house': return <Home className={cls} />;
+      default: return <ShieldCheck className={cls} />;
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-      <div className="w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100">
-        <div className="flex justify-between items-center px-6 py-4 bg-gray-50 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            {editingAsset ? <Edit2 className="w-5 h-5 text-indigo-600" /> : <Plus className="w-5 h-5 text-indigo-600" />}
-            {editingAsset ? 'Editar Equipo o Activo' : 'Registrar Nuevo Equipo o Activo'}
-          </h2>
-          <button onClick={onClose} className="p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0d0e12]/80 backdrop-blur-md">
+      <div className="w-full max-w-xl bg-[#121317] rounded-[2rem] border border-[#2a2b2f] shadow-2xl overflow-hidden animate-fade-in-up">
+        <header className="px-8 py-6 bg-[#1c1d21] border-b border-[#2a2b2f] flex justify-between items-center">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-xl bg-[#5d3cfe]/10 flex items-center justify-center text-[#c7bfff]">
+               {assetToEdit ? <Edit2 className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
+             </div>
+             <h2 className="text-xl font-black text-white uppercase tracking-tight">
+               {assetToEdit ? 'Gestionar Activo' : 'Vincular Nuevo Equipo'}
+             </h2>
+          </div>
+          <button onClick={onClose} className="p-2 text-[#474556] hover:text-white transition-colors"><X className="w-6 h-6" /></button>
+        </header>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Activo / Equipo</label>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { type: 'car', label: 'Carro / Vehículo' },
-                { type: 'ac', label: 'Aire Acondicionado' },
-                { type: 'computer', label: 'Infraestructura TI / PC' },
-                { type: 'generator', label: 'Planta Eléctrica' },
-                { type: 'solar_panels', label: 'Paneles Solares' },
-                { type: 'moto', label: 'Moto / Lancha' },
-                { type: 'industrial_equip', label: 'Equipo Industrial' },
-                { type: 'house', label: 'Hogar / Plomería' },
-              ].map((item) => (
-                <button
-                  key={item.type}
-                  type="button"
-                  onClick={() => setType(item.type as AssetType)}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-left text-xs font-medium transition-all ${
-                    type === item.type
-                      ? 'border-indigo-600 bg-indigo-50 text-indigo-900 shadow-xs'
-                      : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {getAssetIcon(item.type as AssetType)}
-                  {item.label}
-                </button>
-              ))}
+        <form onSubmit={handleSubmit} className="p-8 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-[#474556] uppercase tracking-[0.2em] ml-1">Tipo de Activo</label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+               {(['car', 'ac', 'computer', 'generator', 'solar_panels', 'moto', 'industrial_equip', 'house'] as AssetType[]).map(t => (
+                 <button key={t} type="button" onClick={() => setType(t)} className={`flex items-center gap-2 p-3 rounded-xl border text-[9px] font-black uppercase transition-all ${type === t ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-lg' : 'bg-[#1c1d21] border-[#2a2b2f] text-[#c8c4d9] hover:border-[#c7bfff]/30'}`}>
+                    {getAssetIcon(t)}
+                    {t.split('_')[0]}
+                 </button>
+               ))}
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Descriptivo</label>
-            <input
-              type="text"
-              required
-              placeholder="Ej: Toyota Yaris, Aire Split Habitación, Servidor Dell"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Nombre Descriptivo</label>
+              <input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Unidad Central HVAC" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Detalles de Marca/Modelo</label>
+              <input type="text" value={details} onChange={e => setDetails(e.target.value)} placeholder="Samsung Inverter 24k" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none" />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Especificaciones / Detalles</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <div className="space-y-2">
+               <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Último Mantenimiento</label>
+               <input type="date" required value={lastMaintenance} onChange={e => setLastMaintenance(e.target.value)} className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-[#c7bfff] focus:border-[#c7bfff] outline-none" />
+             </div>
+             <div className="space-y-2">
+               <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Siguiente Programado</label>
+               <input type="date" required value={nextMaintenance} onChange={e => setNextMaintenance(e.target.value)} className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-[#c7bfff] focus:border-[#c7bfff] outline-none" />
+             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Observaciones Críticas</label>
             <textarea
-              placeholder="Ej: Marca Samsung, Inverter 12000 BTU, Placa 4512-B, Año 2021"
-              value={details}
-              onChange={(e) => setDetails(e.target.value)}
-              rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
+              value={observations}
+              onChange={e => setObservations(e.target.value)}
+              placeholder="Ej: El motor emite un sonido extraño al encender, requiere revisión de bujías."
+              className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-xs font-bold text-white focus:border-[#c7bfff] outline-none h-24 resize-none"
             />
           </div>
 
-          {/* Conditional Metrics */}
-          {(type === 'car' || type === 'moto') && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Kilometraje Actual (km)</label>
-              <input
-                type="number"
-                min="0"
-                value={mileage}
-                onChange={(e) => setMileage(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-gray-900"
-              />
-            </div>
-          )}
-
-          {(type === 'generator' || type === 'industrial_equip') && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Horas de Uso Actuales</label>
-              <input
-                type="number"
-                min="0"
-                value={usageHours}
-                onChange={(e) => setUsageHours(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-gray-900"
-              />
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Último Mantenimiento</label>
-              <input
-                type="date"
-                required
-                value={lastMaintenance}
-                onChange={(e) => setLastMaintenance(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-gray-800"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Próximo Mantenimiento</label>
-              <input
-                type="date"
-                required
-                value={nextMaintenance}
-                onChange={(e) => setNextMaintenance(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-gray-800"
-              />
-            </div>
-          </div>
-
-          <div className="pt-4 border-t border-gray-100 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-xs"
-            >
-              {editingAsset ? 'Guardar Cambios' : 'Registrar Activo'}
-            </button>
-          </div>
+          <button type="submit" className="w-full py-5 bg-[#5d3cfe] text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-[#5d3cfe]/20 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+             <Zap className="w-4 h-4 fill-white" />
+             {assetToEdit ? 'Guardar Cambios en Nodo' : 'Registrar Activo en el Nodo'}
+          </button>
         </form>
       </div>
     </div>

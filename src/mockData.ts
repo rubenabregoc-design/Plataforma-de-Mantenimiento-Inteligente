@@ -89,7 +89,20 @@ export const initialTechnicians: TechProfile[] = [
       'https://images.unsplash.com/photo-1517524206127-48bbd363f3d7?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'
     ],
     plan: 'premium',
-    completedJobs: 85
+    completedJobs: 156,
+    mantechId: {
+      status: 'verified',
+      idNumber: '8-888-8888',
+      verifiedAt: '2026-01-15'
+    },
+    wallet: {
+      balance: 450.25,
+      pendingBalance: 85.00,
+      transactions: [
+        { id: 'tx-1', amount: 80.00, type: 'credit', description: 'Cambio de aceite Toyota Yaris', timestamp: '2026-06-20', status: 'completed' },
+        { id: 'tx-2', amount: 120.00, type: 'credit', description: 'Mantenimiento preventivo', timestamp: '2026-06-18', status: 'completed' }
+      ]
+    }
   },
   {
     id: 'tech-2',
@@ -221,4 +234,44 @@ export const initialAgendaEvents: AgendaEvent[] = [
     duration: '1h',
     status: 'pending'
   }
+];
+
+export const initialInventory: InventoryItem[] = [
+  {
+    id: 'inv-1',
+    name: 'Filtro de Aceite Sintético',
+    category: 'filtros',
+    quantity: 2,
+    minStock: 1,
+    unit: 'unidades',
+    pricePerUnit: 12.50,
+    compatibleAssets: ['asset-1']
+  },
+  {
+    id: 'inv-2',
+    name: 'Aceite 5W-30 Full Synthetic',
+    category: 'aceites',
+    quantity: 1,
+    minStock: 2,
+    unit: 'galones',
+    pricePerUnit: 35.00,
+    compatibleAssets: ['asset-1']
+  },
+  {
+    id: 'inv-3',
+    name: 'Filtro de Aire AC 18k BTU',
+    category: 'filtros',
+    quantity: 5,
+    minStock: 2,
+    unit: 'unidades',
+    pricePerUnit: 8.00,
+    compatibleAssets: ['asset-2']
+  }
+];
+
+export const defaultInspectionSteps: Omit<InspectionStep, 'id'>[] = [
+  { label: 'Limpieza de área de trabajo', status: 'pending' },
+  { label: 'Verificación de voltajes/niveles', status: 'pending' },
+  { label: 'Inspección visual de fugas', status: 'pending' },
+  { label: 'Prueba de funcionamiento final', status: 'pending' }
 ];
