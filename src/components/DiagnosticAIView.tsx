@@ -153,7 +153,7 @@ export default function DiagnosticAIView({ assets, onFindTechnicians }: Diagnost
                   <div className="p-5 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex flex-col justify-center">
                     <span className="text-[10px] font-black text-emerald-400 uppercase block mb-1">Especialista:</span>
                     <p className="text-xs font-black text-emerald-900 uppercase leading-none">
-                      {(activeIssue.specialist || 'mecanico').replace('_', ' ')}
+                      {(activeIssue?.specialist || 'mecanico').replace('_', ' ')}
                     </p>
                   </div>
                 </div>
@@ -166,10 +166,10 @@ export default function DiagnosticAIView({ assets, onFindTechnicians }: Diagnost
                 </div>
 
                 <button
-                  onClick={() => onFindTechnicians(activeIssue.specialist)}
+                  onClick={() => onFindTechnicians(activeIssue?.specialist || 'mecanico')}
                   className="w-full py-4 bg-zinc-900 hover:bg-black text-white rounded-2xl text-sm font-black uppercase transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95"
                 >
-                  Contactar Especialista {activeIssue.specialist.split('_')[0].toUpperCase()}
+                  Contactar Especialista {(activeIssue?.specialist || 'mecanico').split('_')[0].toUpperCase()}
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>

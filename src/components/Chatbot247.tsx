@@ -14,7 +14,7 @@ export default function Chatbot247() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: '¡Hola! Soy tu asistente de Mantech 🚀. Estoy aquí para ayudarte 24/7 con cualquier duda sobre tus equipos o servicios. ¿En qué puedo apoyarte hoy?',
+      text: '¡Hola! Soy tu asistente experto de MantechPro Panamá 🇵🇦. Estoy aquí para apoyarte 24/7 con el diagnóstico de tus equipos y servicios técnicos. ¿En qué parte de la ciudad te encuentras hoy?',
       sender: 'bot',
       timestamp: new Date()
     }
@@ -88,13 +88,13 @@ export default function Chatbot247() {
             <div className="bg-[#5d3cfe] p-5 md:p-6 text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
-                  <Sparkles className="w-6 h-6" />
+                  <Zap className="w-6 h-6 text-yellow-300 fill-yellow-300" />
                 </div>
                 <div>
-                  <h4 className="text-xs md:text-sm font-black uppercase tracking-tight leading-none">Soporte 24/7 Premium</h4>
+                  <h4 className="text-xs md:text-sm font-black uppercase tracking-tight leading-none">Asistente Panamá 24/7</h4>
                   <div className="flex items-center gap-1 mt-1">
                     <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-                    <span className="text-[9px] font-bold opacity-80 uppercase tracking-widest">En línea</span>
+                    <span className="text-[9px] font-bold opacity-80 uppercase tracking-widest">Servicio Activo</span>
                   </div>
                 </div>
               </div>

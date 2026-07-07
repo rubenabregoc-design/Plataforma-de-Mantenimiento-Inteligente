@@ -8,30 +8,7 @@ interface TechnicianEditProfileModalProps {
   profile: TechProfile;
   onSave: (updatedData: Partial<TechProfile>) => Promise<void>;
 }
-
 export default function TechnicianEditProfileModal({ isOpen, onClose, profile, onSave }: TechnicianEditProfileModalProps) {
-<<<<<<< HEAD
-  const [name, setName] = useState(profile.name);
-  const [title, setTitle] = useState(profile.title);
-  const [category, setCategory] = useState<TechCategory>(profile.category);
-  const [experienceYears, setExperienceYears] = useState(profile.experienceYears);
-  const [hourlyRate, setHourlyRate] = useState(profile.hourlyRate);
-  const [location, setLocation] = useState(profile.location);
-  const [companyName, setCompanyName] = useState(profile.companyName || '');
-  const [bio, setBio] = useState(profile.bio);
-  const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      setName(profile.name);
-      setTitle(profile.title);
-      setCategory(profile.category);
-      setExperienceYears(profile.experienceYears);
-      setHourlyRate(profile.hourlyRate);
-      setLocation(profile.location);
-      setCompanyName(profile.companyName || '');
-      setBio(profile.bio);
-=======
   const [name, setName] = useState(profile.name || '');
   const [title, setTitle] = useState(profile.title || '');
   const [category, setCategory] = useState<TechCategory>(profile.category || 'mecanico');
@@ -52,7 +29,6 @@ export default function TechnicianEditProfileModal({ isOpen, onClose, profile, o
       setLocation(profile.location || '');
       setBio(profile.bio || '');
       setCompanyName(profile.companyName || '');
->>>>>>> 704b6d958a85e1739c0273d956d23c9955ad9baf
     }
   }, [isOpen, profile]);
 
@@ -69,13 +45,8 @@ export default function TechnicianEditProfileModal({ isOpen, onClose, profile, o
         experienceYears: Number(experienceYears),
         hourlyRate: Number(hourlyRate),
         location,
-<<<<<<< HEAD
-        companyName,
-        bio
-=======
         bio,
         companyName
->>>>>>> 704b6d958a85e1739c0273d956d23c9955ad9baf
       });
       onClose();
     } catch (err) {
@@ -127,19 +98,6 @@ export default function TechnicianEditProfileModal({ isOpen, onClose, profile, o
             <div className="space-y-2">
               <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Tarifa por Hora (B/.)</label>
               <input type="number" required value={hourlyRate} onChange={e => setHourlyRate(Number(e.target.value))} className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-[#52ffac] focus:border-[#c7bfff] outline-none transition-all" />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-black text-zinc-500 flex items-center gap-1.5">
-                <Briefcase className="w-3 h-3" /> Empresa / Taller
-              </label>
-              <input
-                type="text"
-                placeholder="Nombre de la empresa o independiente..."
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-zinc-900 font-bold"
-              />
             </div>
           </div>
 

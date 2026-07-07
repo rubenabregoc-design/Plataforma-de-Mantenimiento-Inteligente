@@ -13,6 +13,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
   const [name, setName] = React.useState(assetToEdit?.name || '');
   const [type, setType] = React.useState<AssetType>(assetToEdit?.type || 'car');
   const [details, setDetails] = React.useState(assetToEdit?.details || '');
+  const [licensePlate, setLicensePlate] = React.useState(assetToEdit?.licensePlate || '');
   const [mileage, setMileage] = React.useState<number>(assetToEdit?.mileage || 0);
   const [lastMaintenance, setLastMaintenance] = React.useState(assetToEdit?.lastMaintenanceDate || '');
   const [nextMaintenance, setNextMaintenance] = React.useState(assetToEdit?.nextMaintenanceDate || '');
@@ -23,6 +24,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       setName(assetToEdit.name);
       setType(assetToEdit.type);
       setDetails(assetToEdit.details);
+      setLicensePlate(assetToEdit.licensePlate || '');
       setMileage(assetToEdit.mileage || 0);
       setLastMaintenance(assetToEdit.lastMaintenanceDate);
       setNextMaintenance(assetToEdit.nextMaintenanceDate);
@@ -31,6 +33,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       setName('');
       setType('car');
       setDetails('');
+      setLicensePlate('');
       setMileage(0);
       setLastMaintenance('');
       setNextMaintenance('');
@@ -45,6 +48,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
     if (!name || !lastMaintenance || !nextMaintenance) return;
     onAdd({
       name, type, details,
+      licensePlate: (type === 'car' || type === 'moto') ? licensePlate : undefined,
       mileage: (type === 'car' || type === 'moto') ? Number(mileage) : undefined,
       lastMaintenanceDate: lastMaintenance,
       nextMaintenanceDate: nextMaintenance,
@@ -105,6 +109,19 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
               <input type="text" value={details} onChange={e => setDetails(e.target.value)} placeholder="Samsung Inverter 24k" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none" />
             </div>
           </div>
+
+          {(type === 'car' || type === 'moto') && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Número de Placa</label>
+                <input type="text" value={licensePlate} onChange={e => setLicensePlate(e.target.value.toUpperCase())} placeholder="AB1234" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">{type === 'car' ? 'Kilometraje' : 'Horas de Uso'}</label>
+                <input type="number" value={mileage} onChange={e => setMileage(Number(e.target.value))} placeholder="0" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none" />
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              <div className="space-y-2">

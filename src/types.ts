@@ -10,15 +10,19 @@ export type AssetType =
 
 export interface Asset {
   id: string;
-  name: string;
+  name: string; // Marca
   type: AssetType;
-  details: string; // e.g. "Toyota Yaris Hatchback 2021", "Samsung 12000 BTU"
+  details: string; // Modelo
+  licensePlate?: string; // Placa (Panamá)
   registeredAt: string;
   // Dynamic metrics:
   mileage?: number; // for cars/motos
   usageHours?: number; // for generators/industrial
   lastMaintenanceDate: string;
   nextMaintenanceDate: string;
+  ownerId?: string; // Para Modo Flota
+  location?: string; // Para Modo Flota (Ej: Provincia/Sede)
+  observations?: string; // Nuevas observaciones del equipo
 }
 
 export interface MaintenanceReminder {
@@ -57,10 +61,11 @@ export interface TechProfile {
   certifications: string[];
   portfolioImages: string[];
   plan: 'basic' | 'premium';
-  companyName?: string; // Nombre de la empresa del técnico
   adminNotes?: string; // Solo editable por el admin
   requestsUsedThisMonth: number;
   isVerified: boolean;
+  mantechId?: MantechID; // Seguridad Verificada
+  wallet?: TechWallet; // Pagos y Billetera
   // Documents for verification
   policeRecordUrl?: string;
   idCardUrl?: string;
@@ -90,7 +95,7 @@ export interface JobRequest {
   techId: string;
   techName: string;
   description: string;
-  status: 'pending' | 'quoted' | 'accepted' | 'completed' | 'rated' | 'rejected' | 'disputed' | 'cancelled';
+  status: 'pending' | 'quoted' | 'accepted' | 'executing' | 'completed' | 'rated' | 'rejected' | 'disputed' | 'cancelled';
   createdAt: string;
   scheduledDate?: string;
   scheduledTime?: string; // Hora propuesta por el técnico (HH:MM)
@@ -206,40 +211,6 @@ export interface TechWallet {
   balance: number;
   pendingBalance: number;
   transactions: WalletTransaction[];
-}
-
-export interface TechProfile {
-  id: string;
-  name: string;
-  category: TechCategory;
-  title: string;
-  rating: number;
-  reviewCount: number;
-  experienceYears: number;
-  location: string;
-  hourlyRate: number;
-  bio: string;
-  certifications: string[];
-  portfolioImages: string[];
-  plan: 'basic' | 'premium';
-  mantechId?: MantechID; // Seguridad Verificada
-  wallet?: TechWallet; // Pagos y Billetera
-  completedJobs: number;
-}
-
-export interface Asset {
-  id: string;
-  name: string;
-  type: AssetType;
-  details: string;
-  registeredAt: string;
-  mileage?: number;
-  usageHours?: number;
-  lastMaintenanceDate: string;
-  nextMaintenanceDate: string;
-  ownerId?: string; // Para Modo Flota
-  location?: string; // Para Modo Flota (Ej: Provincia/Sede)
-  observations?: string; // Nuevas observaciones del equipo
 }
 
 export interface AgendaEvent {
