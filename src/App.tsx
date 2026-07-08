@@ -369,6 +369,49 @@ export default function App() {
     } catch (e) { console.error(e); }
   };
 
+  const handleContinueTomorrow = async (requestId: string) => {
+    if (!requestId) return;
+    const req = requests.find(r => r.id === requestId);
+    if (!req) return;
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const nextDate = tomorrow.toISOString().split('T')[0];
+
+    try {
+      const reason = "Continuación de servicio - Día 2";
+      const history = [...(req.rescheduleHistory || []), {
+        oldDate: req.scheduledDate || '',
+        oldTime: req.scheduledTime || '',
+        newDate: nextDate,
+        newTime: req.scheduledTime || '08:00',
+        reason,
+        timestamp: new Date().toISOString()
+      }];
+
+      await updateDoc(doc(db, "requests", requestId), {
+        status: 'accepted', // Vuelve a aceptado para iniciar mañana
+        scheduledDate: nextDate,
+        rescheduleCount: (req.rescheduleCount || 0) + 1,
+        rescheduleHistory: history
+      });
+
+      // Actualizar agenda
+      const q = query(collection(db, "agenda"), where("requestId", "==", requestId));
+      const snap = await getDocs(q);
+      snap.forEach(d => updateDoc(doc(db, "agenda", d.id), { date: nextDate, title: 'CONTINUACIÓN MAÑANA' }));
+
+      await addDoc(collection(db, "messages"), {
+        requestId,
+        sender: 'tech',
+        text: `📢 PAUSA LOGÍSTICA: El servicio no pudo concluir hoy. Se ha reprogramado automáticamente para mañana ${nextDate} a la misma hora para finalizar las tareas pendientes.`,
+        timestamp: serverTimestamp()
+      });
+
+      alert("Servicio pausado. Se continuará mañana.");
+    } catch (err) { console.error(err); }
+  };
+
   const handleCompleteJob = async (requestId: string, signature: string) => {
     if (!requestId) return;
     try {
@@ -1021,9 +1064,17 @@ export default function App() {
 
                                       {/* Checklist de Progreso para el Técnico */}
                                       <div className="bg-[#0d0e12] p-5 rounded-3xl border border-white/5 space-y-4">
-                                         <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                                            <CheckCircle2 className="w-4 h-4 text-[#5d3cfe]" /> Bitácora de ejecución
-                                         </p>
+                                         <div className="flex justify-between items-center">
+                                            <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                                               <CheckCircle2 className="w-4 h-4 text-[#5d3cfe]" /> Bitácora de ejecución
+                                            </p>
+                                            <button
+                                               onClick={() => handleContinueTomorrow(req.id)}
+                                               className="px-4 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-lg text-[8px] font-black uppercase hover:bg-amber-500 hover:text-black transition-all"
+                                            >
+                                               Pausar y Continuar Mañana
+                                            </button>
+                                         </div>
                                          <div className="grid grid-cols-1 gap-2">
                                             {req.checklist?.map(task => (
                                                <button
