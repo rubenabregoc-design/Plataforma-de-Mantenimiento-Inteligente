@@ -113,6 +113,18 @@ app.post('/api/send-email', async (req, res) => {
   }
 });
 
+app.post('/api/push-notification', async (req, res) => {
+  const { title, body, token } = req.body;
+
+  // En una implementación real con Firebase Admin SDK:
+  // admin.messaging().send({ notification: { title, body }, token });
+
+  console.log(`🔔 Push Notification Sent to ${token}: [${title}] ${body}`);
+
+  // Simulamos éxito para el flujo actual
+  res.json({ success: true, message: 'Notification queued (Mock)' });
+});
+
 // Servir la aplicación
 const distPath = path.join(process.cwd(), 'dist');
 app.use(express.static(distPath));

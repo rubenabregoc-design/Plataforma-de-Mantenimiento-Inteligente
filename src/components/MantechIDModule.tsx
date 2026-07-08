@@ -46,7 +46,7 @@ export default function MantechIDModule({ mantechId, onUpload, role = 'tech' }: 
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-black uppercase tracking-widest text-sm italic">Mantech ID <span className="text-indigo-400">Verificado</span></h3>
+            <h3 className="font-black uppercase tracking-widest text-sm">Mantech ID <span className="text-indigo-400">Verificado</span></h3>
             <p className="text-[10px] text-zinc-300 font-medium">Seguridad y Confianza para el Mercado Panameño</p>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Asset, TechCategory } from '../types';
-import { Wrench, ShieldAlert, Sparkles, AlertCircle, ArrowRight, Droplets, Thermometer, Radio, Flame, Search } from 'lucide-react';
+import { Wrench, ShieldAlert, Sparkles, AlertCircle, ArrowRight, Droplets, Thermometer, Radio, Flame, Search, BrainCircuit } from 'lucide-react';
 
 interface DiagnosticAIViewProps {
   assets: Asset[];
@@ -48,9 +48,14 @@ export default function DiagnosticAIView({ assets, onFindTechnicians }: Diagnost
     <div className="space-y-6">
       <div className="bg-indigo-600 rounded-3xl p-6 md:p-8 text-white relative overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-        <div className="relative z-10">
-          <h1 className="text-2xl font-black uppercase tracking-tight mb-2">Asistente Técnico Especializado</h1>
-          <p className="text-indigo-100 text-sm max-w-xl">Identifica fallas comunes mediante nuestro motor de conocimiento y obtén cotizaciones estimadas basadas en el mercado de Panamá.</p>
+        <div className="relative z-10 flex items-center gap-4">
+          <div className="p-3 bg-white/10 rounded-2xl border border-white/20">
+             <BrainCircuit className="w-8 h-8 text-[#52ffac]" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black uppercase tracking-tight mb-1">Autodiagnóstico Técnico IA</h1>
+            <p className="text-indigo-100 text-sm max-w-xl">Identifica fallas comunes mediante nuestro motor de conocimiento y obtén cotizaciones estimadas basadas en el mercado de Panamá.</p>
+          </div>
         </div>
       </div>
 
@@ -199,7 +204,7 @@ export default function DiagnosticAIView({ assets, onFindTechnicians }: Diagnost
             <div className="bg-zinc-50 rounded-3xl border-2 border-dashed border-zinc-200 p-20 text-center text-zinc-400 h-full flex flex-col justify-center items-center">
                <div className="relative">
                  <Wrench className="w-16 h-16 mx-auto mb-4 opacity-10" />
-                 <Sparkles className="w-6 h-6 absolute -top-2 -right-2 text-indigo-200 animate-pulse" />
+                 <BrainCircuit className="w-6 h-6 absolute -top-2 -right-2 text-indigo-200 animate-pulse" />
                </div>
                <p className="text-[10px] font-black uppercase tracking-widest">Inicia el diagnóstico a la izquierda</p>
             </div>

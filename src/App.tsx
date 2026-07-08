@@ -44,7 +44,7 @@ import Logo from './components/Logo';
 import TechWalletModule from './components/TechWalletModule';
 
 import { 
-  LayoutDashboard, Store, FileCheck2, Bot, MessageSquare, CalendarDays, Users, DollarSign,
+  LayoutDashboard, Store, FileCheck2, BrainCircuit, MessageSquare, CalendarDays, Users, DollarSign,
   Bell, BellRing, Send, CheckCircle, Plus, TrendingUp, Truck, Camera,
   Layers, ShieldCheck, Star, CheckCircle2,
   UserX, Clock, LogOut, User, ChevronRight,
@@ -145,6 +145,17 @@ export default function App() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginName, setLoginName] = useState('');
   const [authError, setAuthError] = useState('');
+
+  // Notification Helper
+  const notifyAdmin = async (title: string, body: string) => {
+    try {
+      await axios.post('http://localhost:3000/api/push-notification', {
+        title,
+        body,
+        token: 'ADMIN_TOKEN_MASTER' // En producción esto vendría del Firestore del Admin
+      });
+    } catch (err) { console.error("Notification failed", err); }
+  };
 
   // Bidding
   const [bidPrice, setBidPrice] = useState<string>('');
@@ -324,17 +335,45 @@ export default function App() {
     const req = requests.find(r => r.id === requestId);
     if (!req?.scheduledDate) return;
     try {
-      await updateDoc(doc(db, "requests", requestId), { status: 'accepted', paidAt: serverTimestamp(), paymentMethod: method });
+      if (method === 'yappy') {
+        await updateDoc(doc(db, "requests", requestId), { status: 'pending_verification', paidAt: serverTimestamp(), paymentMethod: method });
+        await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: `He realizado el pago vía YAPPY por $${req.price}. Quedo a la espera de la verificación oficial.`, timestamp: serverTimestamp() });
+
+        // Notificar al Admin
+        notifyAdmin("💳 PAGO PENDIENTE", `El cliente ${req.clientName} envió un pago de $${req.price} vía YAPPY.`);
+
+        alert("Pago enviado a verificación por el Admin.");
+      } else {
+        await updateDoc(doc(db, "requests", requestId), { status: 'accepted', paidAt: serverTimestamp(), paymentMethod: method });
+        await addDoc(collection(db, "agenda"), {
+          requestId, techId: req.techId, techUserId: req.techUserId,
+          clientName: req.clientName, clientId: user.uid,
+          title: `CONFIRMADO: ${req.assetName}`, date: req.scheduledDate, time: req.scheduledTime,
+          duration: `${req.scheduledDuration}h`, travelTime: `${req.scheduledTravelTime} min`,
+          status: 'pending', createdAt: serverTimestamp()
+        });
+        await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `¡Hola! He recibido tu confirmación y pago vía ${method.toUpperCase()}. Cita confirmada oficialmente.`, timestamp: serverTimestamp() });
+        alert("¡Cita confirmada!");
+      }
+      setClientTab('chat');
+    } catch (err) { console.error(err); }
+  };
+
+  const handleConfirmPayment = async (requestId: string) => {
+    if (!requestId) return;
+    const req = requests.find(r => r.id === requestId);
+    if (!req) return;
+    try {
+      await updateDoc(doc(db, "requests", requestId), { status: 'accepted', paymentVerifiedAt: serverTimestamp() });
       await addDoc(collection(db, "agenda"), {
         requestId, techId: req.techId, techUserId: req.techUserId,
-        clientName: req.clientName, clientId: user.uid,
+        clientName: req.clientName, clientId: req.clientId,
         title: `CONFIRMADO: ${req.assetName}`, date: req.scheduledDate, time: req.scheduledTime,
         duration: `${req.scheduledDuration}h`, travelTime: `${req.scheduledTravelTime} min`,
         status: 'pending', createdAt: serverTimestamp()
       });
-      await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `¡Hola! He recibido tu confirmación y pago vía ${method.toUpperCase()}. Cita confirmada oficialmente.`, timestamp: serverTimestamp() });
-      alert("¡Cita confirmada!");
-      setClientTab('chat');
+      await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `¡Hola! El Administrador ha confirmado tu pago vía ${req.paymentMethod?.toUpperCase()}. Cita confirmada oficialmente.`, timestamp: serverTimestamp() });
+      alert("Pago verificado y cita agendada.");
     } catch (err) { console.error(err); }
   };
 
@@ -343,6 +382,11 @@ export default function App() {
     try {
       await updateDoc(doc(db, "requests", requestId), { status: 'disputed', unforeseenReason: reason, unforeseenAmount: extraCost, unforeseenCategory: category, unforeseenAt: serverTimestamp() });
       await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `⚠️ REPORTE DE IMPREVISTO [${category.toUpperCase()}]: ${reason}. Costo: $${extraCost}. Favor aprobar en panel para no comprometer la garantía.`, timestamp: serverTimestamp() });
+
+      // Notificar al Admin
+      const req = requests.find(r => r.id === requestId);
+      notifyAdmin("⚠️ IMPREVISTO DETECTADO", `${req?.techName} reportó un extra de $${extraCost} para ${req?.assetName}.`);
+
       setIsUnforeseenModalOpen(false);
       alert("Imprevisto reportado.");
     } catch (err) { console.error(err); }
@@ -619,7 +663,7 @@ export default function App() {
               <>
                 <button onClick={() => setClientTab('dashboard')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'dashboard' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><LayoutDashboard className="w-4 h-4" /> Mis Equipos</button>
                 <button onClick={() => setClientTab('fleet')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'fleet' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Globe className="w-5 h-5" /> Flota B2B</button>
-                <button onClick={() => setClientTab('ai')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'ai' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Bot className="w-5 h-5 text-[#52ffac]" /> Asistente IA</button>
+                <button onClick={() => setClientTab('ai')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'ai' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><BrainCircuit className="w-5 h-5 text-[#52ffac]" /> Autodiagnóstico</button>
                 <button onClick={() => setClientTab('marketplace')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'marketplace' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Store className="w-5 h-5" /> Buscar Expertos</button>
                 <button onClick={() => setClientTab('quotes')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'quotes' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileCheck2 className="w-4 h-4" /> Contratos</button>
                 <button onClick={() => setClientTab('inventory')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'inventory' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Package className="w-4 h-4" /> Repuestos</button>
@@ -1161,7 +1205,47 @@ export default function App() {
                         </div>
                      </div>
                    )}
-                   {adminTab === 'logistics' && (<div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl space-y-8"><header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Logística <span className="text-[#5d3cfe]">Central</span></h1></header><div className="grid grid-cols-1 md:grid-cols-2 gap-6">{requests.filter(r => r.status === 'accepted' || r.status === 'executing').map(r => (<div key={r.id} className="p-6 bg-[#1c1d21] border border-[#2a2b2f] rounded-3xl flex justify-between items-center"><div className="flex gap-4 items-center"><div className="p-3 rounded-2xl bg-[#5d3cfe]/10 text-[#c7bfff]"><Truck className="w-6 h-6" /></div><div><h4 className="text-sm font-black text-white uppercase">{r.assetName}</h4><p className="text-[10px] font-bold text-[#474556] uppercase">Técnico: {r.techName}</p></div></div>{r.rescheduleCount && <span className="px-3 py-1 bg-rose-500/10 text-rose-500 rounded-full text-[8px] font-black animate-pulse">⚠️ {r.rescheduleCount} MOVIDAS</span>}</div>))}</div></div>)}
+                   {adminTab === 'logistics' && (
+                     <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl space-y-12">
+                       <header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Logística <span className="text-[#5d3cfe]">Central</span></h1></header>
+
+                       <section className="space-y-6">
+                          <h3 className="text-sm font-black text-[#5d3cfe] uppercase tracking-widest">Pagos por Verificar (YAPPY)</h3>
+                          <div className="grid grid-cols-1 gap-4">
+                             {requests.filter(r => r.status === 'pending_verification').map(r => (
+                               <div key={r.id} className="p-6 bg-[#1c1d21] border border-amber-500/20 rounded-3xl flex justify-between items-center group animate-pulse hover:animate-none transition-all">
+                                  <div className="flex gap-6 items-center">
+                                     <div className="p-4 bg-amber-500/10 rounded-2xl text-amber-500 border border-amber-500/20 shadow-lg shadow-amber-500/10">
+                                        <DollarSign className="w-6 h-6" />
+                                     </div>
+                                     <div>
+                                        <h4 className="text-sm font-black text-white uppercase tracking-tight">{r.clientName}</h4>
+                                        <p className="text-[10px] font-bold text-[#c8c4d9] mt-1 italic opacity-60">Monto: ${r.price} • Servicio: {r.assetName}</p>
+                                     </div>
+                                  </div>
+                                  <button onClick={() => handleConfirmPayment(r.id)} className="px-8 py-3 bg-amber-500 text-black rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 hover:scale-105 transition-all">Verificar Pago</button>
+                               </div>
+                             ))}
+                             {requests.filter(r => r.status === 'pending_verification').length === 0 && <p className="text-[10px] text-[#474556] font-bold uppercase italic ml-4">No hay pagos pendientes de revisión.</p>}
+                          </div>
+                       </section>
+
+                       <section className="space-y-6">
+                          <h3 className="text-sm font-black text-[#474556] uppercase tracking-widest">Servicios en Ejecución</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             {requests.filter(r => r.status === 'accepted' || r.status === 'executing').map(r => (
+                               <div key={r.id} className="p-6 bg-[#1c1d21] border border-[#2a2b2f] rounded-3xl flex justify-between items-center hover:border-[#5d3cfe]/30 transition-all">
+                                  <div className="flex gap-4 items-center">
+                                     <div className="p-3 rounded-2xl bg-[#5d3cfe]/10 text-[#c7bfff]"><Truck className="w-6 h-6" /></div>
+                                     <div><h4 className="text-sm font-black text-white uppercase tracking-tight">{r.assetName}</h4><p className="text-[10px] font-bold text-[#474556] uppercase mt-1">Técnico: {r.techName}</p></div>
+                                  </div>
+                                  {r.rescheduleCount && <span className="px-3 py-1 bg-rose-500/10 text-rose-500 rounded-full text-[8px] font-black animate-pulse">⚠️ {r.rescheduleCount} MOVIDAS</span>}
+                               </div>
+                             ))}
+                          </div>
+                       </section>
+                     </div>
+                   )}
                    {adminTab === 'users' && (
                       <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl space-y-8">
                         <header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Maestro de <span className="text-[#5d3cfe]">Usuarios</span></h1></header>

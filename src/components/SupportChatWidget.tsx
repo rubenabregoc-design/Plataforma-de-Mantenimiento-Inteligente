@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage, JobRequest } from '../types';
-import { Send, MapPin, Paperclip, CheckCheck, User, Wrench, Image as ImageIcon, FileText, Maximize2, Minimize2, Video, Phone, QrCode } from 'lucide-react';
+import { Send, MapPin, Paperclip, CheckCheck, User, Wrench, Image as ImageIcon, FileText, Maximize2, Minimize2, Video, Phone, QrCode, X, Download } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SupportChatWidgetProps {
   request: JobRequest | null;
@@ -26,8 +27,8 @@ export default function SupportChatWidget({
   onOpenScanner
 }: SupportChatWidgetProps) {
   const [text, setText] = useState('');
+  const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -80,7 +81,7 @@ export default function SupportChatWidget({
   }
 
   return (
-    <div className="bg-[#121317] flex flex-col h-full overflow-hidden border border-[#2a2b2f] rounded-[2rem] shadow-2xl">
+    <div className="bg-[#121317] flex flex-col h-full overflow-hidden border border-[#2a2b2f] rounded-[2rem] shadow-2xl relative">
       
       {/* Target header */}
       <div className="px-6 py-4 border-b border-[#2a2b2f] bg-[#0d0e12]/80 backdrop-blur-md flex items-center justify-between shrink-0">
@@ -168,8 +169,14 @@ export default function SupportChatWidget({
                 {msg.text && <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>}
 
                 {msg.image && (
-                  <div className="mt-4 rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
-                    <img src={msg.image} alt="Evidencia" className="w-full max-h-[500px] object-contain bg-black/20" />
+                  <div
+                    className="mt-4 rounded-2xl overflow-hidden border border-white/5 shadow-2xl cursor-zoom-in relative group"
+                    onClick={() => setExpandedImage(msg.image || null)}
+                  >
+                    <img src={msg.image} alt="Evidencia" className="w-full max-h-[500px] object-contain bg-black/20 transition-transform group-hover:scale-[1.02]" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                       <Maximize2 className="w-8 h-8 text-white/70" />
+                    </div>
                   </div>
                 )}
               </div>
@@ -228,6 +235,51 @@ export default function SupportChatWidget({
           <Send className="w-4 h-4" />
         </button>
       </form>
+
+      {/* Fullscreen Image Viewer Modal */}
+      <AnimatePresence>
+        {expandedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[2000] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-12"
+            onClick={() => setExpandedImage(null)}
+          >
+            <motion.button
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="absolute top-8 right-8 p-4 bg-white/10 hover:bg-rose-600 rounded-full text-white transition-all"
+              onClick={() => setExpandedImage(null)}
+            >
+              <X className="w-8 h-8" />
+            </motion.button>
+
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-full max-h-full flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={expandedImage}
+                alt="Evidencia Expandida"
+                className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl border border-white/10"
+              />
+              <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex gap-4">
+                 <a
+                   href={expandedImage}
+                   download="evidencia_mantech.png"
+                   className="flex items-center gap-2 px-6 py-2.5 bg-[#5d3cfe] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl hover:brightness-110"
+                 >
+                   <Download className="w-4 h-4" /> Descargar Imagen
+                 </a>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
