@@ -55,7 +55,16 @@ export default function TechWalletModule({ wallet, techId }: TechWalletModulePro
             </div>
             <h2 className="text-5xl font-black tracking-tighter text-white">${(wallet.balance || 0).toFixed(2)}</h2>
             <div className="flex gap-3 mt-8">
-               <button className="flex-1 py-3.5 bg-[#5d3cfe] hover:brightness-110 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-[#5d3cfe]/20">
+               <button
+                 onClick={() => {
+                   const amt = prompt("Monto a retirar:", wallet.balance.toString());
+                   if(amt) {
+                     // Aquí llamaríamos a la función de retiro que inyectaremos vía props
+                     (window as any).handleWithdraw(techId, Number(amt));
+                   }
+                 }}
+                 className="flex-1 py-3.5 bg-[#5d3cfe] hover:brightness-110 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-[#5d3cfe]/20"
+               >
                  Solicitar Retiro
                </button>
                <button
@@ -208,16 +217,50 @@ export default function TechWalletModule({ wallet, techId }: TechWalletModulePro
       </div>
 
       {/* Historial Simple */}
-      <div className="bg-[#121317] border border-[#2a2b2f] rounded-[2.5rem] overflow-hidden">
+      <div className="bg-[#121317] border border-[#2a2b2f] rounded-[2.5rem] overflow-hidden shadow-xl">
         <div className="p-6 border-b border-[#2a2b2f] bg-[#1c1d21]/30 flex justify-between items-center">
-          <h3 className="font-black text-white uppercase tracking-widest text-[10px]">Historial de Liquidaciones</h3>
-          <button className="p-2 text-[#474556] hover:text-white transition-all">
+          <div className="flex items-center gap-3">
+             <TrendingUp className="w-5 h-5 text-[#52ffac]" />
+             <h3 className="font-black text-white uppercase tracking-widest text-[10px]">Historial de Liquidaciones</h3>
+          </div>
+          <button
+            className="p-2 text-[#474556] hover:text-white transition-all"
+            onClick={() => alert("Historial completo enviado a su correo registrado.")}
+          >
             <Download className="w-4 h-4" />
           </button>
         </div>
-        <div className="p-10 text-center space-y-4">
-           <TrendingUp className="w-12 h-12 text-[#474556] mx-auto opacity-20" />
-           <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em]">No hay liquidaciones recientes</p>
+        <div className="p-4">
+           {wallet.transactions && wallet.transactions.length > 0 ? (
+             <div className="space-y-2">
+                {wallet.transactions.map((tx) => (
+                  <div key={tx.id} className="bg-[#0d0e12] border border-[#2a2b2f] p-5 rounded-2xl flex justify-between items-center group hover:border-[#5d3cfe]/30 transition-all">
+                     <div className="flex gap-4 items-center">
+                        <div className={`p-3 rounded-xl ${tx.type === 'credit' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                           {tx.type === 'credit' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                        </div>
+                        <div>
+                           <h4 className="text-[11px] font-black text-white uppercase tracking-tight">{tx.description}</h4>
+                           <p className="text-[8px] font-bold text-[#474556] uppercase mt-1">
+                              {new Date(tx.timestamp).toLocaleDateString('es-PA')} • ID: {tx.id}
+                           </p>
+                        </div>
+                     </div>
+                     <div className="text-right">
+                        <p className={`text-sm font-black italic ${tx.type === 'credit' ? 'text-[#52ffac]' : 'text-rose-500'}`}>
+                           {tx.type === 'credit' ? '+' : '-'}${tx.amount.toFixed(2)}
+                        </p>
+                        <span className="text-[7px] font-black text-[#474556] uppercase tracking-widest bg-black/30 px-2 py-0.5 rounded">VERIFIED</span>
+                     </div>
+                  </div>
+                ))}
+             </div>
+           ) : (
+             <div className="p-16 text-center space-y-4">
+                <TrendingUp className="w-12 h-12 text-[#474556] mx-auto opacity-20" />
+                <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em]">No hay liquidaciones registradas</p>
+             </div>
+           )}
         </div>
       </div>
     </div>

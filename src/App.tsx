@@ -472,7 +472,31 @@ export default function App() {
          if (tech) {
             const finalR = Math.max(1, ratingVal - ((req.rescheduleCount || 0) * 0.2));
             const nRating = ((tech.rating * tech.reviewCount) + finalR) / (tech.reviewCount + 1);
-            await updateDoc(doc(db, "technicians", tech.id), { completedJobs: (tech.completedJobs || 0) + 1, reviewCount: tech.reviewCount + 1, rating: Number(nRating.toFixed(1)) });
+
+            // ACTUALIZACIÓN DE BILLETERA: Liquidación automática de fondos
+            const earnings = Number(req.technicianEarnings || 0);
+            const currentBalance = Number(tech.wallet?.balance || 0);
+            const newBalance = currentBalance + earnings;
+
+            // Historial de transacciones
+            const newTransaction = {
+               id: `TX-${Date.now().toString().substring(7)}`,
+               amount: earnings,
+               type: 'credit',
+               description: `Servicio ${req.serviceType === 'remote' ? 'Remoto' : 'Presencial'}: ${req.assetName}`,
+               timestamp: new Date().toISOString(),
+               status: 'completed'
+            };
+
+            const updatedTransactions = [newTransaction, ...(tech.wallet?.transactions || [])];
+
+            await updateDoc(doc(db, "technicians", tech.id), {
+               completedJobs: (tech.completedJobs || 0) + 1,
+               reviewCount: tech.reviewCount + 1,
+               rating: Number(nRating.toFixed(1)),
+               'wallet.balance': newBalance,
+               'wallet.transactions': updatedTransactions
+            });
          }
       }
       setIsSignatureModalOpen(false);
@@ -513,6 +537,37 @@ export default function App() {
      }
      await updateDoc(doc(db, "requests", requestId), { status: 'cancelled', cancelledAt: serverTimestamp() });
      alert("Cancelado.");
+  };
+
+  const handleRequestWithdrawal = async (techId: string, amount: number) => {
+    if (amount <= 0) return alert("Monto no válido");
+    try {
+      const tech = technicians.find(t => t.id === techId);
+      if (!tech || (tech.wallet?.balance || 0) < amount) return alert("Saldo insuficiente");
+
+      // 1. Crear transacción de débito (Pendiente)
+      const newTransaction = {
+        id: `WD-${Date.now().toString().substring(7)}`,
+        amount: amount,
+        type: 'debit',
+        description: `Solicitud de Retiro ACH/Yappy`,
+        timestamp: new Date().toISOString(),
+        status: 'pending'
+      };
+
+      const updatedTransactions = [newTransaction, ...(tech.wallet?.transactions || [])];
+
+      // 2. Restar del balance y mover a auditoría
+      await updateDoc(doc(db, "technicians", techId), {
+        'wallet.balance': (tech.wallet?.balance || 0) - amount,
+        'wallet.transactions': updatedTransactions
+      });
+
+      // 3. Notificar al Admin para que haga la transferencia real
+      notifyAdmin("🏦 SOLICITUD DE RETIRO", `El técnico ${tech.name} solicita un retiro de B/. ${amount.toFixed(2)}. Verificar datos bancarios.`);
+
+      alert("Solicitud de retiro enviada a Tesorería. El depósito se reflejará en un máximo de 24h.");
+    } catch (err) { console.error(err); }
   };
 
   const handleSaveMaterial = async (requestId: string, name: string, price: number, quantity: number, category: string) => {
@@ -1211,7 +1266,13 @@ export default function App() {
                        </div>
                     )}
                     {techTab === 'agenda' && <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl space-y-8"><header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Agenda <span className="text-[#5d3cfe]">Logística</span></h1></header><div className="grid grid-cols-1 gap-4">{agenda.map(e => (<div key={e.id} className="p-6 bg-[#1c1d21] border border-[#2a2b2f] rounded-3xl flex justify-between items-center group hover:border-[#5d3cfe]/30 transition-all"><div className="flex gap-6 items-center"><div className="p-4 bg-[#0d0e12] rounded-2xl text-center min-w-[100px] border border-[#2a2b2f]"><span className="text-xs font-black text-[#5d3cfe]">{e.date}</span><p className="text-[10px] font-bold text-white mt-1">{e.time}</p></div><div><h4 className="text-lg font-black text-white uppercase tracking-tight">{e.title}</h4><p className="text-[10px] font-bold text-[#c8c4d9] mt-1 italic opacity-60">Cliente: {e.clientName}</p></div></div><button onClick={() => { const nd = prompt("Nueva Fecha:", e.date); if(nd) handleReschedule(e.requestId || '', nd, e.time, "Motivo logístico"); }} className="px-6 py-2 bg-[#0d0e12] border border-[#2a2b2f] text-white rounded-xl text-[9px] font-black uppercase hover:bg-[#5d3cfe]">Mover</button></div>))}</div></div>}
-                    {techTab === 'wallet' && <TechWalletModule wallet={getSelectedTechProfileObj().wallet || { balance: 0, pendingBalance: 0, transactions: [] }} techId={selectedTechProfileId!} />}
+                    {techTab === 'wallet' && (
+                      <TechWalletModule
+                        wallet={getSelectedTechProfileObj().wallet || { balance: 0, pendingBalance: 0, transactions: [] }}
+                        techId={selectedTechProfileId!}
+                        onWithdraw={handleRequestWithdrawal}
+                      />
+                    )}
                     {techTab === 'mantech_id' && <TechCredential tech={getSelectedTechProfileObj()} />}
                     {techTab === 'chat' && (
                        <div className="h-[calc(100vh-200px)]">
