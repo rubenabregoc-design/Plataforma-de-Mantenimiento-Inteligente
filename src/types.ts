@@ -96,6 +96,9 @@ export interface JobRequest {
   techName: string;
   description: string;
   status: 'pending' | 'quoted' | 'accepted' | 'executing' | 'completed' | 'rated' | 'rejected' | 'disputed' | 'cancelled';
+  serviceType?: 'onsite' | 'remote';
+  remotePlatform?: 'anydesk' | 'zoom' | 'meet' | 'teams' | 'whatsapp' | 'other';
+  remoteLink?: string;
   createdAt: string;
   scheduledDate?: string;
   scheduledTime?: string; // Hora propuesta por el técnico (HH:MM)

@@ -157,16 +157,17 @@ export default function ServiceReportModal({ isOpen, onClose, request }: Service
         </header>
 
         {/* RESUMEN EJECUTIVO */}
-        <div className="grid grid-cols-4 gap-4 mb-12">
+        <div className="grid grid-cols-5 gap-3 mb-12">
           {[
             { label: 'Activo Registrado', value: request.assetName || '---' },
             { label: 'Especialista', value: request.techName || '---' },
-            { label: 'Tiempo en Sitio', value: getTimeDisplay() },
+            { label: 'Modalidad', value: request.serviceType === 'remote' ? `REMOTO (${request.remotePlatform?.toUpperCase()})` : 'PRESENCIAL' },
+            { label: request.serviceType === 'remote' ? 'Sesión Digital' : 'Tiempo en Sitio', value: getTimeDisplay() },
             { label: 'Inversión Final', value: `$${Number(request.price || 0).toFixed(2)} USD`, highlight: true },
           ].map((item, i) => (
-            <div key={i} className={`p-5 rounded-2xl border ${item.highlight ? 'border-[#52ffac] bg-emerald-50/20' : 'border-zinc-100 bg-zinc-50/50'}`}>
+            <div key={i} className={`p-4 rounded-xl border ${item.highlight ? 'border-[#52ffac] bg-emerald-50/20' : 'border-zinc-100 bg-zinc-50/50'}`}>
               <h3 className="text-[8px] font-black uppercase text-zinc-400 mb-2">{item.label}</h3>
-              <p className="text-[10px] font-black text-zinc-900 uppercase leading-snug">{item.value}</p>
+              <p className="text-[9px] font-black text-zinc-900 uppercase leading-snug">{item.value}</p>
             </div>
           ))}
         </div>

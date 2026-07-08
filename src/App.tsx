@@ -48,7 +48,7 @@ import {
   Bell, BellRing, Send, CheckCircle, Plus, TrendingUp, Truck, Camera,
   Layers, ShieldCheck, Star, CheckCircle2,
   UserX, Clock, LogOut, User, ChevronRight,
-  ShieldAlert, HelpCircle, Wrench, Search, Check, X, MapPin, BadgeCheck,
+  ShieldAlert, HelpCircle, Wrench, Search, Check, X, MapPin, BadgeCheck, Video, Monitor,
   Calendar, AlertTriangle, Pencil, Trash2, FileText, Settings, Eye, EyeOff, Sparkles, Inbox, Car, Wind, Package, Globe, PieChart, Building2, Activity, CreditCard, ExternalLink, QrCode
 } from 'lucide-react';
 
@@ -163,6 +163,9 @@ export default function App() {
   const [bidTime, setBidTime] = useState<string>('');
   const [bidDuration, setBidDuration] = useState<number>(1);
   const [bidTravelTime, setBidTravelTime] = useState<number>(30);
+  const [bidServiceType, setBidServiceType] = useState<'onsite' | 'remote'>('onsite');
+  const [bidRemotePlatform, setBidRemotePlatform] = useState<'anydesk' | 'zoom' | 'meet' | 'teams' | 'whatsapp' | 'other'>('anydesk');
+  const [bidRemoteLink, setBidRemoteLink] = useState<string>('');
   const [draftingBidRequestId, setDraftingBidRequestId] = useState<string | null>(null);
 
   // Drafts for Bidding (Materials & Checklist)
@@ -321,6 +324,9 @@ export default function App() {
         scheduledTravelTime: bidTravelTime,
         materials: bidMaterials,
         checklist: bidChecklist,
+        serviceType: bidServiceType,
+        remotePlatform: bidServiceType === 'remote' ? bidRemotePlatform : null,
+        remoteLink: bidServiceType === 'remote' ? bidRemoteLink : null,
         status: 'quoted',
         techUserId: user.uid
       });
@@ -795,7 +801,7 @@ export default function App() {
                                      { label: 'SOLICITUD', status: ['pending', 'quoted', 'accepted', 'executing', 'completed', 'rated'], icon: <Layers className="w-5 h-5" /> },
                                      { label: 'COTIZADO', status: ['quoted', 'accepted', 'executing', 'completed', 'rated'], icon: <DollarSign className="w-5 h-5" /> },
                                      { label: 'PAGADO', status: ['accepted', 'executing', 'completed', 'rated'], icon: <ShieldCheck className="w-5 h-5" /> },
-                                     { label: 'EN SITIO', status: ['executing', 'completed', 'rated'], icon: <MapPin className="w-5 h-5" /> },
+                                     { label: req.serviceType === 'remote' ? 'REMOTO' : 'EN SITIO', status: ['executing', 'completed', 'rated'], icon: req.serviceType === 'remote' ? <Video className="w-5 h-5" /> : <MapPin className="w-5 h-5" /> },
                                      { label: 'FINALIZADO', status: ['completed', 'rated'], icon: <CheckCircle2 className="w-5 h-5" /> }
                                    ].map((step, i, arr) => {
                                      const isActive = step.status.includes(req.status);
@@ -819,12 +825,28 @@ export default function App() {
                                 </div>
 
                                 {req.status === 'quoted' && (
-                                   <div className="bg-[#5d3cfe]/10 p-8 rounded-[2.5rem] border border-[#5d3cfe]/30 flex flex-col md:flex-row gap-6 items-center justify-between">
-                                      <div className="text-center md:text-left">
-                                         <p className="text-white font-black text-lg uppercase tracking-tight">Propuesta de ${req.price?.toFixed(2)} USD</p>
-                                         <p className="text-[11px] text-[#c8c4d9] font-medium mt-1">Cita sugerida: {req.scheduledDate} a las {req.scheduledTime}</p>
+                                   <div className="bg-[#5d3cfe]/10 p-8 rounded-[2.5rem] border border-[#5d3cfe]/30 space-y-6">
+                                      <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+                                         <div className="text-center md:text-left">
+                                            <p className="text-white font-black text-xl uppercase tracking-tight">Propuesta: ${req.price?.toFixed(2)} USD</p>
+                                            <p className="text-[11px] text-[#c8c4d9] font-medium mt-1 uppercase tracking-widest">Cita: {req.scheduledDate} @ {req.scheduledTime}</p>
+                                         </div>
+                                         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                                            <button
+                                              onClick={() => handleAcceptQuote(req.id, 'yappy')}
+                                              className="flex-1 px-8 py-4 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase shadow-xl shadow-[#52ffac]/20 hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                                            >
+                                              <Download className="w-4 h-4" /> Yappy
+                                            </button>
+                                            <button
+                                              onClick={() => handleAcceptQuote(req.id, 'paypal')}
+                                              className="flex-1 px-8 py-4 bg-[#0070ba] text-white rounded-2xl text-[10px] font-black uppercase shadow-xl shadow-[#0070ba]/20 hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                                            >
+                                              <CreditCard className="w-4 h-4" /> Tarjeta / PayPal
+                                            </button>
+                                         </div>
                                       </div>
-                                      <button onClick={() => handleAcceptQuote(req.id, 'yappy')} className="px-10 py-4 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase shadow-xl shadow-[#52ffac]/20 hover:brightness-110 transition-all">PAGAR Y CONFIRMAR</button>
+                                      <p className="text-[9px] text-[#474556] font-bold uppercase text-center tracking-widest">Pagos procesados de forma segura con cifrado AES-256</p>
                                    </div>
                                 )}
                                 {req.status === 'disputed' && req.unforeseenAmount && (
@@ -854,6 +876,16 @@ export default function App() {
                                                <p className="text-[8px] font-black text-[#474556] uppercase">Iniciado</p>
                                                <p className="text-sm font-black text-white">{formatTime12h(req.visitStartedAt)}</p>
                                             </div>
+                                            {req.status === 'executing' && req.serviceType === 'remote' && req.remoteLink && (
+                                               <a
+                                                 href={req.remoteLink.startsWith('http') ? req.remoteLink : `https://${req.remoteLink}`}
+                                                 target="_blank"
+                                                 rel="noreferrer"
+                                                 className="px-6 py-3 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase shadow-lg shadow-[#5d3cfe]/30 flex items-center gap-2 animate-bounce"
+                                               >
+                                                  <Monitor className="w-4 h-4" /> Unirse a {req.remotePlatform?.toUpperCase() || 'Sesión'}
+                                               </a>
+                                            )}
                                             {req.status === 'completed' && (
                                                <button onClick={() => { setSelectedRequestForReport(req); setIsReportModalOpen(true); }} className="px-6 py-3 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-[#5d3cfe] transition-all flex items-center gap-2">
                                                   <FileText className="w-4 h-4" /> Reporte
@@ -982,7 +1014,36 @@ export default function App() {
                                             </select>
                                          </div>
                                          <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">T. Llegada (Min)</label>
+                                            <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Modalidad</label>
+                                            <select value={bidServiceType} onChange={e => setBidServiceType(e.target.value as 'onsite' | 'remote')} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white font-black text-xs appearance-none outline-none focus:border-[#5d3cfe] transition-all">
+                                               <option value="onsite">Presencial (En Sitio)</option>
+                                               <option value="remote">Remoto (Soporte Digital)</option>
+                                            </select>
+                                         </div>
+                                         {bidServiceType === 'remote' && (
+                                            <div className="space-y-2 animate-fade-in">
+                                               <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Plataforma Remota</label>
+                                               <select value={bidRemotePlatform} onChange={e => setBidRemotePlatform(e.target.value as any)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white font-black text-xs appearance-none outline-none focus:border-[#5d3cfe] transition-all">
+                                                  <option value="anydesk">AnyDesk (Control Remoto)</option>
+                                                  <option value="zoom">Zoom</option>
+                                                  <option value="meet">Google Meet</option>
+                                                  <option value="teams">Microsoft Teams</option>
+                                                  <option value="whatsapp">WhatsApp</option>
+                                                  <option value="other">Otra Plataforma</option>
+                                               </select>
+                                            </div>
+                                         )}
+                                         {bidServiceType === 'remote' && (
+                                            <div className="space-y-2 animate-fade-in">
+                                               <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Enlace / ID de Conexión</label>
+                                               <div className="relative">
+                                                  <input type="text" value={bidRemoteLink} onChange={e => setBidRemoteLink(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white font-black text-xs outline-none focus:border-[#5d3cfe] transition-all" placeholder="URL o ID de sesión" />
+                                                  <ExternalLink className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#474556] pointer-events-none" />
+                                               </div>
+                                            </div>
+                                         )}
+                                         <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">T. Llegada / Conexión (Min)</label>
                                             <div className="relative">
                                                <input type="number" value={bidTravelTime} onChange={e => setBidTravelTime(Number(e.target.value))} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white font-black text-sm outline-none focus:border-[#5d3cfe] transition-all" placeholder="30" />
                                                <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#474556] pointer-events-none" />
@@ -1077,7 +1138,9 @@ export default function App() {
                                    </div>
                                 )}
                                 {req.status === 'accepted' && (
-                                   <button onClick={() => updateDoc(doc(db,"requests",req.id), {status:'executing', visitStartedAt: new Date().toISOString()})} className="w-full py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl">📍 Iniciar Visita Física</button>
+                                   <button onClick={() => updateDoc(doc(db,"requests",req.id), {status:'executing', visitStartedAt: new Date().toISOString()})} className="w-full py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl">
+                                      {req.serviceType === 'remote' ? <><Video className="w-4 h-4 inline mr-2 mb-1" /> Iniciar Sesión Remota</> : <><MapPin className="w-4 h-4 inline mr-2 mb-1" /> Iniciar Visita Física</>}
+                                   </button>
                                 )}
                                 {req.status === 'executing' && (
                                    <div className="space-y-6">
