@@ -63,10 +63,10 @@ export default function DiagnosticAIView({ assets, onFindTechnicians }: Diagnost
               <select
                 value={selectedAssetId}
                 onChange={(e) => { setSelectedAssetId(e.target.value); setSelectedIssueId(null); }}
-                className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-xs font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-2xl text-xs font-black text-zinc-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer shadow-sm"
               >
-                <option value="">Selecciona un equipo...</option>
-                {assets.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                <option value="" className="text-zinc-400">-- SELECCIONA UN EQUIPO --</option>
+                {assets.map(a => <option key={a.id} value={a.id} className="text-zinc-900 font-bold">{a.name.toUpperCase()}</option>)}
               </select>
             </div>
 
@@ -89,7 +89,7 @@ export default function DiagnosticAIView({ assets, onFindTechnicians }: Diagnost
                         <div className={`p-2 rounded-xl ${selectedIssueId === issue.id ? 'bg-indigo-600 text-white' : 'bg-zinc-100 text-zinc-500'}`}>
                           {issue.icon}
                         </div>
-                        <span className={`text-xs font-black ${selectedIssueId === issue.id ? 'text-indigo-900' : 'text-zinc-600'}`}>{issue.label}</span>
+                        <span className={`text-xs font-black ${selectedIssueId === issue.id ? 'text-indigo-900' : 'text-zinc-900'}`}>{issue.label}</span>
                       </div>
                       <div className={`w-2 h-2 rounded-full ${selectedIssueId === issue.id ? 'bg-indigo-600' : 'bg-zinc-200'}`}></div>
                     </button>

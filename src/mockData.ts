@@ -3,13 +3,27 @@ import { Asset, TechProfile, MaintenanceReminder, JobRequest, AgendaEvent } from
 export const initialAssets: Asset[] = [
   {
     id: 'asset-1',
+    name: 'GEELY',
+    type: 'car',
+    details: 'NEO 2026',
+    licensePlate: '828854',
+    registeredAt: '2026-01-10',
+    mileage: 44500,
+    lastMaintenanceDate: '2026-07-03',
+    nextMaintenanceDate: '2026-07-31',
+    observations: 'NO PRENDE'
+  },
+  {
+    id: 'asset-2',
     name: 'Toyota Yaris',
     type: 'car',
     details: 'Toyota Yaris Hatchback 2021, Motor 1.5L',
+    licensePlate: 'AA4567',
     registeredAt: '2026-01-10',
     mileage: 44500,
     lastMaintenanceDate: '2026-03-15',
     nextMaintenanceDate: '2026-06-25',
+    observations: 'Requiere cambio de pastillas pronto.'
   },
   {
     id: 'asset-2',

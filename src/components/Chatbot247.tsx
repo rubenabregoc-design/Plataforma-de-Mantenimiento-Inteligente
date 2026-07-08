@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircleMore, Send, X, Sparkles, User } from 'lucide-react';
+import { MessageCircleMore, Send, X, Sparkles, User, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Logo from './Logo';
 
 interface Message {
   id: string;
@@ -85,16 +86,14 @@ export default function Chatbot247() {
             className="bg-[#121317] border border-[#2a2b2f] w-[320px] md:w-[380px] h-[450px] md:h-[520px] max-h-[calc(100vh-140px)] rounded-[2rem] shadow-2xl flex flex-col overflow-hidden mb-4"
           >
             {/* Header */}
-            <div className="bg-[#5d3cfe] p-5 md:p-6 text-white flex items-center justify-between shrink-0">
+            <div className="bg-[#1c1d21] p-5 md:p-6 text-white flex items-center justify-between shrink-0 border-b border-white/5">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
-                  <Zap className="w-6 h-6 text-yellow-300 fill-yellow-300" />
-                </div>
+                <Logo size="sm" showText={false} />
                 <div>
                   <h4 className="text-xs md:text-sm font-black uppercase tracking-tight leading-none">Asistente Panamá 24/7</h4>
                   <div className="flex items-center gap-1 mt-1">
-                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-                    <span className="text-[9px] font-bold opacity-80 uppercase tracking-widest">Servicio Activo</span>
+                    <span className="w-1.5 h-1.5 bg-[#52ffac] rounded-full animate-pulse shadow-[0_0_5px_#52ffac]"></span>
+                    <span className="text-[9px] font-bold text-[#52ffac] uppercase tracking-widest">Servicio Activo</span>
                   </div>
                 </div>
               </div>

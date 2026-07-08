@@ -1,118 +1,43 @@
-# ⚙️ MantechPro: Plataforma de Mantenimiento Especializado
+# ⚙️ MantechPro Master V4: Inteligencia Operativa Panamá
 
-<<<<<<< HEAD
-**MantechPro** es una solución integral diseñada para optimizar la gestión de mantenimiento preventivo y correctivo de activos críticos (vehículos, sistemas de climatización, infraestructura TI y energía solar). La plataforma combina automatización de alertas, diagnósticos expertos y un marketplace de técnicos certificados.
-
-## 🚀 Características Principales
-
-*   **Diagnóstico Especializado:** Analiza fallas comunes mediante un motor de conocimiento técnico, proporcionando causas probables, nivel de urgencia y presupuestos estimados.
-*   **Gestión de Activos:** Registro y seguimiento detallado de vehículos (millaje), aires acondicionados, servidores y plantas eléctricas.
-*   **Alertas Automatizadas:** Sistema de notificaciones vía **Email (SMTP)** y **Web Push** para recordar mantenimientos próximos o vencidos.
-*   **Marketplace de Técnicos:** Conecta con profesionales idóneos en Ciudad de Panamá (Mecánicos, Eléctricos, HVAC, TI) con sistema de valoraciones y perfiles premium.
-*   **Agendamiento en 1-Clic:** Flujo optimizado para convertir una alerta de mantenimiento en una cita técnica inmediata.
-=======
-**MantechPro** es una solución integral diseñada para optimizar la gestión de mantenimiento preventivo y correctivo de activos críticos (vehículos, sistemas de climatización, infraestructura TI y energía solar). La plataforma combina análisis predictivo local, automatización de alertas y un marketplace de técnicos certificados en Panamá.
+**MantechPro** es una solución integral híbrida (Web/Android) diseñada para optimizar la gestión de mantenimiento preventivo y correctivo de activos críticos en Panamá. La plataforma combina inteligencia operativa, sincronización en la nube vía Firebase y un ecosistema blindado para técnicos y clientes.
 
 ## 🚀 Características Principales
 
-*   **🧠 Diagnóstico Técnico Predictivo (Local):** Sistema autónomo que analiza fallas mediante palabras clave, proporcionando causas probables, nivel de urgencia y presupuestos estimados del mercado panameño de forma instantánea.
-*   **📦 Inventario de Repuestos:** Módulo para el control de stock de insumos (aceites, filtros, frenos) con alertas automáticas de reabastecimiento y vinculación por activos.
-*   **📊 Dashboard de Gastos y Analítica:** Visualización interactiva de inversión mensual, cálculo de ahorro generado por prevención y score de salud de los equipos.
-*   **📝 Checklist de Inspección Digital:** Flujo de trabajo para técnicos con protocolos de seguridad y calidad, integrando firma digital y reportes finales detallados.
-*   **🔔 Alertas Multicanal:** Notificaciones en tiempo real vía **Email (SMTP)** y **Web Push (Capacitor)** para mantenimientos preventivos y situaciones críticas.
-*   **🏙️ Marketplace Local:** Conexión directa con especialistas certificados en Ciudad de Panamá y provincias.
->>>>>>> 704b6d958a85e1739c0273d956d23c9955ad9baf
+*   **🧠 Diagnóstico Técnico Predictivo:** Análisis de fallas mediante palabras clave y lógica local, proporcionando causas probables y presupuestos estimados del mercado panameño.
+*   **📊 Monitor de Ejecución en Tiempo Real:** Los clientes pueden visualizar el progreso del técnico, checklist de tareas y materiales cargados a la factura mientras el servicio ocurre.
+*   **📦 Inventario de Repuestos:** Control de stock de insumos con alertas de reabastecimiento y vinculación directa por activos.
+*   **🛡️ Centro de Seguridad (Mantech ID):** Validación de identidad mediante Cédula y Récord Policivo para garantizar la confianza en el ecosistema.
+*   **💳 Billetera Digital & Pagos:** Flujo automatizado de cobros vía Yappy/PayPal con liberación de fondos tras firma de conformidad.
 
 ## 🛠️ Stack Tecnológico
 
-*   **Frontend:** React 19, TypeScript, Tailwind CSS, Lucide React, Framer Motion.
-*   **Backend:** Node.js, Express.
-<<<<<<< HEAD
-=======
-*   **Infraestructura:** Firebase (Authentication, Firestore, Storage).
-*   **Mobile / Native:** Capacitor (Push Notifications, Device Info).
->>>>>>> 704b6d958a85e1739c0273d956d23c9955ad9baf
-*   **Notificaciones:** Nodemailer (SMTP) y Web Push API.
-*   **Build Tool:** Vite + Concurrently para ejecución simultánea.
+*   **Frontend:** React 19, TypeScript, Tailwind CSS, Lucide React.
+*   **Backend:** Node.js, Express (IA Gemini 1.5 Flash Fallback).
+*   **Infraestructura:** Firebase (Auth, Firestore, Storage).
+*   **Mobile:** Capacitor (Android Push Notifications).
+
+## 📋 Historial de Actualizaciones (Changelog)
+
+### [2024-06-22] - Master V4 Update (Estabilidad y Real-Time)
+- **Seguridad:** Implementada validación de Récord Policivo obligatoria para técnicos aprobada por Administrador.
+- **Real-Time Progress:** Nueva interfaz para el Cliente que permite ver el Checklist y Materiales en vivo durante el servicio.
+- **Admin Root:** Consolidación de credenciales admin (`admin@mantech.com`) con bypass de seguridad para gestión de usuarios.
+- **UI/UX:** Restauración total de la estética Master V4 (Glow effects, Steppers de contrato y tarjetas premium).
+- **Backend:** Actualizado servidor Express al puerto 3000 para compatibilidad Windows y despliegue local estable.
 
 ## 📦 Instalación y Configuración
 
-1.  **Clonar el repositorio e instalar dependencias:**
-    ```bash
-    npm install
-    ```
+1.  **Clonar e instalar:** `npm install`
+2.  **Variables de Entorno:** Configura el `.env` con tus llaves de Firebase y SMTP.
+3.  **Ejecutar:** `npm run dev` (Interfaz) y `npm run server` (API).
 
-<<<<<<< HEAD
-2.  **Configurar Variables de Envío:**
-    Crea un archivo `.env` en la raíz (usa `.env.example` como guía):
-    ```env
-    SMTP_USER=tu_correo@gmail.com
-    SMTP_PASS=tu_password_de_aplicacion
-    APP_URL=http://localhost:3000
-    ```
-=======
-2.  **Configurar Variables de Entorno:**
-    Crea un archivo `.env` en la raíz (usa `.env.example` como guía) con tus credenciales de Firebase y configuración SMTP.
->>>>>>> 704b6d958a85e1739c0273d956d23c9955ad9baf
-
-3.  **Ejecutar en modo desarrollo:**
-    El comando iniciará automáticamente el servidor de la API (puerto 8080) y el cliente Vite (puerto 3000):
-    ```bash
-    npm run dev
-    ```
-
-## 📋 Estructura del Proyecto
-
-<<<<<<< HEAD
-*   `/src/components`: Componentes modulares (Modales de registro, Asistente Técnico, Chat).
-*   `/src/mockData.ts`: Base de datos simulada de activos, técnicos y solicitudes.
-*   `server.ts`: Servidor Express que maneja el motor de diagnóstico y el despacho de correos electrónicos.
-=======
-*   `/src/components`: Módulos de Inventario, Analítica, Checklist, Chat y Modales.
-*   `/src/firebase.ts`: Configuración y conexión con los servicios de Google Firebase.
-*   `/src/mockData.ts`: Datos iniciales para demostraciones y pruebas locales.
-*   `server.ts`: Servidor API que maneja el despacho de correos y la lógica de diagnóstico predictivo local.
->>>>>>> 704b6d958a85e1739c0273d956d23c9955ad9baf
-*   `types.ts`: Definiciones de interfaces TypeScript para todo el ecosistema.
+## 📱 Despliegue Android
+1.  `npm run build`
+2.  `npx cap sync android`
+3.  `npx cap open android`
 
 ---
-**Actualización V3: Mayor independencia, gestión de repuestos y analítica financiera.**
+**🔐 Seguridad GitHub:** Última subida de parches de seguridad y validación de reglas de Firestore: `22 de Junio, 2024`.
 
-## 📱 Desarrollo Mobile (Android)
-
-Este proyecto utiliza **Capacitor** para ejecutarse como una aplicación nativa en Android.
-
-1.  **Generar el build del frontend:**
-    ```bash
-    npm run build
-    ```
-2.  **Sincronizar con el proyecto de Android:**
-    ```bash
-    npx cap sync android
-    ```
-3.  **Abrir en Android Studio:**
-    ```bash
-    npx cap open android
-    ```
-
-## 🤝 Contribución
-
-¡Las contribuciones son bienvenidas! Si deseas mejorar MantechPro:
-1. Haz un **Fork** del proyecto.
-2. Crea una rama para tu funcionalidad (`git checkout -b feature/NuevaFuncionalidad`).
-3. Realiza tus cambios y haz un **Commit** (`git commit -m 'Añadir nueva funcionalidad'`).
-4. Sube los cambios a tu rama (`git push origin feature/NuevaFuncionalidad`).
-5. Abre un **Pull Request**.
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT. Consulta el archivo `LICENSE` para más detalles.
-
-## 📧 Contacto
-
-**MantechPro Team** - Ciudad de Panamá, Panamá.
-*   **Sitio Web:** [mantechpro.pa](https://mantechpro.pa)
-*   **Soporte:** soporte@mantechpro.pa
-
----
-*Optimizado para el sector industrial, automotriz y residencial en Panamá.*
+*MantechPro Team - Ciudad de Panamá.*

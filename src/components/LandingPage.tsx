@@ -1,5 +1,6 @@
 import React from 'react';
 import { ShieldCheck, Zap, Globe, MessageSquare, CheckCircle2, Star, ArrowRight, PlayCircle, Users, Activity, Package, Building2, Smartphone, DollarSign } from 'lucide-react';
+import Logo from './Logo';
 
 interface LandingPageProps {
   onStart: () => void;
@@ -13,12 +14,7 @@ export default function LandingPage({ onStart, onWatchDemo }: LandingPageProps) 
       {/* NAVEGACIÓN FLOTANTE */}
       <nav className="fixed top-0 left-0 right-0 z-[100] px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between bg-[#121317]/80 backdrop-blur-xl border border-white/5 px-8 py-3 rounded-full shadow-2xl">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-black tracking-tighter text-white italic">Mantech<span className="text-[#5d3cfe]">Pro</span></span>
-            <div className="px-2 py-0.5 bg-[#52ffac]/10 rounded border border-[#52ffac]/20 ml-2">
-              <span className="text-[8px] font-black text-[#52ffac] uppercase tracking-widest">PANAMÁ</span>
-            </div>
-          </div>
+          <Logo size="sm" />
           <div className="hidden md:flex items-center gap-10">
             <a href="#soluciones" className="text-[10px] font-black uppercase tracking-widest text-[#c8c4d9] hover:text-[#5d3cfe] transition-all">Soluciones</a>
             <a href="#seguridad" className="text-[10px] font-black uppercase tracking-widest text-[#c8c4d9] hover:text-[#5d3cfe] transition-all">Seguridad</a>
@@ -47,7 +43,7 @@ export default function LandingPage({ onStart, onWatchDemo }: LandingPageProps) 
              <span className="text-[9px] font-black text-white uppercase tracking-widest">Red de Mantenimiento #1 de Panamá</span>
           </div>
 
-          <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-[0.9] italic uppercase">
+          <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-[0.9] uppercase">
             Inteligencia en <br />
             <span className="text-[#5d3cfe] block mt-2">Mantenimiento.</span>
           </h1>
@@ -76,19 +72,19 @@ export default function LandingPage({ onStart, onWatchDemo }: LandingPageProps) 
           {/* Stats Bar */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-20 border-t border-white/5">
              <div className="space-y-1">
-                <p className="text-3xl font-black text-white italic">+1,200</p>
+                <p className="text-3xl font-black text-white">+1,200</p>
                 <p className="text-[9px] font-black text-[#474556] uppercase tracking-widest">Servicios Realizados</p>
              </div>
              <div className="space-y-1">
-                <p className="text-3xl font-black text-[#5d3cfe] italic">99.8%</p>
+                <p className="text-3xl font-black text-[#5d3cfe]">99.8%</p>
                 <p className="text-[9px] font-black text-[#474556] uppercase tracking-widest">Tasa de Éxito</p>
              </div>
              <div className="space-y-1">
-                <p className="text-3xl font-black text-[#52ffac] italic">&lt; 15min</p>
+                <p className="text-3xl font-black text-[#52ffac]">&lt; 15min</p>
                 <p className="text-[9px] font-black text-[#474556] uppercase tracking-widest">Respuesta Técnica</p>
              </div>
              <div className="space-y-1">
-                <p className="text-3xl font-black text-white italic">24/7</p>
+                <p className="text-3xl font-black text-white">24/7</p>
                 <p className="text-[9px] font-black text-[#474556] uppercase tracking-widest">Monitoreo Activo</p>
              </div>
           </div>
@@ -102,7 +98,7 @@ export default function LandingPage({ onStart, onWatchDemo }: LandingPageProps) 
             <div className="p-3 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-2xl w-fit text-[#c7bfff]">
                <Activity className="w-6 h-6" />
             </div>
-            <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none italic uppercase">
+            <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none uppercase">
               Operación <br /><span className="text-[#5d3cfe]">Sin Límites</span>
             </h2>
             <p className="text-[#c8c4d9] text-lg font-medium leading-relaxed opacity-70">
@@ -146,7 +142,7 @@ export default function LandingPage({ onStart, onWatchDemo }: LandingPageProps) 
         <div className="max-w-6xl mx-auto text-center space-y-20">
           <header className="space-y-6">
             <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-[0.4em]">Protocolo Mantech ID</p>
-            <h2 className="text-4xl md:text-7xl font-black text-white tracking-tighter italic uppercase">Seguridad <span className="text-white/20">como estándar</span></h2>
+            <h2 className="text-4xl md:text-7xl font-black text-white tracking-tighter uppercase">Seguridad <span className="text-white/20">como estándar</span></h2>
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -174,7 +170,7 @@ export default function LandingPage({ onStart, onWatchDemo }: LandingPageProps) 
           <Building2 className="absolute -bottom-20 -right-20 w-96 h-96 text-white opacity-5" />
 
           <div className="max-w-3xl space-y-10 relative z-10">
-            <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-none italic uppercase">División <br />Corporativa B2B</h2>
+            <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-none uppercase">División <br />Corporativa B2B</h2>
             <p className="text-white/80 text-xl font-medium leading-relaxed">
               Gestión masiva de flotas para PHs, Arrendadoras de autos y complejos industriales. Controla 50 activos desde un solo mapa centralizado.
             </p>
@@ -204,7 +200,7 @@ export default function LandingPage({ onStart, onWatchDemo }: LandingPageProps) 
       {/* FOOTER */}
       <footer className="py-20 px-8 border-t border-white/5 text-center space-y-10 bg-[#0d0e12]">
          <div className="flex items-center justify-center gap-2">
-            <span className="text-2xl font-black tracking-tighter text-white italic">Mantech<span className="text-[#5d3cfe]">Pro</span></span>
+            <Logo size="md" />
          </div>
          <p className="text-[9px] font-black text-[#474556] uppercase tracking-[0.4em]">
             © 2026 MantechPro Industries Panamá • Sistema Operativo Registrado

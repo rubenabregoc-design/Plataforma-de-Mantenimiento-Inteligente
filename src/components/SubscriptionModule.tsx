@@ -109,37 +109,37 @@ export default function SubscriptionModule({ subscription, onUpgrade }: Subscrip
       {/* TABLA COMPARATIVA DE BENEFICIOS V4 */}
       <div className="pt-20 space-y-8 pb-20">
          <div className="text-center space-y-2">
-            <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">Comparativa <span className="text-[#5d3cfe]">MantechPro</span></h3>
+            <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Comparativa <span className="text-[#5d3cfe]">MantechPro</span></h3>
             <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.3em]">Detalle Técnico de Capacidades por Nodo</p>
          </div>
 
-         <div className="bg-[#121317] border border-[#2a2b2f] rounded-[2.5rem] overflow-hidden shadow-2xl">
-            <table className="w-full text-left border-collapse">
+         <div className="bg-[#121317] border border-[#2a2b2f] rounded-[2.5rem] overflow-hidden shadow-2xl overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[600px]">
                <thead>
                   <tr className="bg-[#1c1d21] border-b border-[#2a2b2f]">
                      <th className="p-8 text-[10px] font-black text-white uppercase tracking-widest">Funcionalidad Master</th>
-                     <th className="p-8 text-center text-[10px] font-black text-[#474556] uppercase tracking-widest">Básico</th>
-                     <th className="p-8 text-center text-[10px] font-black text-[#c7bfff] uppercase tracking-widest bg-[#5d3cfe]/5">Profesional</th>
+                     <th className="p-8 text-center text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest">Básico</th>
+                     <th className="p-8 text-center text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest bg-[#5d3cfe]/5">Profesional</th>
                      <th className="p-8 text-center text-[10px] font-black text-amber-500 uppercase tracking-widest">Corporativo</th>
                   </tr>
                </thead>
-               <tbody className="text-xs font-bold text-[#c8c4d9]">
+               <tbody className="text-xs font-bold text-[#e3e2e8]">
                   {[
                     { f: "Capacidad de Activos (Equipos)", b: "Hasta 3", p: "Hasta 15", e: "Ilimitados", cat: "Operación" },
                     { f: "Comisión por Servicio (Técnico)", b: "15%", p: "10%", e: "8%", cat: "Finanzas" },
                     { f: "Acceso a Contratos B2B/PH", b: "❌", p: "SÓLO LECTURA", e: "✅ FULL", cat: "Mercado" },
                     { f: "Tablero de Flota Masiva", b: "❌", p: "LITE", e: "✅ FULL", cat: "Operación" },
-                    { f: "Diagnóstico Predictivo IA", b: "MANUAL", p: "ASISTIDO", e: "AUTOMÁTICO", cat: "Ingeniería" },
+                    { f: "Diagnóstico Predictivo", b: "MANUAL", p: "ASISTIDO", e: "AUTOMÁTICO", cat: "Ingeniería" },
                     { f: "Sello de Confianza Gold", b: "❌", p: "✅", e: "✅ + VIP", cat: "Seguridad" },
                     { f: "Retiros de Billetera", b: "3-5 DÍAS", p: "48 HORAS", e: "24 HORAS", cat: "Finanzas" },
                     { f: "Soporte Técnico", b: "ESTÁNDAR", p: "PRIORITARIO", e: "GERENTE DEDICADO", cat: "Soporte" }
                   ].map((row, i) => (
                     <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                        <td className="p-8">
-                          <span className="block text-[8px] text-[#474556] uppercase mb-1">{row.cat}</span>
-                          {row.f}
+                          <span className="block text-[8px] text-[#52ffac] font-black uppercase mb-1 tracking-widest">{row.cat}</span>
+                          <span className="text-white font-bold">{row.f}</span>
                        </td>
-                       <td className="p-8 text-center opacity-60 font-black">{row.b}</td>
+                       <td className="p-8 text-center opacity-80 font-black">{row.b}</td>
                        <td className="p-8 text-center text-white bg-[#5d3cfe]/5 font-black">{row.p}</td>
                        <td className="p-8 text-center text-amber-400 font-black">{row.e}</td>
                     </tr>
