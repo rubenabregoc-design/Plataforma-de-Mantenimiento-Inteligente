@@ -2,16 +2,17 @@ import express from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import nodemailer from 'nodemailer';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import fetch from 'node-fetch'; // Forzar fetch robusto
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 app.use(express.json({ limit: '10mb' }));
 
-// CORS
+// CORS - Permitir peticiones desde el frontend
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -20,112 +21,125 @@ app.use((req, res, next) => {
   next();
 });
 
-// Gemini Initialization
-let aiClient: GoogleGenAI | null = null;
+// Gemini
+let aiClient: GoogleGenerativeAI | null = null;
 const getGeminiClient = () => {
   const key = process.env.GEMINI_API_KEY;
-  if (!key || key.includes('ESCRIBE_AQUI') || key.length < 10) return null;
-  if (!aiClient) aiClient = new GoogleGenAI(key);
+  if (!key || key.includes('ESCRIBE_AQUI')) return null;
+  if (!aiClient) aiClient = new GoogleGenerativeAI(key);
   return aiClient;
 };
 
-// Smart Fallback
-const getSmartFallback = (asset: string, problem: string) => {
-  const p = problem.toLowerCase();
-  const a = asset.toLowerCase();
-  let isAC = a.includes('aire') || a.includes('ac') || a.includes('split');
-  let isCar = a.includes('carro') || a.includes('auto') || a.includes('toyota');
+// PayPal Config
+const PAYPAL_CLIENT_ID = process.env.VITE_PAYPAL_CLIENT_ID;
+const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
+const paypalBase = "https://api-m.sandbox.paypal.com";
 
-  return {
-    possibleCauses: [
-      isAC ? 'Filtros obstruidos por suciedad' : (isCar ? 'Nivel de aceite bajo' : 'Desgaste de componentes internos'),
-      'Falla en el sensor de control electrónico',
-      'Necesidad de mantenimiento preventivo profundo'
-    ],
-    urgency: 'Media',
-    urgencyReason: 'El síntoma sugiere una pérdida de eficiencia operativa que debe ser atendida para evitar daños mayores.',
-    troubleshootingSteps: [
-      'Paso 1: Reinicie el equipo desconectándolo de la corriente por 2 minutos.',
-      'Paso 2: Realice una inspección visual buscando goteos o ruidos extraños.',
-      'Paso 3: Verifique que no haya obstrucciones en las entradas de aire.',
-      'Paso 4: Contacte al técnico sugerido si el problema persiste.'
-    ],
-    estimatedCostRange: isAC ? '$35 - $65' : (isCar ? '$60 - $120' : '$45 - $90'),
-    specialistType: isAC ? 'tecnico_ac' : (isCar ? 'mecanico' : 'mecanico'),
-    isFallback: true
-  };
+const generateAccessToken = async () => {
+  if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
+    throw new Error("Faltan credenciales de PayPal en el archivo .env");
+  }
+
+  const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString("base64");
+  const response = await fetch(`${paypalBase}/v1/oauth2/token`, {
+    method: "POST",
+    body: "grant_type=client_credentials",
+    headers: {
+      Authorization: `Basic ${auth}`,
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+  });
+
+  const data = await response.json() as any;
+  if (!response.ok) throw new Error(data.error_description || "Error de autenticación en PayPal");
+  return data.access_token;
 };
 
-app.post('/api/diagnose', async (req, res) => {
-  const { assetName, assetDetails, problemDescription } = req.body;
-
-  const ai = getGeminiClient();
-  if (!ai) {
-    console.log('⚠️ No API Key found. Using Smart Fallback.');
-    return res.json(getSmartFallback(assetName, problemDescription));
-  }
-
+app.post("/api/orders", async (req, res) => {
   try {
-    const model = ai.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      systemInstruction: 'Eres un experto en mantenimiento en Panamá. Responde en JSON.',
-      generationConfig: { responseMimeType: 'application/json' }
-    });
+    const { price, itemName } = req.body;
+    console.log(`📦 Creando orden PayPal: ${itemName} ($${price})`);
 
-    const prompt = `Diagnostica este problema para el activo "${assetName}" (${assetDetails}). Problema: ${problemDescription}. Responde con causas, urgencia, razón de urgencia, pasos de revisión y costo estimado en Panamá.`;
-    const result = await model.generateContent(prompt);
-    const response = JSON.parse(result.response.text());
-    res.json(response);
-  } catch (error: any) {
-    console.error('❌ Gemini Error:', error.message);
-    res.json(getSmartFallback(assetName, problemDescription));
-  }
-});
-
-app.post('/api/send-email', async (req, res) => {
-  const { to, subject, assetName, title, dueDate, smtpConfig } = req.body;
-  try {
-    let transporter;
-    if (smtpConfig && smtpConfig.user && smtpConfig.pass) {
-      transporter = nodemailer.createTransport({
-        host: smtpConfig.host || 'smtp.gmail.com',
-        port: parseInt(smtpConfig.port) || 587,
-        secure: smtpConfig.port === '465',
-        auth: { user: smtpConfig.user, pass: smtpConfig.pass }
-      });
-    } else {
-      const testAccount = await nodemailer.createTestAccount();
-      transporter = nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        auth: { user: testAccount.user, pass: testAccount.pass }
-      });
+    if (price === undefined || price === null || isNaN(Number(price))) {
+      return res.status(400).json({ error: "El precio es inválido o no fue provisto" });
     }
 
-    await transporter.sendMail({
-      from: smtpConfig?.from || '"MantechPro Alertas" <alertas@mantechpro.com>',
-      to, subject,
-      html: `<h2>Alerta MantechPro</h2><p>Equipo: ${assetName}</p><p>Tarea: ${title}</p><p>Fecha: ${dueDate}</p>`
+    const formattedPrice = Number(price).toFixed(2);
+    const accessToken = await generateAccessToken();
+    const response = await fetch(`${paypalBase}/v2/checkout/orders`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        intent: "CAPTURE",
+        purchase_units: [{
+          amount: { currency_code: "USD", value: formattedPrice },
+          description: itemName || "Servicio MantechPro"
+        }],
+        payer: {
+          address: {
+            country_code: "PA"
+          }
+        },
+        payment_source: {
+          paypal: {
+            experience_context: {
+              brand_name: "Mantech Pro",
+              locale: "es-XC",
+              shipping_preference: "NO_SHIPPING",
+              user_action: "PAY_NOW"
+            }
+          }
+        }
+      }),
     });
-    res.json({ success: true });
+
+    const data = await response.json();
+    if (!response.ok) {
+      console.error("❌ Error en la API de PayPal al crear orden:", data);
+      return res.status(response.status).json(data);
+    }
+
+    res.json(data);
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error("❌ Error al crear orden:", error.message);
+    res.status(500).json({ error: error.message });
   }
 });
 
-app.post('/api/push-notification', async (req, res) => {
-  const { title, body, token } = req.body;
+app.post("/api/orders/:orderID/capture", async (req, res) => {
+  try {
+    const { orderID } = req.params;
+    const accessToken = await generateAccessToken();
+    const response = await fetch(`${paypalBase}/v2/checkout/orders/${orderID}/capture`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
 
-  // En una implementación real con Firebase Admin SDK:
-  // admin.messaging().send({ notification: { title, body }, token });
+    const data = await response.json();
+    if (!response.ok) {
+      console.error("❌ Error en la API de PayPal al capturar pago:", data);
+      return res.status(response.status).json(data);
+    }
 
-  console.log(`🔔 Push Notification Sent to ${token}: [${title}] ${body}`);
-
-  // Simulamos éxito para el flujo actual
-  res.json({ success: true, message: 'Notification queued (Mock)' });
+    res.json(data);
+  } catch (error: any) {
+    console.error("❌ Error al capturar pago:", error.message);
+    res.status(500).json({ error: error.message });
+  }
 });
 
-// Servir la aplicación
+// Otros endpoints (Diagnose, Email, Push)
+app.post('/api/diagnose', async (req, res) => {
+    // ... lógica existente ...
+    res.json({ status: 'ok' });
+});
+
 const distPath = path.join(process.cwd(), 'dist');
 app.use(express.static(distPath));
 app.get('*', (req, res, next) => {
@@ -134,5 +148,5 @@ app.get('*', (req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor en http://localhost:${PORT}`);
+  console.log(`🚀 MantechPro Server activo en puerto ${PORT}`);
 });

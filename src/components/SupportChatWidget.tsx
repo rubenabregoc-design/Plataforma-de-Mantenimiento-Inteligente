@@ -1,3 +1,4 @@
+﻿import { toast } from 'react-hot-toast';
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage, JobRequest } from '../types';
 import { Send, MapPin, Paperclip, CheckCheck, User, Wrench, Image as ImageIcon, FileText, Maximize2, Minimize2, Video, Phone, QrCode, X, Download } from 'lucide-react';
@@ -58,13 +59,13 @@ export default function SupportChatWidget({
       navigator.geolocation.getCurrentPosition((position) => {
         const { latitude, longitude } = position.coords;
         const locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
-        onSendMessage(`📍 Mi ubicación actual: ${locationUrl}`);
+        onSendMessage(`ðŸ“ Mi ubicación actual: ${locationUrl}`);
       }, (error) => {
         console.error("Error al obtener ubicación:", error);
-        alert("No se pudo obtener la ubicación. Asegúrate de dar permisos al navegador.");
+        toast.error("No se pudo obtener la ubicación. Asegúrate de dar permisos al navegador.");
       });
     } else {
-      alert("Tu navegador no soporta geolocalización.");
+      toast.error("Tu navegador no soporta geolocalización.");
     }
   };
 
@@ -283,3 +284,4 @@ export default function SupportChatWidget({
     </div>
   );
 }
+

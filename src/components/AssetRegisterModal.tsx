@@ -7,9 +7,11 @@ interface AssetRegisterModalProps {
   onClose: () => void;
   onAdd: (asset: Omit<Asset, 'id' | 'registeredAt'>) => void;
   assetToEdit?: Asset | null;
+  maxAssets?: number;
+  currentAssetsCount?: number;
 }
 
-export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit }: AssetRegisterModalProps) {
+export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit, maxAssets = 3, currentAssetsCount = 0 }: AssetRegisterModalProps) {
   const [name, setName] = React.useState(assetToEdit?.name || '');
   const [type, setType] = React.useState<AssetType>(assetToEdit?.type || 'car');
   const [details, setDetails] = React.useState(assetToEdit?.details || '');
@@ -18,6 +20,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
   const [lastMaintenance, setLastMaintenance] = React.useState(assetToEdit?.lastMaintenanceDate || '');
   const [nextMaintenance, setNextMaintenance] = React.useState(assetToEdit?.nextMaintenanceDate || '');
   const [observations, setObservations] = React.useState(assetToEdit?.observations || '');
+  const [location, setLocation] = React.useState(assetToEdit?.location || 'Sede Principal');
 
   React.useEffect(() => {
     if (assetToEdit) {
@@ -29,6 +32,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       setLastMaintenance(assetToEdit.lastMaintenanceDate);
       setNextMaintenance(assetToEdit.nextMaintenanceDate);
       setObservations(assetToEdit.observations || '');
+      setLocation(assetToEdit.location || 'Sede Principal');
     } else {
       setName('');
       setType('car');
@@ -38,6 +42,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       setLastMaintenance('');
       setNextMaintenance('');
       setObservations('');
+      setLocation('Sede Principal');
     }
   }, [assetToEdit, isOpen]);
 
@@ -45,6 +50,10 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!assetToEdit && currentAssetsCount >= maxAssets) {
+      alert(`⚠️ Límite alcanzado. Tu plan permite hasta ${maxAssets} activos. Mejora tu plan para registrar más.`);
+      return;
+    }
     if (!name || !lastMaintenance || !nextMaintenance) return;
     onAdd({
       name, type, details,
@@ -52,7 +61,8 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       mileage: (type === 'car' || type === 'moto') ? Number(mileage) : undefined,
       lastMaintenanceDate: lastMaintenance,
       nextMaintenanceDate: nextMaintenance,
-      observations
+      observations,
+      location
     });
     onClose();
   };
@@ -125,13 +135,67 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              <div className="space-y-2">
+            <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Sede / Ubicación</label>
+            {maxAssets > 3 ? (
+              <select
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none"
+              >
+                <option value="Sede Principal">Sede Principal</option>
+                <option value="Sede Secundaria">Sede Secundaria</option>
+                {maxAssets > 15 && <option value="Sede Regional">Sede Regional</option>}
+                {maxAssets > 15 && <option value="Puerto / Logística">Puerto / Logística</option>}
+              </select>
+            ) : (
+              <input type="text" readOnly value="Sede Única (Plan Básico)" className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-[#474556] outline-none" />
+            )}
+          </div>
+
+          <div className="space-y-2">
                <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Último Mantenimiento</label>
                <input type="date" required value={lastMaintenance} onChange={e => setLastMaintenance(e.target.value)} className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-[#c7bfff] focus:border-[#c7bfff] outline-none" />
              </div>
              <div className="space-y-2">
+            <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Sede / Ubicación</label>
+            {maxAssets > 3 ? (
+              <select
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none"
+              >
+                <option value="Sede Principal">Sede Principal</option>
+                <option value="Sede Secundaria">Sede Secundaria</option>
+                {maxAssets > 15 && <option value="Sede Regional">Sede Regional</option>}
+                {maxAssets > 15 && <option value="Puerto / Logística">Puerto / Logística</option>}
+              </select>
+            ) : (
+              <input type="text" readOnly value="Sede Única (Plan Básico)" className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-[#474556] outline-none" />
+            )}
+          </div>
+
+          <div className="space-y-2">
                <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Siguiente Programado</label>
                <input type="date" required value={nextMaintenance} onChange={e => setNextMaintenance(e.target.value)} className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-[#c7bfff] focus:border-[#c7bfff] outline-none" />
              </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Sede / Ubicación</label>
+            {maxAssets > 3 ? (
+              <select
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none"
+              >
+                <option value="Sede Principal">Sede Principal</option>
+                <option value="Sede Secundaria">Sede Secundaria</option>
+                {maxAssets > 15 && <option value="Sede Regional">Sede Regional</option>}
+                {maxAssets > 15 && <option value="Puerto / Logística">Puerto / Logística</option>}
+              </select>
+            ) : (
+              <input type="text" readOnly value="Sede Única (Plan Básico)" className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-[#474556] outline-none" />
+            )}
           </div>
 
           <div className="space-y-2">

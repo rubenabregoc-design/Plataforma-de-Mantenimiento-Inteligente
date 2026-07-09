@@ -60,7 +60,7 @@ export interface TechProfile {
   bio: string;
   certifications: string[];
   portfolioImages: string[];
-  plan: 'basic' | 'premium';
+  plan: 'basic' | 'pro' | 'enterprise';
   adminNotes?: string; // Solo editable por el admin
   requestsUsedThisMonth: number;
   isVerified: boolean;
@@ -215,6 +215,11 @@ export interface TechWallet {
   balance: number;
   pendingBalance: number;
   transactions: WalletTransaction[];
+  bankName?: string;
+  accountType?: string;
+  accountNumber?: string;
+  ownerName?: string;
+  yappyNumber?: string;
 }
 
 export interface AgendaEvent {

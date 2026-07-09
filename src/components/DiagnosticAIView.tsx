@@ -5,6 +5,7 @@ import { Wrench, ShieldAlert, Sparkles, AlertCircle, ArrowRight, Droplets, Therm
 interface DiagnosticAIViewProps {
   assets: Asset[];
   onFindTechnicians: (category: TechCategory) => void;
+  mode?: 'manual' | 'assisted' | 'auto';
 }
 
 // Base de Conocimiento Especializada de MantechPro
@@ -27,14 +28,34 @@ const DIAGNOSTIC_ENGINE: Record<string, any> = {
   ]
 };
 
-export default function DiagnosticAIView({ assets, onFindTechnicians }: DiagnosticAIViewProps) {
+export default function DiagnosticAIView({ assets, onFindTechnicians, mode = 'manual' }: DiagnosticAIViewProps) {
   const [selectedAssetId, setSelectedAssetId] = useState('');
   const [selectedIssueId, setSelectedIssueId] = useState<number | null>(null);
   const [customNotes, setCustomIssue] = useState('');
+  const [aiResult, setAiResult] = useState<any>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   const selectedAsset = assets.find(a => a.id === selectedAssetId);
   const availableIssues = selectedAsset ? (DIAGNOSTIC_ENGINE[selectedAsset.type] || []) : [];
-  const activeIssue = availableIssues.find((i: any) => i.id === selectedIssueId);
+  const activeIssue = aiResult || availableIssues.find((i: any) => i.id === selectedIssueId);
+
+  const handleAutoDiagnose = async () => {
+    if (!selectedAsset || !customNotes) return;
+    setIsAiLoading(true);
+    try {
+      const res = await fetch('http://localhost:3000/api/diagnose', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          assetName: selectedAsset.name,
+          assetDetails: selectedAsset.details,
+          problemDescription: customNotes
+        })
+      });
+      const data = await res.json();
+      setAiResult(data);
+    } catch (e) { console.error(e); } finally { setIsAiLoading(false); }
+  };
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
@@ -75,15 +96,15 @@ export default function DiagnosticAIView({ assets, onFindTechnicians }: Diagnost
               </select>
             </div>
 
-            {selectedAssetId && (
+            {selectedAssetId && mode !== 'manual' && (
               <div className="space-y-3 animate-[slideUp_0.3s_ease-out]">
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-black text-white">2</span>
-                <label className="block text-xs font-black text-zinc-900 uppercase">Selecciona el síntoma principal</label>
+                <label className="block text-xs font-black text-zinc-900 uppercase">Selecciona el síntoma principal (Asistido)</label>
                 <div className="grid grid-cols-1 gap-2">
                   {availableIssues.map((issue: any) => (
                     <button
                       key={issue.id}
-                      onClick={() => setSelectedIssueId(issue.id)}
+                      onClick={() => { setSelectedIssueId(issue.id); setAiResult(null); }}
                       className={`flex items-center justify-between p-4 rounded-2xl border text-left transition-all ${
                         selectedIssueId === issue.id
                         ? 'border-indigo-600 bg-indigo-50 shadow-md scale-[1.02]'
@@ -100,7 +121,7 @@ export default function DiagnosticAIView({ assets, onFindTechnicians }: Diagnost
                     </button>
                   ))}
                   <button
-                    onClick={() => setSelectedIssueId(0)}
+                    onClick={() => { setSelectedIssueId(0); setAiResult(null); }}
                     className={`p-4 rounded-2xl border text-xs font-bold text-center transition-all ${selectedIssueId === 0 ? 'border-indigo-600 bg-indigo-50 shadow-sm' : 'border-zinc-100 text-zinc-400'}`}
                   >
                     Otro problema (Descripción libre)
@@ -110,19 +131,31 @@ export default function DiagnosticAIView({ assets, onFindTechnicians }: Diagnost
             )}
 
             {/* Paso 3: Notas o Descripción Libre */}
-            {selectedIssueId !== null && (
+            {(selectedIssueId !== null || mode === 'manual') && (
               <div className="space-y-3 animate-[slideUp_0.3s_ease-out]">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-black text-white">3</span>
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-black text-white">
+                  {mode === 'manual' ? '2' : '3'}
+                </span>
                 <label className="block text-xs font-black text-zinc-900 uppercase">
-                  {selectedIssueId === 0 ? 'Describe tu problema aquí' : 'Notas Adicionales'}
+                  {mode === 'manual' ? 'Describe tu problema para el técnico' : (selectedIssueId === 0 ? 'Describe tu problema aquí' : 'Notas Adicionales')}
                 </label>
                 <textarea
                   rows={4}
                   value={customNotes}
                   onChange={(e) => setCustomIssue(e.target.value)}
-                  placeholder={selectedIssueId === 0 ? "Ej: Mi equipo hace un ruido extraño al encender y se apaga a los 5 minutos..." : "Detalles adicionales para el técnico..."}
+                  placeholder={mode === 'manual' ? "Describe el fallo detalladamente..." : (selectedIssueId === 0 ? "Ej: Mi equipo hace un ruido extraño al encender..." : "Detalles adicionales para el técnico...")}
                   className="w-full p-4 bg-zinc-50 border border-indigo-100 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner"
                 />
+
+                {mode === 'auto' && customNotes && (
+                   <button
+                     onClick={handleAutoDiagnose}
+                     disabled={isAiLoading}
+                     className="w-full py-4 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl animate-pulse"
+                   >
+                     {isAiLoading ? 'Analizando con IA...' : '⚙️ Generar Autodiagnóstico Predictivo'}
+                   </button>
+                )}
               </div>
             )}
           </div>
@@ -134,31 +167,31 @@ export default function DiagnosticAIView({ assets, onFindTechnicians }: Diagnost
               <div className="p-6 bg-zinc-50 border-b border-zinc-100 flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-indigo-600 rounded-xl text-white">
-                    {activeIssue.icon}
+                    {activeIssue.icon || <Sparkles className="w-4 h-4" />}
                   </div>
-                  <h3 className="font-black text-zinc-900 uppercase text-xs">Evaluación Técnica</h3>
+                  <h3 className="font-black text-zinc-900 uppercase text-xs">Evaluación {aiResult ? 'IA Predictiva' : 'Técnica'}</h3>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${getUrgencyColor(activeIssue.urgency)}`}>
-                  Urgencia {activeIssue.urgency}
+                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${getUrgencyColor(activeIssue.urgency || 'Media')}`}>
+                  Urgencia {activeIssue.urgency || 'Media'}
                 </span>
               </div>
 
               <div className="p-8 space-y-6">
                 <div className="space-y-2">
                   <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Causa probable identificada:</span>
-                  <p className="text-base font-extrabold text-zinc-900 leading-tight">{activeIssue.cause}</p>
+                  <p className="text-base font-extrabold text-zinc-900 leading-tight">{activeIssue.cause || activeIssue.possibleCauses?.[0]}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100">
                     <span className="text-[10px] font-black text-indigo-400 uppercase block mb-1">Precio Mercado:</span>
-                    <p className="text-2xl font-black text-indigo-900">{activeIssue.cost}</p>
+                    <p className="text-2xl font-black text-indigo-900">{activeIssue.cost || activeIssue.estimatedCostRange}</p>
                     <p className="text-[8px] text-indigo-400 font-bold mt-1">Sugerido Ciudad de Panamá</p>
                   </div>
                   <div className="p-5 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex flex-col justify-center">
                     <span className="text-[10px] font-black text-emerald-400 uppercase block mb-1">Especialista:</span>
                     <p className="text-xs font-black text-emerald-900 uppercase leading-none">
-                      {(activeIssue?.specialist || 'mecanico').replace('_', ' ')}
+                      {(activeIssue?.specialist || activeIssue?.specialistType || 'mecanico').replace('_', ' ')}
                     </p>
                   </div>
                 </div>
@@ -171,22 +204,26 @@ export default function DiagnosticAIView({ assets, onFindTechnicians }: Diagnost
                 </div>
 
                 <button
-                  onClick={() => onFindTechnicians(activeIssue?.specialist || 'mecanico')}
+                  onClick={() => onFindTechnicians(activeIssue?.specialist || activeIssue?.specialistType || 'mecanico')}
                   className="w-full py-4 bg-zinc-900 hover:bg-black text-white rounded-2xl text-sm font-black uppercase transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95"
                 >
-                  Contactar Especialista {(activeIssue?.specialist || 'mecanico').split('_')[0].toUpperCase()}
+                  Contactar Especialista {(activeIssue?.specialist || activeIssue?.specialistType || 'mecanico').split('_')[0].toUpperCase()}
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
-          ) : selectedIssueId === 0 ? (
-            <div className="bg-white rounded-3xl border border-zinc-200 p-8 shadow-sm space-y-6 animate-[fadeIn_0.3s_ease-out] flex flex-col justify-center items-center text-center">
+          ) : selectedIssueId === 0 || mode === 'manual' ? (
+            <div className="bg-white rounded-3xl border border-zinc-200 p-8 shadow-sm space-y-6 animate-[fadeIn_0.3s_ease-out] flex flex-col justify-center items-center text-center h-full">
               <div className="space-y-3">
                 <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto text-indigo-600 border border-indigo-100">
-                   <Search className="w-8 h-8" />
+                   {mode === 'manual' ? <Wrench className="w-8 h-8" /> : <Search className="w-8 h-8" />}
                 </div>
-                <h3 className="text-lg font-black text-zinc-900 uppercase">Solicitud de Inspección Libre</h3>
-                <p className="text-xs text-zinc-500 max-w-xs mx-auto">Usa el cuadro de la izquierda (Paso 3) para detallar lo que sucede con tu equipo.</p>
+                <h3 className="text-lg font-black text-zinc-900 uppercase">{mode === 'manual' ? 'Solicitud de Inspección Directa' : 'Solicitud de Inspección Libre'}</h3>
+                <p className="text-xs text-zinc-500 max-w-xs mx-auto">
+                   {mode === 'manual'
+                    ? 'Tu plan Básico permite contactar técnicos directamente para una inspección física.'
+                    : 'Usa el cuadro de la izquierda para detallar lo que sucede con tu equipo.'}
+                </p>
               </div>
 
               <div className="w-full pt-4 border-t border-zinc-50">
@@ -207,6 +244,7 @@ export default function DiagnosticAIView({ assets, onFindTechnicians }: Diagnost
                  <BrainCircuit className="w-6 h-6 absolute -top-2 -right-2 text-indigo-200 animate-pulse" />
                </div>
                <p className="text-[10px] font-black uppercase tracking-widest">Inicia el diagnóstico a la izquierda</p>
+               <div className="mt-4 px-3 py-1 bg-white border border-zinc-200 rounded-lg text-[8px] font-black uppercase tracking-widest">MODO: {mode.toUpperCase()}</div>
             </div>
           )}
         </div>

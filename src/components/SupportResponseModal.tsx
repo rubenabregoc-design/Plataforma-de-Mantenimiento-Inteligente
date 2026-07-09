@@ -1,3 +1,4 @@
+import { toast } from 'react-hot-toast';
 import React, { useState } from 'react';
 import { X, Send, User, Mail, MessageSquare, Smartphone, ExternalLink } from 'lucide-react';
 
@@ -23,7 +24,7 @@ export default function SupportResponseModal({ isOpen, onClose, ticket }: Suppor
         const phone = ticket.userPhone.replace(/[^0-9]/g, '');
         window.open(`https://wa.me/${phone}?text=Hola ${ticket.userName}, soy el Administrador Master de MantechPro. Respecto a su ticket "${ticket.subject}": ${response}`, '_blank');
       } else {
-        alert("Respuesta enviada a través del canal interno de la App.");
+        toast.success("Respuesta enviada a través del canal interno de la App.");
       }
       setIsSending(false);
       onClose();

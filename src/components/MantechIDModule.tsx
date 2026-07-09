@@ -7,7 +7,7 @@ interface MantechIDModuleProps {
   onUpload: (type: 'id' | 'record') => void;
 }
 
-export default function MantechIDModule({ mantechId, onUpload, role = 'tech' }: MantechIDModuleProps & { role?: 'client' | 'tech' }) {
+export default function MantechIDModule({ mantechId, onUpload, role = 'tech', plan = 'basic' }: MantechIDModuleProps & { role?: 'client' | 'tech', plan?: string }) {
   const status = mantechId?.status || 'unverified';
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [currentType, setCurrentType] = React.useState<'id' | 'record' | null>(null);
@@ -55,6 +55,12 @@ export default function MantechIDModule({ mantechId, onUpload, role = 'tech' }: 
             <CheckCircle2 className="w-3 h-3" />
             Verificado
           </div>
+        )}
+        {status === 'verified' && plan !== 'basic' && (
+           <div className="px-3 py-1 bg-amber-400 text-black rounded-full text-[9px] font-black uppercase flex items-center gap-1 shadow-lg shadow-amber-400/20 ml-2">
+             <Star className="w-3 h-3 fill-black" />
+             Sello Gold
+           </div>
         )}
       </div>
 

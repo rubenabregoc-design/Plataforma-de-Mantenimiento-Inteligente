@@ -1,3 +1,4 @@
+import { Toaster, toast } from 'react-hot-toast';
 import React, { useState } from 'react';
 import { TechWallet } from '../types';
 import { Wallet, TrendingUp, TrendingDown, Download, CreditCard, Landmark, Smartphone, Save, ShieldCheck } from 'lucide-react';
@@ -7,9 +8,11 @@ import { db } from '../firebase';
 interface TechWalletModuleProps {
   wallet: TechWallet;
   techId: string;
+  onWithdraw: (techId: string, amount: number) => void;
+  plan?: 'basic' | 'pro' | 'enterprise';
 }
 
-export default function TechWalletModule({ wallet, techId }: TechWalletModuleProps) {
+export default function TechWalletModule({ wallet, techId, onWithdraw, plan = 'basic' }: TechWalletModuleProps) {
   const [isEditingBank, setIsEditingBank] = useState(false);
   const [bankInfo, setBankInfo] = useState({
     bankName: wallet.bankName || '',
@@ -19,6 +22,12 @@ export default function TechWalletModule({ wallet, techId }: TechWalletModulePro
     yappyNumber: wallet.yappyNumber || ''
   });
   const [isSaving, setIsSaving] = useState(false);
+
+  const planInfo = {
+    basic: { name: 'Básico', speed: '3-5 Días Hábiles', color: 'text-amber-500 bg-amber-500/10' },
+    pro: { name: 'Profesional', speed: '48 Horas', color: 'text-cyan-400 bg-cyan-400/10 border border-cyan-400/20' },
+    enterprise: { name: 'Corporativo', speed: '24 Horas', color: 'text-emerald-400 bg-emerald-400/10 border border-emerald-400/20' }
+  }[plan];
 
   const handleSaveBank = async () => {
     setIsSaving(true);
@@ -31,10 +40,10 @@ export default function TechWalletModule({ wallet, techId }: TechWalletModulePro
         'wallet.yappyNumber': bankInfo.yappyNumber
       });
       setIsEditingBank(false);
-      alert("Datos de pago actualizados correctamente.");
+      toast.success("Datos de pago actualizados correctamente.");
     } catch (err) {
       console.error(err);
-      alert("Error al guardar los datos.");
+      toast.error("Error al guardar los datos. Intenta de nuevo.");
     } finally {
       setIsSaving(false);
     }
@@ -49,9 +58,14 @@ export default function TechWalletModule({ wallet, techId }: TechWalletModulePro
             <Wallet className="w-40 h-40" />
           </div>
           <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 bg-[#52ffac] rounded-full animate-pulse"></div>
-              <span className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest">Saldo Disponible</span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-[#52ffac] rounded-full animate-pulse"></div>
+                <span className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest">Saldo Disponible</span>
+              </div>
+              <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${planInfo.color}`}>
+                Retiro: {planInfo.speed}
+              </span>
             </div>
             <h2 className="text-5xl font-black tracking-tighter text-white">${(wallet.balance || 0).toFixed(2)}</h2>
             <div className="flex gap-3 mt-8">
@@ -59,8 +73,7 @@ export default function TechWalletModule({ wallet, techId }: TechWalletModulePro
                  onClick={() => {
                    const amt = prompt("Monto a retirar:", wallet.balance.toString());
                    if(amt) {
-                     // Aquí llamaríamos a la función de retiro que inyectaremos vía props
-                     (window as any).handleWithdraw(techId, Number(amt));
+                     onWithdraw(techId, Number(amt));
                    }
                  }}
                  className="flex-1 py-3.5 bg-[#5d3cfe] hover:brightness-110 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-[#5d3cfe]/20"
@@ -68,7 +81,7 @@ export default function TechWalletModule({ wallet, techId }: TechWalletModulePro
                  Solicitar Retiro
                </button>
                <button
-                 onClick={() => alert("Generando Factura Fiscal Digital (PDF)... El documento estará disponible en su historial en breve.")}
+                 onClick={() => toast("Generando Factura Fiscal Digital. Estará disponible en su historial en breve.", { icon: '📄' })}
                  className="flex-1 py-3.5 bg-[#121317] border border-[#2a2b2f] text-white hover:border-[#5d3cfe] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
                >
                  Generar Factura Fiscal
@@ -225,7 +238,7 @@ export default function TechWalletModule({ wallet, techId }: TechWalletModulePro
           </div>
           <button
             className="p-2 text-[#474556] hover:text-white transition-all"
-            onClick={() => alert("Historial completo enviado a su correo registrado.")}
+            onClick={() => toast.success("Historial completo enviado a su correo registrado.")}
           >
             <Download className="w-4 h-4" />
           </button>

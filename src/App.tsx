@@ -1,6 +1,8 @@
+import { Toaster, toast } from 'react-hot-toast';
 import React, { useState, useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import {
   initialAssets, 
   initialReminders, 
@@ -98,6 +100,7 @@ export default function App() {
   const [allReminders, setAllReminders] = useState<MaintenanceReminder[]>([]);
   const [agenda, setAgenda] = useState<AgendaEvent[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<UserSubscription>({
     planId: 'plan-basic',
     status: 'active',
@@ -107,7 +110,7 @@ export default function App() {
 
   // UI State
   const [adminTab, setAdminTab] = useState<'finance' | 'users' | 'logistics' | 'alerts' | 'inventory' | 'settings'>('finance');
-  const [clientTab, setClientTab] = useState<'dashboard' | 'fleet' | 'ai' | 'marketplace' | 'quotes' | 'inventory' | 'subscriptions' | 'chat' | 'settings'>('dashboard');
+  const [clientTab, setClientTab] = useState<'dashboard' | 'fleet' | 'ai' | 'marketplace' | 'quotes' | 'inventory' | 'audit' | 'subscriptions' | 'chat' | 'settings'>('dashboard');
   const [techTab, setTechTab] = useState<'received' | 'agenda' | 'wallet' | 'mantech_id' | 'chat' | 'profile' | 'settings'>('received');
 
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
@@ -118,10 +121,22 @@ export default function App() {
   const [isEditingTechProfile, setIsEditingTechProfile] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const [activeRequestForSignature, setActiveRequestForSignature] = useState<string | null>(null);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [selectedRequestForReport, setSelectedRequestForReport] = useState<JobRequest | null>(null);
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
+  // PLAN CONFIGURATION
+  const getPlanLimits = (planId: string) => {
+    switch(planId) {
+      case 'plan-pro': return { maxAssets: 15, commission: 0.10, fleet: 'lite', diag: 'assisted' };
+      case 'plan-enterprise': return { maxAssets: 9999, commission: 0.08, fleet: 'full', diag: 'auto' };
+      default: return { maxAssets: 3, commission: 0.15, fleet: 'none', diag: 'manual' };
+    }
+  };
+
+  const planLimits = getPlanLimits(subscription.planId);
 
   // Video Call & Scanner V4
   const [isVideoCallOpen, setIsVideoCallOpen] = useState(false);
@@ -256,6 +271,12 @@ export default function App() {
     });
     if (role === 'tech') onSnapshot(query(collection(db, "agenda"), where("techUserId", "==", user.uid)), (snap) => setAgenda(snap.docs.map(d => ({ id: d.id, ...d.data() })) as AgendaEvent[]));
     onSnapshot(collection(db, "inventory"), (snap) => setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })) as InventoryItem[]));
+
+    if (role === 'admin') {
+      onSnapshot(collection(db, "users"), (snap) => {
+        setAllUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+    }
   }, [isLoggedIn, user, role]);
 
   useEffect(() => {
@@ -266,6 +287,30 @@ export default function App() {
       setChatMessages(msgs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()));
     });
   }, [isLoggedIn, activeChatRequestId]);
+
+  // Guardia de Suscripción: Verifica expiración cada vez que carga la app
+  useEffect(() => {
+    if (!isLoggedIn || !userData || role !== 'client') return;
+
+    const checkExpiration = async () => {
+      const now = new Date();
+      const expiry = new Date(subscription.nextBillingDate);
+
+      if (now > expiry && subscription.planId !== 'plan-basic' && subscription.status === 'active') {
+        console.log("âš ï¸ Suscripción expirada. Retornando a Plan Básico.");
+        const expiredSub = {
+          ...subscription,
+          status: 'expired',
+          planId: 'plan-basic' // Opcional: degradar automáticamente
+        };
+        await updateDoc(doc(db, "users", user.uid), { subscription: expiredSub });
+        setSubscription(expiredSub as UserSubscription);
+        toast.error("Tu plan MantechPro ha expirado. Has sido retornado al Plan Básico. Renueva tu membresía.", { duration: 6000 });
+      }
+    };
+
+    checkExpiration();
+  }, [userData, isLoggedIn]);
 
   // Handlers
   const handleLogin = async (e: any) => {
@@ -306,18 +351,25 @@ export default function App() {
         scheduledDate: suggestedDate || '', scheduledTime: suggestedTime || '',
         checklist: [{ id: '1', description: 'Inspección inicial', isCompleted: false }], materials: []
       });
-      alert("¡Solicitud enviada!");
+      toast.success("¡Solicitud enviada al técnico exitosamente!");
       setClientTab('quotes');
     } catch (err) { console.error(err); }
   };
 
   const handleSubmitBid = async (requestId: string) => {
-    if (!requestId || !bidPrice || !bidDate || !bidTime) return alert("Complete precio, fecha y hora");
+    if (!requestId || !bidPrice || !bidDate || !bidTime) return toast.error("Complete el precio, la fecha y la hora antes de continuar.");
     try {
+      const techPlan = getSelectedTechProfileObj().plan || 'basic';
+      const commissionRate = techPlan === 'enterprise' ? 0.08 : (techPlan === 'pro' ? 0.10 : 0.15);
+
+      const totalPrice = Number(bidPrice);
+      const platformFee = totalPrice * commissionRate;
+      const techEarnings = totalPrice - platformFee;
+
       await updateDoc(doc(db, "requests", requestId), {
-        price: Number(bidPrice),
-        commission: Number(bidPrice) * 0.15,
-        technicianEarnings: Number(bidPrice) * 0.85,
+        price: totalPrice,
+        commission: platformFee,
+        technicianEarnings: techEarnings,
         scheduledDate: bidDate,
         scheduledTime: bidTime,
         scheduledDuration: bidDuration,
@@ -330,9 +382,9 @@ export default function App() {
         status: 'quoted',
         techUserId: user.uid
       });
-      alert("Cotización enviada con materiales y cronograma.");
+      toast.success(`Cotización enviada. Ganancia neta: $${techEarnings.toFixed(2)} (Comisión ${commissionRate*100}%)`);
       setDraftingBidRequestId(null);
-      setBidMaterials([]); // Limpiar
+      setBidMaterials([]);
     } catch (err) { console.error(err); }
   };
 
@@ -346,9 +398,9 @@ export default function App() {
         await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: `He realizado el pago vía YAPPY por $${req.price}. Quedo a la espera de la verificación oficial.`, timestamp: serverTimestamp() });
 
         // Notificar al Admin
-        notifyAdmin("💳 PAGO PENDIENTE", `El cliente ${req.clientName} envió un pago de $${req.price} vía YAPPY.`);
+        notifyAdmin("ðŸ’³ PAGO PENDIENTE", `El cliente ${req.clientName} envió un pago de $${req.price} vía YAPPY.`);
 
-        alert("Pago enviado a verificación por el Admin.");
+        toast.success("Pago enviado. El Administrador lo verificará en breve.");
       } else {
         await updateDoc(doc(db, "requests", requestId), { status: 'accepted', paidAt: serverTimestamp(), paymentMethod: method });
         await addDoc(collection(db, "agenda"), {
@@ -359,7 +411,7 @@ export default function App() {
           status: 'pending', createdAt: serverTimestamp()
         });
         await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `¡Hola! He recibido tu confirmación y pago vía ${method.toUpperCase()}. Cita confirmada oficialmente.`, timestamp: serverTimestamp() });
-        alert("¡Cita confirmada!");
+        toast.success("¡Cita confirmada y agendada exitosamente!");
       }
       setClientTab('chat');
     } catch (err) { console.error(err); }
@@ -379,7 +431,7 @@ export default function App() {
         status: 'pending', createdAt: serverTimestamp()
       });
       await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `¡Hola! El Administrador ha confirmado tu pago vía ${req.paymentMethod?.toUpperCase()}. Cita confirmada oficialmente.`, timestamp: serverTimestamp() });
-      alert("Pago verificado y cita agendada.");
+      toast.success("Pago verificado. La cita ha sido agendada.");
     } catch (err) { console.error(err); }
   };
 
@@ -387,14 +439,14 @@ export default function App() {
     if (!requestId) return;
     try {
       await updateDoc(doc(db, "requests", requestId), { status: 'disputed', unforeseenReason: reason, unforeseenAmount: extraCost, unforeseenCategory: category, unforeseenAt: serverTimestamp() });
-      await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `⚠️ REPORTE DE IMPREVISTO [${category.toUpperCase()}]: ${reason}. Costo: $${extraCost}. Favor aprobar en panel para no comprometer la garantía.`, timestamp: serverTimestamp() });
+      await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `âš ï¸ REPORTE DE IMPREVISTO [${category.toUpperCase()}]: ${reason}. Costo: $${extraCost}. Favor aprobar en panel para no comprometer la garantía.`, timestamp: serverTimestamp() });
 
       // Notificar al Admin
       const req = requests.find(r => r.id === requestId);
-      notifyAdmin("⚠️ IMPREVISTO DETECTADO", `${req?.techName} reportó un extra de $${extraCost} para ${req?.assetName}.`);
+      notifyAdmin("âš ï¸ IMPREVISTO DETECTADO", `${req?.techName} reportó un extra de $${extraCost} para ${req?.assetName}.`);
 
       setIsUnforeseenModalOpen(false);
-      alert("Imprevisto reportado.");
+      toast.success("Imprevisto reportado al sistema correctamente.");
     } catch (err) { console.error(err); }
   };
 
@@ -406,16 +458,16 @@ export default function App() {
       const newPrice = (req.price || 0) + req.unforeseenAmount;
       await updateDoc(doc(db, "requests", requestId), { status: 'executing', price: newPrice, commission: newPrice * 0.15, technicianEarnings: newPrice * 0.85, unforeseenAmount: 0, unforeseenPaidAt: serverTimestamp() });
       await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: `✅ IMPREVISTO PAGADO: $${req.unforeseenAmount}. Puede continuar.`, timestamp: serverTimestamp() });
-      alert("Aprobado.");
+      toast.success("Costo adicional aprobado. El técnico puede continuar.");
     } catch (err) { console.error(err); }
   };
 
   const handleRejectUnforeseen = async (requestId: string) => {
     if (!requestId) return;
-    if (!window.confirm("⚠️ ATENCIÓN: Al continuar sin pagar el imprevisto, la GARANTÍA TOTAL del servicio quedará ANULADA. ¿Deseas proceder bajo tu responsabilidad?")) return;
+    if (!window.confirm("âš ï¸ ATENCIÁ“N: Al continuar sin pagar el imprevisto, la GARANTÁA TOTAL del servicio quedará ANULADA. ¿Deseas proceder bajo tu responsabilidad?")) return;
     try {
       await updateDoc(doc(db, "requests", requestId), { status: 'executing', guaranteeStatus: 'voided', unforeseenAmount: 0 });
-      await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: "❌ IMPREVISTO RECHAZADO: El cliente decide continuar sin realizar la reparación sugerida. LA GARANTÍA QUEDA ANULADA.", timestamp: serverTimestamp() });
+      await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: "âŒ IMPREVISTO RECHAZADO: El cliente decide continuar sin realizar la reparación sugerida. LA GARANTÁA QUEDA ANULADA.", timestamp: serverTimestamp() });
     } catch (e) { console.error(e); }
   };
 
@@ -449,23 +501,37 @@ export default function App() {
       // Actualizar agenda
       const q = query(collection(db, "agenda"), where("requestId", "==", requestId));
       const snap = await getDocs(q);
-      snap.forEach(d => updateDoc(doc(db, "agenda", d.id), { date: nextDate, title: 'CONTINUACIÓN MAÑANA' }));
+      snap.forEach(d => updateDoc(doc(db, "agenda", d.id), { date: nextDate, title: 'CONTINUACIÁ“N MAÁ‘ANA' }));
 
       await addDoc(collection(db, "messages"), {
         requestId,
         sender: 'tech',
-        text: `📢 PAUSA LOGÍSTICA: El servicio no pudo concluir hoy. Se ha reprogramado automáticamente para mañana ${nextDate} a la misma hora para finalizar las tareas pendientes.`,
+        text: `ðŸ“¢ PAUSA LOGÁSTICA: El servicio no pudo concluir hoy. Se ha reprogramado automáticamente para mañana ${nextDate} a la misma hora para finalizar las tareas pendientes.`,
         timestamp: serverTimestamp()
       });
 
-      alert("Servicio pausado. Se continuará mañana.");
+      toast.success("Servicio pausado. Reprogramado automáticamente para mañana.");
     } catch (err) { console.error(err); }
   };
 
   const handleCompleteJob = async (requestId: string, signature: string) => {
-    if (!requestId) return;
+    if (!requestId) {
+      toast.error("Error: No se pudo identificar el servicio a finalizar.");
+      return;
+    }
     try {
-      await updateDoc(doc(db, "requests", requestId), { status: 'completed', visitFinishedAt: new Date().toISOString(), clientSignature: signature, rating: ratingVal, comment: ratingComment });
+      await updateDoc(doc(db, "requests", requestId), {
+        status: 'completed',
+        visitFinishedAt: new Date().toISOString(),
+        clientSignature: signature,
+        rating: ratingVal,
+        comment: ratingComment
+      });
+
+      setIsSignatureModalOpen(false);
+      setActiveRequestForSignature(null);
+      toast.success("¡Servicio Finalizado y Liquidado con éxito!");
+
       const req = requests.find(r => r.id === requestId);
       if (req) {
          const tech = technicians.find(t => t.id === req.techId);
@@ -473,7 +539,7 @@ export default function App() {
             const finalR = Math.max(1, ratingVal - ((req.rescheduleCount || 0) * 0.2));
             const nRating = ((tech.rating * tech.reviewCount) + finalR) / (tech.reviewCount + 1);
 
-            // ACTUALIZACIÓN DE BILLETERA: Liquidación automática de fondos
+            // ACTUALIZACIÁ“N DE BILLETERA: Liquidación automática de fondos
             const earnings = Number(req.technicianEarnings || 0);
             const currentBalance = Number(tech.wallet?.balance || 0);
             const newBalance = currentBalance + earnings;
@@ -500,7 +566,7 @@ export default function App() {
          }
       }
       setIsSignatureModalOpen(false);
-      alert("Completado.");
+      toast.success("¡Servicio completado y calificado exitosamente!");
     } catch (err) { console.error(err); }
   };
 
@@ -514,16 +580,16 @@ export default function App() {
       const q = query(collection(db, "agenda"), where("requestId", "==", requestId));
       const snap = await getDocs(q);
       snap.forEach(d => updateDoc(doc(db, "agenda", d.id), { date, time, title: 'REPROGRAMADO' }));
-      await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `📢 REPROGRAMADA: ${date} @ ${time}. Motivo: ${reason}`, timestamp: serverTimestamp() });
-      alert("Movida.");
+      await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `ðŸ“¢ REPROGRAMADA: ${date} @ ${time}. Motivo: ${reason}`, timestamp: serverTimestamp() });
+      toast.success("Cita reprogramada exitosamente.");
     } catch (err) { console.error(err); }
   };
 
   const handleReportTechnicianFailure = async (requestId: string) => {
     if (!requestId) return;
-    if (!window.confirm("⚠️ ¿El técnico no concluyó? Solo recibirá el 5% de la inspección inicial. ¿Deseas reportar?")) return;
+    if (!window.confirm("âš ï¸ ¿El técnico no concluyó? Solo recibirá el 5% de la inspección inicial. ¿Deseas reportar?")) return;
     await updateDoc(doc(db, "requests", requestId), { status: 'cancelled', cancellationReason: 'Incumplimiento del técnico / Penalidad 5%', penaltyApplied: true });
-    alert("Reportado a auditoría.");
+    toast.success("Caso reportado a Auditoría. El equipo tomará acción.");
   };
 
   const handleCancelRequest = async (requestId: string) => {
@@ -531,19 +597,19 @@ export default function App() {
      const req = requests.find(r => r.id === requestId);
      if(!req) return;
      if (req.status === 'executing') {
-        if (!window.confirm("⚠️ EN EJECUCIÓN: Se liquidará el 50% por avance de obra. ¿Deseas proceder?")) return;
+        if (!window.confirm("âš ï¸ EN EJECUCIÁ“N: Se liquidará el 50% por avance de obra. ¿Deseas proceder?")) return;
      } else {
         if (!window.confirm("¿Deseas cancelar?")) return;
      }
      await updateDoc(doc(db, "requests", requestId), { status: 'cancelled', cancelledAt: serverTimestamp() });
-     alert("Cancelado.");
+     toast.success("Solicitud cancelada.");
   };
 
   const handleRequestWithdrawal = async (techId: string, amount: number) => {
-    if (amount <= 0) return alert("Monto no válido");
+    if (amount <= 0) return toast.error("El monto ingresado no es válido.");
     try {
       const tech = technicians.find(t => t.id === techId);
-      if (!tech || (tech.wallet?.balance || 0) < amount) return alert("Saldo insuficiente");
+      if (!tech || (tech.wallet?.balance || 0) < amount) return toast.error("Saldo insuficiente para procesar este retiro.");
 
       // 1. Crear transacción de débito (Pendiente)
       const newTransaction = {
@@ -564,9 +630,9 @@ export default function App() {
       });
 
       // 3. Notificar al Admin para que haga la transferencia real
-      notifyAdmin("🏦 SOLICITUD DE RETIRO", `El técnico ${tech.name} solicita un retiro de B/. ${amount.toFixed(2)}. Verificar datos bancarios.`);
+      notifyAdmin("ðŸ¦ SOLICITUD DE RETIRO", `El técnico ${tech.name} solicita un retiro de B/. ${amount.toFixed(2)}. Verificar datos bancarios.`);
 
-      alert("Solicitud de retiro enviada a Tesorería. El depósito se reflejará en un máximo de 24h.");
+      toast.success("Solicitud de retiro enviada a Tesorería. El depósito se reflejará en un máximo de 24h.");
     } catch (err) { console.error(err); }
   };
 
@@ -576,7 +642,7 @@ export default function App() {
     if (!req) return;
     const newMaterials = [...(req.materials || []), { name, price, quantity, category, addedAt: new Date().toISOString() }];
     await updateDoc(doc(db, "requests", requestId), { materials: newMaterials });
-    alert("Material registrado.");
+    toast.success("Material registrado en el servicio.");
   };
 
   const [isSubPaymentModalOpen, setIsSubPaymentModalOpen] = useState(false);
@@ -598,7 +664,41 @@ export default function App() {
     setIsSubPaymentModalOpen(true);
   };
 
-  const handleConfirmSubscriptionUpgrade = async (planId: string) => {
+  const handleConfirmSubscriptionUpgrade = async (planId: string, isInstant: boolean = false) => {
+    try {
+      const nextBilling = new Date();
+      nextBilling.setDate(nextBilling.getDate() + 30);
+
+      if (planId === 'plan-basic' || isInstant) {
+        // ACTIVACIÁ“N INSTANTÁNEA (Básico o PayPal)
+        const newSub = {
+          planId,
+          status: 'active',
+          startDate: new Date().toISOString(),
+          nextBillingDate: nextBilling.toISOString()
+        };
+        await updateDoc(doc(db, "users", user.uid), { subscription: newSub });
+        setSubscription(newSub as UserSubscription);
+        setIsSubPaymentModalOpen(false);
+        if (isInstant) toast.success(`¡Felicidades! Tu cuenta ha sido mejorada al plan ${planId.split('-')[1].toUpperCase()}.`, { duration: 5000 });
+        return;
+      }
+
+      // FLUJO MANUAL (Yappy): Queda en espera de verificación Admin
+      await updateDoc(doc(db, "users", user.uid), {
+        'subscription.requestedPlanId': planId,
+        'subscription.status': 'pending_payment_verification',
+        'subscription.paymentAt': new Date().toISOString()
+      });
+
+      notifyAdmin("ðŸ’Ž NUEVA SUSCRIPCIÁ“N (YAPPY)", `El usuario ${loggedInName} solicita subir al plan ${planId.split('-')[1].toUpperCase()}. Verificar transferencia manual.`);
+
+      setIsSubPaymentModalOpen(false);
+      toast("Solicitud recibida. El Administrador activará tu plan tras confirmar la transferencia por Yappy.", { icon: "📡", duration: 6000 });
+    } catch (err) { console.error(err); }
+  };
+
+  const handleApproveSubscription = async (userId: string, planId: string) => {
     try {
       const nextBilling = new Date();
       nextBilling.setDate(nextBilling.getDate() + 30);
@@ -610,10 +710,20 @@ export default function App() {
         nextBillingDate: nextBilling.toISOString()
       };
 
-      await updateDoc(doc(db, "users", user.uid), { subscription: newSub });
-      setSubscription(newSub);
-      setIsSubPaymentModalOpen(false);
-      alert(`🎉 ¡Felicidades! Tu cuenta ha sido mejorada al plan ${planId.split('-')[1].toUpperCase()}.`);
+      await updateDoc(doc(db, "users", userId), {
+        subscription: newSub
+      });
+
+      // Si es técnico, actualizar también su perfil de técnico
+      const userSnap = await getDoc(doc(db, "users", userId));
+      if (userSnap.exists() && userSnap.data().role === 'tech') {
+        const techId = userSnap.data().techId || `tech-${userId}`;
+        await updateDoc(doc(db, "technicians", techId), {
+          plan: planId.split('-')[1] // 'pro' o 'enterprise'
+        });
+      }
+
+      toast.success("Suscripción aprobada y activada correctamente.");
     } catch (err) { console.error(err); }
   };
 
@@ -642,7 +752,7 @@ export default function App() {
         [type === 'id' ? 'idCardUrl' : 'policeRecordUrl']: reader.result as string,
         [type === 'id' ? 'idStatus' : 'recordStatus']: 'pending'
       });
-      alert("Documento subido.");
+      toast.success("Documento subido correctamente.");
     };
     reader.readAsDataURL(file);
   };
@@ -668,6 +778,14 @@ export default function App() {
   const handleDeleteInventoryItem = async (id: string) => { if (window.confirm("¿Eliminar?")) try { await deleteDoc(doc(db, "inventory", id)); } catch (e) { console.error(e); } };
 
   const handleUpdateInventoryItem = async (item: InventoryItem) => { try { const { id, ...data } = item; await updateDoc(doc(db, "inventory", id), data); } catch (e) { console.error(e); } };
+
+  const handleBulkUpdateAssets = async (assetIds: string[], update: Partial<Asset>) => {
+    try {
+      const batch = assetIds.map(id => updateDoc(doc(db, "assets", id), update));
+      await Promise.all(batch);
+      toast.success(`${assetIds.length} equipos actualizados en lote.`);
+    } catch (err) { console.error(err); }
+  };
 
   const handleAddAsset = async (data: any) => {
     if (!user) return;
@@ -713,7 +831,7 @@ export default function App() {
               <div className="space-y-2 text-left"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Clave</label><input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white" required /></div>
               {authMode === 'register' && <div className="space-y-2 text-left"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Tipo</label><select value={authRole} onChange={e => setAuthRole(e.target.value as any)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white"><option value="client">Cliente</option><option value="tech">Técnico</option></select></div>}
               {authError && <p className="text-rose-500 text-[10px] font-black uppercase text-center">{authError}</p>}
-              <button type="submit" className="w-full py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]">Entrar ➔</button>
+              <button type="submit" className="w-full py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]">Entrar âž”</button>
             </form>
           </div>
         </div>
@@ -730,7 +848,9 @@ export default function App() {
   );
 
   return (
+    <PayPalScriptProvider options={{ clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || "sb", currency: "USD", intent: "capture" }}>
     <div className="min-h-screen bg-[#0d0e12] flex flex-col font-sans text-[#e3e2e8] overflow-hidden grid-bg">
+      <Toaster position="top-center" toastOptions={{ style: { background: '#1c1d24', color: '#fff', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' } }} />
       <nav className="h-20 bg-[#0d0e12]/80 backdrop-blur-md border-b border-[#2a2b2f] flex items-center justify-between px-10 shrink-0 z-50">
         <div className="flex items-center gap-10">
           <Logo size="sm" />
@@ -753,7 +873,7 @@ export default function App() {
              <div className="overflow-hidden">
                <h4 className="font-black text-white text-xs tracking-tight truncate uppercase leading-tight">{loggedInName}</h4>
                <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest mt-1">
-                 {role === 'client' ? 'CLIENTE' : role === 'tech' ? 'TÉCNICO' : 'ADMINISTRADOR'}
+                 {role === 'client' ? 'CLIENTE' : role === 'tech' ? 'TÁ‰CNICO' : 'ADMINISTRADOR'}
                </p>
              </div>
           </div>
@@ -761,10 +881,15 @@ export default function App() {
             {role === 'client' ? (
               <>
                 <button onClick={() => setClientTab('dashboard')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'dashboard' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><LayoutDashboard className="w-4 h-4" /> Mis Equipos</button>
-                <button onClick={() => setClientTab('fleet')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'fleet' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Globe className="w-5 h-5" /> Flota B2B</button>
+                {planLimits.fleet !== 'none' && (
+                  <button onClick={() => setClientTab('fleet')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'fleet' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Globe className="w-5 h-5" /> Flota B2B</button>
+                )}
                 <button onClick={() => setClientTab('ai')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'ai' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><BrainCircuit className="w-5 h-5 text-[#52ffac]" /> Autodiagnóstico</button>
                 <button onClick={() => setClientTab('marketplace')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'marketplace' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Store className="w-5 h-5" /> Buscar Expertos</button>
                 <button onClick={() => setClientTab('quotes')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'quotes' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileCheck2 className="w-4 h-4" /> Contratos</button>
+                {planLimits.maxAssets > 3 && (
+                  <button onClick={() => setClientTab('audit')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'audit' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileText className="w-4 h-4" /> Auditoría</button>
+                )}
                 <button onClick={() => setClientTab('inventory')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'inventory' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Package className="w-4 h-4" /> Repuestos</button>
                 <button onClick={() => setClientTab('subscriptions')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'subscriptions' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Star className="w-4 h-4" /> Membresía</button>
                 <button onClick={() => setClientTab('chat')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'chat' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><MessageSquare className="w-4 h-4" /> Chat</button>
@@ -828,7 +953,7 @@ export default function App() {
                                 <div className="py-6 px-6 bg-black/30 rounded-[2rem] border border-white/5 relative z-10 space-y-4">
                                    <div className="grid grid-cols-2 gap-4">
                                       <div>
-                                         <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Último Mtto.</p>
+                                         <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Ášltimo Mtto.</p>
                                          <p className="text-xs font-bold text-white/40 mt-1 uppercase">{a.lastMaintenanceDate || 'Sin Registro'}</p>
                                       </div>
                                       <div>
@@ -840,7 +965,7 @@ export default function App() {
                                    <div className="grid grid-cols-2 gap-4">
                                       <div>
                                          <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Estatus Salud</p>
-                                         <p className="text-sm font-black text-emerald-500 uppercase mt-1">Óptimo</p>
+                                         <p className="text-sm font-black text-emerald-500 uppercase mt-1">Á“ptimo</p>
                                       </div>
                                       <div>
                                          <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Modelo Registrado</p>
@@ -854,14 +979,14 @@ export default function App() {
                                       </div>
                                    )}
                                 </div>
-                                <button onClick={() => setClientTab('marketplace')} className="w-full py-4 bg-[#1c1d21] hover:bg-white text-white hover:text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] transition-all relative z-10">SOLICITAR TÉCNICO</button>
+                                <button onClick={() => setClientTab('marketplace')} className="w-full py-4 bg-[#1c1d21] hover:bg-white text-white hover:text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] transition-all relative z-10">SOLICITAR TÁ‰CNICO</button>
                              </div>
                          ))}
                       </div>
                     </div>
                   )}
-                  {clientTab === 'fleet' && <FleetDashboard assets={assets} reminders={reminders} onManageAsset={(a) => { setAssetToEdit(a); setIsAssetModalOpen(true); }} />}
-                  {clientTab === 'ai' && <DiagnosticAIView assets={assets} onFindTechnicians={(c) => { setMarketFilter(c); setClientTab('marketplace'); }} />}
+                  {clientTab === 'fleet' && <FleetDashboard assets={assets} reminders={reminders} onManageAsset={(a) => { setAssetToEdit(a); setIsAssetModalOpen(true); }} mode={planLimits.fleet as any} onBulkUpdate={handleBulkUpdateAssets} />}
+                  {clientTab === 'ai' && <DiagnosticAIView assets={assets} onFindTechnicians={(c) => { setMarketFilter(c); setClientTab('marketplace'); }} mode={planLimits.diag as any} />}
                   {clientTab === 'marketplace' && (
                     <div className="space-y-10">
                       <header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Marketplace <span className="text-[#5d3cfe]">Expertos</span></h1><div className="flex gap-3 overflow-x-auto pb-4 mt-6 custom-scrollbar">{['Todos', 'Mecánico', 'Técnico A/C', 'Electricista', 'Informático'].map(c => (<button key={c} onClick={() => setMarketFilter(c === 'Todos' ? 'all' : c.toLowerCase().replace(' ', '_') as any)} className={`flex-shrink-0 px-8 py-3 rounded-full border transition-all text-[10px] font-black uppercase tracking-widest ${marketFilter === (c === 'Todos' ? 'all' : c.toLowerCase().replace(' ', '_')) ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'border-[#2a2b2f] text-[#c8c4d9] hover:border-[#5d3cfe]'}`}>{c}</button>))}</div></header>
@@ -927,16 +1052,52 @@ export default function App() {
                                          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                                             <button
                                               onClick={() => handleAcceptQuote(req.id, 'yappy')}
-                                              className="flex-1 px-8 py-4 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase shadow-xl shadow-[#52ffac]/20 hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                                              className="flex-1 px-8 py-4 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase shadow-xl shadow-[#52ffac]/20 hover:brightness-110 transition-all flex items-center justify-center gap-2 h-[56px]"
                                             >
                                               <Download className="w-4 h-4" /> Yappy
                                             </button>
-                                            <button
-                                              onClick={() => handleAcceptQuote(req.id, 'paypal')}
-                                              className="flex-1 px-8 py-4 bg-[#0070ba] text-white rounded-2xl text-[10px] font-black uppercase shadow-xl shadow-[#0070ba]/20 hover:brightness-110 transition-all flex items-center justify-center gap-2"
-                                            >
-                                              <CreditCard className="w-4 h-4" /> Tarjeta / PayPal
-                                            </button>
+                                            <div className="flex-1 min-w-[200px]">
+                                              <PayPalButtons
+                                                style={{ layout: "horizontal", shape: "pill", color: "blue", height: 55 }}
+                                                createOrder={async () => {
+                                                  try {
+                                                    const response = await fetch("/api/orders", {
+                                                      method: "POST",
+                                                      headers: { "Content-Type": "application/json" },
+                                                      body: JSON.stringify({ price: req.price, itemName: `Servicio: ${req.assetName}` })
+                                                    });
+                                                    if (!response.ok) {
+                                                      const errorData = await response.json().catch(() => ({}));
+                                                      throw new Error(errorData.error || "Error al crear la orden de pago");
+                                                    }
+                                                    const order = await response.json();
+                                                    return order.id;
+                                                  } catch (err: any) {
+                                                    console.error("âŒ Error en createOrder:", err);
+                                                    toast.error(`Error al procesar el pago: ${err.message}`);
+                                                    throw err;
+                                                  }
+                                                }}
+                                                onApprove={async (data) => {
+                                                  try {
+                                                    const response = await fetch(`/api/orders/${data.orderID}/capture`, { method: "POST" });
+                                                    if (!response.ok) {
+                                                      const errorData = await response.json().catch(() => ({}));
+                                                      throw new Error(errorData.error || "Error al capturar el pago");
+                                                    }
+                                                    const result = await response.json();
+                                                    if (result.status === "COMPLETED") {
+                                                      handleAcceptQuote(req.id, 'paypal');
+                                                    } else {
+                                                      toast.error("El pago no se pudo completar. Por favor verifica tu cuenta.");
+                                                    }
+                                                  } catch (err: any) {
+                                                    console.error("âŒ Error en onApprove:", err);
+                                                    toast.error(`Error al procesar el pago: ${err.message}`);
+                                                  }
+                                                }}
+                                              />
+                                            </div>
                                          </div>
                                       </div>
                                       <p className="text-[9px] text-[#474556] font-bold uppercase text-center tracking-widest">Pagos procesados de forma segura con cifrado AES-256</p>
@@ -980,9 +1141,25 @@ export default function App() {
                                                </a>
                                             )}
                                             {req.status === 'completed' && (
-                                               <button onClick={() => { setSelectedRequestForReport(req); setIsReportModalOpen(true); }} className="px-6 py-3 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-[#5d3cfe] transition-all flex items-center gap-2">
-                                                  <FileText className="w-4 h-4" /> Reporte
-                                               </button>
+                                               <div className="flex gap-2">
+                                                  <button onClick={() => { setSelectedRequestForReport(req); setIsReportModalOpen(true); }} className="px-6 py-3 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-[#5d3cfe] transition-all flex items-center gap-2">
+                                                     <FileText className="w-4 h-4" /> Reporte
+                                                  </button>
+                                                  <button onClick={() => { setActiveRequestForSignature(req.id); setIsSignatureModalOpen(true); }} className="px-8 py-3 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase shadow-lg">
+                                                     Calificar
+                                                  </button>
+                                                  <button
+                                                    onClick={async () => {
+                                                      if(window.confirm("¿Deseas eliminar este registro de tu vista?")) {
+                                                        await deleteDoc(doc(db, "requests", req.id));
+                                                        toast.success("Eliminado");
+                                                      }
+                                                    }}
+                                                    className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-2xl hover:bg-rose-500 hover:text-white transition-all"
+                                                  >
+                                                    <Trash2 className="w-4 h-4" />
+                                                  </button>
+                                               </div>
                                             )}
                                             {req.status === 'completed' && (
                                                <button onClick={() => setIsSignatureModalOpen(true)} className="px-8 py-3 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase shadow-lg">
@@ -1035,8 +1212,43 @@ export default function App() {
                         </div>
                      </div>
                   )}
+                  {clientTab === 'audit' && (
+                    <div className="space-y-10 animate-fade-in">
+                       <header className="flex justify-between items-end">
+                          <div><h1 className="text-4xl font-black text-white tracking-tighter uppercase">Auditoría <span className="text-[#5d3cfe]">Lite</span></h1><p className="text-[#c8c4d9] font-medium mt-2 italic opacity-60">Resumen de cumplimiento técnico (Plan Profesional).</p></div>
+                          {subscription.planId === 'plan-enterprise' && (
+                            <button onClick={() => toast.success("Generando reporte Excel completo...")} className="px-6 py-3 bg-[#52ffac] text-black rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all hover:scale-105"><Download className="w-4 h-4" /> Exportar Full</button>
+                          )}
+                       </header>
+                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2rem] shadow-2xl">
+                             <span className="text-[9px] font-black text-[#474556] uppercase tracking-[0.3em]">Total Equipos</span>
+                             <p className="text-4xl font-black text-white mt-2">{assets.length}</p>
+                          </div>
+                          <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2rem] shadow-2xl">
+                             <span className="text-[9px] font-black text-[#474556] uppercase tracking-[0.3em]">Mttos. Al Día</span>
+                             <p className="text-4xl font-black text-emerald-500 mt-2">{assets.length - reminders.filter(r => r.status === 'urgent').length}</p>
+                          </div>
+                          <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2rem] shadow-2xl">
+                             <span className="text-[9px] font-black text-[#474556] uppercase tracking-[0.3em]">Acciones Pendientes</span>
+                             <p className="text-4xl font-black text-rose-500 mt-2">{reminders.filter(r => r.status === 'urgent').length}</p>
+                          </div>
+                       </div>
+                       <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[3rem] shadow-2xl">
+                          <h4 className="text-xs font-black text-white uppercase mb-6 tracking-widest">Logs de Cumplimiento</h4>
+                          <div className="space-y-4">
+                             {assets.map(a => (
+                               <div key={a.id} className="flex justify-between items-center py-4 border-b border-white/5">
+                                  <div><p className="text-sm font-bold text-white uppercase">{a.name}</p><p className="text-[9px] text-[#474556] uppercase tracking-widest">{a.details} • Sede: {a.location || 'Principal'}</p></div>
+                                  <div className="text-right"><p className="text-[10px] font-black text-[#5d3cfe] uppercase">Próximo Mtto.</p><p className="text-xs font-bold text-white/60">{a.nextMaintenanceDate}</p></div>
+                               </div>
+                             ))}
+                          </div>
+                       </div>
+                    </div>
+                  )}
                   {clientTab === 'inventory' && <InventoryModule items={inventory} assets={assets} onUpdateQuantity={handleUpdateInventoryQuantity} onAddItem={handleAddInventoryItem} onDeleteItem={handleDeleteInventoryItem} onUpdateItem={handleUpdateInventoryItem} />}
-                  {clientTab === 'subscriptions' && <SubscriptionModule subscription={subscription} onUpgrade={handleOpenSubscriptionPayment} />}
+                  {clientTab === 'subscriptions' && <SubscriptionModule subscription={subscription} onUpgrade={handleOpenSubscriptionPayment} role="client" />}
                   {clientTab === 'chat' && (
                     <div className="h-[calc(100vh-200px)]">
                       <SupportChatWidget
@@ -1052,7 +1264,7 @@ export default function App() {
                   {clientTab === 'settings' && (
                     <div className="max-w-2xl mx-auto space-y-10 pb-20">
                        <header className="text-center space-y-2"><h2 className="text-3xl font-black text-white uppercase tracking-tight">Seguridad de Cuenta</h2><p className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-[0.3em]">Validación Mantech ID Panamá</p></header>
-                       <MantechIDModule mantechId={{ status: userData?.recordStatus || 'unverified', idNumber: '', documentUrl: userData?.idCardUrl, policeRecordUrl: userData?.policeRecordUrl }} onUpload={handleUploadDoc} role="client" />
+                       <MantechIDModule mantechId={{ status: userData?.recordStatus || 'unverified', idNumber: '', documentUrl: userData?.idCardUrl, policeRecordUrl: userData?.policeRecordUrl }} onUpload={handleUploadDoc} role="client" plan={subscription.planId} />
                        <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[3rem] shadow-2xl"><button onClick={handleLogout} className="w-full py-5 border border-rose-500/20 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all">Cerrar Sesión Segura</button></div>
                     </div>
                   )}
@@ -1063,7 +1275,7 @@ export default function App() {
                  <div className="space-y-12">
                     {techTab === 'received' && (
                        <div className="space-y-8">
-                          <header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Bandeja de <span className="text-[#5d3cfe]">Servicios</span></h1></header>
+                          <header className="flex justify-between items-center"><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Bandeja de <span className="text-[#5d3cfe]">Servicios</span></h1><button onClick={() => setTechTab('subscriptions')} className="px-6 py-2 bg-white/5 border border-white/10 text-white rounded-xl text-[9px] font-black uppercase hover:bg-[#5d3cfe]">Mejorar Plan Técnico</button></header>
                           <div className="grid grid-cols-1 gap-6">
                             {requests.map(req => (
                               <div key={req.id} className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden group hover:border-[#5d3cfe]/30 transition-all">
@@ -1071,7 +1283,7 @@ export default function App() {
                                 <div className="p-5 bg-[#0d0e12] rounded-2xl border border-[#2a2b2f] italic text-xs text-[#c8c4d9]">"{req.description}"</div>
                                 {req.status === 'pending' && (
                                    <div className="pt-8 border-t border-[#2a2b2f] space-y-8 animate-fade-in">
-                                      {/* SECCIÓN 1: DATOS LOGÍSTICOS */}
+                                      {/* SECCIÁ“N 1: DATOS LOGÁSTICOS */}
                                       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                                          <div className="space-y-2">
                                             <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Tarifa Sugerida</label>
@@ -1144,7 +1356,7 @@ export default function App() {
                                          </div>
                                       </div>
 
-                                      {/* SECCIÓN 2: CRONOGRAMA Y MATERIALES (NUEVO) */}
+                                      {/* SECCIÁ“N 2: CRONOGRAMA Y MATERIALES (NUEVO) */}
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                          <div className="space-y-4">
                                             <div className="flex justify-between items-center px-1">
@@ -1226,7 +1438,7 @@ export default function App() {
                                       </div>
 
                                       <button onClick={() => { setDraftingBidRequestId(req.id); handleSubmitBid(req.id); }} className="w-full py-5 bg-[#5d3cfe] text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[#5d3cfe]/20 active:scale-95 transition-all flex items-center justify-center gap-4 group">
-                                         ENVIAR PROPUESTA TÉCNICA ➔
+                                         ENVIAR PROPUESTA TÁ‰CNICA âž”
                                       </button>
                                    </div>
                                 )}
@@ -1295,7 +1507,7 @@ export default function App() {
                                          <button onClick={() => { setActiveRequestForMaterial(req); setIsMaterialModalOpen(true); }} className="flex-1 py-4 bg-[#1c1d21] border border-[#2a2b2f] text-white rounded-xl text-[10px] font-black uppercase transition-all hover:border-[#5d3cfe]"><Package className="w-4 h-4 mx-auto mb-1" /> Cargar Material</button>
                                          <button onClick={() => { setActiveRequestForUnforeseen(req); setIsUnforeseenModalOpen(true); }} className="flex-1 py-4 bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-xl text-[10px] font-black uppercase transition-all hover:bg-amber-500 hover:text-black"><AlertTriangle className="w-4 h-4 mx-auto mb-1" /> Imprevisto</button>
                                       </div>
-                                      <button onClick={() => setIsSignatureModalOpen(true)} className="w-full py-5 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">Finalizar Servicio</button>
+                                      <button onClick={() => { setActiveRequestForSignature(req.id); setIsSignatureModalOpen(true); }} className="w-full py-5 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">Finalizar Servicio</button>
                                    </div>
                                 )}
                               </div>
@@ -1309,6 +1521,7 @@ export default function App() {
                         wallet={getSelectedTechProfileObj().wallet || { balance: 0, pendingBalance: 0, transactions: [] }}
                         techId={selectedTechProfileId!}
                         onWithdraw={handleRequestWithdrawal}
+                        plan={getSelectedTechProfileObj().plan || 'basic'}
                       />
                     )}
                     {techTab === 'mantech_id' && <TechCredential tech={getSelectedTechProfileObj()} />}
@@ -1336,10 +1549,17 @@ export default function App() {
                           </div>
                        </div>
                     )}
+                    {techTab === 'subscriptions' && (
+                      <SubscriptionModule
+                        subscription={subscription}
+                        onUpgrade={handleOpenSubscriptionPayment}
+                        role="tech"
+                      />
+                    )}
                     {techTab === 'settings' && (
                        <div className="max-w-2xl mx-auto space-y-10 pb-20">
                           <header className="text-center space-y-2"><h2 className="text-3xl font-black text-white uppercase tracking-tight">Centro de Seguridad Técnico</h2><p className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-[0.3em]">Validación Profesional MantechPro</p></header>
-                          <MantechIDModule mantechId={getSelectedTechProfileObj().mantechId || { status: 'unverified', idNumber: '' }} onUpload={handleUploadDoc} role="tech" />
+                          <MantechIDModule mantechId={getSelectedTechProfileObj().mantechId || { status: 'unverified', idNumber: '' }} onUpload={handleUploadDoc} role="tech" plan={getSelectedTechProfileObj().plan} />
                           <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[3rem] shadow-2xl"><button onClick={handleLogout} className="w-full py-5 border border-rose-500/20 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all">Cerrar Sesión Segura</button></div>
                        </div>
                     )}
@@ -1349,21 +1569,51 @@ export default function App() {
               {role === 'admin' && (
                 <div className="space-y-12 animate-fade-in-up">
                    {adminTab === 'finance' && (
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
-                           <span className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] block mb-4">Ingresos Brutos</span>
-                           <h2 className="text-6xl font-black text-white italic tracking-tighter leading-none">$2,450</h2>
-                           <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity"><DollarSign className="w-32 h-32" /></div>
+                     <div className="space-y-12">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                           <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
+                              <span className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] block mb-4">Ingresos Brutos</span>
+                              <h2 className="text-6xl font-black text-white italic tracking-tighter leading-none">$2,450</h2>
+                              <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity"><DollarSign className="w-32 h-32" /></div>
+                           </div>
+                           <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
+                              <span className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] block mb-4">Comisiones (15%)</span>
+                              <h2 className="text-6xl font-black text-[#5d3cfe] italic tracking-tighter leading-none">$367</h2>
+                              <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity"><TrendingUp className="w-32 h-32" /></div>
+                           </div>
+                           <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
+                              <span className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] block mb-4">Membresías</span>
+                              <h2 className="text-6xl font-black text-amber-500 italic tracking-tighter leading-none">$120</h2>
+                              <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity"><Star className="w-32 h-32" /></div>
+                           </div>
                         </div>
-                        <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
-                           <span className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] block mb-4">Comisiones (15%)</span>
-                           <h2 className="text-6xl font-black text-[#5d3cfe] italic tracking-tighter leading-none">$367</h2>
-                           <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity"><TrendingUp className="w-32 h-32" /></div>
-                        </div>
-                        <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
-                           <span className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] block mb-4">Membresías</span>
-                           <h2 className="text-6xl font-black text-amber-500 italic tracking-tighter leading-none">$120</h2>
-                           <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity"><Star className="w-32 h-32" /></div>
+
+                        <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl space-y-8">
+                           <header><h1 className="text-2xl font-black text-white uppercase tracking-tighter">Suscripciones <span className="text-amber-500">Pendientes</span></h1></header>
+                           <div className="grid grid-cols-1 gap-4">
+                              {allUsers.filter(u => u.subscription?.status === 'pending_payment_verification').map(u => (
+                                <div key={u.uid} className="p-6 bg-[#1c1d21] border border-amber-500/20 rounded-3xl flex justify-between items-center group animate-pulse hover:animate-none">
+                                   <div className="flex gap-6 items-center">
+                                      <div className="p-4 bg-amber-500/10 rounded-2xl text-amber-500 border border-amber-500/20 shadow-lg">
+                                         <Star className="w-6 h-6" />
+                                      </div>
+                                      <div>
+                                         <h4 className="text-sm font-black text-white uppercase tracking-tight">{u.name}</h4>
+                                         <p className="text-[10px] font-bold text-[#c8c4d9] mt-1 uppercase opacity-60">Plan Solicitado: {u.subscription.requestedPlanId?.split('-')[1].toUpperCase()}</p>
+                                      </div>
+                                   </div>
+                                   <button
+                                     onClick={() => handleApproveSubscription(u.uid, u.subscription.requestedPlanId)}
+                                     className="px-8 py-3 bg-amber-500 text-black rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 hover:scale-105 transition-all"
+                                   >
+                                     Aprobar Membresía
+                                   </button>
+                                </div>
+                              ))}
+                              {allUsers.filter(u => u.subscription?.status === 'pending_payment_verification').length === 0 && (
+                                <p className="text-[10px] text-[#474556] font-bold uppercase italic ml-4">No hay membresías por verificar.</p>
+                              )}
+                           </div>
                         </div>
                      </div>
                    )}
@@ -1401,7 +1651,7 @@ export default function App() {
                                      <div className="p-3 rounded-2xl bg-[#5d3cfe]/10 text-[#c7bfff]"><Truck className="w-6 h-6" /></div>
                                      <div><h4 className="text-sm font-black text-white uppercase tracking-tight">{r.assetName}</h4><p className="text-[10px] font-bold text-[#474556] uppercase mt-1">Técnico: {r.techName}</p></div>
                                   </div>
-                                  {r.rescheduleCount && <span className="px-3 py-1 bg-rose-500/10 text-rose-500 rounded-full text-[8px] font-black animate-pulse">⚠️ {r.rescheduleCount} MOVIDAS</span>}
+                                  {r.rescheduleCount && <span className="px-3 py-1 bg-rose-500/10 text-rose-500 rounded-full text-[8px] font-black animate-pulse">âš ï¸ {r.rescheduleCount} MOVIDAS</span>}
                                </div>
                              ))}
                           </div>
@@ -1475,12 +1725,12 @@ export default function App() {
           <div className="max-w-md w-full bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] space-y-10 shadow-2xl">
              <div className="text-center space-y-2"><h3 className="text-2xl font-black text-white uppercase tracking-tight">Cierre de <span className="text-[#5d3cfe]">Garantía</span></h3><p className="text-[10px] text-[#c8c4d9] font-bold uppercase tracking-widest opacity-60">Firme y califique para liberar el pago.</p></div>
              <div className="flex justify-center gap-3 py-4 border-y border-[#2a2b2f]/50">{[1,2,3,4,5].map(s => <button key={s} onClick={() => setRatingVal(s)} className="transform hover:scale-110"><Star className={`w-10 h-10 ${ratingVal >= s ? 'fill-amber-500 text-amber-500 shadow-[0_0_20px_#f59e0b40]' : 'text-[#2a2b2f]'}`} /></button>)}</div>
-             <SignaturePad onSave={sig => handleCompleteJob(requests.find(r => r.status === 'executing')?.id || '', sig)} onCancel={() => setIsSignatureModalOpen(false)} />
+             <SignaturePad onSave={sig => handleCompleteJob(activeRequestForSignature || '', sig)} onCancel={() => { setIsSignatureModalOpen(false); setActiveRequestForSignature(null); }} />
           </div>
         </div>
       )}
 
-      {isAssetModalOpen && <AssetRegisterModal isOpen={isAssetModalOpen} onClose={() => setIsAssetModalOpen(false)} onAdd={handleAddAsset} assetToEdit={assetToEdit} />}
+      {isAssetModalOpen && <AssetRegisterModal isOpen={isAssetModalOpen} onClose={() => setIsAssetModalOpen(false)} onAdd={handleAddAsset} assetToEdit={assetToEdit} maxAssets={planLimits.maxAssets} currentAssetsCount={assets.length} />}
       {isTechModalOpen && activeTechForModal && <TechnicianProfileModal tech={activeTechForModal} isOpen={isTechModalOpen} onClose={() => setIsTechModalOpen(false)} assets={assets} onRequestQuote={handleRequestQuote} />}
       {isEditingTechProfile && <TechnicianEditProfileModal isOpen={isEditingTechProfile} onClose={() => setIsEditingTechProfile(false)} profile={getSelectedTechProfileObj()} onSave={handleUpdateTechProfile} />}
       {selectedRequestForReport && <ServiceReportModal isOpen={isReportModalOpen} onClose={() => { setIsReportModalOpen(false); setSelectedRequestForReport(null); }} request={selectedRequestForReport} />}
@@ -1497,31 +1747,65 @@ export default function App() {
         </div>
       )}
       <VideoCallModal isOpen={isVideoCallOpen} onClose={() => setIsVideoCallOpen(false)} roomName={videoCallRoom} userName={loggedInName} isVoiceOnly={isVideoVoiceOnly} />
-      <QRScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanSuccess={(id) => { const tech = technicians.find(t => t.id === id); if (tech) alert(`✅ Especialista Validado: ${tech.name}`); }} technicians={technicians} />
-      <SupportModal isOpen={isSupportModalOpen} onClose={() => setIsSupportModalOpen(false)} userEmail={loggedInEmail} userName={loggedInName} userId={user?.uid} userRole={role} />
+      <QRScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanSuccess={(id) => { const tech = technicians.find(t => t.id === id); if (tech) toast(`✅ Especialista Validado: ${tech.name}`); }} technicians={technicians} />
+      <SupportModal isOpen={isSupportModalOpen} onClose={() => setIsSupportModalOpen(false)} userEmail={loggedInEmail} userName={loggedInName} userId={user?.uid} userRole={role} plan={subscription.planId} />
 
       {isSubPaymentModalOpen && selectedPlanForPayment && (
         <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-          <div className="w-full max-w-lg bg-[#121317] border border-[#2a2b2f] rounded-[3rem] p-10 space-y-8 shadow-2xl animate-fade-in-up">
+          <div className="w-full max-w-lg bg-[#121317] border border-[#2a2b2f] rounded-[3rem] p-10 space-y-8 shadow-2xl animate-fade-in-up max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="text-center space-y-2">
                <h3 className="text-2xl font-black text-white uppercase italic">Mejorar a <span className="text-[#5d3cfe]">{selectedPlanForPayment.name}</span></h3>
                <p className="text-[10px] text-[#c8c4d9] font-black uppercase tracking-widest opacity-60">Inversión mensual: ${selectedPlanForPayment.price}.00 USD</p>
             </div>
 
             <div className="space-y-4">
-               <button
-                 onClick={() => handleConfirmSubscriptionUpgrade(selectedPlanForPayment.id)}
-                 className="w-full py-5 bg-[#0070ba] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[#0070ba]/20 hover:brightness-110 transition-all flex items-center justify-center gap-3"
-               >
-                 <CreditCard className="w-4 h-4" /> Pagar con PayPal / Tarjeta
-               </button>
+               <PayPalButtons
+                 style={{ layout: "vertical", shape: "pill", color: "blue", height: 50 }}
+                 createOrder={async () => {
+                   try {
+                     const response = await fetch("/api/orders", {
+                       method: "POST",
+                       headers: { "Content-Type": "application/json" },
+                       body: JSON.stringify({ price: selectedPlanForPayment.price, itemName: `Plan ${selectedPlanForPayment.name}` })
+                     });
+                     if (!response.ok) {
+                       const errorData = await response.json().catch(() => ({}));
+                       throw new Error(errorData.error || "Error al crear la orden de pago");
+                     }
+                     const order = await response.json();
+                     return order.id;
+                   } catch (err: any) {
+                     console.error("âŒ Error en createOrder:", err);
+                     toast.error(`Error al procesar el pago: ${err.message}`);
+                     throw err;
+                   }
+                 }}
+                 onApprove={async (data) => {
+                   try {
+                     const response = await fetch(`/api/orders/${data.orderID}/capture`, { method: "POST" });
+                     if (!response.ok) {
+                       const errorData = await response.json().catch(() => ({}));
+                       throw new Error(errorData.error || "Error al capturar el pago");
+                     }
+                     const result = await response.json();
+                     if (result.status === "COMPLETED") {
+                       handleConfirmSubscriptionUpgrade(selectedPlanForPayment.id, true);
+                     } else {
+                       toast.error("El pago no se pudo completar. Por favor verifica tu cuenta.");
+                     }
+                   } catch (err: any) {
+                     console.error("âŒ Error en onApprove:", err);
+                     toast.error(`Error al procesar el pago: ${err.message}`);
+                   }
+                 }}
+               />
                <div className="flex items-center gap-4">
                   <div className="h-px bg-[#2a2b2f] flex-1"></div>
                   <span className="text-[8px] font-black text-[#474556] uppercase tracking-widest">Otras opciones</span>
                   <div className="h-px bg-[#2a2b2f] flex-1"></div>
                </div>
                <button
-                 onClick={() => handleConfirmSubscriptionUpgrade(selectedPlanForPayment.id)}
+                 onClick={() => handleConfirmSubscriptionUpgrade(selectedPlanForPayment.id, false)}
                  className="w-full py-5 border border-[#2a2b2f] text-[#c8c4d9] rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white/5 transition-all flex items-center justify-center gap-3"
                >
                  <Download className="w-4 h-4" /> Pago vía Yappy (Manual)
@@ -1540,6 +1824,7 @@ export default function App() {
 
       <Chatbot247 />
     </div>
+    </PayPalScriptProvider>
   );
 }
 
@@ -1564,3 +1849,5 @@ function formatTime12h(dateStr?: string) {
     });
   } catch (e) { return '---'; }
 }
+
+
