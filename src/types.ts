@@ -140,6 +140,7 @@ export interface JobRequest {
   clientRating?: number;
   clientComment?: string;
   clientSignature?: string; // Base64 signature image
+  paymentMethod?: string;
 }
 
 export interface ChatMessage {

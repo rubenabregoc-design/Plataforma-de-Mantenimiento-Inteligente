@@ -48,7 +48,7 @@ import {
   Bell, BellRing, Send, CheckCircle, Plus, TrendingUp, Truck, Camera,
   Layers, ShieldCheck, Star, CheckCircle2,
   UserX, Clock, LogOut, User, ChevronRight,
-  ShieldAlert, HelpCircle, Wrench, Search, Check, X, MapPin, BadgeCheck, Video, Monitor,
+  ShieldAlert, HelpCircle, Wrench, Search, Check, X, MapPin, BadgeCheck, Video, Monitor, Download,
   Calendar, AlertTriangle, Pencil, Trash2, FileText, Settings, Eye, EyeOff, Sparkles, Inbox, Car, Wind, Package, Globe, PieChart, Building2, Activity, CreditCard, ExternalLink, QrCode
 } from 'lucide-react';
 
@@ -579,6 +579,44 @@ export default function App() {
     alert("Material registrado.");
   };
 
+  const [isSubPaymentModalOpen, setIsSubPaymentModalOpen] = useState(false);
+  const [selectedPlanForPayment, setSelectedPlanForPlanPayment] = useState<any>(null);
+
+  const handleOpenSubscriptionPayment = (planId: string) => {
+    const plan = [
+      { id: 'plan-basic', name: 'Básico', price: 0 },
+      { id: 'plan-pro', name: 'Profesional', price: 15 },
+      { id: 'plan-enterprise', name: 'Corporativo', price: 45 }
+    ].find(p => p.id === planId);
+
+    if (planId === 'plan-basic') {
+      handleConfirmSubscriptionUpgrade('plan-basic');
+      return;
+    }
+
+    setSelectedPlanForPlanPayment(plan);
+    setIsSubPaymentModalOpen(true);
+  };
+
+  const handleConfirmSubscriptionUpgrade = async (planId: string) => {
+    try {
+      const nextBilling = new Date();
+      nextBilling.setDate(nextBilling.getDate() + 30);
+
+      const newSub = {
+        planId,
+        status: 'active',
+        startDate: new Date().toISOString(),
+        nextBillingDate: nextBilling.toISOString()
+      };
+
+      await updateDoc(doc(db, "users", user.uid), { subscription: newSub });
+      setSubscription(newSub);
+      setIsSubPaymentModalOpen(false);
+      alert(`🎉 ¡Felicidades! Tu cuenta ha sido mejorada al plan ${planId.split('-')[1].toUpperCase()}.`);
+    } catch (err) { console.error(err); }
+  };
+
   const handleDeleteMaterial = async (requestId: string, index: number) => {
     if (!requestId) return;
     const req = requests.find(r => r.id === requestId);
@@ -998,7 +1036,7 @@ export default function App() {
                      </div>
                   )}
                   {clientTab === 'inventory' && <InventoryModule items={inventory} assets={assets} onUpdateQuantity={handleUpdateInventoryQuantity} onAddItem={handleAddInventoryItem} onDeleteItem={handleDeleteInventoryItem} onUpdateItem={handleUpdateInventoryItem} />}
-                  {clientTab === 'subscriptions' && <SubscriptionModule subscription={subscription} onUpgrade={(p) => alert(`Cambiando a ${p}...`)} />}
+                  {clientTab === 'subscriptions' && <SubscriptionModule subscription={subscription} onUpgrade={handleOpenSubscriptionPayment} />}
                   {clientTab === 'chat' && (
                     <div className="h-[calc(100vh-200px)]">
                       <SupportChatWidget
@@ -1461,6 +1499,45 @@ export default function App() {
       <VideoCallModal isOpen={isVideoCallOpen} onClose={() => setIsVideoCallOpen(false)} roomName={videoCallRoom} userName={loggedInName} isVoiceOnly={isVideoVoiceOnly} />
       <QRScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanSuccess={(id) => { const tech = technicians.find(t => t.id === id); if (tech) alert(`✅ Especialista Validado: ${tech.name}`); }} technicians={technicians} />
       <SupportModal isOpen={isSupportModalOpen} onClose={() => setIsSupportModalOpen(false)} userEmail={loggedInEmail} userName={loggedInName} userId={user?.uid} userRole={role} />
+
+      {isSubPaymentModalOpen && selectedPlanForPayment && (
+        <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+          <div className="w-full max-w-lg bg-[#121317] border border-[#2a2b2f] rounded-[3rem] p-10 space-y-8 shadow-2xl animate-fade-in-up">
+            <div className="text-center space-y-2">
+               <h3 className="text-2xl font-black text-white uppercase italic">Mejorar a <span className="text-[#5d3cfe]">{selectedPlanForPayment.name}</span></h3>
+               <p className="text-[10px] text-[#c8c4d9] font-black uppercase tracking-widest opacity-60">Inversión mensual: ${selectedPlanForPayment.price}.00 USD</p>
+            </div>
+
+            <div className="space-y-4">
+               <button
+                 onClick={() => handleConfirmSubscriptionUpgrade(selectedPlanForPayment.id)}
+                 className="w-full py-5 bg-[#0070ba] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[#0070ba]/20 hover:brightness-110 transition-all flex items-center justify-center gap-3"
+               >
+                 <CreditCard className="w-4 h-4" /> Pagar con PayPal / Tarjeta
+               </button>
+               <div className="flex items-center gap-4">
+                  <div className="h-px bg-[#2a2b2f] flex-1"></div>
+                  <span className="text-[8px] font-black text-[#474556] uppercase tracking-widest">Otras opciones</span>
+                  <div className="h-px bg-[#2a2b2f] flex-1"></div>
+               </div>
+               <button
+                 onClick={() => handleConfirmSubscriptionUpgrade(selectedPlanForPayment.id)}
+                 className="w-full py-5 border border-[#2a2b2f] text-[#c8c4d9] rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white/5 transition-all flex items-center justify-center gap-3"
+               >
+                 <Download className="w-4 h-4" /> Pago vía Yappy (Manual)
+               </button>
+            </div>
+
+            <button
+              onClick={() => setIsSubPaymentModalOpen(false)}
+              className="w-full py-4 text-[#474556] hover:text-white text-[10px] font-black uppercase tracking-widest transition-all"
+            >
+              Cancelar Proceso
+            </button>
+          </div>
+        </div>
+      )}
+
       <Chatbot247 />
     </div>
   );

@@ -157,17 +157,18 @@ export default function ServiceReportModal({ isOpen, onClose, request }: Service
         </header>
 
         {/* RESUMEN EJECUTIVO */}
-        <div className="grid grid-cols-5 gap-3 mb-12">
+        <div className="grid grid-cols-6 gap-2 mb-12">
           {[
-            { label: 'Activo Registrado', value: request.assetName || '---' },
+            { label: 'Activo', value: request.assetName || '---' },
             { label: 'Especialista', value: request.techName || '---' },
-            { label: 'Modalidad', value: request.serviceType === 'remote' ? `REMOTO (${request.remotePlatform?.toUpperCase()})` : 'PRESENCIAL' },
-            { label: request.serviceType === 'remote' ? 'Sesión Digital' : 'Tiempo en Sitio', value: getTimeDisplay() },
-            { label: 'Inversión Final', value: `$${Number(request.price || 0).toFixed(2)} USD`, highlight: true },
+            { label: 'Modalidad', value: request.serviceType === 'remote' ? `REMOTO` : 'PRESENCIAL' },
+            { label: 'Plataforma / Pago', value: request.serviceType === 'remote' ? request.remotePlatform?.toUpperCase() : request.paymentMethod?.toUpperCase() || 'YAPPY' },
+            { label: 'Tiempo', value: getTimeDisplay() },
+            { label: 'Inversión', value: `$${Number(request.price || 0).toFixed(2)}`, highlight: true },
           ].map((item, i) => (
-            <div key={i} className={`p-4 rounded-xl border ${item.highlight ? 'border-[#52ffac] bg-emerald-50/20' : 'border-zinc-100 bg-zinc-50/50'}`}>
-              <h3 className="text-[8px] font-black uppercase text-zinc-400 mb-2">{item.label}</h3>
-              <p className="text-[9px] font-black text-zinc-900 uppercase leading-snug">{item.value}</p>
+            <div key={i} className={`p-3 rounded-xl border ${item.highlight ? 'border-[#52ffac] bg-emerald-50/20' : 'border-zinc-100 bg-zinc-50/50'}`}>
+              <h3 className="text-[7px] font-black uppercase text-zinc-400 mb-1.5">{item.label}</h3>
+              <p className="text-[9px] font-black text-zinc-900 uppercase leading-tight truncate">{item.value}</p>
             </div>
           ))}
         </div>
