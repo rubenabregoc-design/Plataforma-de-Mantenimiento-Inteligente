@@ -15,12 +15,13 @@ interface FleetDashboardProps {
   onBulkRegister?: (assets: any[]) => void;
   onStartGps?: (assetId: string) => void;
   onTogglePause?: () => void;
+  onAddCheckpoint?: (asset: Asset) => void;
   trackingAssetId?: string | null;
   tripStatus?: 'idle' | 'active' | 'paused';
   mode?: 'lite' | 'full';
 }
 
-export default function FleetDashboard({ assets, reminders, onManageAsset, onBulkUpdate, onBulkRegister, onStartGps, onTogglePause, trackingAssetId, tripStatus = 'idle', mode = 'lite' }: FleetDashboardProps) {
+export default function FleetDashboard({ assets, reminders, onManageAsset, onBulkUpdate, onBulkRegister, onStartGps, onTogglePause, onAddCheckpoint, trackingAssetId, tripStatus = 'idle', mode = 'lite' }: FleetDashboardProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'table' | 'history'>(mode === 'full' ? 'table' : 'grid');
   const [activeSubTab, setActiveSubTab] = useState<'fleet' | 'api' | 'support'>('fleet');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -80,18 +81,8 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
   };
 
   const handleAddCheckpoint = (asset: Asset) => {
-    const name = prompt("🏷️ Nombre de la parada (Ej: Almacén Chiriquí):");
-    if (name) {
-      onBulkUpdate?.([asset.id], {
-        routeHistory: [...(asset.routeHistory || []), {
-          lat: (asset as any).latitude || 0,
-          lng: (asset as any).longitude || 0,
-          timestamp: new Date().toISOString(),
-          locationName: name,
-          type: 'checkpoint'
-        }]
-      });
-      toast.success(`Parada "${name}" registrada.`);
+    if (onAddCheckpoint) {
+      onAddCheckpoint(asset);
     }
   };
 
@@ -352,12 +343,38 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
           {viewMode === 'history' && historyAssetId && (
             <div className="bg-[#1f1f24] rounded-[1.5rem] border border-[#474556]/30 overflow-hidden shadow-xl animate-fade-in flex flex-col lg:flex-row h-[600px]">
                <div className="flex-1 bg-[#0d0e12] relative min-h-[300px]">
-                  {assets.find(a => a.id === historyAssetId)?.routeHistory?.length ? (
-                    <iframe width="100%" height="100%" frameBorder="0" style={{ border: 0 }} src={`https://www.google.com/maps?q=${assets.find(a => a.id === historyAssetId)?.routeHistory?.filter(p => p.lat !== 0).at(-1)?.lat},${assets.find(a => a.id === historyAssetId)?.routeHistory?.filter(p => p.lat !== 0).at(-1)?.lng}&t=k&z=16&output=embed`} allowFullScreen></iframe>
-                  ) : (
-                    <iframe width="100%" height="100%" frameBorder="0" style={{ border: 0 }} src={`https://www.google.com/maps?q=8.9833,-79.5167&t=k&z=12&output=embed`} allowFullScreen></iframe>
-                  )}
-                  <div className="absolute bottom-6 left-6 bg-black/90 backdrop-blur-md p-4 rounded-2xl border border-white/10 z-10 shadow-2xl flex items-center gap-3">
+                  {(() => {
+                    const isNight = new Date().getHours() >= 18 || new Date().getHours() < 6;
+                    const history = assets.find(a => a.id === historyAssetId)?.routeHistory;
+                    const lastValidPoint = history?.filter(p => p.lat !== 0).at(-1);
+                    const lat = lastValidPoint?.lat || 8.9833;
+                    const lng = lastValidPoint?.lng || -79.5167;
+                    const zoom = lastValidPoint ? 16 : 12;
+
+                    return (
+                      <>
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          frameBorder="0"
+                          style={{
+                            border: 0,
+                            filter: isNight ? 'invert(90%) hue-rotate(180deg) brightness(0.8) contrast(1.2)' : 'none'
+                          }}
+                          src={`https://www.google.com/maps?q=${lat},${lng}&t=m&z=${zoom}&output=embed`}
+                          allowFullScreen
+                        ></iframe>
+                        {isNight && (
+                          <div className="absolute top-4 right-4 bg-amber-500/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-amber-500/30 flex items-center gap-2 z-20 shadow-2xl">
+                             <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                             <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Monitoreo Nocturno Activo</span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                  {/* Badge movido al top-left para no tapar el mapa ni el logo de Google */}
+                  <div className="absolute top-6 left-6 bg-black/90 backdrop-blur-md p-4 rounded-2xl border border-white/10 z-10 shadow-2xl flex items-center gap-3">
                      <div className="w-2 h-2 bg-[#52ffac] rounded-full animate-ping"></div>
                      <div><p className="text-[7px] font-black text-[#474556] uppercase tracking-[0.2em]">Enlace en Vivo</p><p className="text-[9px] font-black text-white uppercase">Mantech Sat-Link v4</p></div>
                   </div>

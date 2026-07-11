@@ -138,8 +138,8 @@ export default function TechnicianRadar({ technicians, assets, onSelectTech }: T
               </div>
            </div>
 
-           <div className="absolute top-8 right-8">
-              <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl p-4 space-y-1">
+           <div className="absolute top-8 left-8">
+              <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl p-4 space-y-1 shadow-2xl">
                  <p className="text-[8px] font-black text-[#474556] uppercase tracking-widest">Señal de Red</p>
                  <p className="text-xs font-black text-[#52ffac] uppercase tracking-tight italic">Mantech Sat-Link v4</p>
               </div>

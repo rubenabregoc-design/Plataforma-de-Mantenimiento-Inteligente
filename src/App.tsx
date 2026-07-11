@@ -48,6 +48,7 @@ import Logo from './components/Logo';
 import TechWalletModule from './components/TechWalletModule';
 import TechnicianRadar from './components/TechnicianRadar';
 import RouteStartModal from './components/RouteStartModal';
+import CheckpointModal from './components/CheckpointModal';
 
 import { 
   LayoutDashboard, Store, FileCheck2, BrainCircuit, MessageSquare, CalendarDays, Users, DollarSign,
@@ -135,6 +136,7 @@ export default function App() {
   // Marketplace UI State
   const [marketViewMode, setMarketViewMode] = useState<'list' | 'radar'>('list');
   const [isRouteStartModalOpen, setIsRouteStartModalOpen] = useState(false);
+  const [isCheckpointModalOpen, setIsCheckpointModalOpen] = useState(false);
   const [assetForRoute, setAssetForRoute] = useState<Asset | null>(null);
 
   // Asset View State
@@ -165,22 +167,30 @@ export default function App() {
   const [activeRequestForUnforeseen, setActiveRequestForUnforeseen] = useState<any>(null);
   const [unforeseenInputs, setUnforeseenInputs] = useState({ reason: '', amount: '', category: 'spare_part' });
 
-  // GPS TRACKING STATE (CELLPHONE)
-  const [trackingAssetId, setTrackingAssetId] = useState<string | null>(null);
-  const [tripStatus, setTripStatus] = useState<'idle' | 'active' | 'paused'>('idle');
+  // GPS TRACKING STATE (CELLPHONE) - CON PERSISTENCIA
+  const [trackingAssetId, setTrackingAssetId] = useState<string | null>(localStorage.getItem('mantech_tracking_id'));
+  const [tripStatus, setTripStatus] = useState<'idle' | 'active' | 'paused'>((localStorage.getItem('mantech_trip_status') as any) || 'idle');
   const [autoGpsEnabled, setAutoGpsEnabled] = useState(false);
   const watchIdRef = useRef<string | null>(null);
   const lastPosRef = useRef<any>(null);
   const wakeLockRef = useRef<any>(null);
 
-  // Iniciar rastreo automático al detectar rol de flota
+  // Persistir cambios en localStorage
   useEffect(() => {
-    if (isLoggedIn && role === 'client' && autoGpsEnabled) {
-      // Iniciar rastreo del primer camión activo o el seleccionado
-      const activeAsset = assets.find(a => a.type === 'car');
-      if (activeAsset) startGpsTracking(activeAsset.id);
+    if (trackingAssetId) localStorage.setItem('mantech_tracking_id', trackingAssetId);
+    else localStorage.removeItem('mantech_tracking_id');
+  }, [trackingAssetId]);
+
+  useEffect(() => {
+    localStorage.setItem('mantech_trip_status', tripStatus);
+  }, [tripStatus]);
+
+  // Recuperar rastreo tras reinicio de página
+  useEffect(() => {
+    if (isLoggedIn && trackingAssetId && tripStatus !== 'idle') {
+      startGpsTracking(trackingAssetId, true); // Reanudar silenciosamente
     }
-  }, [autoGpsEnabled, isLoggedIn]);
+  }, [isLoggedIn]);
 
   const toggleGpsPause = () => {
     if (tripStatus === 'active') {
@@ -193,8 +203,8 @@ export default function App() {
     }
   };
 
-  const startGpsTracking = async (assetId: string) => {
-    if (trackingAssetId === assetId) {
+  const startGpsTracking = async (assetId: string, isResuming = false) => {
+    if (trackingAssetId === assetId && !isResuming) {
       if (watchIdRef.current) Geolocation.clearWatch({ id: watchIdRef.current });
       if (wakeLockRef.current) wakeLockRef.current.release();
       if (Capacitor.isNativePlatform()) {
@@ -210,7 +220,7 @@ export default function App() {
     try {
       const isNative = Capacitor.isNativePlatform();
 
-      if (!trackingAssetId) {
+      if (!trackingAssetId && !isResuming) {
         const asset = assets.find(a => a.id === assetId);
         if (asset) {
           setAssetForRoute(asset);
@@ -225,31 +235,9 @@ export default function App() {
       }
 
       setTrackingAssetId(assetId);
-      setTripStatus('active');
+      if (!isResuming) setTripStatus('active');
 
-      if (isNative) {
-        const hasPermission = await LocalNotifications.requestPermissions();
-        if (hasPermission.display === 'granted') {
-          LocalNotifications.schedule({
-            notifications: [
-              {
-                title: "MantechPro: Rastreo Activo",
-                body: "El sistema está calculando el kilometraje en segundo plano.",
-                id: 1001,
-                ongoing: true,
-                smallIcon: "ic_stat_name",
-                actionTypeId: "OPEN_APP"
-              }
-            ]
-          });
-        }
-      }
-
-      if ('wakeLock' in navigator) {
-        try {
-          wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
-        } catch (err) { console.error("WakeLock no soportado."); }
-      }
+      if (!isResuming) toast.success("Rastreo de Celular Activado.");
 
       watchIdRef.current = await Geolocation.watchPosition({
         enableHighAccuracy: true,
@@ -1235,6 +1223,7 @@ export default function App() {
                       onBulkRegister={handleBulkRegisterAssets}
                       onStartGps={startGpsTracking}
                       onTogglePause={toggleGpsPause}
+                      onAddCheckpoint={(a) => { setAssetForRoute(a); setIsCheckpointModalOpen(true); }}
                       trackingAssetId={trackingAssetId}
                       tripStatus={tripStatus}
                     />
@@ -2087,13 +2076,63 @@ export default function App() {
           onConfirm={async (dest) => {
             setIsRouteStartModalOpen(false);
             const assetId = assetForRoute.id;
-            setTrackingAssetId(assetId);
-            setTripStatus('active');
-            await updateDoc(doc(db, "assets", assetId), {
-              currentRoute: dest,
-              routeStartedAt: new Date().toISOString()
-            });
-            toast.success(`Viaje a ${dest} Iniciado.`);
+
+            try {
+              // CAPTURA INMEDIATA (REAL)
+              const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
+              const startPoint = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+                timestamp: new Date().toISOString(),
+                locationName: 'Punto de Despacho',
+                type: 'checkpoint'
+              };
+
+              setTrackingAssetId(assetId);
+              setTripStatus('active');
+
+              await updateDoc(doc(db, "assets", assetId), {
+                currentRoute: dest,
+                routeStartedAt: new Date().toISOString(),
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                routeHistory: arrayUnion(startPoint)
+              });
+              toast.success(`Unidad despachada a ${dest}.`);
+            } catch (err) {
+              toast.error("Error al obtener señal GPS inicial.");
+            }
+          }}
+        />
+      )}
+
+      {isCheckpointModalOpen && assetForRoute && (
+        <CheckpointModal
+          isOpen={isCheckpointModalOpen}
+          onClose={() => setIsCheckpointModalOpen(false)}
+          assetName={assetForRoute.name}
+          onConfirm={async (name) => {
+            setIsCheckpointModalOpen(false);
+            const assetId = assetForRoute.id;
+            try {
+              const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
+              const newPoint = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+                timestamp: new Date().toISOString(),
+                locationName: name,
+                type: 'checkpoint'
+              };
+
+              await updateDoc(doc(db, "assets", assetId), {
+                routeHistory: arrayUnion(newPoint),
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              });
+              toast.success(`Parada "${name}" registrada con éxito.`);
+            } catch (err) {
+              toast.error("Error al obtener ubicación para la parada.");
+            }
           }}
         />
       )}
