@@ -23,6 +23,7 @@ export interface Asset {
   ownerId?: string; // Para Modo Flota
   location?: string; // Para Modo Flota (Ej: Provincia/Sede)
   observations?: string; // Nuevas observaciones del equipo
+  gpsDeviceId?: string; // ID o IMEI del rastreador GPS para sincronización real
 }
 
 export interface MaintenanceReminder {

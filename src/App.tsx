@@ -2,6 +2,8 @@ import { Toaster, toast } from 'react-hot-toast';
 import React, { useState, useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { Geolocation } from '@capacitor/geolocation';
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import {
   initialAssets, 
@@ -49,7 +51,7 @@ import {
   LayoutDashboard, Store, FileCheck2, BrainCircuit, MessageSquare, CalendarDays, Users, DollarSign,
   Bell, BellRing, Send, CheckCircle, Plus, TrendingUp, Truck, Camera,
   Layers, ShieldCheck, Star, CheckCircle2,
-  UserX, Clock, LogOut, User, ChevronRight,
+  UserX, Clock, LogOut, User, ChevronRight, ChevronLeft,
   ShieldAlert, HelpCircle, Wrench, Search, Check, X, MapPin, BadgeCheck, Video, Monitor, Download,
   Calendar, AlertTriangle, Pencil, Trash2, FileText, Settings, Eye, EyeOff, Sparkles, Inbox, Car, Wind, Package, Globe, PieChart, Building2, Activity, CreditCard, ExternalLink, QrCode
 } from 'lucide-react';
@@ -127,6 +129,11 @@ export default function App() {
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
+  // Asset View State
+  const [assetSearchQuery, setAssetSearchQuery] = useState('');
+  const [assetCurrentPage, setAssetCurrentPage] = useState(1);
+  const assetPageSize = 6;
+
   // PLAN CONFIGURATION
   const getPlanLimits = (planId: string) => {
     switch(planId) {
@@ -149,6 +156,93 @@ export default function App() {
   const [isUnforeseenModalOpen, setIsUnforeseenModalOpen] = useState(false);
   const [activeRequestForUnforeseen, setActiveRequestForUnforeseen] = useState<any>(null);
   const [unforeseenInputs, setUnforeseenInputs] = useState({ reason: '', amount: '', category: 'spare_part' });
+
+  // GPS TRACKING STATE (CELLPHONE)
+  const [trackingAssetId, setTrackingAssetId] = useState<string | null>(null);
+  const watchIdRef = useRef<string | null>(null);
+  const lastPosRef = useRef<any>(null);
+  const wakeLockRef = useRef<any>(null);
+
+  const startGpsTracking = async (assetId: string) => {
+    if (trackingAssetId === assetId) {
+      if (watchIdRef.current) Geolocation.clearWatch({ id: watchIdRef.current });
+      if (wakeLockRef.current) wakeLockRef.current.release();
+      if (Capacitor.getPlatform() !== 'web') {
+        LocalNotifications.cancel({ notifications: [{ id: 1001 }] });
+      }
+      setTrackingAssetId(null);
+      lastPosRef.current = null;
+      toast.success("Rastreo detenido. Km guardados.");
+      return;
+    }
+
+    try {
+      const permission = await Geolocation.requestPermissions();
+      if (permission.location !== 'granted') return toast.error("Se requieren permisos de GPS.");
+
+      // Activar Notificación Persistente (Solo móvil)
+      if (Capacitor.getPlatform() !== 'web') {
+        const hasPermission = await LocalNotifications.requestPermissions();
+        if (hasPermission.display === 'granted') {
+          LocalNotifications.schedule({
+            notifications: [
+              {
+                title: "MantechPro: Rastreo Activo",
+                body: "El sistema está calculando el kilometraje en segundo plano.",
+                id: 1001,
+                ongoing: true, // Esto la hace persistente en Android
+                smallIcon: "ic_stat_name", // Referencia al icono de sistema
+                actionTypeId: "OPEN_APP"
+              }
+            ]
+          });
+        }
+      }
+
+      if ('wakeLock' in navigator) {
+        try {
+          wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+        } catch (err) { console.error("WakeLock no soportado."); }
+      }
+
+      setTrackingAssetId(assetId);
+      toast.success("Rastreo en Segundo Plano Activo. Puedes minimizar la app.");
+
+      watchIdRef.current = await Geolocation.watchPosition({
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 3000
+      }, (position) => {
+        if (!position) return;
+        if (lastPosRef.current) {
+          const dist = calculateDistance(
+            lastPosRef.current.coords.latitude,
+            lastPosRef.current.coords.longitude,
+            position.coords.latitude,
+            position.coords.longitude
+          );
+          if (dist > 0.03) { // 30 metros de precisión
+             const asset = assets.find(a => a.id === assetId);
+             if (asset) {
+                const newKm = (asset.mileage || 0) + dist;
+                updateDoc(doc(db, "assets", assetId), { mileage: Math.round(newKm) });
+             }
+          }
+        }
+        lastPosRef.current = position;
+      });
+    } catch (e) { console.error(e); }
+  };
+
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+  };
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
   const [activeRequestForMaterial, setActiveRequestForMaterial] = useState<any>(null);
   const [materialInputs, setMaterialInputs] = useState({ name: '', price: '', quantity: '1', category: 'general' });
@@ -398,7 +492,7 @@ export default function App() {
         await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: `He realizado el pago vía YAPPY por $${req.price}. Quedo a la espera de la verificación oficial.`, timestamp: serverTimestamp() });
 
         // Notificar al Admin
-        notifyAdmin("ðŸ’³ PAGO PENDIENTE", `El cliente ${req.clientName} envió un pago de $${req.price} vía YAPPY.`);
+        notifyAdmin("💳 PAGO PENDIENTE", `El cliente ${req.clientName} envió un pago de $${req.price} vía YAPPY.`);
 
         toast.success("Pago enviado. El Administrador lo verificará en breve.");
       } else {
@@ -439,11 +533,11 @@ export default function App() {
     if (!requestId) return;
     try {
       await updateDoc(doc(db, "requests", requestId), { status: 'disputed', unforeseenReason: reason, unforeseenAmount: extraCost, unforeseenCategory: category, unforeseenAt: serverTimestamp() });
-      await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `âš ï¸ REPORTE DE IMPREVISTO [${category.toUpperCase()}]: ${reason}. Costo: $${extraCost}. Favor aprobar en panel para no comprometer la garantía.`, timestamp: serverTimestamp() });
+      await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `⚠️ REPORTE DE IMPREVISTO [${category.toUpperCase()}]: ${reason}. Costo: $${extraCost}. Favor aprobar en panel para no comprometer la garantía.`, timestamp: serverTimestamp() });
 
       // Notificar al Admin
       const req = requests.find(r => r.id === requestId);
-      notifyAdmin("âš ï¸ IMPREVISTO DETECTADO", `${req?.techName} reportó un extra de $${extraCost} para ${req?.assetName}.`);
+      notifyAdmin("⚠️ IMPREVISTO DETECTADO", `${req?.techName} reportó un extra de $${extraCost} para ${req?.assetName}.`);
 
       setIsUnforeseenModalOpen(false);
       toast.success("Imprevisto reportado al sistema correctamente.");
@@ -464,10 +558,10 @@ export default function App() {
 
   const handleRejectUnforeseen = async (requestId: string) => {
     if (!requestId) return;
-    if (!window.confirm("âš ï¸ ATENCIÁ“N: Al continuar sin pagar el imprevisto, la GARANTÁA TOTAL del servicio quedará ANULADA. ¿Deseas proceder bajo tu responsabilidad?")) return;
+    if (!window.confirm("⚠️ ATENCIÓN: Al continuar sin pagar el imprevisto, la GARANTÍA TOTAL del servicio quedará ANULADA. ¿Deseas proceder bajo tu responsabilidad?")) return;
     try {
       await updateDoc(doc(db, "requests", requestId), { status: 'executing', guaranteeStatus: 'voided', unforeseenAmount: 0 });
-      await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: "âŒ IMPREVISTO RECHAZADO: El cliente decide continuar sin realizar la reparación sugerida. LA GARANTÁA QUEDA ANULADA.", timestamp: serverTimestamp() });
+      await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: "❌ IMPREVISTO RECHAZADO: El cliente decide continuar sin realizar la reparación sugerida. LA GARANTÍA QUEDA ANULADA.", timestamp: serverTimestamp() });
     } catch (e) { console.error(e); }
   };
 
@@ -501,12 +595,12 @@ export default function App() {
       // Actualizar agenda
       const q = query(collection(db, "agenda"), where("requestId", "==", requestId));
       const snap = await getDocs(q);
-      snap.forEach(d => updateDoc(doc(db, "agenda", d.id), { date: nextDate, title: 'CONTINUACIÁ“N MAÁ‘ANA' }));
+      snap.forEach(d => updateDoc(doc(db, "agenda", d.id), { date: nextDate, title: 'CONTINUACIÓN MAÑANA' }));
 
       await addDoc(collection(db, "messages"), {
         requestId,
         sender: 'tech',
-        text: `ðŸ“¢ PAUSA LOGÁSTICA: El servicio no pudo concluir hoy. Se ha reprogramado automáticamente para mañana ${nextDate} a la misma hora para finalizar las tareas pendientes.`,
+        text: `📢 PAUSA LOGÍSTICA: El servicio no pudo concluir hoy. Se ha reprogramado automáticamente para mañana ${nextDate} a la misma hora para finalizar la labor.`,
         timestamp: serverTimestamp()
       });
 
@@ -520,8 +614,13 @@ export default function App() {
       return;
     }
     try {
+      const req = requests.find(r => r.id === requestId);
+      if (!req) return;
+
+      const newStatus = req.status === 'executing' ? 'completed' : 'rated';
+
       await updateDoc(doc(db, "requests", requestId), {
-        status: 'completed',
+        status: newStatus,
         visitFinishedAt: new Date().toISOString(),
         clientSignature: signature,
         rating: ratingVal,
@@ -530,16 +629,15 @@ export default function App() {
 
       setIsSignatureModalOpen(false);
       setActiveRequestForSignature(null);
-      toast.success("¡Servicio Finalizado y Liquidado con éxito!");
+      toast.success(newStatus === 'completed' ? "¡Servicio Finalizado y Liquidado!" : "¡Gracias por tu calificación!");
 
-      const req = requests.find(r => r.id === requestId);
-      if (req) {
+      if (newStatus === 'completed') {
          const tech = technicians.find(t => t.id === req.techId);
          if (tech) {
             const finalR = Math.max(1, ratingVal - ((req.rescheduleCount || 0) * 0.2));
             const nRating = ((tech.rating * tech.reviewCount) + finalR) / (tech.reviewCount + 1);
 
-            // ACTUALIZACIÁ“N DE BILLETERA: Liquidación automática de fondos
+            // ACTUALIZACIÓN DE BILLETERA: Liquidación automática de fondos
             const earnings = Number(req.technicianEarnings || 0);
             const currentBalance = Number(tech.wallet?.balance || 0);
             const newBalance = currentBalance + earnings;
@@ -580,14 +678,14 @@ export default function App() {
       const q = query(collection(db, "agenda"), where("requestId", "==", requestId));
       const snap = await getDocs(q);
       snap.forEach(d => updateDoc(doc(db, "agenda", d.id), { date, time, title: 'REPROGRAMADO' }));
-      await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `ðŸ“¢ REPROGRAMADA: ${date} @ ${time}. Motivo: ${reason}`, timestamp: serverTimestamp() });
+      await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `📢 REPROGRAMADA: ${date} @ ${time}. Motivo: ${reason}`, timestamp: serverTimestamp() });
       toast.success("Cita reprogramada exitosamente.");
     } catch (err) { console.error(err); }
   };
 
   const handleReportTechnicianFailure = async (requestId: string) => {
     if (!requestId) return;
-    if (!window.confirm("âš ï¸ ¿El técnico no concluyó? Solo recibirá el 5% de la inspección inicial. ¿Deseas reportar?")) return;
+    if (!window.confirm("⚠️ ¿El técnico no concluyó? Solo recibirá el 5% de la inspección inicial. ¿Deseas reportar?")) return;
     await updateDoc(doc(db, "requests", requestId), { status: 'cancelled', cancellationReason: 'Incumplimiento del técnico / Penalidad 5%', penaltyApplied: true });
     toast.success("Caso reportado a Auditoría. El equipo tomará acción.");
   };
@@ -597,7 +695,7 @@ export default function App() {
      const req = requests.find(r => r.id === requestId);
      if(!req) return;
      if (req.status === 'executing') {
-        if (!window.confirm("âš ï¸ EN EJECUCIÁ“N: Se liquidará el 50% por avance de obra. ¿Deseas proceder?")) return;
+        if (!window.confirm("⚠️ EN EJECUCIÓN: Se liquidará el 50% por avance de obra. ¿Deseas proceder?")) return;
      } else {
         if (!window.confirm("¿Deseas cancelar?")) return;
      }
@@ -630,7 +728,7 @@ export default function App() {
       });
 
       // 3. Notificar al Admin para que haga la transferencia real
-      notifyAdmin("ðŸ¦ SOLICITUD DE RETIRO", `El técnico ${tech.name} solicita un retiro de B/. ${amount.toFixed(2)}. Verificar datos bancarios.`);
+      notifyAdmin("🏦 SOLICITUD DE RETIRO", `El técnico ${tech.name} solicita un retiro de B/. ${amount.toFixed(2)}. Verificar datos bancarios.`);
 
       toast.success("Solicitud de retiro enviada a Tesorería. El depósito se reflejará en un máximo de 24h.");
     } catch (err) { console.error(err); }
@@ -670,7 +768,7 @@ export default function App() {
       nextBilling.setDate(nextBilling.getDate() + 30);
 
       if (planId === 'plan-basic' || isInstant) {
-        // ACTIVACIÁ“N INSTANTÁNEA (Básico o PayPal)
+        // ACTIVACIÓN INSTANTÁNEA (Básico o PayPal)
         const newSub = {
           planId,
           status: 'active',
@@ -691,7 +789,7 @@ export default function App() {
         'subscription.paymentAt': new Date().toISOString()
       });
 
-      notifyAdmin("ðŸ’Ž NUEVA SUSCRIPCIÁ“N (YAPPY)", `El usuario ${loggedInName} solicita subir al plan ${planId.split('-')[1].toUpperCase()}. Verificar transferencia manual.`);
+      notifyAdmin("💎 NUEVA SUSCRIPCIÓN (YAPPY)", `El usuario ${loggedInName} solicita subir al plan ${planId.split('-')[1].toUpperCase()}. Verificar transferencia manual.`);
 
       setIsSubPaymentModalOpen(false);
       toast("Solicitud recibida. El Administrador activará tu plan tras confirmar la transferencia por Yappy.", { icon: "📡", duration: 6000 });
@@ -787,6 +885,23 @@ export default function App() {
     } catch (err) { console.error(err); }
   };
 
+  const handleBulkRegisterAssets = async (assetsList: any[]) => {
+    if (!user) return;
+    try {
+      toast.loading(`Registrando ${assetsList.length} unidades...`, { id: 'bulk-reg' });
+      const batch = assetsList.map(a => addDoc(collection(db, "assets"), {
+        ...a,
+        clientId: user.uid,
+        registeredAt: new Date().toISOString().split('T')[0]
+      }));
+      await Promise.all(batch);
+      toast.success(`¡Misión cumplida! ${assetsList.length} unidades integradas al ecosistema.`, { id: 'bulk-reg' });
+    } catch (err) {
+      console.error(err);
+      toast.error("Error en el registro masivo.", { id: 'bulk-reg' });
+    }
+  };
+
   const handleAddAsset = async (data: any) => {
     if (!user) return;
     if (assetToEdit) await updateDoc(doc(db, "assets", assetToEdit.id), data);
@@ -873,7 +988,7 @@ export default function App() {
              <div className="overflow-hidden">
                <h4 className="font-black text-white text-xs tracking-tight truncate uppercase leading-tight">{loggedInName}</h4>
                <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest mt-1">
-                 {role === 'client' ? 'CLIENTE' : role === 'tech' ? 'TÁ‰CNICO' : 'ADMINISTRADOR'}
+                 {role === 'client' ? 'CLIENTE' : role === 'tech' ? 'TÉCNICO' : 'ADMINISTRADOR'}
                </p>
              </div>
           </div>
@@ -924,68 +1039,150 @@ export default function App() {
                 <>
                   {clientTab === 'dashboard' && (
                     <div className="space-y-10 animate-fade-in">
-                      <header className="flex justify-between items-end">
-                         <div><h1 className="text-4xl font-black text-white tracking-tighter uppercase">Equipos</h1><p className="text-[#c8c4d9] font-medium mt-2 italic opacity-60">Monitoreo activo de tus activos en Panamá.</p></div>
-                         <button onClick={() => setIsAssetModalOpen(true)} className="px-8 py-4 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[#5d3cfe]/20 transition-all">+ Registrar Activo</button>
+                      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                         <div>
+                            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Mis Equipos</h1>
+                            <p className="text-[#c8c4d9] font-medium mt-3 italic opacity-60">Monitoreo activo de tus activos en Panamá.</p>
+                         </div>
+                         <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                            <div className="relative flex-1 md:w-64">
+                               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#474556]" />
+                               <input
+                                 type="text"
+                                 placeholder="Buscar por placa o marca..."
+                                 value={assetSearchQuery}
+                                 onChange={(e) => { setAssetSearchQuery(e.target.value); setAssetCurrentPage(1); }}
+                                 className="w-full bg-[#121317] border border-[#2a2b2f] rounded-2xl py-3 pl-12 pr-6 text-xs text-white focus:border-[#5d3cfe] outline-none transition-all"
+                               />
+                            </div>
+                            <button onClick={() => setIsAssetModalOpen(true)} className="px-8 py-3.5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[#5d3cfe]/20 transition-all hover:scale-105 active:scale-95 shrink-0">+ Registrar</button>
+                         </div>
                       </header>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                         {assets.map(a => (
-                           <div key={a.id} className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2.5rem] space-y-6 shadow-2xl hover:border-[#5d3cfe]/40 transition-all relative overflow-hidden group">
-                                <div className="absolute -bottom-6 -right-6 opacity-5 group-hover:opacity-10 transition-opacity">{a.type === 'car' ? <Car className="w-32 h-32" /> : <Wind className="w-32 h-32" />}</div>
-                               <div className="flex justify-between items-start relative z-10">
-                                   <div className="flex items-center gap-5">
-                                      <div className="w-16 h-16 rounded-2xl bg-[#1c1d21] border border-white/5 flex items-center justify-center text-white shadow-inner">{a.type === 'car' ? <Car className="w-8 h-8" /> : <Wind className="w-8 h-8" />}</div>
-                                      <div>
-                                         <p className="text-[9px] font-black text-[#474556] uppercase tracking-[0.3em] mb-1">Equipo / Marca</p>
-                                         <h4 className="font-black text-white text-2xl uppercase tracking-tighter leading-none">{a.name}</h4>
-                                         <p className="text-sm font-bold text-[#52ffac] uppercase tracking-widest mt-1.5">{a.details}</p>
-                                         {a.licensePlate && (
-                                            <div className="mt-3 inline-flex items-center px-3 py-1 bg-black/50 border border-white/10 rounded-xl shadow-xl">
-                                               <span className="text-[9px] font-black text-[#474556] uppercase mr-2">Placa:</span>
-                                               <span className="text-[11px] font-black text-white tracking-widest">{a.licensePlate}</span>
+
+                      {(() => {
+                        const filtered = assets.filter(a =>
+                          a.name.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
+                          a.licensePlate?.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
+                          a.details.toLowerCase().includes(assetSearchQuery.toLowerCase())
+                        );
+                        const total = filtered.length;
+                        const pages = Math.ceil(total / assetPageSize);
+                        const start = (assetCurrentPage - 1) * assetPageSize;
+                        const paginated = filtered.slice(start, start + assetPageSize);
+
+                        return (
+                          <div className="space-y-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                               {paginated.map(a => (
+                                 <div key={a.id} className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2.5rem] space-y-6 shadow-2xl hover:border-[#5d3cfe]/40 transition-all relative overflow-hidden group">
+                                      <div className="absolute -bottom-6 -right-6 opacity-5 group-hover:opacity-10 transition-opacity">{a.type === 'car' ? <Car className="w-32 h-32" /> : <Wind className="w-32 h-32" />}</div>
+                                     <div className="flex justify-between items-start relative z-10">
+                                         <div className="flex items-center gap-5">
+                                            <div className="w-16 h-16 rounded-2xl bg-[#1c1d21] border border-white/5 flex items-center justify-center text-white shadow-inner">{a.type === 'car' ? <Car className="w-8 h-8" /> : <Wind className="w-8 h-8" />}</div>
+                                            <div>
+                                               <p className="text-[9px] font-black text-[#474556] uppercase tracking-[0.3em] mb-1">Equipo / Marca</p>
+                                               <h4 className="font-black text-white text-2xl uppercase tracking-tighter leading-none">{a.name}</h4>
+                                               <p className="text-sm font-bold text-[#52ffac] uppercase tracking-widest mt-1.5">{a.details}</p>
+                                               {a.licensePlate && (
+                                                  <div className="mt-3 inline-flex items-center px-3 py-1 bg-black/50 border border-white/10 rounded-xl shadow-xl">
+                                                     <span className="text-[9px] font-black text-[#474556] uppercase mr-2">Placa:</span>
+                                                     <span className="text-[11px] font-black text-white tracking-widest">{a.licensePlate}</span>
+                                                  </div>
+                                               )}
+                                            </div>
+                                         </div>
+                                         <button onClick={() => { setAssetToEdit(a); setIsAssetModalOpen(true); }} className="p-3 text-[#474556] hover:text-white transition-all bg-white/5 border border-white/5 rounded-2xl"><Pencil className="w-4 h-4" /></button>
+                                      </div>
+
+                                      <div className="py-6 px-6 bg-black/30 rounded-[2rem] border border-white/5 relative z-10 space-y-4">
+                                         <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                               <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Último Mtto.</p>
+                                               <p className="text-xs font-bold text-white/40 mt-1 uppercase">{a.lastMaintenanceDate || 'Sin Registro'}</p>
+                                            </div>
+                                            <div>
+                                               <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Próximo Mtto.</p>
+                                               <p className="text-sm font-black text-[#5d3cfe] mt-1 tracking-tight">{a.nextMaintenanceDate}</p>
+                                            </div>
+                                         </div>
+                                         <div className="h-px bg-white/5"></div>
+                                         <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                               <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Estatus Salud</p>
+                                               <p className="text-sm font-black text-emerald-500 uppercase mt-1">Óptimo</p>
+                                            </div>
+                                            <div>
+                                               <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Modelo Registrado</p>
+                                               <p className="text-xs font-bold text-[#52ffac] mt-1 uppercase">{a.details.split(' ')[0]}</p>
+                                            </div>
+                                         </div>
+                                         {a.observations && (
+                                            <div className="pt-2">
+                                               <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Detalles del Servicio</p>
+                                               <p className="text-[11px] text-white italic font-bold mt-1 leading-relaxed tracking-wide">"{a.observations.toUpperCase()}"</p>
                                             </div>
                                          )}
                                       </div>
+                                      <button onClick={() => setClientTab('marketplace')} className="w-full py-4 bg-[#1c1d21] hover:bg-white text-white hover:text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] transition-all relative z-10">SOLICITAR TÉCNICO</button>
                                    </div>
-                                   <button onClick={() => { setAssetToEdit(a); setIsAssetModalOpen(true); }} className="p-3 text-[#474556] hover:text-white transition-all bg-white/5 border border-white/5 rounded-2xl"><Pencil className="w-4 h-4" /></button>
-                                </div>
+                               ))}
+                            </div>
 
-                                <div className="py-6 px-6 bg-black/30 rounded-[2rem] border border-white/5 relative z-10 space-y-4">
-                                   <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                         <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Ášltimo Mtto.</p>
-                                         <p className="text-xs font-bold text-white/40 mt-1 uppercase">{a.lastMaintenanceDate || 'Sin Registro'}</p>
-                                      </div>
-                                      <div>
-                                         <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Próximo Mtto.</p>
-                                         <p className="text-sm font-black text-[#5d3cfe] mt-1 tracking-tight">{a.nextMaintenanceDate}</p>
-                                      </div>
-                                   </div>
-                                   <div className="h-px bg-white/5"></div>
-                                   <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                         <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Estatus Salud</p>
-                                         <p className="text-sm font-black text-emerald-500 uppercase mt-1">Á“ptimo</p>
-                                      </div>
-                                      <div>
-                                         <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Modelo Registrado</p>
-                                         <p className="text-xs font-bold text-[#52ffac] mt-1 uppercase">{a.details.split(' ')[0]}</p>
-                                      </div>
-                                   </div>
-                                   {a.observations && (
-                                      <div className="pt-2">
-                                         <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Detalles del Servicio</p>
-                                         <p className="text-[11px] text-white italic font-bold mt-1 leading-relaxed tracking-wide">"{a.observations.toUpperCase()}"</p>
-                                      </div>
-                                   )}
-                                </div>
-                                <button onClick={() => setClientTab('marketplace')} className="w-full py-4 bg-[#1c1d21] hover:bg-white text-white hover:text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] transition-all relative z-10">SOLICITAR TÁ‰CNICO</button>
-                             </div>
-                         ))}
-                      </div>
+                            {pages > 1 && (
+                               <div className="flex justify-center items-center gap-4 pt-10">
+                                  <button
+                                    disabled={assetCurrentPage === 1}
+                                    onClick={() => setAssetCurrentPage(p => p - 1)}
+                                    className="p-3 bg-[#121317] border border-[#2a2b2f] rounded-xl text-[#c8c4d9] disabled:opacity-20 hover:text-white transition-all shadow-xl"
+                                  >
+                                     <ChevronLeft className="w-5 h-5" />
+                                  </button>
+                                  <div className="flex gap-2">
+                                     {Array.from({ length: pages }).map((_, i) => (
+                                       <button
+                                         key={i}
+                                         onClick={() => setAssetCurrentPage(i + 1)}
+                                         className={`w-10 h-10 rounded-xl text-[10px] font-black transition-all ${assetCurrentPage === i + 1 ? 'bg-[#5d3cfe] text-white shadow-lg shadow-[#5d3cfe]/30' : 'bg-[#121317] text-[#474556] border border-[#2a2b2f]'}`}
+                                       >
+                                         {i + 1}
+                                       </button>
+                                     ))}
+                                  </div>
+                                  <button
+                                    disabled={assetCurrentPage === pages}
+                                    onClick={() => setAssetCurrentPage(p => p + 1)}
+                                    className="p-3 bg-[#121317] border border-[#2a2b2f] rounded-xl text-[#c8c4d9] disabled:opacity-20 hover:text-white transition-all shadow-xl"
+                                  >
+                                     <ChevronRight className="w-5 h-5" />
+                                  </button>
+                               </div>
+                            )}
+
+                            {total === 0 && (
+                               <div className="py-20 text-center space-y-4">
+                                  <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto border border-white/5 opacity-20">
+                                     <LayoutDashboard className="w-8 h-8" />
+                                  </div>
+                                  <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em]">No se encontraron equipos con esa placa o nombre.</p>
+                               </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
-                  {clientTab === 'fleet' && <FleetDashboard assets={assets} reminders={reminders} onManageAsset={(a) => { setAssetToEdit(a); setIsAssetModalOpen(true); }} mode={planLimits.fleet as any} onBulkUpdate={handleBulkUpdateAssets} />}
+                  {clientTab === 'fleet' && (
+                    <FleetDashboard
+                      assets={assets}
+                      reminders={reminders}
+                      onManageAsset={(a) => { setAssetToEdit(a); setIsAssetModalOpen(true); }}
+                      mode={planLimits.fleet as any}
+                      onBulkUpdate={handleBulkUpdateAssets}
+                      onBulkRegister={handleBulkRegisterAssets}
+                      onStartGps={startGpsTracking}
+                      trackingAssetId={trackingAssetId}
+                    />
+                  )}
                   {clientTab === 'ai' && <DiagnosticAIView assets={assets} onFindTechnicians={(c) => { setMarketFilter(c); setClientTab('marketplace'); }} mode={planLimits.diag as any} />}
                   {clientTab === 'marketplace' && (
                     <div className="space-y-10">
@@ -994,7 +1191,7 @@ export default function App() {
                          {technicians.filter(t => marketFilter === 'all' || t.category === marketFilter).map(t => (
                            <div key={t.id} className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[3rem] flex flex-col gap-6 relative overflow-hidden group hover:border-[#5d3cfe]/50 transition-all shadow-2xl">
                               <div className="flex items-center gap-5"><div className="w-16 h-16 rounded-2xl bg-[#1c1d21] border border-[#2a2b2f] flex items-center justify-center text-[#c7bfff] font-black text-2xl shadow-inner">{t.name[0]}</div><div><h4 className="font-black text-white text-base uppercase tracking-tight">{t.name}</h4><p className="text-[10px] font-black text-[#52ffac] uppercase tracking-[0.2em] mt-1">{t.category.replace('_',' ')}</p></div></div>
-                              <div className="grid grid-cols-3 gap-4 py-4 border-y border-[#2a2b2f]/50 bg-[#0d0e12]/30 px-4 rounded-2xl text-center"><div><div className="text-amber-500 font-black text-sm flex items-center justify-center gap-1"><Star className="w-3 h-3 fill-amber-500" /> {t.rating}</div><span className="text-[8px] text-[#474556] font-bold uppercase">Rating</span></div><div><div className="text-white font-black text-sm">{t.experienceYears}y</div><span className="text-[8px] text-[#474556] font-bold uppercase">Exp.</span></div><div><div className="text-[#52ffac] font-black text-sm">${t.hourlyRate}</div><span className="text-[8px] text-[#474556] font-bold uppercase">Hr.</span></div></div>
+                              <div className="grid grid-cols-3 gap-4 py-4 border-y border-[#2a2b2f]/50 bg-[#0d0e12]/30 px-4 rounded-2xl text-center"><div><div className="text-amber-500 font-black text-sm flex items-center justify-center gap-1"><Star className="w-3 h-3 fill-amber-500" /> {t.rating}</div><span className="text-[8px] text-[#474556] font-bold uppercase">Rating</span></div><div><div className="text-white font-black text-sm">{t.experienceYears}a</div><span className="text-[8px] text-[#474556] font-bold uppercase">Exp.</span></div><div><div className="text-[#52ffac] font-black text-sm">${t.hourlyRate}</div><span className="text-[8px] text-[#474556] font-bold uppercase">Hr.</span></div></div>
                               <button onClick={() => { setActiveTechForModal(t); setIsTechModalOpen(true); }} className="w-full py-4 bg-[#1c1d21] hover:bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg active:scale-95">Ver Perfil & Agendar</button>
                            </div>
                          ))}
@@ -1073,7 +1270,7 @@ export default function App() {
                                                     const order = await response.json();
                                                     return order.id;
                                                   } catch (err: any) {
-                                                    console.error("âŒ Error en createOrder:", err);
+                                                    console.error("❌ Error en createOrder:", err);
                                                     toast.error(`Error al procesar el pago: ${err.message}`);
                                                     throw err;
                                                   }
@@ -1081,19 +1278,24 @@ export default function App() {
                                                 onApprove={async (data) => {
                                                   try {
                                                     const response = await fetch(`/api/orders/${data.orderID}/capture`, { method: "POST" });
-                                                    if (!response.ok) {
-                                                      const errorData = await response.json().catch(() => ({}));
-                                                      throw new Error(errorData.error || "Error al capturar el pago");
-                                                    }
                                                     const result = await response.json();
+
+                                                    if (!response.ok) {
+                                                      const errorDetail = result.details?.[0];
+                                                      if (errorDetail?.issue === "INSTRUMENT_DECLINED") {
+                                                        throw new Error("La tarjeta fue rechazada. Por favor intenta con otro método en tu cuenta PayPal.");
+                                                      }
+                                                      throw new Error(result.message || "Error al procesar la captura del pago.");
+                                                    }
+
                                                     if (result.status === "COMPLETED") {
                                                       handleAcceptQuote(req.id, 'paypal');
                                                     } else {
                                                       toast.error("El pago no se pudo completar. Por favor verifica tu cuenta.");
                                                     }
                                                   } catch (err: any) {
-                                                    console.error("âŒ Error en onApprove:", err);
-                                                    toast.error(`Error al procesar el pago: ${err.message}`);
+                                                    console.error("❌ Error en onApprove:", err);
+                                                    toast.error(`Pago fallido: ${err.message}`);
                                                   }
                                                 }}
                                               />
@@ -1140,14 +1342,16 @@ export default function App() {
                                                   <Monitor className="w-4 h-4" /> Unirse a {req.remotePlatform?.toUpperCase() || 'Sesión'}
                                                </a>
                                             )}
-                                            {req.status === 'completed' && (
+                                            {(req.status === 'completed' || req.status === 'rated') && (
                                                <div className="flex gap-2">
                                                   <button onClick={() => { setSelectedRequestForReport(req); setIsReportModalOpen(true); }} className="px-6 py-3 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-[#5d3cfe] transition-all flex items-center gap-2">
                                                      <FileText className="w-4 h-4" /> Reporte
                                                   </button>
-                                                  <button onClick={() => { setActiveRequestForSignature(req.id); setIsSignatureModalOpen(true); }} className="px-8 py-3 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase shadow-lg">
-                                                     Calificar
-                                                  </button>
+                                                  {req.status === 'completed' && (
+                                                    <button onClick={() => { setActiveRequestForSignature(req.id); setIsSignatureModalOpen(true); }} className="px-8 py-3 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase shadow-lg">
+                                                       Calificar
+                                                    </button>
+                                                  )}
                                                   <button
                                                     onClick={async () => {
                                                       if(window.confirm("¿Deseas eliminar este registro de tu vista?")) {
@@ -1160,11 +1364,6 @@ export default function App() {
                                                     <Trash2 className="w-4 h-4" />
                                                   </button>
                                                </div>
-                                            )}
-                                            {req.status === 'completed' && (
-                                               <button onClick={() => setIsSignatureModalOpen(true)} className="px-8 py-3 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase shadow-lg">
-                                                  Calificar
-                                               </button>
                                             )}
                                          </div>
                                       </div>
@@ -1283,7 +1482,7 @@ export default function App() {
                                 <div className="p-5 bg-[#0d0e12] rounded-2xl border border-[#2a2b2f] italic text-xs text-[#c8c4d9]">"{req.description}"</div>
                                 {req.status === 'pending' && (
                                    <div className="pt-8 border-t border-[#2a2b2f] space-y-8 animate-fade-in">
-                                      {/* SECCIÁ“N 1: DATOS LOGÁSTICOS */}
+                                      {/* SECCIÓN 1: DATOS LOGÍSTICOS */}
                                       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                                          <div className="space-y-2">
                                             <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Tarifa Sugerida</label>
@@ -1356,7 +1555,7 @@ export default function App() {
                                          </div>
                                       </div>
 
-                                      {/* SECCIÁ“N 2: CRONOGRAMA Y MATERIALES (NUEVO) */}
+                                      {/* SECCIÓN 2: CRONOGRAMA Y MATERIALES (NUEVO) */}
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                          <div className="space-y-4">
                                             <div className="flex justify-between items-center px-1">
@@ -1438,7 +1637,7 @@ export default function App() {
                                       </div>
 
                                       <button onClick={() => { setDraftingBidRequestId(req.id); handleSubmitBid(req.id); }} className="w-full py-5 bg-[#5d3cfe] text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[#5d3cfe]/20 active:scale-95 transition-all flex items-center justify-center gap-4 group">
-                                         ENVIAR PROPUESTA TÁ‰CNICA âž”
+                                         ENVIAR PROPUESTA TÉCNICA ➔
                                       </button>
                                    </div>
                                 )}
@@ -1783,19 +1982,24 @@ export default function App() {
                  onApprove={async (data) => {
                    try {
                      const response = await fetch(`/api/orders/${data.orderID}/capture`, { method: "POST" });
-                     if (!response.ok) {
-                       const errorData = await response.json().catch(() => ({}));
-                       throw new Error(errorData.error || "Error al capturar el pago");
-                     }
                      const result = await response.json();
+
+                     if (!response.ok) {
+                       const errorDetail = result.details?.[0];
+                       if (errorDetail?.issue === "INSTRUMENT_DECLINED") {
+                         throw new Error("La tarjeta fue rechazada. Por favor intenta con otro método en tu cuenta PayPal.");
+                       }
+                       throw new Error(result.message || "Error al procesar la captura del pago.");
+                     }
+
                      if (result.status === "COMPLETED") {
                        handleConfirmSubscriptionUpgrade(selectedPlanForPayment.id, true);
                      } else {
                        toast.error("El pago no se pudo completar. Por favor verifica tu cuenta.");
                      }
                    } catch (err: any) {
-                     console.error("âŒ Error en onApprove:", err);
-                     toast.error(`Error al procesar el pago: ${err.message}`);
+                     console.error("❌ Error en onApprove:", err);
+                     toast.error(`Pago fallido: ${err.message}`);
                    }
                  }}
                />
@@ -1804,6 +2008,15 @@ export default function App() {
                   <span className="text-[8px] font-black text-[#474556] uppercase tracking-widest">Otras opciones</span>
                   <div className="h-px bg-[#2a2b2f] flex-1"></div>
                </div>
+
+               {/* BYPASS DE INGENIERÍA PARA PRUEBAS RÁPIDAS */}
+               <button
+                 onClick={() => handleConfirmSubscriptionUpgrade(selectedPlanForPayment.id, true)}
+                 className="w-full py-3 bg-rose-600/10 border border-rose-600/20 text-rose-500 rounded-xl text-[8px] font-black uppercase tracking-[0.2em] hover:bg-rose-600 hover:text-white transition-all mb-2"
+               >
+                 ⚠️ Simular Pago Exitoso (Bypass Dev)
+               </button>
+
                <button
                  onClick={() => handleConfirmSubscriptionUpgrade(selectedPlanForPayment.id, false)}
                  className="w-full py-5 border border-[#2a2b2f] text-[#c8c4d9] rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white/5 transition-all flex items-center justify-center gap-3"

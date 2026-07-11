@@ -100,12 +100,24 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
           <div className="space-y-3">
             <label className="text-[10px] font-black text-[#474556] uppercase tracking-[0.2em] ml-1">Tipo de Activo</label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-               {(['car', 'ac', 'computer', 'generator', 'solar_panels', 'moto', 'industrial_equip', 'house'] as AssetType[]).map(t => (
-                 <button key={t} type="button" onClick={() => setType(t)} className={`flex items-center gap-2 p-3 rounded-xl border text-[9px] font-black uppercase transition-all ${type === t ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-lg' : 'bg-[#1c1d21] border-[#2a2b2f] text-[#c8c4d9] hover:border-[#c7bfff]/30'}`}>
-                    {getAssetIcon(t)}
-                    {t.split('_')[0]}
-                 </button>
-               ))}
+               {(['car', 'ac', 'computer', 'generator', 'solar_panels', 'moto', 'industrial_equip', 'house'] as AssetType[]).map(t => {
+                 const labels: Record<AssetType, string> = {
+                   car: 'Auto / Camión',
+                   ac: 'Aire Acond.',
+                   computer: 'Computación',
+                   generator: 'Planta Eléc.',
+                   solar_panels: 'Panel Solar',
+                   moto: 'Moto',
+                   industrial_equip: 'Equipo Ind.',
+                   house: 'Propiedad'
+                 };
+                 return (
+                   <button key={t} type="button" onClick={() => setType(t)} className={`flex items-center gap-2 p-3 rounded-xl border text-[9px] font-black uppercase transition-all ${type === t ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-lg' : 'bg-[#1c1d21] border-[#2a2b2f] text-[#c8c4d9] hover:border-[#c7bfff]/30'}`}>
+                      {getAssetIcon(t)}
+                      {labels[t]}
+                   </button>
+                 );
+               })}
             </div>
           </div>
 

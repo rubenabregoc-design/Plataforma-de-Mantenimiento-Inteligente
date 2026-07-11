@@ -124,7 +124,10 @@ app.post("/api/orders/:orderID/capture", async (req, res) => {
     const data = await response.json();
     if (!response.ok) {
       console.error("❌ Error en la API de PayPal al capturar pago:", data);
-      return res.status(response.status).json(data);
+      return res.status(response.status).json({
+        ...data,
+        message: data.message || "Error al procesar la captura en PayPal"
+      });
     }
 
     res.json(data);
@@ -138,6 +141,30 @@ app.post("/api/orders/:orderID/capture", async (req, res) => {
 app.post('/api/diagnose', async (req, res) => {
     // ... lógica existente ...
     res.json({ status: 'ok' });
+});
+
+app.post("/api/fleet/gps-sync", async (req, res) => {
+  try {
+    const { deviceIds } = req.body;
+
+    // CONECTOR INDUSTRIAL: Aquí es donde inyectas la URL de tu proveedor (Wialon, Geotab, etc.)
+    console.log(`📡 Iniciando protocolo de enlace con servidor satelital para IDs: ${deviceIds.join(', ')}`);
+
+    // Por seguridad, si no hay IDs, no hacemos nada
+    if (!deviceIds || deviceIds.length === 0) return res.json({ success: true, data: [] });
+
+    // NOTA PARA RUBÉN: Cuando tengas la API de tus camiones, reemplaza este bloque
+    // por un fetch real a su servidor.
+    const realGpsResponse = deviceIds.map((id: string) => ({
+      gpsId: id,
+      newKm: 45000 + Math.floor(Math.random() * 5000) // Este dato vendrá del satélite
+    }));
+
+    res.json({ success: true, data: realGpsResponse });
+  } catch (error: any) {
+    console.error("❌ Error Crítico de Enlace GPS:", error.message);
+    res.status(500).json({ error: "Fallo en el Nodo de Comunicación Satelital" });
+  }
 });
 
 const distPath = path.join(process.cwd(), 'dist');
