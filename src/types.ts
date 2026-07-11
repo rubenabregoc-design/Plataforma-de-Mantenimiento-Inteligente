@@ -24,6 +24,8 @@ export interface Asset {
   location?: string; // Para Modo Flota (Ej: Provincia/Sede)
   observations?: string; // Nuevas observaciones del equipo
   gpsDeviceId?: string; // ID o IMEI del rastreador GPS para sincronización real
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface MaintenanceReminder {
@@ -67,6 +69,10 @@ export interface TechProfile {
   isVerified: boolean;
   mantechId?: MantechID; // Seguridad Verificada
   wallet?: TechWallet; // Pagos y Billetera
+  // GPS Location for Radar
+  latitude?: number;
+  longitude?: number;
+  lastLocationUpdate?: string;
   // Documents for verification
   policeRecordUrl?: string;
   idCardUrl?: string;

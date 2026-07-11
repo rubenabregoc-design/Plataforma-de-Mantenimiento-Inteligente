@@ -11,7 +11,9 @@ export const initialAssets: Asset[] = [
     mileage: 44500,
     lastMaintenanceDate: '2026-07-03',
     nextMaintenanceDate: '2026-07-31',
-    observations: 'NO PRENDE'
+    observations: 'NO PRENDE',
+    latitude: 8.9830,
+    longitude: -79.5170
   },
   {
     id: 'asset-2',
@@ -102,8 +104,10 @@ export const initialTechnicians: TechProfile[] = [
       'https://images.unsplash.com/photo-1486006920555-c77dce18193b?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
       'https://images.unsplash.com/photo-1517524206127-48bbd363f3d7?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'
     ],
-    plan: 'premium',
+    plan: 'enterprise',
     completedJobs: 156,
+    latitude: 8.9833,
+    longitude: -79.5167,
     mantechId: {
       status: 'verified',
       idNumber: '8-888-8888',
@@ -133,8 +137,10 @@ export const initialTechnicians: TechProfile[] = [
     portfolioImages: [
       'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'
     ],
-    plan: 'premium',
-    completedJobs: 120
+    plan: 'pro',
+    completedJobs: 120,
+    latitude: 8.9950,
+    longitude: -79.5012
   },
   {
     id: 'tech-3',
@@ -152,7 +158,9 @@ export const initialTechnicians: TechProfile[] = [
       'https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'
     ],
     plan: 'basic',
-    completedJobs: 42
+    completedJobs: 42,
+    latitude: 9.0125,
+    longitude: -79.5230
   },
   {
     id: 'tech-4',
@@ -169,8 +177,10 @@ export const initialTechnicians: TechProfile[] = [
     portfolioImages: [
       'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'
     ],
-    plan: 'premium',
-    completedJobs: 56
+    plan: 'enterprise',
+    completedJobs: 56,
+    latitude: 9.0010,
+    longitude: -79.5820
   },
   {
     id: 'tech-5',
@@ -187,8 +197,10 @@ export const initialTechnicians: TechProfile[] = [
     portfolioImages: [
       'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'
     ],
-    plan: 'premium',
-    completedJobs: 34
+    plan: 'pro',
+    completedJobs: 34,
+    latitude: 8.9880,
+    longitude: -79.5280
   }
 ];
 

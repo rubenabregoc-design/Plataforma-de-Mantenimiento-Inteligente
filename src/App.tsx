@@ -46,6 +46,7 @@ import VideoCallModal from './components/VideoCallModal';
 import LandingPage from './components/LandingPage';
 import Logo from './components/Logo';
 import TechWalletModule from './components/TechWalletModule';
+import TechnicianRadar from './components/TechnicianRadar';
 
 import { 
   LayoutDashboard, Store, FileCheck2, BrainCircuit, MessageSquare, CalendarDays, Users, DollarSign,
@@ -128,6 +129,9 @@ export default function App() {
   const [selectedRequestForReport, setSelectedRequestForReport] = useState<JobRequest | null>(null);
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
+  // Marketplace UI State
+  const [marketViewMode, setMarketViewMode] = useState<'list' | 'radar'>('list');
 
   // Asset View State
   const [assetSearchQuery, setAssetSearchQuery] = useState('');
@@ -1189,16 +1193,34 @@ export default function App() {
                   {clientTab === 'ai' && <DiagnosticAIView assets={assets} onFindTechnicians={(c) => { setMarketFilter(c); setClientTab('marketplace'); }} mode={planLimits.diag as any} />}
                   {clientTab === 'marketplace' && (
                     <div className="space-y-10">
-                      <header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Marketplace <span className="text-[#5d3cfe]">Expertos</span></h1><div className="flex gap-3 overflow-x-auto pb-4 mt-6 custom-scrollbar">{['Todos', 'Mecánico', 'Técnico A/C', 'Electricista', 'Informático'].map(c => (<button key={c} onClick={() => setMarketFilter(c === 'Todos' ? 'all' : c.toLowerCase().replace(' ', '_') as any)} className={`flex-shrink-0 px-8 py-3 rounded-full border transition-all text-[10px] font-black uppercase tracking-widest ${marketFilter === (c === 'Todos' ? 'all' : c.toLowerCase().replace(' ', '_')) ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'border-[#2a2b2f] text-[#c8c4d9] hover:border-[#5d3cfe]'}`}>{c}</button>))}</div></header>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                         {technicians.filter(t => marketFilter === 'all' || t.category === marketFilter).map(t => (
-                           <div key={t.id} className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[3rem] flex flex-col gap-6 relative overflow-hidden group hover:border-[#5d3cfe]/50 transition-all shadow-2xl">
-                              <div className="flex items-center gap-5"><div className="w-16 h-16 rounded-2xl bg-[#1c1d21] border border-[#2a2b2f] flex items-center justify-center text-[#c7bfff] font-black text-2xl shadow-inner">{t.name[0]}</div><div><h4 className="font-black text-white text-base uppercase tracking-tight">{t.name}</h4><p className="text-[10px] font-black text-[#52ffac] uppercase tracking-[0.2em] mt-1">{t.category.replace('_',' ')}</p></div></div>
-                              <div className="grid grid-cols-3 gap-4 py-4 border-y border-[#2a2b2f]/50 bg-[#0d0e12]/30 px-4 rounded-2xl text-center"><div><div className="text-amber-500 font-black text-sm flex items-center justify-center gap-1"><Star className="w-3 h-3 fill-amber-500" /> {t.rating}</div><span className="text-[8px] text-[#474556] font-bold uppercase">Rating</span></div><div><div className="text-white font-black text-sm">{t.experienceYears}a</div><span className="text-[8px] text-[#474556] font-bold uppercase">Exp.</span></div><div><div className="text-[#52ffac] font-black text-sm">${t.hourlyRate}</div><span className="text-[8px] text-[#474556] font-bold uppercase">Hr.</span></div></div>
-                              <button onClick={() => { setActiveTechForModal(t); setIsTechModalOpen(true); }} className="w-full py-4 bg-[#1c1d21] hover:bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg active:scale-95">Ver Perfil & Agendar</button>
-                           </div>
-                         ))}
-                      </div>
+                      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                        <div>
+                           <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-none">Marketplace <span className="text-[#5d3cfe]">Expertos</span></h1>
+                           <div className="flex gap-3 overflow-x-auto pb-4 mt-6 custom-scrollbar">{['Todos', 'Mecánico', 'Técnico A/C', 'Electricista', 'Informático'].map(c => (<button key={c} onClick={() => setMarketFilter(c === 'Todos' ? 'all' : c.toLowerCase().replace(' ', '_') as any)} className={`flex-shrink-0 px-8 py-3 rounded-full border transition-all text-[10px] font-black uppercase tracking-widest ${marketFilter === (c === 'Todos' ? 'all' : c.toLowerCase().replace(' ', '_')) ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'border-[#2a2b2f] text-[#c8c4d9] hover:border-[#5d3cfe]'}`}>{c}</button>))}</div>
+                        </div>
+                        <div className="bg-[#1c1d21] p-1.5 rounded-2xl border border-[#2a2b2f] flex">
+                           <button onClick={() => setMarketViewMode('list')} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${marketViewMode === 'list' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}>Listado</button>
+                           <button onClick={() => setMarketViewMode('radar')} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${marketViewMode === 'radar' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}>Radar Satelital</button>
+                        </div>
+                      </header>
+
+                      {marketViewMode === 'list' ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                           {technicians.filter(t => marketFilter === 'all' || t.category === marketFilter).map(t => (
+                             <div key={t.id} className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[3rem] flex flex-col gap-6 relative overflow-hidden group hover:border-[#5d3cfe]/50 transition-all shadow-2xl">
+                                <div className="flex items-center gap-5"><div className="w-16 h-16 rounded-2xl bg-[#1c1d21] border border-[#2a2b2f] flex items-center justify-center text-[#c7bfff] font-black text-2xl shadow-inner">{t.name[0]}</div><div><h4 className="font-black text-white text-base uppercase tracking-tight">{t.name}</h4><p className="text-[10px] font-black text-[#52ffac] uppercase tracking-[0.2em] mt-1">{t.category.replace('_',' ')}</p></div></div>
+                                <div className="grid grid-cols-3 gap-4 py-4 border-y border-[#2a2b2f]/50 bg-[#0d0e12]/30 px-4 rounded-2xl text-center"><div><div className="text-amber-500 font-black text-sm flex items-center justify-center gap-1"><Star className="w-3 h-3 fill-amber-500" /> {t.rating}</div><span className="text-[8px] text-[#474556] font-bold uppercase">Rating</span></div><div><div className="text-white font-black text-sm">{t.experienceYears}a</div><span className="text-[8px] text-[#474556] font-bold uppercase">Exp.</span></div><div><div className="text-[#52ffac] font-black text-sm">${t.hourlyRate}</div><span className="text-[8px] text-[#474556] font-bold uppercase">Hr.</span></div></div>
+                                <button onClick={() => { setActiveTechForModal(t); setIsTechModalOpen(true); }} className="w-full py-4 bg-[#1c1d21] hover:bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg active:scale-95">Ver Perfil & Agendar</button>
+                             </div>
+                           ))}
+                        </div>
+                      ) : (
+                        <TechnicianRadar
+                          technicians={technicians.filter(t => marketFilter === 'all' || t.category === marketFilter)}
+                          assets={assets}
+                          onSelectTech={(t) => { setActiveTechForModal(t); setIsTechModalOpen(true); }}
+                        />
+                      )}
                     </div>
                   )}
                   {clientTab === 'quotes' && (

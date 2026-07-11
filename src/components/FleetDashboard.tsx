@@ -148,30 +148,32 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
             </div>
 
             <div className="bg-[#343439] rounded-[1.5rem] p-5 text-white shadow-xl border border-[#474556]/30">
-              <span className="text-[9px] font-black uppercase opacity-60">Auditoría Disponible</span>
-              <button
-                onClick={() => {
-                  const data = assets.map(a => ({
-                    'Nombre/Unidad': a.name,
-                    'Placa': a.licensePlate || 'N/A',
-                    'Tipo': a.type,
-                    'Ubicación': a.location || 'Sede Principal',
-                    'Kilometraje': a.mileage || 0,
-                    'Último Mantenimiento': a.lastMaintenanceDate,
-                    'Próximo Mantenimiento': a.nextMaintenanceDate,
-                    'Estado': (a.mileage || 0) >= ((a.mileage || 0) + 5000 - 500) ? 'URGENTE' : 'ÓPTIMO'
-                  }));
-
-                  const ws = XLSX.utils.json_to_sheet(data);
-                  const wb = XLSX.utils.book_new();
-                  XLSX.utils.book_append_sheet(wb, ws, "Flota MantechPro");
-                  XLSX.writeFile(wb, `Auditoria_Flota_${new Date().toISOString().split('T')[0]}.xlsx`);
-                  toast.success("Reporte de auditoría generado.");
-                }}
-                className="mt-2 w-full py-2 bg-white/10 hover:bg-white/20 rounded-lg text-[8px] font-black uppercase flex items-center justify-center gap-2 transition-all"
-              >
-                <FileText className="w-3 h-3" /> Exportar a Excel
-              </button>
+              <span className="text-[9px] font-black uppercase opacity-60">Servicios Proyectados</span>
+              <p className="text-3xl font-black text-[#c7bfff]">
+                {assets.filter(a => {
+                  const nextKm = (a.mileage || 0) + 5000;
+                  return (a.mileage || 0) >= nextKm - 500;
+                }).length}
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                 <button
+                    onClick={() => {
+                      const data = assets.map(a => ({
+                        'Nombre/Unidad': a.name,
+                        'Placa': a.licensePlate || 'N/A',
+                        'Kilometraje': a.mileage || 0,
+                        'Estado': (a.mileage || 0) >= ((a.mileage || 0) + 5000 - 500) ? 'URGENTE' : 'ÓPTIMO'
+                      }));
+                      const ws = XLSX.utils.json_to_sheet(data);
+                      const wb = XLSX.utils.book_new();
+                      XLSX.utils.book_append_sheet(wb, ws, "Auditoria");
+                      XLSX.writeFile(wb, "Reporte_Flota.xlsx");
+                    }}
+                    className="flex-1 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-[8px] font-black uppercase flex items-center justify-center gap-1 transition-all"
+                 >
+                    <FileText className="w-2.5 h-2.5" /> Excel
+                 </button>
+              </div>
             </div>
           </div>
 
