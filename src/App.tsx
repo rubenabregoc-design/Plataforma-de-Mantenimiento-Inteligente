@@ -167,7 +167,7 @@ export default function App() {
     if (trackingAssetId === assetId) {
       if (watchIdRef.current) Geolocation.clearWatch({ id: watchIdRef.current });
       if (wakeLockRef.current) wakeLockRef.current.release();
-      if (Capacitor.getPlatform() !== 'web') {
+      if (Capacitor.isNativePlatform()) {
         LocalNotifications.cancel({ notifications: [{ id: 1001 }] });
       }
       setTrackingAssetId(null);
@@ -177,11 +177,14 @@ export default function App() {
     }
 
     try {
-      const permission = await Geolocation.requestPermissions();
-      if (permission.location !== 'granted') return toast.error("Se requieren permisos de GPS.");
+      const isNative = Capacitor.isNativePlatform();
+      if (isNative) {
+        const permission = await Geolocation.requestPermissions();
+        if (permission.location !== 'granted') return toast.error("Se requieren permisos de GPS.");
+      }
 
       // Activar Notificación Persistente (Solo móvil)
-      if (Capacitor.getPlatform() !== 'web') {
+      if (Capacitor.isNativePlatform()) {
         const hasPermission = await LocalNotifications.requestPermissions();
         if (hasPermission.display === 'granted') {
           LocalNotifications.schedule({
@@ -391,7 +394,7 @@ export default function App() {
       const expiry = new Date(subscription.nextBillingDate);
 
       if (now > expiry && subscription.planId !== 'plan-basic' && subscription.status === 'active') {
-        console.log("âš ï¸ Suscripción expirada. Retornando a Plan Básico.");
+        console.log("⚠️ Suscripción expirada. Retornando a Plan Básico.");
         const expiredSub = {
           ...subscription,
           status: 'expired',

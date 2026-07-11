@@ -1,3 +1,4 @@
+import * as XLSX from 'xlsx';
 import { toast } from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { Asset, MaintenanceReminder } from '../types';
@@ -148,7 +149,27 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
 
             <div className="bg-[#343439] rounded-[1.5rem] p-5 text-white shadow-xl border border-[#474556]/30">
               <span className="text-[9px] font-black uppercase opacity-60">Auditoría Disponible</span>
-              <button onClick={() => toast.success("Generando reporte de auditoría de los 40 camiones...")} className="mt-2 w-full py-2 bg-white/10 hover:bg-white/20 rounded-lg text-[8px] font-black uppercase flex items-center justify-center gap-2 transition-all">
+              <button
+                onClick={() => {
+                  const data = assets.map(a => ({
+                    'Nombre/Unidad': a.name,
+                    'Placa': a.licensePlate || 'N/A',
+                    'Tipo': a.type,
+                    'Ubicación': a.location || 'Sede Principal',
+                    'Kilometraje': a.mileage || 0,
+                    'Último Mantenimiento': a.lastMaintenanceDate,
+                    'Próximo Mantenimiento': a.nextMaintenanceDate,
+                    'Estado': (a.mileage || 0) >= ((a.mileage || 0) + 5000 - 500) ? 'URGENTE' : 'ÓPTIMO'
+                  }));
+
+                  const ws = XLSX.utils.json_to_sheet(data);
+                  const wb = XLSX.utils.book_new();
+                  XLSX.utils.book_append_sheet(wb, ws, "Flota MantechPro");
+                  XLSX.writeFile(wb, `Auditoria_Flota_${new Date().toISOString().split('T')[0]}.xlsx`);
+                  toast.success("Reporte de auditoría generado.");
+                }}
+                className="mt-2 w-full py-2 bg-white/10 hover:bg-white/20 rounded-lg text-[8px] font-black uppercase flex items-center justify-center gap-2 transition-all"
+              >
                 <FileText className="w-3 h-3" /> Exportar a Excel
               </button>
             </div>
