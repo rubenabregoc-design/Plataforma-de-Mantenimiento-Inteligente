@@ -26,6 +26,9 @@ export interface Asset {
   gpsDeviceId?: string; // ID o IMEI del rastreador GPS para sincronización real
   latitude?: number;
   longitude?: number;
+  currentRoute?: string;
+  routeStartedAt?: string;
+  routeHistory?: { lat: number; lng: number; timestamp: string; locationName?: string; type?: 'checkpoint' | 'track' }[]; // Historial con nombres de lugar
 }
 
 export interface MaintenanceReminder {

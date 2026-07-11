@@ -41,26 +41,41 @@ export default function TechnicianRadar({ technicians, assets, onSelectTech }: T
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
       {/* LADO IZQUIERDO: VISUALIZADOR DE RADAR */}
       <div className="lg:col-span-7 space-y-6">
-        {/* SELECTOR DE CAMIÓN PARA EL RADAR */}
-        <div className="bg-[#1c1d21] p-4 rounded-2xl border border-[#2a2b2f] flex items-center gap-4">
-           <div className="p-2 bg-[#5d3cfe]/10 rounded-lg text-[#5d3cfe]">
-              <Car className="w-5 h-5" />
+        {/* SELECTOR DE CAMIÓN PARA EL RADAR CON BÚSQUEDA REAL */}
+        <div className="bg-[#1c1d21] p-5 rounded-[2rem] border border-[#2a2b2f] space-y-4 shadow-xl">
+           <div className="flex items-center justify-between">
+              <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.2em]">Seleccionar Unidad</p>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-black/30 rounded-xl border border-white/5">
+                 <Search className="w-3.5 h-3.5 text-[#474556]" />
+                 <input
+                   type="text"
+                   placeholder="Buscar placa..."
+                   className="bg-transparent border-none text-[11px] text-white outline-none w-40 font-bold"
+                   onChange={(e) => {
+                      const term = e.target.value.toLowerCase();
+                      const match = assets.find(a => a.licensePlate?.toLowerCase().includes(term) || a.name.toLowerCase().includes(term));
+                      if (match) setSelectedAssetId(match.id);
+                   }}
+                 />
+              </div>
            </div>
-           <div className="flex-1">
-              <p className="text-[8px] font-black text-[#474556] uppercase tracking-widest">Enfocar Radar en:</p>
+
+           <div className="relative group">
+              <Car className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#5d3cfe]" />
               <select
                 value={selectedAssetId}
                 onChange={(e) => setSelectedAssetId(e.target.value)}
-                className="w-full bg-transparent text-white font-black text-sm outline-none cursor-pointer"
+                className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 pl-12 pr-6 text-white font-black text-sm outline-none cursor-pointer appearance-none hover:border-[#5d3cfe]/50 transition-all shadow-inner uppercase tracking-tight"
               >
                  {assets.map(a => (
-                   <option key={a.id} value={a.id} className="bg-[#1c1d21]">{a.name} ({a.licensePlate || 'Sin Placa'})</option>
+                   <option key={a.id} value={a.id} className="bg-[#1c1d21]">{a.name} • {a.licensePlate || 'Sin Placa'}</option>
                  ))}
               </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40"><ArrowRight className="w-4 h-4 rotate-90" /></div>
            </div>
         </div>
 
-        <div className="bg-[#121317] border border-[#2a2b2f] rounded-[3rem] p-8 shadow-2xl relative overflow-hidden h-[540px] flex items-center justify-center">
+        <div className="bg-[#121317] border border-[#2a2b2f] rounded-[3rem] p-8 shadow-2xl relative overflow-hidden h-[500px] flex items-center justify-center">
            {/* Fondo de Radar */}
            <div className="absolute inset-0 opacity-10">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#5d3cfe_0%,_transparent_70%)]"></div>
@@ -191,14 +206,31 @@ export default function TechnicianRadar({ technicians, assets, onSelectTech }: T
                   const closest = relevantTechs.slice(0, 3);
                   const names = closest.map(t => t.name).join(', ');
 
-                  if(window.confirm(`🚨 PROTOCOLO DE RESCATE: ¿Enviar alerta del ${currentAsset?.name} a los ${closest.length} ${targetCategory.replace('_',' ')}s más cercanos? (${names})`)) {
-                    toast.success(`SEÑAL SOS TRANSMITIDA. Los especialistas en ${targetCategory.replace('_',' ')} han sido alertados.`);
+                  if(window.confirm(`🚨 PROTOCOLO DE SEGURIDAD ACTIVADO: ¿Enviar alerta del ${currentAsset?.name} a los ${closest.length} especialistas más cercanos? (${names})\n\nSe generará un CÓDIGO DE VERIFICACIÓN para tu seguridad.`)) {
+                    const safetyPin = Math.floor(1000 + Math.random() * 9000);
+                    toast.success(`SEÑAL SOS TRANSMITIDA. Tu Código de Seguridad es: ${safetyPin}. NO abras la puerta a nadie que no diga este código.`, { duration: 10000, icon: '🛡️' });
                   }
                 }}
                 className="w-full py-4 bg-rose-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-xl shadow-rose-600/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3"
               >
                 <AlertTriangle className="w-4 h-4 fill-white" /> LANZAR ALERTA SOS
               </button>
+
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => window.open('tel:911')}
+                  className="flex-1 py-3 bg-[#1c1d21] border border-rose-500/30 text-rose-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center gap-2"
+                >
+                  <Phone className="w-3 h-3" /> EMERGENCIA POLICÍA (911)
+                </button>
+                <div className="px-4 py-2 bg-black/40 border border-white/10 rounded-xl flex items-center gap-2 grayscale hover:grayscale-0 transition-all cursor-help" title="Servicio Protegido por Seguridad Privada">
+                   <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                   <div className="leading-none text-left">
+                      <p className="text-[7px] font-black text-[#474556] uppercase">Protección</p>
+                      <p className="text-[8px] font-black text-white uppercase">PANAMÁ SECURITY</p>
+                   </div>
+                </div>
+              </div>
 
               <div className="bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 p-4 rounded-2xl flex items-start gap-4">
                  <Zap className="w-5 h-5 text-[#5d3cfe] shrink-0" />

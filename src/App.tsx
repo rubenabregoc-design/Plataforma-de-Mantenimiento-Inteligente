@@ -47,6 +47,7 @@ import LandingPage from './components/LandingPage';
 import Logo from './components/Logo';
 import TechWalletModule from './components/TechWalletModule';
 import TechnicianRadar from './components/TechnicianRadar';
+import RouteStartModal from './components/RouteStartModal';
 
 import { 
   LayoutDashboard, Store, FileCheck2, BrainCircuit, MessageSquare, CalendarDays, Users, DollarSign,
@@ -78,7 +79,8 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
-  orderBy
+  orderBy,
+  arrayUnion
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
@@ -132,6 +134,8 @@ export default function App() {
 
   // Marketplace UI State
   const [marketViewMode, setMarketViewMode] = useState<'list' | 'radar'>('list');
+  const [isRouteStartModalOpen, setIsRouteStartModalOpen] = useState(false);
+  const [assetForRoute, setAssetForRoute] = useState<Asset | null>(null);
 
   // Asset View State
   const [assetSearchQuery, setAssetSearchQuery] = useState('');
@@ -163,9 +167,31 @@ export default function App() {
 
   // GPS TRACKING STATE (CELLPHONE)
   const [trackingAssetId, setTrackingAssetId] = useState<string | null>(null);
+  const [tripStatus, setTripStatus] = useState<'idle' | 'active' | 'paused'>('idle');
+  const [autoGpsEnabled, setAutoGpsEnabled] = useState(false);
   const watchIdRef = useRef<string | null>(null);
   const lastPosRef = useRef<any>(null);
   const wakeLockRef = useRef<any>(null);
+
+  // Iniciar rastreo automático al detectar rol de flota
+  useEffect(() => {
+    if (isLoggedIn && role === 'client' && autoGpsEnabled) {
+      // Iniciar rastreo del primer camión activo o el seleccionado
+      const activeAsset = assets.find(a => a.type === 'car');
+      if (activeAsset) startGpsTracking(activeAsset.id);
+    }
+  }, [autoGpsEnabled, isLoggedIn]);
+
+  const toggleGpsPause = () => {
+    if (tripStatus === 'active') {
+      setTripStatus('paused');
+      toast("Ruta Pausada: Kilometraje detenido.", { icon: '⏸️' });
+    } else if (tripStatus === 'paused') {
+      setTripStatus('active');
+      lastPosRef.current = null;
+      toast.success("Ruta Reanudada: Contando Km...");
+    }
+  };
 
   const startGpsTracking = async (assetId: string) => {
     if (trackingAssetId === assetId) {
@@ -175,20 +201,33 @@ export default function App() {
         LocalNotifications.cancel({ notifications: [{ id: 1001 }] });
       }
       setTrackingAssetId(null);
+      setTripStatus('idle');
       lastPosRef.current = null;
-      toast.success("Rastreo detenido. Km guardados.");
+      toast.success("Viaje Finalizado. Kilometraje total guardado.");
       return;
     }
 
     try {
       const isNative = Capacitor.isNativePlatform();
+
+      if (!trackingAssetId) {
+        const asset = assets.find(a => a.id === assetId);
+        if (asset) {
+          setAssetForRoute(asset);
+          setIsRouteStartModalOpen(true);
+        }
+        return;
+      }
+
       if (isNative) {
         const permission = await Geolocation.requestPermissions();
         if (permission.location !== 'granted') return toast.error("Se requieren permisos de GPS.");
       }
 
-      // Activar Notificación Persistente (Solo móvil)
-      if (Capacitor.isNativePlatform()) {
+      setTrackingAssetId(assetId);
+      setTripStatus('active');
+
+      if (isNative) {
         const hasPermission = await LocalNotifications.requestPermissions();
         if (hasPermission.display === 'granted') {
           LocalNotifications.schedule({
@@ -197,8 +236,8 @@ export default function App() {
                 title: "MantechPro: Rastreo Activo",
                 body: "El sistema está calculando el kilometraje en segundo plano.",
                 id: 1001,
-                ongoing: true, // Esto la hace persistente en Android
-                smallIcon: "ic_stat_name", // Referencia al icono de sistema
+                ongoing: true,
+                smallIcon: "ic_stat_name",
                 actionTypeId: "OPEN_APP"
               }
             ]
@@ -212,15 +251,12 @@ export default function App() {
         } catch (err) { console.error("WakeLock no soportado."); }
       }
 
-      setTrackingAssetId(assetId);
-      toast.success("Rastreo en Segundo Plano Activo. Puedes minimizar la app.");
-
       watchIdRef.current = await Geolocation.watchPosition({
         enableHighAccuracy: true,
         timeout: 10000,
         maximumAge: 3000
       }, (position) => {
-        if (!position) return;
+        if (!position || tripStatus === 'paused') return;
         if (lastPosRef.current) {
           const dist = calculateDistance(
             lastPosRef.current.coords.latitude,
@@ -228,11 +264,22 @@ export default function App() {
             position.coords.latitude,
             position.coords.longitude
           );
-          if (dist > 0.03) { // 30 metros de precisión
+          if (dist > 0.03) {
              const asset = assets.find(a => a.id === assetId);
              if (asset) {
                 const newKm = (asset.mileage || 0) + dist;
-                updateDoc(doc(db, "assets", assetId), { mileage: Math.round(newKm) });
+                const newPoint = {
+                  lat: position.coords.latitude,
+                  lng: position.coords.longitude,
+                  timestamp: new Date().toISOString()
+                };
+
+                updateDoc(doc(db, "assets", assetId), {
+                  mileage: Math.round(newKm),
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+                  routeHistory: arrayUnion(newPoint)
+                });
              }
           }
         }
@@ -1187,7 +1234,9 @@ export default function App() {
                       onBulkUpdate={handleBulkUpdateAssets}
                       onBulkRegister={handleBulkRegisterAssets}
                       onStartGps={startGpsTracking}
+                      onTogglePause={toggleGpsPause}
                       trackingAssetId={trackingAssetId}
+                      tripStatus={tripStatus}
                     />
                   )}
                   {clientTab === 'ai' && <DiagnosticAIView assets={assets} onFindTechnicians={(c) => { setMarketFilter(c); setClientTab('marketplace'); }} mode={planLimits.diag as any} />}
@@ -1907,7 +1956,63 @@ export default function App() {
                       </div>
                    )}
                    {adminTab === 'inventory' && <InventoryModule items={inventory} assets={assets} onUpdateQuantity={handleUpdateInventoryQuantity} onAddItem={handleAddInventoryItem} onDeleteItem={handleDeleteInventoryItem} onUpdateItem={handleUpdateInventoryItem} />}
-                   {adminTab === 'alerts' && <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl space-y-8"><header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Alertas de <span className="text-rose-500">Mantenimiento</span></h1></header><div className="space-y-4">{allReminders.map(r => (<div key={r.id} className="p-6 bg-rose-500/5 border border-rose-500/20 rounded-3xl flex justify-between items-center"><div><h4 className="text-sm font-black text-white uppercase">{r.title}</h4><p className="text-[10px] font-bold text-rose-500 uppercase">{r.assetName} - Vence: {r.dueDate}</p></div><BellRing className="w-5 h-5 text-rose-500 animate-bounce" /></div>))}</div></div>}
+                   {adminTab === 'alerts' && (
+                      <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl space-y-12">
+                        <section className="space-y-8">
+                           <header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Alertas de <span className="text-rose-500">Mantenimiento</span></h1></header>
+                           <div className="space-y-4">
+                              {allReminders.map(r => (
+                                <div key={r.id} className="p-6 bg-rose-500/5 border border-rose-500/20 rounded-3xl flex justify-between items-center group">
+                                   <div><h4 className="text-sm font-black text-white uppercase">{r.title}</h4><p className="text-[10px] font-bold text-rose-500 uppercase">{r.assetName} - Vence: {r.dueDate}</p></div>
+                                   <BellRing className="w-5 h-5 text-rose-500 animate-bounce" />
+                                </div>
+                              ))}
+                           </div>
+                        </section>
+
+                        <section className="space-y-8 pt-8 border-t border-[#2a2b2f]">
+                           <header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Alertas <span className="text-amber-500">Operativas</span></h1><p className="text-[10px] text-[#474556] font-black uppercase tracking-widest mt-2">Detección de paradas prolongadas (&gt;2h)</p></header>
+                           <div className="space-y-4">
+                              {assets.filter(a => a.routeHistory && a.routeHistory.length > 0).map(asset => {
+                                 const lastPoint = asset.routeHistory![asset.routeHistory!.length - 1];
+                                 const timeDiff = Date.now() - new Date(lastPoint.timestamp).getTime();
+                                 const hoursDetained = timeDiff / (1000 * 60 * 60);
+
+                                 if (hoursDetained >= 2 && trackingAssetId === asset.id) {
+                                    return (
+                                       <div key={asset.id} className="p-6 bg-amber-500/5 border border-amber-500/20 rounded-3xl flex justify-between items-center animate-pulse">
+                                          <div className="flex gap-6 items-center">
+                                             <div className="p-4 bg-amber-500/10 rounded-2xl text-amber-500 border border-amber-500/20 shadow-lg">
+                                                <AlertTriangle className="w-6 h-6" />
+                                             </div>
+                                             <div>
+                                                <h4 className="text-sm font-black text-white uppercase">{asset.name} DETENIDO</h4>
+                                                <p className="text-[10px] font-bold text-amber-500 uppercase mt-1">Exceso de tiempo: {hoursDetained.toFixed(1)} horas sin movimiento.</p>
+                                             </div>
+                                          </div>
+                                          <button
+                                            onClick={() => window.open(`https://www.google.com/maps?q=${lastPoint.lat},${lastPoint.lng}`, '_blank')}
+                                            className="px-6 py-2 bg-amber-500 text-black rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl"
+                                          >
+                                            Ver Ubicación
+                                          </button>
+                                       </div>
+                                    );
+                                 }
+                                 return null;
+                              })}
+                              {assets.every(a => {
+                                 if (!a.routeHistory || a.routeHistory.length === 0) return true;
+                                 const lastPoint = a.routeHistory![a.routeHistory!.length - 1];
+                                 const hours = (Date.now() - new Date(lastPoint.timestamp).getTime()) / (1000 * 60 * 60);
+                                 return hours < 2 || trackingAssetId !== a.id;
+                              }) && (
+                                 <p className="text-[10px] text-[#474556] font-bold uppercase italic ml-4">No se detectan anomalías de tiempo en la flota activa.</p>
+                              )}
+                           </div>
+                        </section>
+                      </div>
+                   )}
                    {adminTab === 'settings' && <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl"><header><h1 className="text-4xl font-black text-white tracking-tighter">Ajustes <span className="text-[#5d3cfe]">Sistema</span></h1></header><div className="mt-10"><button onClick={handleLogout} className="px-10 py-5 bg-rose-600/10 border border-rose-600/20 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all">Cerrar Sesión Root</button></div></div>}
                 </div>
               )}
@@ -1973,6 +2078,25 @@ export default function App() {
       <VideoCallModal isOpen={isVideoCallOpen} onClose={() => setIsVideoCallOpen(false)} roomName={videoCallRoom} userName={loggedInName} isVoiceOnly={isVideoVoiceOnly} />
       <QRScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanSuccess={(id) => { const tech = technicians.find(t => t.id === id); if (tech) toast(`✅ Especialista Validado: ${tech.name}`); }} technicians={technicians} />
       <SupportModal isOpen={isSupportModalOpen} onClose={() => setIsSupportModalOpen(false)} userEmail={loggedInEmail} userName={loggedInName} userId={user?.uid} userRole={role} plan={subscription.planId} />
+
+      {isRouteStartModalOpen && assetForRoute && (
+        <RouteStartModal
+          isOpen={isRouteStartModalOpen}
+          onClose={() => setIsRouteStartModalOpen(false)}
+          assetName={assetForRoute.name}
+          onConfirm={async (dest) => {
+            setIsRouteStartModalOpen(false);
+            const assetId = assetForRoute.id;
+            setTrackingAssetId(assetId);
+            setTripStatus('active');
+            await updateDoc(doc(db, "assets", assetId), {
+              currentRoute: dest,
+              routeStartedAt: new Date().toISOString()
+            });
+            toast.success(`Viaje a ${dest} Iniciado.`);
+          }}
+        />
+      )}
 
       {isSubPaymentModalOpen && selectedPlanForPayment && (
         <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">

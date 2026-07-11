@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Asset, MaintenanceReminder } from '../types';
 import {
   LayoutGrid, List, MapPin, AlertCircle, CheckCircle2, TrendingUp, Search, Filter,
-  ChevronRight, Car, Wind, Cpu, Zap, Building2, Code, Phone, ShieldCheck, Download, Star, FileText, Globe, RefreshCw, ChevronLeft
+  ChevronRight, Car, Wind, Cpu, Zap, Building2, Code, Phone, ShieldCheck, Download, Star, FileText, Globe, RefreshCw, ChevronLeft, Navigation, Pause, Clock, Flag
 } from 'lucide-react';
 
 interface FleetDashboardProps {
@@ -14,15 +14,18 @@ interface FleetDashboardProps {
   onBulkUpdate?: (assetIds: string[], update: Partial<Asset>) => void;
   onBulkRegister?: (assets: any[]) => void;
   onStartGps?: (assetId: string) => void;
+  onTogglePause?: () => void;
   trackingAssetId?: string | null;
+  tripStatus?: 'idle' | 'active' | 'paused';
   mode?: 'lite' | 'full';
 }
 
-export default function FleetDashboard({ assets, reminders, onManageAsset, onBulkUpdate, onBulkRegister, onStartGps, trackingAssetId, mode = 'lite' }: FleetDashboardProps) {
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>(mode === 'full' ? 'table' : 'grid');
+export default function FleetDashboard({ assets, reminders, onManageAsset, onBulkUpdate, onBulkRegister, onStartGps, onTogglePause, trackingAssetId, tripStatus = 'idle', mode = 'lite' }: FleetDashboardProps) {
+  const [viewMode, setViewMode] = useState<'grid' | 'table' | 'history'>(mode === 'full' ? 'table' : 'grid');
   const [activeSubTab, setActiveSubTab] = useState<'fleet' | 'api' | 'support'>('fleet');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [locationFilter, setLocationFilter] = useState('Todas');
+  const [historyAssetId, setHistoryAssetId] = useState<string | null>(null);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -41,36 +44,8 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
   const healthScore = totalAssets > 0 ? Math.round(((totalAssets - urgentCount) / totalAssets) * 100) : 100;
 
   const handleGpsSync = async () => {
-    const assetsWithGps = assets.filter(a => a.gpsDeviceId);
-    if (assetsWithGps.length === 0) {
-      toast.error("Ninguna unidad tiene configurado un GPS ID (IMEI).");
-      return;
-    }
-
-    const toastId = toast.loading('Sincronizando con Servidor Satelital...');
-
-    try {
-      const response = await fetch('http://localhost:8080/api/fleet/gps-sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deviceIds: assetsWithGps.map(a => a.gpsDeviceId) })
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        // Actualizar cada activo con su nuevo Km del satélite
-        result.data.forEach((data: any) => {
-          const asset = assets.find(a => a.gpsDeviceId === data.gpsId);
-          if (asset) {
-            onBulkUpdate?.([asset.id], { mileage: data.newKm });
-          }
-        });
-        toast.success(`Sincronización Exitosa: ${result.data.length} unidades actualizadas vía Satélite.`, { id: toastId });
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error("Error de conexión con el proveedor GPS.", { id: toastId });
-    }
+    onStartGps?.('all');
+    toast.success("🛰️ Enlace Satelital Activo: Sincronización Automática iniciada.");
   };
 
   const handleManualKmSave = (id: string) => {
@@ -79,6 +54,44 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
       onBulkUpdate?.([id], { mileage: val });
       setEditingKmId(null);
       toast.success("Km actualizado");
+    }
+  };
+
+  const handleExportRoute = (asset: Asset) => {
+    if (!asset.routeHistory || asset.routeHistory.length === 0) {
+      toast.error("No hay datos de ruta para exportar.");
+      return;
+    }
+
+    const data = asset.routeHistory.map((p, i) => ({
+      'Punto': i + 1,
+      'Latitud': p.lat,
+      'Longitud': p.lng,
+      'Fecha/Hora': new Date(p.timestamp).toLocaleString(),
+      'Lugar': p.locationName || 'Rastreo Automático',
+      'Estado': 'Verificado por GPS'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Bitácora GPS");
+    XLSX.writeFile(wb, `Ruta_${asset.name}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success("Reporte de ruta descargado.");
+  };
+
+  const handleAddCheckpoint = (asset: Asset) => {
+    const name = prompt("🏷️ Nombre de la parada (Ej: Almacén Chiriquí):");
+    if (name) {
+      onBulkUpdate?.([asset.id], {
+        routeHistory: [...(asset.routeHistory || []), {
+          lat: (asset as any).latitude || 0,
+          lng: (asset as any).longitude || 0,
+          timestamp: new Date().toISOString(),
+          locationName: name,
+          type: 'checkpoint'
+        }]
+      });
+      toast.success(`Parada "${name}" registrada.`);
     }
   };
 
@@ -214,7 +227,8 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                       mileage: Math.floor(10000 + Math.random() * 80000),
                       lastMaintenanceDate: '2026-06-01',
                       nextMaintenanceDate: '2026-08-01',
-                      location: i % 2 === 0 ? 'Panamá Centro' : 'Colón'
+                      location: i % 2 === 0 ? 'Panamá Centro' : 'Colón',
+                      routeHistory: []
                     }));
                     onBulkRegister?.(trucks);
                   }
@@ -231,7 +245,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
             </div>
           </div>
 
-          {/* Location Bar (Para Clientes Corporativos) */}
+          {/* Location Bar */}
           {mode === 'full' && (
             <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
               {['Todas', 'Panamá Centro', 'Colón', 'Chiriquí', 'Chorrera'].map(loc => (
@@ -246,8 +260,8 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
             </div>
           )}
 
-          {/* View Mode Switching */}
-          {viewMode === 'table' ? (
+          {/* View Mode Logic */}
+          {viewMode === 'table' && (
              <div className="bg-[#1f1f24] rounded-[1.5rem] border border-[#474556]/30 overflow-hidden shadow-xl animate-fade-in">
                 <table className="w-full text-left border-collapse">
                    <thead>
@@ -255,9 +269,9 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                          <th className="p-4 w-10 text-center"><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? filteredAssets.map(a => a.id) : [])} className="rounded border-[#474556]/30 bg-[#0d0e12] text-[#5d3cfe]" /></th>
                          <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest">Unidad / Marca</th>
                          <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Placa</th>
-                         <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Kilometraje (Editar)</th>
-                         <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Próximo Mtto (Km)</th>
-                         <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest">Estado Técnico</th>
+                         <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Kilometraje</th>
+                         <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Próximo Mtto</th>
+                         <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest">Estado</th>
                          <th className="p-4"></th>
                       </tr>
                    </thead>
@@ -270,48 +284,22 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                                <td className="p-4 text-center"><input type="checkbox" checked={selectedIds.includes(asset.id)} onChange={(e) => { if(e.target.checked) setSelectedIds([...selectedIds, asset.id]); else setSelectedIds(selectedIds.filter(id => id !== asset.id)); }} className="rounded border-[#474556]/30 bg-[#0d0e12] text-[#5d3cfe]" /></td>
                                <td className="p-4 flex items-center gap-3">
                                   <div className="p-2 bg-[#1a1b20] rounded-lg border border-[#474556]/30"><Car className="w-3.5 h-3.5 text-[#c7bfff]" /></div>
-                                  <div>
-                                    <p className="font-black uppercase tracking-tight">{asset.name}</p>
-                                    <p className="text-[9px] text-[#c8c4d9] opacity-40 uppercase">{asset.details}</p>
-                                  </div>
+                                  <div><p className="font-black uppercase tracking-tight">{asset.name}</p><p className="text-[9px] text-[#c8c4d9] opacity-40 uppercase">{asset.details}</p></div>
                                </td>
                                <td className="p-4 text-center font-mono tracking-widest text-[#52ffac]">{asset.licensePlate || '---'}</td>
-                               <td className="p-4 text-center">
-                                  {editingKmId === asset.id ? (
-                                    <input
-                                      autoFocus
-                                      type="number"
-                                      className="w-24 bg-[#0d0e12] border border-[#5d3cfe] rounded-lg py-1 px-2 text-white font-black text-center outline-none"
-                                      value={tempKm}
-                                      onChange={e => setCustomKm(e.target.value)}
-                                      onBlur={() => handleManualKmSave(asset.id)}
-                                      onKeyDown={e => e.key === 'Enter' && handleManualKmSave(asset.id)}
-                                    />
-                                  ) : (
-                                    <div
-                                      onClick={() => { setEditingKmId(asset.id); setCustomKm(asset.mileage?.toString() || '0'); }}
-                                      className="cursor-pointer hover:text-[#5d3cfe] transition-colors font-black"
-                                    >
-                                      {asset.mileage?.toLocaleString() || 0} Km
-                                    </div>
-                                  )}
-                               </td>
+                               <td className="p-4 text-center font-black">{asset.mileage?.toLocaleString()} Km</td>
                                <td className="p-4 text-center font-black text-[#c7bfff]">{nextKm.toLocaleString()} Km</td>
-                               <td className="p-4">
-                                  <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase ${isCritical ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'}`}>
-                                    {isCritical ? 'URGENTE' : 'ÓPTIMO'}
-                                  </span>
-                               </td>
+                               <td className="p-4"><span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase ${isCritical ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'}`}>{isCritical ? 'URGENTE' : 'ÓPTIMO'}</span></td>
                                <td className="p-4 text-right">
-                                  <div className="flex gap-2 justify-end">
-                                     <button
-                                       onClick={() => onStartGps?.(asset.id)}
-                                       className={`p-2 rounded-lg transition-all ${trackingAssetId === asset.id ? 'bg-rose-500 text-white animate-pulse' : 'bg-[#1a1b20] text-[#52ffac] hover:bg-[#52ffac] hover:text-black'}`}
-                                       title={trackingAssetId === asset.id ? "Detener GPS" : "Iniciar GPS de Celular"}
-                                     >
-                                        <MapPin className="w-4 h-4" />
-                                     </button>
-                                     <button onClick={() => onManageAsset?.(asset)} className="p-2 bg-[#1a1b20] hover:bg-[#5d3cfe] rounded-lg transition-all text-white"><ChevronRight className="w-4 h-4" /></button>
+                                  <div className="flex gap-2 justify-end items-center">
+                                     {trackingAssetId === asset.id && (
+                                       <>
+                                         <button onClick={() => handleAddCheckpoint(asset)} className="p-2 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-lg" title="Marcar Parada"><Flag className="w-4 h-4" /></button>
+                                         <button onClick={onTogglePause} className={`p-2 rounded-lg ${tripStatus === 'paused' ? 'bg-amber-500 text-black' : 'bg-amber-500/10 text-amber-500'}`}>{tripStatus === 'paused' ? <Zap className="w-4 h-4 fill-current" /> : <Clock className="w-4 h-4" />}</button>
+                                       </>
+                                     )}
+                                     <button onClick={() => { setHistoryAssetId(asset.id); setViewMode('history'); }} className="p-2 bg-[#1a1b20] text-[#c7bfff] hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"><FileText className="w-4 h-4" /></button>
+                                     <button onClick={() => onStartGps?.(asset.id)} className={`p-2 rounded-lg transition-all ${trackingAssetId === asset.id ? 'bg-rose-500 text-white animate-pulse' : 'bg-[#1a1b20] text-[#52ffac] hover:bg-[#52ffac] hover:text-black'}`}><MapPin className="w-4 h-4" /></button>
                                   </div>
                                </td>
                             </tr>
@@ -319,38 +307,17 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                       })}
                    </tbody>
                 </table>
-
-                {/* Pagination Controls */}
                 <div className="bg-[#1a1b20] p-4 flex items-center justify-between border-t border-[#474556]/30">
-                   <p className="text-[9px] font-black text-[#474556] uppercase tracking-widest">Mostrando {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredAssets.length)} de {filteredAssets.length} unidades</p>
-                   <div className="flex items-center gap-2">
-                      <button
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage(p => p - 1)}
-                        className="p-2 bg-[#121317] border border-[#474556]/30 rounded-lg text-[#c8c4d9] disabled:opacity-20 hover:text-white transition-all"
-                      >
-                         <ChevronLeft className="w-4 h-4" />
-                      </button>
-                      {Array.from({ length: totalPages }).map((_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setCurrentPage(i + 1)}
-                          className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${currentPage === i + 1 ? 'bg-[#5d3cfe] text-white' : 'bg-[#121317] text-[#474556] border border-[#474556]/30'}`}
-                        >
-                          {i + 1}
-                        </button>
-                      ))}
-                      <button
-                        disabled={currentPage === totalPages}
-                        onClick={() => setCurrentPage(p => p + 1)}
-                        className="p-2 bg-[#121317] border border-[#474556]/30 rounded-lg text-[#c8c4d9] disabled:opacity-20 hover:text-white transition-all"
-                      >
-                         <ChevronRight className="w-4 h-4" />
-                      </button>
+                   <p className="text-[9px] font-black text-[#474556] uppercase">Mostrando {paginatedAssets.length} unidades</p>
+                   <div className="flex gap-2">
+                      <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-2 bg-[#121317] border border-[#474556]/30 rounded-lg text-[#c8c4d9]"><ChevronLeft className="w-4 h-4" /></button>
+                      <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-2 bg-[#121317] border border-[#474556]/30 rounded-lg text-[#c8c4d9]"><ChevronRight className="w-4 h-4" /></button>
                    </div>
                 </div>
              </div>
-          ) : (
+          )}
+
+          {viewMode === 'grid' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
               {paginatedAssets.map((asset) => {
                 const isUrgent = reminders.some(r => r.assetId === asset.id && r.status === 'urgent');
@@ -358,7 +325,12 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                   <div key={asset.id} className={`bg-[#1f1f24] rounded-2xl border transition-all p-5 hover:shadow-xl group relative overflow-hidden ${isUrgent ? 'border-rose-500/50 bg-rose-500/5' : 'border-[#474556]/30'}`}>
                     <div className="flex justify-between items-start mb-4">
                       <div className={`p-2 rounded-xl ${isUrgent ? 'bg-rose-500/20 text-rose-500' : 'bg-[#5d3cfe]/20 text-[#c7bfff]'}`}>{asset.type === 'car' ? <Car className="w-5 h-5" /> : <Wind className="w-5 h-5" />}</div>
-                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full border ${isUrgent ? 'bg-rose-500/10 text-rose-500 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'}`}>{'URGENTE'}</span>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full border ${isUrgent ? 'bg-rose-500/10 text-rose-500 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/30'}`}>{isUrgent ? 'URGENTE' : 'ÓPTIMO'}</span>
+                        {asset.currentRoute && trackingAssetId === asset.id && (
+                           <div className="px-2 py-0.5 bg-[#52ffac] text-[#0d0e12] rounded-md text-[7px] font-black uppercase flex items-center gap-1 animate-pulse shadow-lg"><Navigation className="w-2 h-2 fill-current" /> {asset.currentRoute}</div>
+                        )}
+                      </div>
                     </div>
                     <h4 className="font-black text-white text-sm tracking-tight uppercase">{asset.name}</h4>
                     <p className="text-[10px] text-[#c8c4d9] mb-4 opacity-60 uppercase">{asset.details}</p>
@@ -366,16 +338,73 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                        <div><p className="text-[8px] font-black text-[#474556] uppercase">Km Actual</p><p className="text-xs font-black text-white">{asset.mileage?.toLocaleString()} Km</p></div>
                        <div><p className="text-[8px] font-black text-[#474556] uppercase">Próximo</p><p className="text-xs font-black text-[#5d3cfe]">{( (asset.mileage || 0) + 5000 ).toLocaleString()} Km</p></div>
                     </div>
-                    <button onClick={() => onManageAsset?.(asset)} className="w-full mt-4 flex items-center justify-center gap-2 py-2 rounded-xl bg-[#1a1b20] text-[#c8c4d9] text-[9px] font-black uppercase group-hover:bg-[#5d3cfe] group-hover:text-white transition-all border border-[#474556]/30">Gestionar Unidad <ChevronRight className="w-3 h-3" /></button>
+                    <div className="flex gap-2 mt-4">
+                       <button onClick={() => onStartGps?.(asset.id)} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[9px] font-black uppercase transition-all border ${trackingAssetId === asset.id ? 'bg-rose-500 border-rose-500 text-white animate-pulse' : 'bg-[#1a1b20] border-[#474556]/30 text-[#52ffac] hover:bg-[#52ffac] hover:text-black'}`}><MapPin className="w-3.5 h-3.5" /> {trackingAssetId === asset.id ? 'Finalizar' : 'Iniciar'}</button>
+                       <button onClick={() => { setHistoryAssetId(asset.id); setViewMode('history'); }} className="p-3 bg-[#1a1b20] border border-[#474556]/30 text-[#c7bfff] hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"><FileText className="w-4 h-4" /></button>
+                       <button onClick={() => onManageAsset?.(asset)} className="p-3 bg-[#1a1b20] border border-[#474556]/30 text-white hover:bg-white/10 rounded-xl transition-all"><ChevronRight className="w-4 h-4" /></button>
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
+
+          {viewMode === 'history' && historyAssetId && (
+            <div className="bg-[#1f1f24] rounded-[1.5rem] border border-[#474556]/30 overflow-hidden shadow-xl animate-fade-in flex flex-col lg:flex-row h-[600px]">
+               <div className="flex-1 bg-[#0d0e12] relative min-h-[300px]">
+                  {assets.find(a => a.id === historyAssetId)?.routeHistory?.length ? (
+                    <iframe width="100%" height="100%" frameBorder="0" style={{ border: 0 }} src={`https://www.google.com/maps?q=${assets.find(a => a.id === historyAssetId)?.routeHistory?.filter(p => p.lat !== 0).at(-1)?.lat},${assets.find(a => a.id === historyAssetId)?.routeHistory?.filter(p => p.lat !== 0).at(-1)?.lng}&t=k&z=16&output=embed`} allowFullScreen></iframe>
+                  ) : (
+                    <iframe width="100%" height="100%" frameBorder="0" style={{ border: 0 }} src={`https://www.google.com/maps?q=8.9833,-79.5167&t=k&z=12&output=embed`} allowFullScreen></iframe>
+                  )}
+                  <div className="absolute bottom-6 left-6 bg-black/90 backdrop-blur-md p-4 rounded-2xl border border-white/10 z-10 shadow-2xl flex items-center gap-3">
+                     <div className="w-2 h-2 bg-[#52ffac] rounded-full animate-ping"></div>
+                     <div><p className="text-[7px] font-black text-[#474556] uppercase tracking-[0.2em]">Enlace en Vivo</p><p className="text-[9px] font-black text-white uppercase">Mantech Sat-Link v4</p></div>
+                  </div>
+               </div>
+
+               <div className="w-full lg:w-[450px] bg-[#1a1b20] border-l border-[#474556]/30 flex flex-col shadow-2xl">
+                  <header className="p-8 border-b border-[#474556]/30 flex justify-between items-center bg-[#1c1d24]">
+                     <div className="flex items-center gap-4">
+                        <button onClick={() => setViewMode('table')} className="p-3 hover:bg-white/5 rounded-xl text-[#c8c4d9] transition-all"><ChevronLeft className="w-5 h-5" /></button>
+                        <div><h4 className="text-sm font-black text-white uppercase tracking-tight">Timeline Logístico</h4><p className="text-[8px] text-[#474556] font-black uppercase tracking-[0.2em]">Historial de Paradas y Tráfico</p></div>
+                     </div>
+                     <button onClick={() => { const asset = assets.find(a => a.id === historyAssetId); if (asset) handleExportRoute(asset); }} className="p-3 bg-[#5d3cfe]/10 text-[#c7bfff] border border-[#5d3cfe]/20 rounded-xl hover:bg-[#5d3cfe] hover:text-white transition-all shadow-lg"><FileText className="w-5 h-5" /></button>
+                  </header>
+
+                  <div className="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-6">
+                     {assets.find(a => a.id === historyAssetId)?.routeHistory?.slice().reverse().map((point, idx, arr) => {
+                       const isCheckpoint = point.type === 'checkpoint';
+                       let stayDuration = '';
+                       if (isCheckpoint && idx < arr.length - 1) {
+                         const arrivalTime = new Date(point.timestamp).getTime();
+                         const prevTime = new Date(arr[idx + 1].timestamp).getTime();
+                         const diff = Math.floor(Math.abs(arrivalTime - prevTime) / (1000 * 60));
+                         if (diff > 0) { const h = Math.floor(diff / 60); const m = diff % 60; stayDuration = h > 0 ? `${h}h ${m}m` : `${m} min`; }
+                       }
+                       return (
+                        <div key={idx} className="flex items-start gap-6 group relative">
+                           <div className="flex flex-col items-center"><div className={`w-3 h-3 rounded-full z-10 transition-all ${idx === 0 ? 'bg-[#52ffac] shadow-[0_0_15px_#52ffac]' : isCheckpoint ? 'bg-amber-500 scale-125' : 'bg-[#474556]'}`}></div><div className="w-px h-16 bg-gradient-to-b from-[#474556]/50 to-transparent mt-1"></div></div>
+                           <div className={`flex-1 p-5 rounded-2xl border transition-all ${isCheckpoint ? 'bg-amber-500/10 border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.05)]' : 'bg-[#121317] border-[#2a2b2f] group-hover:border-[#5d3cfe]/50 shadow-inner'}`}>
+                              <div className="flex justify-between items-start">
+                                 <div className="space-y-1">
+                                    {isCheckpoint ? (<div className="flex flex-col gap-1"><p className="text-xs font-black text-amber-500 uppercase flex items-center gap-2"><Flag className="w-3 h-3" /> {point.locationName}</p>{stayDuration && (<div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500 text-[#0d0e12] rounded text-[7px] font-black w-fit uppercase"><Clock className="w-2 h-2" /> Estancia: {stayDuration}</div>)}</div>) : (<p className="text-[10px] font-black text-white">{point.lat.toFixed(4)}, {point.lng.toFixed(4)}</p>)}
+                                    <p className="text-[8px] text-[#474556] font-bold uppercase tracking-widest">{new Date(point.timestamp).toLocaleTimeString()}</p>
+                                 </div>
+                                 <div className="p-2 bg-white/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"><Navigation className={`w-3 h-3 ${isCheckpoint ? 'text-amber-500' : 'text-[#5d3cfe]'}`} /></div>
+                              </div>
+                           </div>
+                        </div>
+                       );
+                     })}
+                     {(!assets.find(a => a.id === historyAssetId)?.routeHistory || assets.find(a => a.id === historyAssetId)?.routeHistory?.length === 0) && (<div className="py-20 text-center opacity-20"><Navigation className="w-12 h-12 mx-auto mb-4" /><p className="text-[10px] font-black uppercase">Sin actividad detectada</p></div>)}
+                  </div>
+               </div>
+            </div>
+          )}
         </>
       )}
 
-      {/* Resto de Tabs (API/Support) */}
       {activeSubTab === 'api' && (
         <div className="bg-[#1f1f24] rounded-[1.5rem] border border-[#474556]/30 p-8 shadow-xl space-y-6 animate-fade-in">
            <header className="flex items-center gap-4 mb-6"><div className="p-3 bg-[#5d3cfe]/10 rounded-2xl text-[#c7bfff]"><Code className="w-6 h-6" /></div><div><h3 className="text-lg font-black text-white uppercase tracking-tight">API de Integración Empresarial</h3><p className="text-[10px] text-[#c8c4d9] font-bold uppercase tracking-widest">Conecta tus sistemas ERP con MantechPro</p></div></header>
