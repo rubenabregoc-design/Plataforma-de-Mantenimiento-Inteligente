@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TechProfile, Asset, TechCategory } from '../types';
-import { MapPin, Search, Navigation, Zap, Star, ShieldCheck, User, Info, Crosshair, ArrowRight, Car, AlertTriangle } from 'lucide-react';
+import { MapPin, Search, Navigation, Zap, Star, ShieldCheck, User, Info, Crosshair, ArrowRight, Car, AlertTriangle, Phone } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 interface TechnicianRadarProps {
@@ -30,7 +30,7 @@ export default function TechnicianRadar({ technicians, assets, onSelectTech }: T
   };
 
   const techWithDistance = technicians
-    .filter(t => t.latitude && t.longitude)
+    .filter(t => t.latitude && t.longitude && t.isOnline)
     .map(t => ({
       ...t,
       distance: calculateDistance(centerLat, centerLng, t.latitude!, t.longitude!)

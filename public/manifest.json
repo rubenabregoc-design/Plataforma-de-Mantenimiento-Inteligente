@@ -1,0 +1,21 @@
+{
+  "name": "MantechPro Master V4",
+  "short_name": "MantechPro",
+  "description": "Inteligencia Operativa y Mantenimiento Panamá",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d0e12",
+  "theme_color": "#5d3cfe",
+  "icons": [
+    {
+      "src": "logo.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

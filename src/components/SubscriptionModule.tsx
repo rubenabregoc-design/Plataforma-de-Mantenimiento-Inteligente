@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserSubscription } from '../types';
-import { ShieldCheck, Zap, Star, Check, Calendar, CreditCard, Building2, Package, DollarSign, Clock, LayoutDashboard, BrainCircuit, FileText, Users, Globe, ShieldAlert, ListOrdered, Share2, Printer, Sliders, Inbox } from 'lucide-react';
+import { ShieldCheck, Zap, Star, Check, Calendar, CreditCard, Building2, Package, DollarSign, Clock, LayoutDashboard, BrainCircuit, FileText, Users, Globe, ShieldAlert, ListOrdered, Share2, Printer, Sliders, Inbox, Fuel, Pencil } from 'lucide-react';
 
 interface SubscriptionModuleProps {
   subscription: UserSubscription;
@@ -13,72 +13,88 @@ export default function SubscriptionModule({ subscription, onUpgrade, role = 'cl
 
   const clientPlans = [
     {
-      id: 'plan-basic',
-      name: 'Básico',
+      id: 'plan-free',
+      name: 'Gratis',
       price: '0',
       features: [
-        'Hasta 3 activos registrados',
-        'Diagnóstico manual',
-        'Soporte vía chat estándar'
+        'Hasta 2 activos registrados',
+        'Alertas de Mantenimiento Básicas',
+        'Diagnóstico manual básico',
+        'Soporte vía chat estándar',
+        'Uso personal básico'
+      ],
+      icon: Inbox
+    },
+    {
+      id: 'plan-basic',
+      name: 'Emprendedor',
+      price: '29',
+      features: [
+        'Hasta 5 activos registrados',
+        'Rastreo Satelital Tiempo Real',
+        'Chatbot de Soporte 24/7',
+        'Alertas de Mantenimiento',
+        'Gestión de Activos IT'
       ],
       icon: Package
     },
     {
       id: 'plan-pro',
-      name: 'Profesional',
-      price: '15',
+      name: 'Flota Master',
+      price: '89',
       features: [
-        'Hasta 15 activos registrados',
-        'Control de Flota (Modo Lite)',
-        'Auditoría Básica de Salud',
-        'Soporte prioritario 24/7',
-        'Garantía Extendida Mantech'
+        'Hasta 25 activos registrados',
+        'Auditoría de Combustible',
+        'Diagnóstico IA Predictivo',
+        'Carga Masiva por Excel',
+        'Sello de Ingeniería Verificada',
+        'Reportes PDF/Excel Full'
       ],
       icon: Zap,
       highlight: true
     },
     {
       id: 'plan-enterprise',
-      name: 'Corporativo',
-      price: '45',
+      name: 'Enterprise',
+      price: '199',
       features: [
-        'Activos ILIMITADOS',
-        'Tablero de Flota Masiva (Lote)',
-        'Auditoría Full (Excel/PDF)',
-        'Multi-sede & Subcuentas',
-        'Prioridad Emergencias (<15 min)'
+        'Unidades ILIMITADAS',
+        'Control Multi-Sede PH Root',
+        'Firma Biométrica Digital',
+        'API para Software Externo',
+        'Soporte VIP Prioritario',
+        'Seguro de Incidencias'
       ],
       icon: Building2
     }
   ];
 
   const techPlans = [
-    { id: 'plan-basic', name: 'Técnico Standard', price: '0', features: ['Comisión de servicio 15%', 'Retiros en 5 días hábiles', 'Reportes de servicio básicos'], icon: Package },
-    { id: 'plan-pro', name: 'Técnico Pro', price: '15', features: ['Comisión reducida 10%', 'Retiros en 48 Horas', 'Sello Gold & Reportes Industriales', 'Acceso a contratos B2B'], icon: Zap, highlight: true },
-    { id: 'plan-enterprise', name: 'Especialista Élite', price: '45', features: ['Comisión mínima 8%', 'Retiros en 24 Horas', 'Visibilidad TOP en Marketplace', 'Sello Gold Master + VIP'], icon: Building2 }
+    { id: 'plan-basic', name: 'Técnico Standard', price: '0', features: ['Comisión de servicio 20%', 'Retiros en 5 días hábiles', 'Reportes de servicio básicos'], icon: Package },
+    { id: 'plan-pro', name: 'Técnico Pro', price: '45', features: ['Comisión reducida 10%', 'Retiros en 48 Horas', 'Sello Gold & Radar Satelital', 'Acceso a contratos PH'], icon: Zap, highlight: true },
+    { id: 'plan-enterprise', name: 'Partner Élite', price: '99', features: ['Comisión mínima 5%', 'Retiros en 24 Horas', 'Visibilidad TOP / Sello Ing.', 'Sello Gold Master + Auditoría'], icon: Building2 }
   ];
 
   const plans = role === 'tech' ? techPlans : clientPlans;
 
   const clientTable = [
-    { f: "Capacidad de Activos (Equipos)", b: "Hasta 3", p: "Hasta 15", e: "ILIMITADOS", cat: "Operación", icon: LayoutDashboard },
-    { f: "Diagnóstico Predictivo", b: "MANUAL", p: "ASISTIDO", e: "IA AUTOMÁTICA", cat: "Ingeniería", icon: BrainCircuit },
+    { f: "Capacidad de Activos (Equipos)", b: "Hasta 5", p: "Hasta 25", e: "ILIMITADOS", cat: "Operación", icon: LayoutDashboard },
+    { f: "Rastreo Satelital", b: "✅", p: "✅", e: "PREMIUM", cat: "Ingeniería", icon: Globe },
+    { f: "Auditoría de Combustible", b: "❌", p: "✅", e: "✅ + SENSORES", cat: "Finanzas", icon: Fuel },
+    { f: "Diagnóstico Predictivo", b: "MANUAL", p: "IA BÁSICA", e: "IA AUTOMÁTICA", cat: "Ingeniería", icon: BrainCircuit },
     { f: "Auditoría & Cumplimiento", b: "❌", p: "BÁSICO", e: "FULL (Excel/PDF)", cat: "Herramientas", icon: FileText },
-    { f: "Gestión de Sedes (Logística)", b: "ÚNICA", p: "HASTA 2", e: "ILIMITADAS (GPS)", cat: "Gestión", icon: Globe },
-    { f: "Historial de Repuestos", b: "ÚLTIMOS 5", p: "ÚLTIMOS 50", e: "ILIMITADO", cat: "Operación", icon: ListOrdered },
-    { f: "Subcuentas (Personal)", b: "❌", p: "❌", e: "HASTA 5 USUARIOS", cat: "Gestión", icon: Share2 },
-    { f: "Prioridad Soporte VIP", b: "ESTÁNDAR", p: "ALTA (<30 min)", e: "CRÍTICA (<15 min)", cat: "Soporte", icon: ShieldAlert }
+    { f: "Gestión de Sedes (Logística)", b: "ÚNICA", p: "HASTA 5", e: "ILIMITADAS (PH)", cat: "Gestión", icon: Globe },
+    { f: "Firma Biométrica Digital", b: "❌", p: "❌", e: "✅ DISPONIBLE", cat: "Seguridad", icon: Pencil },
+    { f: "Subcuentas (Personal)", b: "❌", p: "HASTA 2", e: "ILIMITADAS", cat: "Gestión", icon: Users },
+    { f: "Nivel de Soporte VIP", b: "ESTÁNDAR", p: "PRIORITARIO", e: "CONCIERGE 24/7", cat: "Soporte", icon: ShieldAlert }
   ];
 
   const techTable = [
-    { f: "Comisión sobre Trabajo", b: "15%", p: "10%", e: "8% (MÍNIMA)", cat: "Finanzas", icon: DollarSign },
+    { f: "Comisión sobre Trabajo", b: "20%", p: "10%", e: "5% (MÍNIMA)", cat: "Finanzas", icon: DollarSign },
     { f: "Velocidad de Retiro", b: "5 DÍAS", p: "48 HORAS", e: "24 HORAS", cat: "Finanzas", icon: Clock },
-    { f: "Visibilidad Marketplace", b: "ESTÁNDAR", p: "DESTACADO", e: "TOP 3 / PRIORIDAD", cat: "Mercado", icon: Zap },
-    { f: "Motor de Reportes", b: "ESTÁNDAR", p: "INDUSTRIAL V5", e: "EDITORIAL PRO", cat: "Herramientas", icon: Printer },
-    { f: "Agenda de Servicios", b: "BÁSICA", p: "PROFESIONAL", e: "FULL CONTROL", cat: "Gestión", icon: Calendar },
-    { f: "Sello de Confianza", b: "❌", p: "GOLD", e: "GOLD + MASTER", cat: "Seguridad", icon: Star },
-    { f: "Panel de Analíticas", b: "❌", p: "BÁSICO", e: "FULL (Rentabilidad)", cat: "Herramientas", icon: Sliders },
-    { f: "Acceso a Contratos B2B", b: "❌", p: "SÓLO LECTURA", e: "✅ ACCESO FULL", cat: "Mercado", icon: Building2 }
+    { f: "Visibilidad Marketplace", b: "ESTÁNDAR", p: "DESTACADO", e: "TOP 1 / RADAR", cat: "Mercado", icon: Zap },
+    { f: "Sello de Ingeniería", b: "❌", p: "CERTIFICADO", e: "GOLD MASTER", cat: "Seguridad", icon: Star },
+    { f: "Acceso a Contratos PH", b: "❌", p: "MODO LECTURA", e: "✅ ACCESO FULL", cat: "Mercado", icon: Building2 }
   ];
 
   const tableRows = role === 'tech' ? techTable : clientTable;
@@ -106,7 +122,7 @@ export default function SubscriptionModule({ subscription, onUpgrade, role = 'cl
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-6">
         {plans.map((plan) => (
           <div key={plan.id} className={`p-8 flex flex-col transition-all relative group bg-[#121317] rounded-[2rem] border ${
             activePlanId === plan.id ? 'border-[#5d3cfe] shadow-2xl ring-1 ring-[#5d3cfe]/30' : 'border-[#2a2b2f] hover:border-[#5d3cfe]/30 shadow-lg'
@@ -145,19 +161,20 @@ export default function SubscriptionModule({ subscription, onUpgrade, role = 'cl
         ))}
       </div>
 
-      <div className="pt-20 space-y-8 pb-20">
-         <div className="text-center space-y-2">
+      <div className="pt-20 space-y-12 pb-20">
+         <div className="text-center md:text-left space-y-2">
             <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Comparativa de <span className="text-[#52ffac]">Alto Nivel</span></h3>
             <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.3em]">Exigencia técnica y herramientas destacadas para {role === 'tech' ? 'Especialistas' : 'Empresas'}</p>
          </div>
-         <div className="bg-[#121317] border border-[#2a2b2f] rounded-[3rem] overflow-hidden shadow-2xl overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[700px]">
+         <div className="bg-[#121317] border border-[#2a2b2f] rounded-[3rem] shadow-2xl overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[900px]">
                <thead>
                   <tr className="bg-[#1c1d21] border-b border-[#2a2b2f]">
                      <th className="p-8 text-[10px] font-black text-white uppercase tracking-widest">Herramienta / Funcionalidad</th>
-                     <th className="p-8 text-center text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest">Básico</th>
-                     <th className="p-8 text-center text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest bg-[#5d3cfe]/5">Profesional</th>
-                     <th className="p-8 text-center text-[10px] font-black text-amber-500 uppercase tracking-widest">Corporativo</th>
+                     <th className="p-8 text-center text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest">Gratis</th>
+                     <th className="p-8 text-center text-[10px] font-black text-white uppercase tracking-widest bg-white/5">Emprendedor</th>
+                     <th className="p-8 text-center text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest bg-[#5d3cfe]/5">Flota Master</th>
+                     <th className="p-8 text-center text-[10px] font-black text-amber-500 uppercase tracking-widest">Enterprise</th>
                   </tr>
                </thead>
                <tbody className="text-xs font-bold text-[#e3e2e8]">
@@ -174,7 +191,8 @@ export default function SubscriptionModule({ subscription, onUpgrade, role = 'cl
                              </div>
                           </div>
                        </td>
-                       <td className="p-8 text-center opacity-80 font-black">{row.b}</td>
+                       <td className="p-8 text-center opacity-60 font-black">HASTA 2</td>
+                       <td className="p-8 text-center text-white bg-white/5 font-black">{row.b}</td>
                        <td className="p-8 text-center text-white bg-[#5d3cfe]/5 font-black">{row.p}</td>
                        <td className="p-8 text-center text-amber-400 font-black">{row.e}</td>
                     </tr>

@@ -74,9 +74,9 @@ export default function SupportModal({ isOpen, onClose, userEmail, userName, use
   const getSupportLabel = () => {
     if (!userId) return "Atención Master: Respuesta garantizada en < 2 horas";
     switch(plan) {
-      case 'plan-enterprise': return "VIP SUPPORT: Respuesta inmediata con Gerente Dedicado";
-      case 'plan-pro': return "PRIORITY 24/7: Respuesta técnica prioritaria en < 30 min";
-      default: return "STANDARD SUPPORT: Respuesta técnica en < 2 horas";
+      case 'plan-enterprise': return "VIP SUPPORT: Respaldo Global Mantech con Gerente Dedicado";
+      case 'plan-pro': return "PRIORITY 24/7: Auditoría Técnica y Soporte Prioritario";
+      default: return "STANDARD SUPPORT: Consulta Técnica de Red";
     }
   };
 

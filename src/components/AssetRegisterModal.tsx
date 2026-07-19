@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Asset, AssetType } from '../types';
-import { Plus, X, Car, ShieldCheck, Cpu, Sliders, BatteryCharging, Zap, Boxes, Home, Edit2 } from 'lucide-react';
+import { Plus, X, Car, ShieldCheck, Cpu, Sliders, BatteryCharging, Zap, Boxes, Home, Edit2, Search, CheckCircle2 } from 'lucide-react';
 
 interface AssetRegisterModalProps {
   isOpen: boolean;
@@ -12,17 +12,20 @@ interface AssetRegisterModalProps {
 }
 
 export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit, maxAssets = 3, currentAssetsCount = 0 }: AssetRegisterModalProps) {
-  const [name, setName] = React.useState(assetToEdit?.name || '');
-  const [type, setType] = React.useState<AssetType>(assetToEdit?.type || 'car');
-  const [details, setDetails] = React.useState(assetToEdit?.details || '');
-  const [licensePlate, setLicensePlate] = React.useState(assetToEdit?.licensePlate || '');
-  const [mileage, setMileage] = React.useState<number>(assetToEdit?.mileage || 0);
-  const [lastMaintenance, setLastMaintenance] = React.useState(assetToEdit?.lastMaintenanceDate || '');
-  const [nextMaintenance, setNextMaintenance] = React.useState(assetToEdit?.nextMaintenanceDate || '');
-  const [observations, setObservations] = React.useState(assetToEdit?.observations || '');
-  const [location, setLocation] = React.useState(assetToEdit?.location || 'Sede Principal');
+  const [name, setName] = useState(assetToEdit?.name || '');
+  const [type, setType] = useState<AssetType>(assetToEdit?.type || 'car');
+  const [details, setDetails] = useState(assetToEdit?.details || '');
+  const [licensePlate, setLicensePlate] = useState(assetToEdit?.licensePlate || '');
+  const [mileage, setMileage] = useState<number>(assetToEdit?.mileage || 0);
+  const [lastMaintenance, setLastMaintenance] = useState(assetToEdit?.lastMaintenanceDate || '');
+  const [nextMaintenance, setNextMaintenance] = useState(assetToEdit?.nextMaintenanceDate || '');
+  const [observations, setObservations] = useState(assetToEdit?.observations || '');
+  const [location, setLocation] = useState(assetToEdit?.location || 'Sede Principal');
+  const [driverName, setDriverName] = useState(assetToEdit?.driverName || '');
+  const [serialNumber, setSerialNumber] = useState(assetToEdit?.serialNumber || '');
+  const [fuelType, setFuelType] = useState<Asset['fuelType']>(assetToEdit?.fuelType || 'diesel');
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (assetToEdit) {
       setName(assetToEdit.name);
       setType(assetToEdit.type);
@@ -33,6 +36,9 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       setNextMaintenance(assetToEdit.nextMaintenanceDate);
       setObservations(assetToEdit.observations || '');
       setLocation(assetToEdit.location || 'Sede Principal');
+      setDriverName(assetToEdit.driverName || '');
+      setSerialNumber(assetToEdit.serialNumber || '');
+      setFuelType(assetToEdit.fuelType || 'diesel');
     } else {
       setName('');
       setType('car');
@@ -43,6 +49,9 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       setNextMaintenance('');
       setObservations('');
       setLocation('Sede Principal');
+      setDriverName('');
+      setSerialNumber('');
+      setFuelType('diesel');
     }
   }, [assetToEdit, isOpen]);
 
@@ -62,7 +71,10 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       lastMaintenanceDate: lastMaintenance,
       nextMaintenanceDate: nextMaintenance,
       observations,
-      location
+      location,
+      serialNumber,
+      driverName: (type === 'car' || type === 'moto') ? driverName : undefined,
+      fuelType: (type === 'car' || type === 'moto') ? fuelType : undefined
     });
     onClose();
   };
@@ -128,86 +140,76 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Detalles de Marca/Modelo</label>
-              <input type="text" value={details} onChange={e => setDetails(e.target.value)} placeholder="Samsung Inverter 24k" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none" />
+              <input type="text" value={details} onChange={e => setDetails(e.target.value)} placeholder="Ej: Servidor Dell R750" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Número de Serie / IMEI</label>
+              <input type="text" value={serialNumber} onChange={e => setSerialNumber(e.target.value.toUpperCase())} placeholder="SN-123456789" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none" />
             </div>
           </div>
 
           {(type === 'car' || type === 'moto') && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Número de Placa</label>
-                <input type="text" value={licensePlate} onChange={e => setLicensePlate(e.target.value.toUpperCase())} placeholder="AB1234" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none" />
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Número de Placa</label>
+                  <input type="text" value={licensePlate} onChange={e => setLicensePlate(e.target.value.toUpperCase())} placeholder="AB1234" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">{type === 'car' ? 'Kilometraje' : 'Horas de Uso'}</label>
+                  <input type="number" value={mileage} onChange={e => setMileage(Number(e.target.value))} placeholder="0" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none" />
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">{type === 'car' ? 'Kilometraje' : 'Horas de Uso'}</label>
-                <input type="number" value={mileage} onChange={e => setMileage(Number(e.target.value))} placeholder="0" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Conductor Asignado</label>
+                  <input type="text" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="Nombre del Chofer" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none" />
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Tipo de Combustible</label>
+                  <div className="flex gap-2">
+                    {(['diesel', 'gas91', 'gas95'] as const).map(f => (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => setFuelType(f)}
+                        className={`flex-1 py-3 rounded-xl border text-[9px] font-black uppercase transition-all ${fuelType === f ? 'bg-[#52ffac] border-[#52ffac] text-black shadow-lg' : 'bg-[#1c1d21] border-[#2a2b2f] text-[#c8c4d9] hover:border-[#52ffac]/30'}`}
+                      >
+                        {f === 'diesel' ? 'Diesel' : f === 'gas91' ? '91 Oct.' : '95 Oct.'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
+            </>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
              <div className="space-y-2">
-            <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Sede / Ubicación</label>
-            {maxAssets > 3 ? (
-              <select
-                value={location}
-                onChange={e => setLocation(e.target.value)}
-                className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none"
-              >
-                <option value="Sede Principal">Sede Principal</option>
-                <option value="Sede Secundaria">Sede Secundaria</option>
-                {maxAssets > 15 && <option value="Sede Regional">Sede Regional</option>}
-                {maxAssets > 15 && <option value="Puerto / Logística">Puerto / Logística</option>}
-              </select>
-            ) : (
-              <input type="text" readOnly value="Sede Única (Plan Básico)" className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-[#474556] outline-none" />
-            )}
-          </div>
-
-          <div className="space-y-2">
-               <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Último Mantenimiento</label>
+                <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Sede / Ubicación</label>
+                {maxAssets > 3 ? (
+                  <select
+                    value={location}
+                    onChange={e => setLocation(e.target.value)}
+                    className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none"
+                  >
+                    <option value="Sede Principal">Sede Principal</option>
+                    <option value="Sede Secundaria">Sede Secundaria</option>
+                    {maxAssets > 15 && <option value="Sede Regional">Sede Regional</option>}
+                    {maxAssets > 15 && <option value="Puerto / Logística">Puerto / Logística</option>}
+                  </select>
+                ) : (
+                  <input type="text" readOnly value="Sede Única (Plan Básico)" className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-[#474556] outline-none" />
+                )}
+             </div>
+             <div className="space-y-2">
+               <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Último Mtto.</label>
                <input type="date" required value={lastMaintenance} onChange={e => setLastMaintenance(e.target.value)} className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-[#c7bfff] focus:border-[#c7bfff] outline-none" />
              </div>
              <div className="space-y-2">
-            <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Sede / Ubicación</label>
-            {maxAssets > 3 ? (
-              <select
-                value={location}
-                onChange={e => setLocation(e.target.value)}
-                className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none"
-              >
-                <option value="Sede Principal">Sede Principal</option>
-                <option value="Sede Secundaria">Sede Secundaria</option>
-                {maxAssets > 15 && <option value="Sede Regional">Sede Regional</option>}
-                {maxAssets > 15 && <option value="Puerto / Logística">Puerto / Logística</option>}
-              </select>
-            ) : (
-              <input type="text" readOnly value="Sede Única (Plan Básico)" className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-[#474556] outline-none" />
-            )}
-          </div>
-
-          <div className="space-y-2">
                <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Siguiente Programado</label>
                <input type="date" required value={nextMaintenance} onChange={e => setNextMaintenance(e.target.value)} className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-[#c7bfff] focus:border-[#c7bfff] outline-none" />
              </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Sede / Ubicación</label>
-            {maxAssets > 3 ? (
-              <select
-                value={location}
-                onChange={e => setLocation(e.target.value)}
-                className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none"
-              >
-                <option value="Sede Principal">Sede Principal</option>
-                <option value="Sede Secundaria">Sede Secundaria</option>
-                {maxAssets > 15 && <option value="Sede Regional">Sede Regional</option>}
-                {maxAssets > 15 && <option value="Puerto / Logística">Puerto / Logística</option>}
-              </select>
-            ) : (
-              <input type="text" readOnly value="Sede Única (Plan Básico)" className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-[#474556] outline-none" />
-            )}
           </div>
 
           <div className="space-y-2">

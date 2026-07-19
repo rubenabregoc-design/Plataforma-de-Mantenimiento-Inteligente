@@ -1,59 +1,44 @@
-import { Asset, TechProfile, MaintenanceReminder, JobRequest, AgendaEvent } from './types';
+import { Asset, TechProfile, MaintenanceReminder, JobRequest, AgendaEvent, InventoryItem, InspectionStep } from './types';
 
 export const initialAssets: Asset[] = [
   {
-    id: 'asset-1',
-    name: 'GEELY',
+    id: 'asset-12',
+    name: 'CAMIÓN-12',
     type: 'car',
-    details: 'NEO 2026',
-    licensePlate: '828854',
+    details: 'FREIGHTLINER M2 - UNIDAD 12',
+    licensePlate: 'CP-8295',
     registeredAt: '2026-01-10',
-    mileage: 44500,
-    lastMaintenanceDate: '2026-07-03',
-    nextMaintenanceDate: '2026-07-31',
-    observations: 'NO PRENDE',
-    latitude: 8.9830,
-    longitude: -79.5170
+    mileage: 4233,
+    lastMaintenanceDate: '2026-06-01',
+    nextMaintenanceDate: '2026-08-01',
+    location: 'Sede Principal',
+    fuelType: 'diesel'
   },
   {
-    id: 'asset-2',
-    name: 'Toyota Yaris',
+    id: 'asset-03',
+    name: 'CAMIÓN-03',
     type: 'car',
-    details: 'Toyota Yaris Hatchback 2021, Motor 1.5L',
-    licensePlate: 'AA4567',
+    details: 'FREIGHTLINER M2 - UNIDAD 3',
+    licensePlate: 'CP-7568',
     registeredAt: '2026-01-10',
-    mileage: 44500,
-    lastMaintenanceDate: '2026-03-15',
-    nextMaintenanceDate: '2026-06-25',
-    observations: 'Requiere cambio de pastillas pronto.'
+    mileage: 4578,
+    lastMaintenanceDate: '2026-06-01',
+    nextMaintenanceDate: '2026-08-01',
+    location: 'Panamá Centro',
+    fuelType: 'diesel'
   },
   {
-    id: 'asset-2',
-    name: 'Aire Acondicionado Sala',
-    type: 'ac',
-    details: 'Samsung Inverter 18,000 BTU, Split Wall-mount',
-    registeredAt: '2025-05-20',
-    lastMaintenanceDate: '2026-01-20',
-    nextMaintenanceDate: '2026-06-27',
-  },
-  {
-    id: 'asset-3',
-    name: 'Planta Eléctrica Auxiliar',
-    type: 'generator',
-    details: 'Generac Guardian 14kW, Gas Licuado',
-    registeredAt: '2025-09-01',
-    usageHours: 120,
-    lastMaintenanceDate: '2026-02-10',
-    nextMaintenanceDate: '2026-07-10',
-  },
-  {
-    id: 'asset-4',
-    name: 'Servidor de Datos B2B',
-    type: 'computer',
-    details: 'Dell PowerEdge R750 Xeon, 64GB RAM, RAID 5',
-    registeredAt: '2024-11-15',
-    lastMaintenanceDate: '2025-12-15',
-    nextMaintenanceDate: '2026-06-20', // Due now
+    id: 'asset-20',
+    name: 'CAMIÓN-20',
+    type: 'car',
+    details: 'FREIGHTLINER M2 - UNIDAD 20',
+    licensePlate: 'CP-5848',
+    registeredAt: '2026-01-10',
+    mileage: 37132,
+    lastMaintenanceDate: '2026-06-01',
+    nextMaintenanceDate: '2026-08-01',
+    location: 'Colón',
+    fuelType: 'diesel'
   }
 ];
 
@@ -108,6 +93,8 @@ export const initialTechnicians: TechProfile[] = [
     completedJobs: 156,
     latitude: 8.9833,
     longitude: -79.5167,
+    requestsUsedThisMonth: 0,
+    isVerified: true,
     mantechId: {
       status: 'verified',
       idNumber: '8-888-8888',
@@ -140,7 +127,9 @@ export const initialTechnicians: TechProfile[] = [
     plan: 'pro',
     completedJobs: 120,
     latitude: 8.9950,
-    longitude: -79.5012
+    longitude: -79.5012,
+    requestsUsedThisMonth: 0,
+    isVerified: true
   },
   {
     id: 'tech-3',
@@ -160,7 +149,9 @@ export const initialTechnicians: TechProfile[] = [
     plan: 'basic',
     completedJobs: 42,
     latitude: 9.0125,
-    longitude: -79.5230
+    longitude: -79.5230,
+    requestsUsedThisMonth: 0,
+    isVerified: true
   },
   {
     id: 'tech-4',
@@ -180,7 +171,9 @@ export const initialTechnicians: TechProfile[] = [
     plan: 'enterprise',
     completedJobs: 56,
     latitude: 9.0010,
-    longitude: -79.5820
+    longitude: -79.5820,
+    requestsUsedThisMonth: 0,
+    isVerified: true
   },
   {
     id: 'tech-5',
@@ -200,7 +193,9 @@ export const initialTechnicians: TechProfile[] = [
     plan: 'pro',
     completedJobs: 34,
     latitude: 8.9880,
-    longitude: -79.5280
+    longitude: -79.5280,
+    requestsUsedThisMonth: 0,
+    isVerified: true
   }
 ];
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TechProfile, Asset } from '../types';
-import { X, Star, MapPin, Award, CheckCircle2, Clock, DollarSign, Send, ShieldPlus, ShieldCheck, Briefcase, Calendar } from 'lucide-react';
+import { X, Star, MapPin, Award, CheckCircle2, Clock, DollarSign, Send, ShieldPlus, ShieldCheck, Briefcase, Calendar, Search, Car } from 'lucide-react';
 
 interface TechnicianProfileModalProps {
   tech: TechProfile | null;
@@ -9,9 +9,11 @@ interface TechnicianProfileModalProps {
   assets: Asset[];
   onRequestQuote: (techId: string, assetId: string, description: string, suggestedDate?: string, suggestedTime?: string) => void;
   prefilledDescription?: string;
+  onVerifyTech?: (techId: string) => void;
+  isAdmin?: boolean;
 }
 
-export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, onRequestQuote, prefilledDescription }: TechnicianProfileModalProps) {
+export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, onRequestQuote, prefilledDescription, onVerifyTech, isAdmin }: TechnicianProfileModalProps) {
   const [selectedAssetId, setSelectedAssetId] = useState('');
   const [description, setDescription] = useState(prefilledDescription || '');
   const [suggestedDate, setSuggestedDate] = useState('');
@@ -54,11 +56,31 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
                 <div className="w-20 h-20 bg-[#5d3cfe] rounded-[2rem] flex items-center justify-center text-3xl font-black text-white shadow-2xl shadow-[#5d3cfe]/20 border border-white/10 uppercase">
                   {tech.name.split(' ').map(n => n[0]).join('')}
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <div className="flex items-center gap-1.5 text-[#52ffac] bg-[#52ffac]/10 px-3 py-1 rounded-full border border-[#52ffac]/20">
-                    <ShieldCheck className="w-3 h-3" />
-                    <span className="text-[8px] font-black uppercase tracking-widest">Técnico Verificado</span>
-                  </div>
+                <div className="flex flex-col items-end gap-3">
+                  {tech.isVerified ? (
+                    <div className="relative group cursor-help">
+                      <div className="bg-[#52ffac] text-[#0d0e12] p-3 rounded-full border-4 border-[#0d0e12] shadow-[0_0_20px_#52ffac] animate-pulse">
+                         <ShieldCheck className="w-6 h-6 fill-current" />
+                      </div>
+                      <div className="absolute -right-2 -bottom-2 bg-white text-black p-1 rounded-full border-2 border-black rotate-12 shadow-xl">
+                         <CheckCircle2 className="w-3 h-3" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border text-[#474556] bg-white/5 border-white/10">
+                      <Clock className="w-3 h-3" />
+                      <span className="text-[8px] font-black uppercase tracking-widest">Pendiente Sello</span>
+                    </div>
+                  )}
+
+                  {isAdmin && !tech.isVerified && (
+                    <button
+                      onClick={() => onVerifyTech?.(tech.id)}
+                      className="px-4 py-2 bg-white text-black rounded-xl text-[8px] font-black uppercase hover:bg-[#52ffac] transition-all border-2 border-black shadow-[0_10px_20px_rgba(0,0,0,0.4)] rotate-[-2deg] active:scale-95 flex items-center gap-2"
+                    >
+                      <Award className="w-3 h-3" /> Aplicar Sello Oficial
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -68,15 +90,15 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#121317] p-5 rounded-3xl border border-white/5 shadow-inner">
-                   <div className="flex items-center gap-2 text-amber-400 mb-1">
+                <div className="bg-[#121317] p-5 rounded-3xl border border-white/5 shadow-inner text-center">
+                   <div className="flex items-center justify-center gap-2 text-amber-400 mb-1">
                       <Star className="w-4 h-4 fill-amber-400" />
                       <span className="text-sm font-black">{tech.rating}</span>
                    </div>
                    <p className="text-[8px] font-black text-[#474556] uppercase tracking-widest">Rating Global</p>
                 </div>
-                <div className="bg-[#121317] p-5 rounded-3xl border border-white/5 shadow-inner">
-                   <div className="flex items-center gap-2 text-[#52ffac] mb-1">
+                <div className="bg-[#121317] p-5 rounded-3xl border border-white/5 shadow-inner text-center">
+                   <div className="flex items-center justify-center gap-2 text-[#52ffac] mb-1">
                       <CheckCircle2 className="w-4 h-4" />
                       <span className="text-sm font-black">{tech.completedJobs || 0}</span>
                    </div>
@@ -89,8 +111,16 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
                   <MapPin className="w-4 h-4 text-[#5d3cfe]" />
                   <span className="uppercase tracking-widest">{tech.location}</span>
                 </div>
-                <div className="bg-[#0d0e12] p-6 rounded-[2rem] border border-white/5 italic text-[#c8c4d9] text-xs leading-relaxed opacity-80">
-                  "{tech.bio}"
+                <div className="bg-[#0d0e12] p-8 rounded-[2rem] border border-white/5 relative overflow-hidden group text-center">
+                   <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                      <Star className="w-24 h-24 rotate-12" />
+                   </div>
+                   <h4 className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-[0.4em] mb-4">
+                      Estatus de Ingeniería
+                   </h4>
+                   <p className="text-xs font-black text-white leading-relaxed uppercase italic opacity-80">
+                     "Especialista certificado por MantechPro con validación de competencias técnicas."
+                   </p>
                 </div>
               </div>
 
@@ -138,7 +168,7 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
                 </div>
                 <div>
                   <h4 className="text-2xl font-black text-white uppercase tracking-widest italic">Transmisión Exitosa</h4>
-                  <p className="text-sm text-[#c8c4d9] font-medium mt-4 max-w-xs mx-auto leading-relaxed">
+                  <p className="text-sm text-[#c8c4d9] font-medium mt-4 max-w-xs mx-auto leading-relaxed uppercase">
                     Tu ticket ha sido inyectado en el nodo del técnico. Recibirás una notificación encriptada en breve.
                   </p>
                 </div>
@@ -148,17 +178,55 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
                 <div className="space-y-10">
                   <div className="space-y-4">
                     <label className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] ml-2">Seleccionar Infraestructura</label>
-                    <select
-                      required
-                      value={selectedAssetId}
-                      onChange={(e) => setSelectedAssetId(e.target.value)}
-                      className="w-full bg-[#0d0e12] border border-white/10 rounded-[1.5rem] py-5 px-6 text-sm font-bold text-white focus:border-[#5d3cfe] outline-none transition-all appearance-none"
-                    >
-                      <option value="">-- Seleccione una unidad --</option>
-                      {assets.map((x) => (
-                        <option key={x.id} value={x.id}>{x.name.toUpperCase()} • {x.details.toUpperCase()}</option>
-                      ))}
-                    </select>
+                    <div className="relative group">
+                      <div className="absolute left-6 top-6 text-[#474556] group-focus-within:text-[#5d3cfe] transition-colors z-10">
+                        <Search className="w-5 h-5" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Escriba nombre o placa para buscar..."
+                        className="w-full bg-black border border-white/10 rounded-t-[1.5rem] py-6 pl-16 pr-6 text-sm font-black text-white focus:border-[#5d3cfe] outline-none transition-all placeholder:text-white/20 uppercase tracking-widest"
+                        onChange={(e) => {
+                          const term = e.target.value.toLowerCase();
+                          const list = document.getElementById('asset-dropdown');
+                          if (list) {
+                            const options = list.getElementsByClassName('asset-item');
+                            for (let opt of options as any) {
+                              opt.style.display = opt.innerText.toLowerCase().includes(term) ? 'flex' : 'none';
+                            }
+                          }
+                        }}
+                      />
+                      <div
+                        id="asset-dropdown"
+                        className="w-full bg-black border-x border-b border-white/10 rounded-b-[1.5rem] max-h-[250px] overflow-y-auto custom-scrollbar shadow-2xl"
+                      >
+                        {assets.length === 0 ? (
+                          <div className="p-8 text-center text-[10px] font-black text-rose-500 uppercase tracking-widest animate-pulse">No hay unidades en el inventario</div>
+                        ) : (
+                          assets.map((x) => (
+                            <div
+                              key={x.id}
+                              onClick={() => setSelectedAssetId(x.id)}
+                              className={`asset-item p-6 hover:bg-[#5d3cfe]/10 cursor-pointer flex items-center justify-between border-t border-white/5 transition-all group/item ${selectedAssetId === x.id ? 'bg-[#5d3cfe]/20' : ''}`}
+                            >
+                              <div className="flex items-center gap-5">
+                                <div className={`p-3 rounded-2xl transition-all ${selectedAssetId === x.id ? 'bg-[#5d3cfe] text-white rotate-12' : 'bg-white/5 text-[#474556]'}`}>
+                                  <Car className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <p className="text-xs font-black text-white uppercase tracking-tighter">{x.name}</p>
+                                  <p className="text-[9px] font-bold text-[#474556] uppercase tracking-[0.2em]">{x.licensePlate || 'Unidad Interna'}</p>
+                                </div>
+                              </div>
+                              <div className={`w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center ${selectedAssetId === x.id ? 'border-[#52ffac] bg-[#52ffac]/10' : 'border-white/5'}`}>
+                                 {selectedAssetId === x.id && <CheckCircle2 className="w-3.5 h-3.5 text-[#52ffac]" />}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-4">

@@ -8,12 +8,15 @@ export type AssetType =
   | 'moto' 
   | 'industrial_equip';
 
+export type FuelType = 'diesel' | 'gas91' | 'gas95';
+
 export interface Asset {
   id: string;
-  name: string; // Marca
+  name: string; // Marca o Nombre descriptivo
   type: AssetType;
   details: string; // Modelo
   licensePlate?: string; // Placa (Panamá)
+  serialNumber?: string; // Número de Serie / IMEI
   registeredAt: string;
   // Dynamic metrics:
   mileage?: number; // for cars/motos
@@ -28,7 +31,9 @@ export interface Asset {
   longitude?: number;
   currentRoute?: string;
   routeStartedAt?: string;
-  routeHistory?: { lat: number; lng: number; timestamp: string; locationName?: string; type?: 'checkpoint' | 'track' }[]; // Historial con nombres de lugar
+  driverName?: string;
+  fuelType?: FuelType;
+  routeHistory?: { lat: number; lng: number; timestamp: string; locationName?: string; type?: 'checkpoint' | 'track'; speed?: number }[]; // Añadido speed
 }
 
 export interface MaintenanceReminder {
@@ -61,6 +66,7 @@ export interface TechProfile {
   completedJobs: number;
   experienceYears: number;
   location: string;
+  isOnline?: boolean; // Estado de disponibilidad en el radar
   companyName?: string; // Nombre de la empresa a la que pertenece
   hourlyRate: number;
   bio: string;

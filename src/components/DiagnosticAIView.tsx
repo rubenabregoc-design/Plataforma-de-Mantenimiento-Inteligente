@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Asset, TechCategory } from '../types';
-import { Wrench, ShieldAlert, Sparkles, AlertCircle, ArrowRight, Droplets, Thermometer, Radio, Flame, Search, BrainCircuit } from 'lucide-react';
+import { Wrench, ShieldAlert, Sparkles, AlertCircle, ArrowRight, Droplets, Thermometer, Radio, Flame, Search, BrainCircuit, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 interface DiagnosticAIViewProps {
   assets: Asset[];
@@ -8,23 +8,93 @@ interface DiagnosticAIViewProps {
   mode?: 'manual' | 'assisted' | 'auto';
 }
 
-// Base de Conocimiento Especializada de MantechPro
+// Base de Conocimiento Especializada de MantechPro (Grado Industrial)
 const DIAGNOSTIC_ENGINE: Record<string, any> = {
   ac: [
-    { id: 1, label: 'Gotea agua (Fugas)', cause: 'Drenaje de condensado obstruido o congelamiento de serpentín.', urgency: 'Alta', cost: '$35 - $60', specialist: 'tecnico_ac', icon: <Droplets className="w-4 h-4" /> },
-    { id: 2, label: 'No enfría / Aire caliente', cause: 'Bajo nivel de refrigerante o condensador sucio.', urgency: 'Media', cost: '$45 - $85', specialist: 'tecnico_ac', icon: <Thermometer className="w-4 h-4" /> },
-    { id: 3, label: 'Ruido extraño / Vibración', cause: 'Fallo en motor del soplador o aspas desbalanceadas.', urgency: 'Media', cost: '$40 - $70', specialist: 'tecnico_ac', icon: <Radio className="w-4 h-4" /> },
-    { id: 4, label: 'Huele a quemado / Humo', cause: 'Cortocircuito eléctrico o sobrecalentamiento de cables.', urgency: 'Crítica', cost: '$60 - $150', specialist: 'tecnico_ac', icon: <Flame className="w-4 h-4" /> }
+    {
+      id: 1,
+      label: 'Gotea agua (Fugas)',
+      cause: 'Drenaje de condensado obstruido o congelamiento de serpentín.',
+      prevention: 'Limpieza trimestral de filtros y mantenimiento preventivo de la bandeja de condensado.',
+      damage: 'Corrosión interna, daños en la tarjeta electrónica y manchas de humedad en infraestructura.',
+      urgency: 'Alta', cost: '$35 - $60', specialist: 'tecnico_ac', icon: <Droplets className="w-4 h-4" />
+    },
+    {
+      id: 2,
+      label: 'No enfría / Aire caliente',
+      cause: 'Bajo nivel de refrigerante (fuga) o condensador obstruido por suciedad.',
+      prevention: 'Revisión de presión de gas anual y limpieza profunda del serpentín exterior.',
+      damage: 'Sobrecalentamiento y quemadura del compresor (pérdida total de la unidad).',
+      urgency: 'Media', cost: '$45 - $85', specialist: 'tecnico_ac', icon: <Thermometer className="w-4 h-4" />
+    },
+    {
+      id: 3,
+      label: 'Ruido extraño / Vibración',
+      cause: 'Fallo en rodamientos del motor del soplador o aspas desbalanceadas por suciedad.',
+      prevention: 'Ajuste de tornillería y lubricación de partes móviles cada 6 meses.',
+      damage: 'Rotura del eje del motor y daños estructurales en el chasis de la unidad.',
+      urgency: 'Media', cost: '$40 - $70', specialist: 'tecnico_ac', icon: <Radio className="w-4 h-4" />
+    },
+    {
+      id: 4,
+      label: 'Huele a quemado / Humo',
+      cause: 'Cortocircuito eléctrico, terminales flojas o sobrecalentamiento del capacitor.',
+      prevention: 'Uso de protectores de voltaje y reapriete de terminales eléctricas en mantenimiento.',
+      damage: 'Incendio eléctrico y destrucción total del cableado y componentes de control.',
+      urgency: 'Crítica', cost: '$60 - $150', specialist: 'tecnico_ac', icon: <Flame className="w-4 h-4" />
+    }
   ],
   car: [
-    { id: 5, label: 'Chillido al frenar', cause: 'Pastillas de freno desgastadas o discos cristalizados.', urgency: 'Alta', cost: '$65 - $110', specialist: 'mecanico', icon: <Wrench className="w-4 h-4" /> },
-    { id: 6, label: 'Luz de motor (Check Engine)', cause: 'Fallo en sensores de oxígeno o sistema de combustión.', urgency: 'Media', cost: '$45 - $130', specialist: 'mecanico', icon: <AlertCircle className="w-4 h-4" /> },
-    { id: 7, label: 'No arranca / Batería', cause: 'Batería agotada o alternador defectuoso.', urgency: 'Media', cost: '$15 - $95', specialist: 'mecanico', icon: <Sparkles className="w-4 h-4" /> },
-    { id: 8, label: 'Humo en el motor', cause: 'Fuga de aceite o sobrecalentamiento crítico.', urgency: 'Crítica', cost: '$80 - $250', specialist: 'mecanico', icon: <Flame className="w-4 h-4" /> }
+    {
+      id: 5,
+      label: 'Chillido al frenar',
+      cause: 'Pastillas de freno desgastadas al límite o discos cristalizados por calor excesivo.',
+      prevention: 'Revisión de frenos cada 5,000km y uso de líquido de frenos de alta calidad.',
+      damage: 'Rayado profundo de discos, reducción de la seguridad y posible fallo total de frenado.',
+      urgency: 'Alta', cost: '$65 - $110', specialist: 'mecanico', icon: <Wrench className="w-4 h-4" />
+    },
+    {
+      id: 6,
+      label: 'Luz de motor (Check Engine)',
+      cause: 'Fallo en sensores de oxígeno, sensor MAF o mal funcionamiento de la bobina de ignición.',
+      prevention: 'Cambio de filtros de aire/combustible y uso de combustible de octanaje adecuado.',
+      damage: 'Consumo excesivo de combustible, daño al catalizador y pérdida de potencia del motor.',
+      urgency: 'Media', cost: '$45 - $130', specialist: 'mecanico', icon: <AlertCircle className="w-4 h-4" />
+    },
+    {
+      id: 7,
+      label: 'No arranca / Batería',
+      cause: 'Batería con celdas agotadas, alternador sin carga o terminales sulfatadas.',
+      prevention: 'Limpieza de terminales y revisión del sistema de carga cada 6 meses.',
+      damage: 'Daños en el módulo electrónico del vehículo (ECU) por picos de voltaje.',
+      urgency: 'Media', cost: '$15 - $95', specialist: 'mecanico', icon: <Sparkles className="w-4 h-4" />
+    },
+    {
+      id: 8,
+      label: 'Humo en el motor',
+      cause: 'Fuga de aceite sobre el escape, sobrecalentamiento crítico o rotura de manguera de radiador.',
+      prevention: 'Verificación de niveles de fluidos semanal y cambio de mangueras resecas.',
+      damage: 'Fundición del bloque del motor, deformación de culata e incendio del compartimiento.',
+      urgency: 'Crítica', cost: '$80 - $250', specialist: 'mecanico', icon: <Flame className="w-4 h-4" />
+    }
   ],
   computer: [
-    { id: 9, label: 'Pantalla azul / No inicia', cause: 'Fallo en disco duro o corrupción de sistema operativo.', urgency: 'Media', cost: '$30 - $60', specialist: 'informatico', icon: <AlertCircle className="w-4 h-4" /> },
-    { id: 10, label: 'Se apaga sola / Calentamiento', cause: 'Pasta térmica seca o ventiladores obstruidos.', urgency: 'Alta', cost: '$25 - $55', specialist: 'informatico', icon: <Thermometer className="w-4 h-4" /> }
+    {
+      id: 9,
+      label: 'Pantalla azul / No inicia',
+      cause: 'Fallo de sectores en disco duro, memoria RAM defectuosa o corrupción de drivers.',
+      prevention: 'Limpieza lógica de sistema y evitar apagados forzados de la unidad.',
+      damage: 'Pérdida total de datos e imposibilidad de recuperación de archivos críticos.',
+      urgency: 'Media', cost: '$30 - $60', specialist: 'informatico', icon: <AlertCircle className="w-4 h-4" />
+    },
+    {
+      id: 10,
+      label: 'Se apaga sola / Calentamiento',
+      cause: 'Pasta térmica cristalizada, ventiladores obstruidos por polvo o fallo en fuente.',
+      prevention: 'Mantenimiento preventivo físico (sopleteo) y cambio de pasta térmica anual.',
+      damage: 'Degradación térmica del procesador y posible cortocircuito en la placa base.',
+      urgency: 'Alta', cost: '$25 - $55', specialist: 'informatico', icon: <Thermometer className="w-4 h-4" />
+    }
   ]
 };
 
@@ -71,11 +141,11 @@ export default function DiagnosticAIView({ assets, onFindTechnicians, mode = 'ma
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
         <div className="relative z-10 flex items-center gap-4">
           <div className="p-3 bg-white/10 rounded-2xl border border-white/20">
-             <BrainCircuit className="w-8 h-8 text-[#52ffac]" />
+            <BrainCircuit className="w-8 h-8 text-[#52ffac]" />
           </div>
           <div>
-            <h1 className="text-2xl font-black uppercase tracking-tight mb-1">Autodiagnóstico Técnico IA</h1>
-            <p className="text-indigo-100 text-sm max-w-xl">Identifica fallas comunes mediante nuestro motor de conocimiento y obtén cotizaciones estimadas basadas en el mercado de Panamá.</p>
+            <h1 className="text-2xl font-black uppercase tracking-tight mb-1">Motor de Diagnóstico Master</h1>
+            <p className="text-indigo-100 text-sm max-w-xl">Inteligencia técnica asistida para identificar fallas en equipos de flota, industriales y residenciales en Panamá.</p>
           </div>
         </div>
       </div>
@@ -180,6 +250,27 @@ export default function DiagnosticAIView({ assets, onFindTechnicians, mode = 'ma
                 <div className="space-y-2">
                   <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Causa probable identificada:</span>
                   <p className="text-base font-extrabold text-zinc-900 leading-tight">{activeIssue.cause || activeIssue.possibleCauses?.[0]}</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ShieldCheck className="w-3 h-3 text-blue-600" />
+                      <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Prevención</span>
+                    </div>
+                    <p className="text-[11px] font-bold text-blue-900 leading-relaxed">
+                      {activeIssue.prevention || 'Realizar mantenimiento preventivo programado.'}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-rose-50/50 rounded-2xl border border-rose-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className="w-3 h-3 text-rose-600" />
+                      <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest">Daño Potencial</span>
+                    </div>
+                    <p className="text-[11px] font-bold text-rose-900 leading-relaxed">
+                      {activeIssue.damage || 'Aumento exponencial de costos de reparación.'}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

@@ -1,4 +1,5 @@
 import { Toaster, toast } from 'react-hot-toast';
+import * as XLSX from 'xlsx';
 import React, { useState, useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
@@ -49,6 +50,13 @@ import TechWalletModule from './components/TechWalletModule';
 import TechnicianRadar from './components/TechnicianRadar';
 import RouteStartModal from './components/RouteStartModal';
 import CheckpointModal from './components/CheckpointModal';
+import CorporateSupportModal from './components/CorporateSupportModal';
+
+// Servicios PROFESIONALES (Clean Architecture)
+import { AssetService } from './services/assetService';
+import { logActivity } from './services/auditService';
+import AuditLogsModule from './components/AuditLogsModule';
+import Skeleton from './components/Skeleton';
 
 import { 
   LayoutDashboard, Store, FileCheck2, BrainCircuit, MessageSquare, CalendarDays, Users, DollarSign,
@@ -56,7 +64,7 @@ import {
   Layers, ShieldCheck, Star, CheckCircle2,
   UserX, Clock, LogOut, User, ChevronRight, ChevronLeft,
   ShieldAlert, HelpCircle, Wrench, Search, Check, X, MapPin, BadgeCheck, Video, Monitor, Download,
-  Calendar, AlertTriangle, Pencil, Trash2, FileText, Settings, Eye, EyeOff, Sparkles, Inbox, Car, Wind, Package, Globe, PieChart, Building2, Activity, CreditCard, ExternalLink, QrCode
+  Calendar, AlertTriangle, Pencil, Trash2, FileText, Settings, Eye, EyeOff, Sparkles, Inbox, Car, Wind, Package, Globe, PieChart, Building2, Activity, CreditCard, ExternalLink, QrCode, Cpu, Zap
 } from 'lucide-react';
 
 // Firebase
@@ -89,6 +97,7 @@ export default function App() {
   // Session state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthResolving, setIsAuthResolving] = useState(true);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [role, setRole] = useState<'client' | 'tech' | 'admin'>('client');
@@ -107,6 +116,7 @@ export default function App() {
   const [agenda, setAgenda] = useState<AgendaEvent[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<UserSubscription>({
     planId: 'plan-basic',
     status: 'active',
@@ -115,7 +125,7 @@ export default function App() {
   });
 
   // UI State
-  const [adminTab, setAdminTab] = useState<'finance' | 'users' | 'logistics' | 'alerts' | 'inventory' | 'settings'>('finance');
+  const [adminTab, setAdminTab] = useState<'finance' | 'users' | 'logistics' | 'alerts' | 'inventory' | 'audit' | 'settings'>('finance');
   const [clientTab, setClientTab] = useState<'dashboard' | 'fleet' | 'ai' | 'marketplace' | 'quotes' | 'inventory' | 'audit' | 'subscriptions' | 'chat' | 'settings'>('dashboard');
   const [techTab, setTechTab] = useState<'received' | 'agenda' | 'wallet' | 'mantech_id' | 'chat' | 'profile' | 'settings'>('received');
 
@@ -132,6 +142,8 @@ export default function App() {
   const [selectedRequestForReport, setSelectedRequestForReport] = useState<JobRequest | null>(null);
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCorporateSupportModalOpen, setIsCorporateSupportModalOpen] = useState(false);
 
   // Marketplace UI State
   const [marketViewMode, setMarketViewMode] = useState<'list' | 'radar'>('list');
@@ -142,14 +154,40 @@ export default function App() {
   // Asset View State
   const [assetSearchQuery, setAssetSearchQuery] = useState('');
   const [assetCurrentPage, setAssetCurrentPage] = useState(1);
+  const [selectedDashboardIds, setSelectedDashboardIds] = useState<string[]>([]);
   const assetPageSize = 6;
 
   // PLAN CONFIGURATION
   const getPlanLimits = (planId: string) => {
     switch(planId) {
-      case 'plan-pro': return { maxAssets: 15, commission: 0.10, fleet: 'lite', diag: 'assisted' };
-      case 'plan-enterprise': return { maxAssets: 9999, commission: 0.08, fleet: 'full', diag: 'auto' };
-      default: return { maxAssets: 3, commission: 0.15, fleet: 'none', diag: 'manual' };
+      case 'plan-pro': return {
+        maxAssets: 15,
+        commission: 0.10,
+        fleet: 'lite',
+        diag: 'assisted',
+        sites: 2,
+        history: 50,
+        support: 'alta'
+      };
+      case 'plan-enterprise': return {
+        maxAssets: 9999,
+        commission: 0.08,
+        fleet: 'full',
+        diag: 'auto',
+        sites: 'unlimited',
+        history: 'unlimited',
+        support: 'critica',
+        subaccounts: 5
+      };
+      default: return {
+        maxAssets: 3,
+        commission: 0.15,
+        fleet: 'none',
+        diag: 'manual',
+        sites: 1,
+        history: 5,
+        support: 'estandar'
+      };
     }
   };
 
@@ -252,21 +290,41 @@ export default function App() {
             position.coords.latitude,
             position.coords.longitude
           );
-          if (dist > 0.03) {
+          // Capturar punto solo si hay movimiento real (> 20 metros) para evitar ruido
+          if (dist > 0.02) {
              const asset = assets.find(a => a.id === assetId);
              if (asset) {
                 const newKm = (asset.mileage || 0) + dist;
+
+                // Cálculo de velocidad (Km/h)
+                const timeDiffHours = (Date.now() - new Date(lastPosRef.current.timestamp).getTime()) / (1000 * 60 * 60);
+                const currentSpeed = timeDiffHours > 0 ? (dist / timeDiffHours) : 0;
+
+                // BÚSQUEDA DE NOMBRE DE AVENIDA (Reverse Geocoding)
+                const getStreet = async () => {
+                  try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}`);
+                    const data = await res.json();
+                    return data.address?.road || data.display_name.split(',')[0];
+                  } catch { return 'Vía en tránsito'; }
+                };
+
                 const newPoint = {
                   lat: position.coords.latitude,
                   lng: position.coords.longitude,
-                  timestamp: new Date().toISOString()
+                  timestamp: new Date().toISOString(),
+                  type: 'track',
+                  speed: Math.round(currentSpeed)
                 };
 
-                updateDoc(doc(db, "assets", assetId), {
-                  mileage: Math.round(newKm),
-                  latitude: position.coords.latitude,
-                  longitude: position.coords.longitude,
-                  routeHistory: arrayUnion(newPoint)
+                getStreet().then(street => {
+                  updateDoc(doc(db, "assets", assetId), {
+                    mileage: Math.round(newKm),
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    currentStreet: street, // Guardar calle actual
+                    routeHistory: arrayUnion(newPoint)
+                  });
                 });
              }
           }
@@ -398,8 +456,24 @@ export default function App() {
       setRequests(list);
       if (list.length > 0 && !activeChatRequestId) setActiveChatRequestId(list[0].id);
     });
-    const qAssets = role === 'admin' ? query(collection(db, "assets")) : query(collection(db, "assets"), where("clientId", "==", user.uid));
-    onSnapshot(qAssets, (snap) => setAssets(snap.docs.map(d => ({ id: d.id, ...d.data() })) as Asset[]));
+    // Suscripción de Activos con Filtro de Soft Delete
+    const qAssets = role === 'admin'
+      ? query(collection(db, "assets"), where("status", "!=", "deleted"))
+      : query(collection(db, "assets"), where("clientId", "==", user.uid), where("status", "!=", "deleted"));
+
+    onSnapshot(qAssets,
+      (snap) => {
+        setAssets(snap.docs.map(d => ({ id: d.id, ...d.data() })) as Asset[]);
+        setIsDataLoading(false);
+      },
+      (err) => {
+        console.error("❌ Error en suscripción de activos:", err);
+        if (err.message.includes("requires an index")) {
+          toast.error("Error de base de datos: Falta un índice. Revisa la consola para crearlo.");
+        }
+        setIsDataLoading(false); // Detener skeleton aunque falle
+      }
+    );
     const qRem = role === 'admin' ? query(collection(db, "reminders"), orderBy("dueDate", "asc")) : query(collection(db, "reminders"), where("clientId", "==", user.uid));
     onSnapshot(qRem, (snap) => {
       const list = snap.docs.map(d => ({ id: d.id, ...d.data() })) as MaintenanceReminder[];
@@ -411,6 +485,10 @@ export default function App() {
     if (role === 'admin') {
       onSnapshot(collection(db, "users"), (snap) => {
         setAllUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+      // Listener de Logs de Auditoría Profesional
+      onSnapshot(query(collection(db, "audit_logs"), orderBy("timestamp", "desc")), (snap) => {
+        setAuditLogs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       });
     }
   }, [isLoggedIn, user, role]);
@@ -461,7 +539,8 @@ export default function App() {
         if (authRole === 'tech' && tId) await setDoc(doc(db, "technicians", tId), { id: tId, name: loginName, category: 'mecanico', rating: 5.0, reviewCount: 0, completedJobs: 0, experienceYears: 5, location: 'Panamá', hourlyRate: 25, bio: 'Técnico certificado.', plan: 'basic', userId: u.uid });
       } else {
         try {
-          await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+          const res = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+          await logActivity(res.user.uid, res.user.email || 'user', 'LOGIN', `Acceso al sistema desde Web`);
         } catch (loginErr: any) {
           if (loginEmail === 'admin@mantech.com' && loginPassword === 'mantech123' && loginErr.code === 'auth/invalid-credential') {
              const res = await createUserWithEmailAndPassword(auth, loginEmail, loginPassword);
@@ -472,7 +551,9 @@ export default function App() {
     } catch (err: any) { setAuthError(err.message); }
   };
 
-  const handleLogout = () => signOut(auth);
+  const handleLogout = () => {
+    signOut(auth);
+  };
 
   const handleRequestQuote = async (techId: string, assetId: string, description: string, suggestedDate?: string, suggestedTime?: string) => {
     if (!user) return;
@@ -899,12 +980,42 @@ export default function App() {
 
   const handleUploadAvatar = async (file: File) => {
     if (!user) return;
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      await updateDoc(doc(db, "users", user.uid), { profileImage: reader.result as string });
-      setProfileImage(reader.result as string);
+
+    // Motor de Compresión de Imagen (Evita error de 1MB en Firestore)
+    const compressImage = (file: File): Promise<string> => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target?.result as string;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 400; // Resolución profesional para avatar
+            const scaleSize = MAX_WIDTH / img.width;
+            canvas.width = MAX_WIDTH;
+            canvas.height = img.height * scaleSize;
+
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Exportar como JPG con calidad 0.7 (reduce peso drásticamente)
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            resolve(dataUrl);
+          };
+        };
+      });
     };
-    reader.readAsDataURL(file);
+
+    try {
+      const compressedBase64 = await compressImage(file);
+      await setDoc(doc(db, "users", user.uid), { profileImage: compressedBase64 }, { merge: true });
+      setProfileImage(compressedBase64);
+      toast.success("Foto de perfil actualizada.");
+    } catch (err) {
+      toast.error("Error al procesar la imagen.");
+      console.error(err);
+    }
   };
 
   const handleUpdateInventoryQuantity = async (id: string, delta: number) => {
@@ -915,7 +1026,43 @@ export default function App() {
 
   const handleAddInventoryItem = async (item: any) => { try { await addDoc(collection(db, "inventory"), { ...item, createdAt: serverTimestamp() }); } catch (e) { console.error(e); } };
 
-  const handleDeleteInventoryItem = async (id: string) => { if (window.confirm("¿Eliminar?")) try { await deleteDoc(doc(db, "inventory", id)); } catch (e) { console.error(e); } };
+  const handleDeleteInventoryItem = async (id: string) => {
+    toast((t) => (
+      <div className="flex flex-col gap-4 p-4 bg-[#121317] border border-white/10 rounded-2xl shadow-2xl min-w-[280px] animate-fade-in">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-rose-600/20 text-rose-500 rounded-lg">
+            <Trash2 className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-black text-white uppercase tracking-tight">¿Confirmar Eliminación?</p>
+            <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mt-0.5">Operación irreversible</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="flex-1 py-2.5 bg-white/5 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                await deleteDoc(doc(db, "inventory", id));
+                toast.success("Item purgado del sistema.");
+              } catch (err) {
+                toast.error("Falla en la purga de datos.");
+              }
+            }}
+            className="flex-1 py-2.5 bg-rose-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-rose-600/20 hover:brightness-110 active:scale-95 transition-all"
+          >
+            Confirmar
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000, position: 'bottom-center' });
+  };
 
   const handleUpdateInventoryItem = async (item: InventoryItem) => { try { const { id, ...data } = item; await updateDoc(doc(db, "inventory", id), data); } catch (e) { console.error(e); } };
 
@@ -925,6 +1072,18 @@ export default function App() {
       await Promise.all(batch);
       toast.success(`${assetIds.length} equipos actualizados en lote.`);
     } catch (err) { console.error(err); }
+  };
+
+  const handleBulkDeleteAssets = async (assetIds: string[]) => {
+    try {
+      toast.loading(`Purgando ${assetIds.length} unidades del ecosistema...`, { id: 'bulk-del' });
+      const batch = assetIds.map(id => deleteDoc(doc(db, "assets", id)));
+      await Promise.all(batch);
+      toast.success(`Limpieza masiva completada.`, { id: 'bulk-del' });
+    } catch (err) {
+      console.error(err);
+      toast.error("Error en la eliminación masiva.", { id: 'bulk-del' });
+    }
   };
 
   const handleBulkRegisterAssets = async (assetsList: any[]) => {
@@ -946,8 +1105,31 @@ export default function App() {
 
   const handleAddAsset = async (data: any) => {
     if (!user) return;
-    if (assetToEdit) await updateDoc(doc(db, "assets", assetToEdit.id), data);
-    else await addDoc(collection(db, "assets"), { ...data, clientId: user.uid, registeredAt: new Date().toISOString().split('T')[0] });
+
+    // Limpieza de datos: Firebase no acepta campos 'undefined'
+    const cleanData = Object.fromEntries(
+      Object.entries(data).filter(([_, v]) => v !== undefined)
+    );
+
+    try {
+      if (assetToEdit) {
+        await AssetService.updateAsset(assetToEdit.id, cleanData);
+        await logActivity(user.uid, loggedInName, 'UPDATE_ASSET', `Editado equipo: ${data.name}`);
+        toast.success("Equipo actualizado con éxito.");
+      } else {
+        await AssetService.createAsset({
+          ...cleanData,
+          clientId: user.uid,
+          registeredAt: new Date().toISOString().split('T')[0]
+        });
+        await logActivity(user.uid, loggedInName, 'CREATE_ASSET', `Registrado nuevo equipo: ${data.name}`);
+        toast.success("Equipo registrado en la nube.");
+      }
+    } catch (error) {
+      toast.error("Error al procesar el activo.");
+      console.error(error);
+    }
+
     setIsAssetModalOpen(false);
     setAssetToEdit(null);
   };
@@ -961,6 +1143,102 @@ export default function App() {
     try { await updateDoc(doc(db, "technicians", id), { isVerified: val }); } catch (e) { console.error(e); }
   };
 
+  const handleDeleteAsset = async (id: string) => {
+    toast((t) => (
+      <div className="flex flex-col gap-4 p-4 bg-[#121317] border border-white/10 rounded-2xl shadow-2xl min-w-[280px] animate-fade-in">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-rose-600/20 text-rose-500 rounded-lg">
+            <Trash2 className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-black text-white uppercase tracking-tight">¿Eliminar Equipo?</p>
+            <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mt-0.5">Se perderá todo el historial</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="flex-1 py-2.5 bg-white/5 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                // SOFT DELETE (Estandard de producción)
+                await AssetService.softDeleteAsset(id);
+                await logActivity(user.uid, loggedInName, 'DELETE_ASSET', `Eliminado (Soft Delete) activo ID: ${id}`);
+                toast.success("Unidad movida a la papelera.");
+              } catch (err) {
+                toast.error("Error al purgar unidad.");
+              }
+            }}
+            className="flex-1 py-2.5 bg-rose-600 text-white rounded-xl text-[9px] font-black uppercase shadow-lg shadow-rose-600/20 hover:brightness-110 active:scale-95 transition-all"
+          >
+            Confirmar
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000, position: 'bottom-center' });
+  };
+
+  // 🤖 MOTOR DE AUDITORÍA TÉCNICA 24/7 (AUTOMATIZADO - GRADO INDUSTRIAL)
+  useEffect(() => {
+    if (!isLoggedIn || role !== 'client') return;
+
+    const auditInterval = setInterval(async () => {
+      const activeUnits = assets.filter(a => a.routeHistory && a.routeHistory.length > 0);
+
+      activeUnits.forEach(async (unit) => {
+        const lastPoint = unit.routeHistory![unit.routeHistory!.length - 1];
+        const lastUpdate = new Date(lastPoint.timestamp).getTime();
+        const now = Date.now();
+        const inactiveMinutes = (now - lastUpdate) / (1000 * 60);
+
+        let logEntry = null;
+
+        // 1. Auditoría de Mantenimiento Preventivo (Automática)
+        const kmToService = 5000 - ((unit.mileage || 0) % 5000);
+        if (kmToService < 300) {
+           // Buscar técnico responsable (el último que trabajó en esta unidad)
+           const lastJob = requests
+             .filter(r => r.assetId === unit.id && (r.status === 'completed' || r.status === 'executing'))
+             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+           const techName = lastJob ? `Responsable: ${lastJob.techName}` : 'Sin Técnico Asignado';
+
+           logEntry = {
+             type: 'maintenance_warning',
+             message: `PROTOCOLO 24/7: Unidad ${unit.name} cerca de límite de servicio (${kmToService}km restantes). Auditando componentes. [${techName}]`,
+             severity: 'warning'
+           };
+        }
+
+        // 2. Auditoría de Integridad GPS (Sin molestar al usuario)
+        if (inactiveMinutes > 60) {
+           logEntry = {
+             type: 'signal_info',
+             message: `REGISTRO 24/7: Pérdida de señal prolongada en ${unit.name}. Bitácora técnica actualizada automáticamente.`,
+             severity: 'info'
+           };
+        }
+
+        if (logEntry) {
+           console.log(`🛡️ LOG AUDITORÍA 24/7: ${logEntry.message}`);
+           toast(logEntry.message, {
+             duration: 6000,
+             icon: logEntry.severity === 'warning' ? '⚙️' : '📡',
+             position: 'bottom-right',
+             style: { border: '1px solid #5d3cfe', background: '#0d0e12', color: '#fff', fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold' }
+           });
+        }
+      });
+    }, 600000); // Revisión cada 10 minutos (Silenciosa y Eficiente)
+
+    return () => clearInterval(auditInterval);
+  }, [isLoggedIn, assets, role]);
+
   const getStatusLabel = (s: string) => {
     const map: any = { pending: 'SOLICITADO', quoted: 'COTIZADO', accepted: 'PAGADO', executing: 'EN PROCESO', completed: 'FINALIZADO', rated: 'CALIFICADO', rejected: 'DENEGADO', disputed: 'IMPREVISTO', cancelled: 'CANCELADO' };
     return map[s] || s.toUpperCase();
@@ -972,12 +1250,22 @@ export default function App() {
 
   if (!isLoggedIn) return (
     <>
-      <LandingPage onStart={() => setShowAuthForm(true)} onWatchDemo={() => setIsDemoModalOpen(true)} />
+      <LandingPage
+        onStart={() => setShowAuthForm(true)}
+        onWatchDemo={() => setIsDemoModalOpen(true)}
+        assets={assets}
+        requests={requests}
+      />
       {showAuthForm && (
-        <div className="fixed inset-0 z-[200] bg-[#0d0e12]/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-[#121317] border border-[#2a2b2f] p-10 rounded-[2.5rem] space-y-8 shadow-2xl relative animate-fade-in-up">
-            <button onClick={() => setShowAuthForm(false)} className="absolute top-6 right-6 p-2 text-[#474556] hover:text-white"><X className="w-6 h-6" /></button>
-            <div className="text-center space-y-4 flex flex-col items-center"><Logo size="lg" className="mb-2" /><p className="text-[#c8c4d9] text-[10px] font-black uppercase tracking-[0.3em]">Inteligencia Operativa Panamá</p></div>
+        <div className="fixed inset-0 z-[200] bg-[#0d0e12]/90 backdrop-blur-md flex flex-col items-center justify-center p-4 overflow-y-auto custom-scrollbar">
+          <div className="max-w-md w-full bg-[#121317] border border-[#2a2b2f] p-8 md:p-10 rounded-[2.5rem] space-y-6 md:space-y-8 shadow-2xl relative animate-fade-in-up my-auto">
+            <button onClick={() => setShowAuthForm(false)} className="absolute -top-4 -right-4 p-4 text-white hover:bg-rose-600 bg-[#1c1d21] border border-white/10 rounded-2xl shadow-2xl z-50 transition-all active:scale-90 group">
+              <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+            </button>
+            <div className="text-center space-y-3 flex flex-col items-center">
+              <Logo size="md" className="md:scale-125 mb-1" />
+              <p className="text-[#c8c4d9] text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em]">Central Logística Panamá</p>
+            </div>
             <div className="flex bg-[#1c1d21] p-1.5 rounded-2xl border border-[#2a2b2f]">
                <button onClick={() => setAuthMode('login')} className={`flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${authMode === 'login' ? 'bg-[#5d3cfe] text-white shadow-lg shadow-[#5d3cfe]/20' : 'text-[#474556]'}`}>Ingresar</button>
                <button onClick={() => setAuthMode('register')} className={`flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${authMode === 'register' ? 'bg-[#5d3cfe] text-white shadow-lg shadow-[#5d3cfe]/20' : 'text-[#474556]'}`}>Registrarse</button>
@@ -988,16 +1276,80 @@ export default function App() {
               <div className="space-y-2 text-left"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Clave</label><input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white" required /></div>
               {authMode === 'register' && <div className="space-y-2 text-left"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Tipo</label><select value={authRole} onChange={e => setAuthRole(e.target.value as any)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white"><option value="client">Cliente</option><option value="tech">Técnico</option></select></div>}
               {authError && <p className="text-rose-500 text-[10px] font-black uppercase text-center">{authError}</p>}
-              <button type="submit" className="w-full py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]">Entrar âž”</button>
+              <button type="submit" className="w-full py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-[#5d3cfe]/30 hover:brightness-110 active:scale-95 transition-all">Entrar ➔</button>
             </form>
           </div>
         </div>
       )}
       {isDemoModalOpen && (
-        <div className="fixed inset-0 z-[300] bg-[#0d0e12]/95 backdrop-blur-xl flex items-center justify-center p-4">
-          <div className="w-full max-w-5xl bg-[#121317] border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl animate-fade-in-up">
-            <header className="px-10 py-6 border-b border-white/5 flex justify-between items-center bg-[#1c1d21]/50"><Logo size="md" /><button onClick={() => setIsDemoModalOpen(false)} className="p-3 text-[#474556] hover:text-white bg-white/5 rounded-2xl"><X className="w-7 h-7" /></button></header>
-            <div className="aspect-video bg-black"><iframe className="w-full h-full" src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1" frameBorder="0" allowFullScreen></iframe></div>
+        <div className="fixed inset-0 z-[300] bg-[#0d0e12]/98 backdrop-blur-3xl flex items-center justify-center p-4">
+          <div className="w-full max-w-5xl bg-[#121317] border border-white/10 rounded-[3rem] overflow-hidden shadow-[0_0_100px_rgba(93,60,254,0.15)] animate-fade-in-up relative flex flex-col md:flex-row h-full max-h-[85vh]">
+
+            {/* Botón de Cierre Táctico */}
+            <button
+              onClick={() => setIsDemoModalOpen(false)}
+              className="absolute top-8 right-8 z-50 p-3 bg-white/5 hover:bg-rose-600 text-white rounded-2xl border border-white/10 transition-all active:scale-90 group"
+            >
+              <X className="w-6 h-6 group-hover:rotate-90 transition-transform" />
+            </button>
+
+            {/* LADO IZQUIERDO: Branding y Status */}
+            <div className="md:w-1/3 bg-[#1c1d21] p-12 flex flex-col justify-between border-r border-white/5">
+               <div className="space-y-8">
+                  <Logo size="md" />
+                  <div className="space-y-4">
+                     <h3 className="text-3xl font-black text-white leading-none uppercase tracking-tighter">Ecosistema <br /><span className="text-[#5d3cfe]">Master V4</span></h3>
+                     <p className="text-xs font-bold text-[#c8c4d9] uppercase tracking-widest opacity-60 leading-relaxed">Infraestructura de Grado Industrial para Panamá.</p>
+                  </div>
+               </div>
+
+               <div className="space-y-6">
+                  <div className="p-5 bg-black/40 rounded-3xl border border-white/5 space-y-3">
+                     <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#52ffac] animate-pulse"></span>
+                        <span className="text-[9px] font-black text-[#52ffac] uppercase tracking-[0.2em]">Servidores Activos</span>
+                     </div>
+                     <p className="text-[10px] text-white/40 font-medium">Uptime del 99.9% con redundancia satelital distribuida.</p>
+                  </div>
+                  <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.3em] text-center">© 2026 MantechPro Panama</p>
+               </div>
+            </div>
+
+            {/* LADO DERECHO: Pilares Tecnológicos */}
+            <div className="md:w-2/3 p-12 overflow-y-auto custom-scrollbar bg-grid-white/[0.02]">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {[
+                    { t: "Rastreo Sat-Link V4", d: "Telemetría en tiempo real con latencia <1s. Protocolo militar de encriptación.", i: Globe, c: "#52ffac" },
+                    { t: "IA Predictiva", d: "Algoritmos que analizan el desgaste de piezas antes de que ocurra la falla.", i: BrainCircuit, c: "#5d3cfe" },
+                    { t: "Custodia Escrow", d: "Seguridad bancaria en pagos. El fondo se libera solo tras tu firma digital.", i: ShieldCheck, c: "#f59e0b" },
+                    { t: "Mantech ID", d: "Base de datos de técnicos con récord policivo y certificaciones validadas.", i: BadgeCheck, c: "#e11d48" },
+                    { t: "Logística B2B", d: "Gestión de flotas masivas, inventarios de repuestos y auditoría financiera.", i: Truck, c: "#c7bfff" },
+                    { t: "Soporte 24/7", d: "Asistente virtual y técnicos de emergencia disponibles en todo el país.", i: MessageSquare, c: "#ffffff" }
+                  ].map((f, idx) => (
+                    <div key={idx} className="p-8 bg-[#1c1d21]/50 border border-white/5 rounded-[2.5rem] hover:border-white/20 transition-all group">
+                       <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6 shadow-2xl transition-transform group-hover:scale-110" style={{ backgroundColor: `${f.c}10`, color: f.c }}>
+                          <f.i className="w-6 h-6" />
+                       </div>
+                       <h4 className="text-sm font-black text-white uppercase tracking-tight mb-2">{f.t}</h4>
+                       <p className="text-[11px] text-[#c8c4d9] font-medium leading-relaxed opacity-70">{f.d}</p>
+                    </div>
+                  ))}
+               </div>
+
+               <div className="mt-10 p-8 bg-[#5d3cfe] rounded-[2.5rem] flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xl shadow-[#5d3cfe]/20">
+                  <div>
+                     <h4 className="text-xl font-black text-white uppercase tracking-tighter leading-none">¿Listo para escalar?</h4>
+                     <p className="text-[10px] text-white/80 font-bold uppercase tracking-widest mt-2">Prueba el autodiagnóstico ahora mismo.</p>
+                  </div>
+                  <button
+                    onClick={() => setIsDemoModalOpen(false)}
+                    className="px-8 py-4 bg-white text-[#5d3cfe] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl"
+                  >
+                    Empezar Tour Gratis
+                  </button>
+               </div>
+            </div>
+
           </div>
         </div>
       )}
@@ -1008,19 +1360,45 @@ export default function App() {
     <PayPalScriptProvider options={{ clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || "sb", currency: "USD", intent: "capture" }}>
     <div className="min-h-screen bg-[#0d0e12] flex flex-col font-sans text-[#e3e2e8] overflow-hidden grid-bg">
       <Toaster position="top-center" toastOptions={{ style: { background: '#1c1d24', color: '#fff', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' } }} />
-      <nav className="h-20 bg-[#0d0e12]/80 backdrop-blur-md border-b border-[#2a2b2f] flex items-center justify-between px-10 shrink-0 z-50">
-        <div className="flex items-center gap-10">
+
+      {/* MOBILE HEADER */}
+          <nav className="h-20 bg-[#0d0e12]/80 backdrop-blur-md border-b border-[#2a2b2f] flex items-center justify-between px-6 md:px-10 shrink-0 z-[100]">
+        <div className="flex items-center gap-4 md:gap-10">
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2.5 bg-[#1c1d21] border border-[#2a2b2f] rounded-xl text-[#c8c4d9] hover:text-white md:hidden transition-all active:scale-95"
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <LayoutDashboard className="w-5 h-5" />}
+          </button>
           <Logo size="sm" />
-          <div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#474556]" /><input type="text" placeholder="Buscar en el ecosistema..." className="bg-[#121317] border border-[#2a2b2f] rounded-full py-2.5 pl-12 pr-6 text-xs text-white w-[450px]" value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} /></div>
+          <div className="relative hidden md:block">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#474556]" />
+            <input type="text" placeholder="Buscar en el ecosistema..." className="bg-[#121317] border border-[#2a2b2f] rounded-full py-2.5 pl-12 pr-6 text-xs text-white w-[300px] lg:w-[450px]" value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} />
+          </div>
         </div>
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-3 md:gap-8">
           <button onClick={() => setIsSupportModalOpen(true)} className="p-2.5 bg-[#1c1d21] border border-[#2a2b2f] rounded-xl text-[#c8c4d9] hover:text-white transition-all"><HelpCircle className="w-5 h-5" /></button>
-          <button onClick={handleLogout} className="flex items-center gap-3 text-[#c8c4d9] hover:text-white font-black text-[10px] uppercase tracking-widest transition-all"><LogOut className="w-5 h-5" /> Salir</button>
+          <button onClick={handleLogout} className="flex items-center gap-3 text-[#c8c4d9] hover:text-white font-black text-[10px] uppercase tracking-widest transition-all">
+            <LogOut className="w-5 h-5" />
+            <span className="hidden sm:inline">Salir</span>
+          </button>
         </div>
       </nav>
 
-      <div className="flex flex-1 overflow-hidden">
-        <aside className="w-72 bg-[#0d0e12] border-r border-[#2a2b2f] p-8 flex flex-col shrink-0 overflow-y-auto custom-scrollbar">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* SIDEBAR - RESPONSIVE CLAMP */}
+        <aside className={`
+          fixed md:relative inset-y-0 left-0 z-[90] w-72 bg-[#0d0e12] border-r border-[#2a2b2f] p-8 flex flex-col shrink-0 overflow-y-auto custom-scrollbar transition-transform duration-300 ease-in-out
+          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}>
+          {/* Overlay for mobile when menu is open */}
+          {isMobileMenuOpen && (
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[-1] md:hidden"
+              onClick={() => setIsMobileMenuOpen(false)}
+            ></div>
+          )}
+
           <div className="flex items-center gap-4 mb-10 group cursor-pointer" onClick={() => document.getElementById('avatar-input')?.click()}>
              <div className="w-14 h-14 rounded-2xl bg-[#1c1d21] border border-white/10 flex items-center justify-center text-xl font-black text-white shadow-2xl overflow-hidden relative">
                {profileImage ? <img src={profileImage} className="w-full h-full object-cover" /> : loggedInName[0]}
@@ -1065,6 +1443,7 @@ export default function App() {
             ) : (
               <>
                 <button onClick={() => setAdminTab('finance')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${adminTab === 'finance' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><DollarSign className="w-4 h-4" /> Finanzas</button>
+                <button onClick={() => setAdminTab('audit')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${adminTab === 'audit' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileText className="w-4 h-4" /> Logs Actividad</button>
                 <button onClick={() => setAdminTab('logistics')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${adminTab === 'logistics' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Truck className="w-4 h-4" /> Logística</button>
                 <button onClick={() => setAdminTab('users')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${adminTab === 'users' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Users className="w-4 h-4" /> Usuarios</button>
                 <button onClick={() => setAdminTab('inventory')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${adminTab === 'inventory' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Package className="w-4 h-4" /> Inventario</button>
@@ -1075,8 +1454,8 @@ export default function App() {
           </nav>
         </aside>
 
-        <main className="flex-1 bg-[#0d0e12] p-10 overflow-y-auto custom-scrollbar">
-           <div className="max-w-6xl mx-auto space-y-12">
+        <main className="flex-1 bg-[#0d0e12] p-6 md:p-10 overflow-y-auto custom-scrollbar relative">
+           <div className="max-w-6xl mx-auto space-y-8 md:space-y-12">
               {role === 'client' && (
                 <>
                   {clientTab === 'dashboard' && (
@@ -1101,11 +1480,17 @@ export default function App() {
                          </div>
                       </header>
 
-                      {(() => {
+                      {isDataLoading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                           {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-64" />)}
+                        </div>
+                      ) : (() => {
                         const filtered = assets.filter(a =>
                           a.name.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
                           a.licensePlate?.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
-                          a.details.toLowerCase().includes(assetSearchQuery.toLowerCase())
+                          a.serialNumber?.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
+                          a.details?.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
+                          a.type.toLowerCase().includes(assetSearchQuery.toLowerCase())
                         );
                         const total = filtered.length;
                         const pages = Math.ceil(total / assetPageSize);
@@ -1114,13 +1499,118 @@ export default function App() {
 
                         return (
                           <div className="space-y-10">
+                            {/* Dashboard Bulk Actions */}
+                            <div className="flex items-center justify-between bg-[#121317] border border-[#2a2b2f] p-4 rounded-2xl shadow-xl">
+                               <div className="flex items-center gap-4">
+                                  <label className="flex items-center gap-3 cursor-pointer group">
+                                     <div className="relative flex items-center justify-center">
+                                        <input
+                                          type="checkbox"
+                                          className="sr-only peer"
+                                          checked={selectedDashboardIds.length === paginated.length && paginated.length > 0}
+                                          onChange={(e) => {
+                                             if (e.target.checked) setSelectedDashboardIds(paginated.map(a => a.id));
+                                             else setSelectedDashboardIds([]);
+                                          }}
+                                        />
+                                        <div className="w-5 h-5 border-2 border-[#474556] rounded-md transition-all peer-checked:border-[#5d3cfe] peer-checked:bg-[#5d3cfe]"></div>
+                                        <Check className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
+                                     </div>
+                                     <span className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest group-hover:text-white transition-colors">Seleccionar Todo (Página)</span>
+                                  </label>
+                               </div>
+
+                               {selectedDashboardIds.length > 0 && (
+                                  <button
+                                    onClick={() => {
+                                       const confirmDelete = async () => {
+                                          toast.loading(`Borrando ${selectedDashboardIds.length} unidades...`, { id: 'bulk-dash-del' });
+                                          try {
+                                             const batch = selectedDashboardIds.map(id => deleteDoc(doc(db, "assets", id)));
+                                             await Promise.all(batch);
+                                             setSelectedDashboardIds([]);
+                                             toast.success("Limpieza masiva exitosa.", { id: 'bulk-dash-del' });
+                                          } catch (err) {
+                                             toast.error("Falla en la purga.", { id: 'bulk-dash-del' });
+                                          }
+                                       };
+
+                                       toast((t) => (
+                                          <div className="flex flex-col gap-4 p-4 bg-[#121317] border border-white/10 rounded-2xl shadow-2xl min-w-[300px]">
+                                            <div className="flex items-center gap-3">
+                                              <div className="p-2 bg-rose-600/20 text-rose-500 rounded-lg"><Trash2 className="w-5 h-5" /></div>
+                                              <div><p className="text-xs font-black text-white uppercase">¿Purgar {selectedDashboardIds.length} Equipos?</p><p className="text-[9px] text-white/50 font-bold uppercase">Acción irreversible en la nube</p></div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                              <button onClick={() => toast.dismiss(t.id)} className="flex-1 py-2.5 bg-white/5 text-white rounded-xl text-[9px] font-black uppercase">Abortar</button>
+                                              <button onClick={() => { toast.dismiss(t.id); confirmDelete(); }} className="flex-1 py-2.5 bg-rose-600 text-white rounded-xl text-[9px] font-black uppercase shadow-lg">Confirmar</button>
+                                            </div>
+                                          </div>
+                                       ), { duration: 8000, position: 'bottom-center' });
+                                    }}
+                                    className="px-6 py-2 bg-rose-600 text-white text-[9px] font-black rounded-xl uppercase shadow-lg shadow-rose-600/20 flex items-center gap-2 hover:bg-rose-700 transition-all animate-fade-in-up"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" /> Purgar Lote ({selectedDashboardIds.length})
+                                  </button>
+                               )}
+                            </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                               {paginated.map(a => (
-                                 <div key={a.id} className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2.5rem] space-y-6 shadow-2xl hover:border-[#5d3cfe]/40 transition-all relative overflow-hidden group">
-                                      <div className="absolute -bottom-6 -right-6 opacity-5 group-hover:opacity-10 transition-opacity">{a.type === 'car' ? <Car className="w-32 h-32" /> : <Wind className="w-32 h-32" />}</div>
-                                     <div className="flex justify-between items-start relative z-10">
+                               {paginated.map(a => {
+                                 const isSelected = selectedDashboardIds.includes(a.id);
+                                 return (
+                                 <div key={a.id} className={`bg-[#121317] border p-8 rounded-[2.5rem] space-y-6 shadow-2xl transition-all relative overflow-hidden group ${isSelected ? 'border-[#5d3cfe] ring-2 ring-[#5d3cfe]/20 bg-[#5d3cfe]/5' : 'border-[#2a2b2f] hover:border-[#5d3cfe]/40'}`}>
+                                      {/* Checkbox Individual */}
+                                      <div className="absolute top-6 left-6 z-20">
+                                         <label className="cursor-pointer group">
+                                            <div className="relative flex items-center justify-center">
+                                               <input
+                                                 type="checkbox"
+                                                 className="sr-only peer"
+                                                 checked={isSelected}
+                                                 onChange={(e) => {
+                                                   if (e.target.checked) setSelectedDashboardIds([...selectedDashboardIds, a.id]);
+                                                   else setSelectedDashboardIds(selectedDashboardIds.filter(id => id !== a.id));
+                                                 }}
+                                               />
+                                               <div className={`w-6 h-6 border-2 rounded-lg transition-all ${isSelected ? 'border-[#5d3cfe] bg-[#5d3cfe] shadow-lg shadow-[#5d3cfe]/30' : 'border-[#474556] bg-black/40 group-hover:border-[#c7bfff]/50'}`}></div>
+                                               <Check className="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
+                                            </div>
+                                         </label>
+                                      </div>
+
+                                      <div className="absolute -bottom-6 -right-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                                        {(() => {
+                                          const cls = "w-32 h-32";
+                                          switch(a.type) {
+                                            case 'car': return <Car className={cls} />;
+                                            case 'ac': return <Wind className={cls} />;
+                                            case 'computer': return <Cpu className={cls} />;
+                                            case 'generator': return <Zap className={cls} />;
+                                            case 'solar_panels': return <Wind className={cls} />;
+                                            case 'industrial_equip': return <Package className={cls} />;
+                                            case 'house': return <Building2 className={cls} />;
+                                            default: return <Package className={cls} />;
+                                          }
+                                        })()}
+                                      </div>
+                                     <div className="flex justify-between items-start relative z-10 pl-10">
                                          <div className="flex items-center gap-5">
-                                            <div className="w-16 h-16 rounded-2xl bg-[#1c1d21] border border-white/5 flex items-center justify-center text-white shadow-inner">{a.type === 'car' ? <Car className="w-8 h-8" /> : <Wind className="w-8 h-8" />}</div>
+                                            <div className="w-16 h-16 rounded-2xl bg-[#1c1d21] border border-white/5 flex items-center justify-center text-white shadow-inner">
+                                              {(() => {
+                                                const cls = "w-8 h-8";
+                                                switch(a.type) {
+                                                  case 'car': return <Car className={cls} />;
+                                                  case 'ac': return <Wind className={cls} />;
+                                                  case 'computer': return <Cpu className={cls} />;
+                                                  case 'generator': return <Zap className={cls} />;
+                                                  case 'solar_panels': return <Wind className={cls} />;
+                                                  case 'industrial_equip': return <Package className={cls} />;
+                                                  case 'house': return <Building2 className={cls} />;
+                                                  default: return <Package className={cls} />;
+                                                }
+                                              })()}
+                                            </div>
                                             <div>
                                                <p className="text-[9px] font-black text-[#474556] uppercase tracking-[0.3em] mb-1">Equipo / Marca</p>
                                                <h4 className="font-black text-white text-2xl uppercase tracking-tighter leading-none">{a.name}</h4>
@@ -1131,9 +1621,18 @@ export default function App() {
                                                      <span className="text-[11px] font-black text-white tracking-widest">{a.licensePlate}</span>
                                                   </div>
                                                )}
+                                               {a.serialNumber && (
+                                                  <div className="mt-3 inline-flex items-center px-3 py-1 bg-black/50 border border-white/10 rounded-xl shadow-xl ml-2">
+                                                     <span className="text-[9px] font-black text-[#474556] uppercase mr-2">S/N:</span>
+                                                     <span className="text-[11px] font-black text-white tracking-widest">{a.serialNumber}</span>
+                                                  </div>
+                                               )}
                                             </div>
                                          </div>
-                                         <button onClick={() => { setAssetToEdit(a); setIsAssetModalOpen(true); }} className="p-3 text-[#474556] hover:text-white transition-all bg-white/5 border border-white/5 rounded-2xl"><Pencil className="w-4 h-4" /></button>
+                                         <div className="flex gap-2">
+                                            <button onClick={() => { setAssetToEdit(a); setIsAssetModalOpen(true); }} className="p-3 text-[#474556] hover:text-white transition-all bg-white/5 border border-white/5 rounded-2xl"><Pencil className="w-4 h-4" /></button>
+                                            <button onClick={() => handleDeleteAsset(a.id)} className="p-3 text-[#474556] hover:text-rose-500 transition-all bg-white/5 border border-white/5 rounded-2xl"><Trash2 className="w-4 h-4" /></button>
+                                         </div>
                                       </div>
 
                                       <div className="py-6 px-6 bg-black/30 rounded-[2rem] border border-white/5 relative z-10 space-y-4">
@@ -1167,7 +1666,8 @@ export default function App() {
                                       </div>
                                       <button onClick={() => setClientTab('marketplace')} className="w-full py-4 bg-[#1c1d21] hover:bg-white text-white hover:text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] transition-all relative z-10">SOLICITAR TÉCNICO</button>
                                    </div>
-                               ))}
+                                 );
+                               })}
                             </div>
 
                             {pages > 1 && (
@@ -1220,10 +1720,12 @@ export default function App() {
                       onManageAsset={(a) => { setAssetToEdit(a); setIsAssetModalOpen(true); }}
                       mode={planLimits.fleet as any}
                       onBulkUpdate={handleBulkUpdateAssets}
+                      onBulkDelete={handleBulkDeleteAssets}
                       onBulkRegister={handleBulkRegisterAssets}
                       onStartGps={startGpsTracking}
                       onTogglePause={toggleGpsPause}
                       onAddCheckpoint={(a) => { setAssetForRoute(a); setIsCheckpointModalOpen(true); }}
+                      onContactSupport={() => setIsCorporateSupportModalOpen(true)}
                       trackingAssetId={trackingAssetId}
                       tripStatus={tripStatus}
                     />
@@ -1242,7 +1744,11 @@ export default function App() {
                         </div>
                       </header>
 
-                      {marketViewMode === 'list' ? (
+                      {isDataLoading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                           {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-96" />)}
+                        </div>
+                      ) : marketViewMode === 'list' ? (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                            {technicians.filter(t => marketFilter === 'all' || t.category === marketFilter).map(t => (
                              <div key={t.id} className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[3rem] flex flex-col gap-6 relative overflow-hidden group hover:border-[#5d3cfe]/50 transition-all shadow-2xl">
@@ -1262,238 +1768,256 @@ export default function App() {
                     </div>
                   )}
                   {clientTab === 'quotes' && (
-                     <div className="space-y-10 animate-fade-in">
-                        <header><h1 className="text-4xl font-black text-white tracking-tighter uppercase">Contratos <span className="text-[#52ffac]">Activos</span></h1></header>
-                        <div className="space-y-6">
-                           {requests.map(req => (
-                             <div key={req.id} className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[2.5rem] space-y-10 shadow-2xl relative overflow-hidden">
-                                <div className="flex justify-between items-center relative z-10">
-                                   <h4 className="font-black text-white text-2xl uppercase tracking-tighter">{req.assetName}</h4>
-                                   <span className="px-6 py-2 bg-[#1c1d21] border border-[#2a2b2f] rounded-full text-[10px] font-black text-[#52ffac] uppercase tracking-widest shadow-inner">
-                                      {getStatusLabel(req.status)}
-                                   </span>
+                    <div className="space-y-10 animate-fade-in">
+                      <header><h1 className="text-4xl font-black text-white tracking-tighter uppercase">Contratos <span className="text-[#52ffac]">Activos</span></h1></header>
+                      <div className="space-y-6">
+                        {isDataLoading ? (
+                          <div className="space-y-6">
+                            {[1,2].map(i => <Skeleton key={i} className="h-48" />)}
+                          </div>
+                        ) : (
+                          requests.map(req => (
+                            <div key={req.id} className="bg-[#121317] border border-white/10 p-10 rounded-[2.5rem] space-y-10 shadow-2xl relative overflow-hidden">
+                              <div className="flex justify-between items-center relative z-10">
+                                <h4 className="font-black text-white text-2xl uppercase tracking-tighter">{req.assetName}</h4>
+                                <span className="px-6 py-2 bg-[#1c1d21] border border-white/10 rounded-full text-[10px] font-black text-[#52ffac] uppercase tracking-widest shadow-inner">
+                                  {getStatusLabel(req.status)}
+                                </span>
+                              </div>
+
+                              {/* Stepper */}
+                              <div className="flex items-center justify-between px-4 py-8 relative z-10">
+                                {[
+                                  { label: 'SOLICITUD', status: ['pending', 'quoted', 'accepted', 'executing', 'completed', 'rated'], icon: <Layers className="w-5 h-5" /> },
+                                  { label: 'COTIZADO', status: ['quoted', 'accepted', 'executing', 'completed', 'rated'], icon: <DollarSign className="w-5 h-5" /> },
+                                  { label: 'PAGADO', status: ['accepted', 'executing', 'completed', 'rated'], icon: <ShieldCheck className="w-5 h-5" /> },
+                                  { label: req.serviceType === 'remote' ? 'REMOTO' : 'EN SITIO', status: ['executing', 'completed', 'rated'], icon: req.serviceType === 'remote' ? <Video className="w-5 h-5" /> : <MapPin className="w-5 h-5" /> },
+                                  { label: 'FINALIZADO', status: ['completed', 'rated'], icon: <CheckCircle2 className="w-5 h-5" /> }
+                                ].map((step, i, arr) => {
+                                  const isActive = step.status.includes(req.status);
+                                  const isLast = i === arr.length - 1;
+                                  return (
+                                    <React.Fragment key={i}>
+                                      <div className="flex flex-col items-center gap-4 relative z-20">
+                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${isActive ? 'bg-[#5d3cfe] shadow-[0_0_30px_#5d3cfe] text-white' : 'bg-[#1c1d21] border border-white/10 text-[#474556]'}`}>
+                                          {step.icon}
+                                        </div>
+                                        <span className={`text-[8px] font-black tracking-[0.2em] ${isActive ? 'text-[#c8c4d9]' : 'text-[#474556]'}`}>{step.label}</span>
+                                      </div>
+                                      {!isLast && (
+                                        <div className="flex-1 px-2 mb-12">
+                                          <div className={`h-[2px] rounded-full transition-all duration-700 ${isActive && arr[i+1].status.includes(req.status) ? 'bg-[#5d3cfe] shadow-[0_0_10px_#5d3cfe]' : 'bg-[#1c1d21]'}`}></div>
+                                        </div>
+                                      )}
+                                    </React.Fragment>
+                                  );
+                                })}
+                              </div>
+
+                              {/* Quoted View */}
+                              {req.status === 'quoted' && (
+                                <div className="bg-[#5d3cfe]/10 p-8 rounded-[2.5rem] border border-[#5d3cfe]/30 space-y-6">
+                                  <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+                                    <div className="text-center md:text-left">
+                                      <p className="text-white font-black text-xl uppercase tracking-tight">Propuesta: ${req.price?.toFixed(2)} USD</p>
+                                      <p className="text-[11px] text-[#c8c4d9] font-medium mt-1 uppercase tracking-widest">Cita: {req.scheduledDate} @ {req.scheduledTime}</p>
+                                    </div>
+                                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                                      <button onClick={() => handleAcceptQuote(req.id, 'yappy')} className="flex-1 px-8 py-4 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase shadow-xl shadow-[#52ffac]/20 hover:brightness-110 transition-all flex items-center justify-center gap-2 h-[56px]">
+                                        <Download className="w-4 h-4" /> Yappy
+                                      </button>
+                                      <div className="flex-1 min-w-[200px]">
+                                        <PayPalButtons
+                                          style={{ layout: "horizontal", shape: "pill", color: "blue", height: 55 }}
+                                          createOrder={async () => {
+                                            const response = await fetch("/api/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ price: req.price, itemName: `Servicio: ${req.assetName}` }) });
+                                            const order = await response.json();
+                                            return order.id;
+                                          }}
+                                          onApprove={async (data) => {
+                                            const response = await fetch(`/api/orders/${data.orderID}/capture`, { method: "POST" });
+                                            const result = await response.json();
+                                            if (result.status === "COMPLETED") handleAcceptQuote(req.id, 'paypal');
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <p className="text-[9px] text-[#474556] font-bold uppercase text-center tracking-widest">Pagos procesados de forma segura con cifrado AES-256</p>
                                 </div>
+                              )}
 
-                                <div className="flex items-center justify-between px-4 py-8 relative z-10">
-                                   {[
-                                     { label: 'SOLICITUD', status: ['pending', 'quoted', 'accepted', 'executing', 'completed', 'rated'], icon: <Layers className="w-5 h-5" /> },
-                                     { label: 'COTIZADO', status: ['quoted', 'accepted', 'executing', 'completed', 'rated'], icon: <DollarSign className="w-5 h-5" /> },
-                                     { label: 'PAGADO', status: ['accepted', 'executing', 'completed', 'rated'], icon: <ShieldCheck className="w-5 h-5" /> },
-                                     { label: req.serviceType === 'remote' ? 'REMOTO' : 'EN SITIO', status: ['executing', 'completed', 'rated'], icon: req.serviceType === 'remote' ? <Video className="w-5 h-5" /> : <MapPin className="w-5 h-5" /> },
-                                     { label: 'FINALIZADO', status: ['completed', 'rated'], icon: <CheckCircle2 className="w-5 h-5" /> }
-                                   ].map((step, i, arr) => {
-                                     const isActive = step.status.includes(req.status);
-                                     const isLast = i === arr.length - 1;
-                                     return (
-                                       <React.Fragment key={i}>
-                                         <div className="flex flex-col items-center gap-4 relative z-20">
-                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${isActive ? 'bg-[#5d3cfe] shadow-[0_0_30px_#5d3cfe] text-white' : 'bg-[#1c1d21] border border-[#2a2b2f] text-[#474556]'}`}>
-                                               {step.icon}
-                                            </div>
-                                            <span className={`text-[8px] font-black tracking-[0.2em] ${isActive ? 'text-[#c8c4d9]' : 'text-[#474556]'}`}>{step.label}</span>
-                                         </div>
-                                         {!isLast && (
-                                            <div className="flex-1 px-2 mb-12">
-                                               <div className={`h-[2px] rounded-full transition-all duration-700 ${isActive && arr[i+1].status.includes(req.status) ? 'bg-[#5d3cfe] shadow-[0_0_10px_#5d3cfe]' : 'bg-[#1c1d21]'}`}></div>
-                                            </div>
-                                         )}
-                                       </React.Fragment>
-                                     );
-                                   })}
+                              {/* Execution / Result View */}
+                              {(req.status === 'executing' || req.status === 'completed' || req.status === 'rated') && (
+                                <div className="space-y-8 animate-fade-in">
+                                  {/* Panel de Validación de Asistencia (Solo Cliente) */}
+                                  {role === 'client' && req.status === 'executing' && !req.clientConfirmedArrival && (
+                                    <div className="flex flex-col md:flex-row gap-4 mb-8">
+                                      <div className="flex-1 p-6 bg-white/5 border border-white/5 rounded-3xl flex items-center justify-between group hover:border-[#52ffac]/30 transition-all">
+                                        <div className="flex items-center gap-4">
+                                          <div className="w-10 h-10 rounded-xl bg-[#52ffac]/10 flex items-center justify-center text-[#52ffac]">
+                                            <User className="w-5 h-5" />
+                                          </div>
+                                          <div>
+                                            <p className="text-[10px] font-black text-[#474556] uppercase tracking-widest leading-none">Validación {req.serviceType === 'remote' ? 'Digital' : 'Física'}</p>
+                                            <h5 className="text-white font-bold uppercase mt-1">
+                                              {req.serviceType === 'remote' ? '¿Se estableció la conexión?' : '¿El técnico está en sitio?'}
+                                            </h5>
+                                          </div>
+                                        </div>
+                                        <button
+                                          onClick={() => {
+                                            const confirmMsg = req.serviceType === 'remote'
+                                              ? "¿Confirma que el técnico ya se encuentra brindándole soporte remoto?"
+                                              : "¿Confirma que el técnico ya se encuentra trabajando en su activo?";
+                                            if(window.confirm(confirmMsg)) {
+                                              updateDoc(doc(db, "requests", req.id), {
+                                                clientConfirmedArrival: true,
+                                                clientArrivalTimestamp: new Date().toISOString()
+                                              });
+                                              toast.success("Conexión confirmada. ¡Gracias!");
+                                            }
+                                          }}
+                                          className="px-6 py-2.5 bg-[#52ffac] text-[#0d0e12] rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-[#52ffac]/20 hover:scale-105 transition-all"
+                                        >
+                                          {req.serviceType === 'remote' ? 'Confirmar Conexión' : 'Confirmar Llegada'}
+                                        </button>
+                                      </div>
+
+                                      <button
+                                        onClick={() => {
+                                          const reportMsg = req.serviceType === 'remote'
+                                            ? "¿Desea reportar que el técnico NO se conectó a pesar de haber marcado inicio de sesión?"
+                                            : "¿Desea reportar que el técnico NO asistió a pesar de haber marcado inicio de visita?";
+                                          if(window.confirm(reportMsg)) {
+                                            updateDoc(doc(db, "requests", req.id), {
+                                              issueReportedByClient: true,
+                                              issueDescription: req.serviceType === 'remote' ? "Incumplimiento: El técnico no se conectó." : "Incumplimiento: El técnico no asistió físicamente.",
+                                              status: 'disputed'
+                                            });
+                                            notifyAdmin("🚨 INCUMPLIMIENTO DIGITAL", `El cliente ${req.clientName} reporta que el técnico ${req.techName} no se ha conectado.`);
+                                            toast.error("Incumplimiento reportado. El sistema ha bloqueado los fondos.");
+                                          }
+                                        }}
+                                        className="p-6 bg-rose-500/5 border border-rose-500/10 rounded-3xl flex-1 flex items-center justify-between group hover:bg-rose-500/10 hover:border-rose-500/30 transition-all text-left"
+                                      >
+                                        <div className="flex items-center gap-4">
+                                          <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500 group-hover:scale-110 transition-transform">
+                                            <AlertTriangle className="w-5 h-5" />
+                                          </div>
+                                          <div>
+                                            <p className="text-[10px] font-black text-[#474556] uppercase tracking-widest leading-none group-hover:text-rose-400">Reportar Falla</p>
+                                            <h5 className="text-white/60 font-bold uppercase mt-1 group-hover:text-white">
+                                              {req.serviceType === 'remote' ? 'No se conectó' : 'No está aquí'}
+                                            </h5>
+                                          </div>
+                                        </div>
+                                        <ArrowRight className="w-4 h-4 text-[#474556] group-hover:text-rose-500 group-x-1 transition-all" />
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  <div className="bg-[#1c1d21] p-8 rounded-[3rem] border border-white/5 space-y-8 shadow-2xl">
+                                  <div className="flex flex-col md:flex-row gap-6 items-start justify-between border-b border-white/5 pb-8">
+                                    <div className="space-y-4">
+                                      <div className="flex items-center gap-3 text-[#52ffac]">
+                                        {req.status === 'executing' ? <Activity className="w-6 h-6 animate-pulse" /> : <CheckCircle2 className="w-6 h-6" />}
+                                        <h4 className="text-xl font-black uppercase tracking-tighter leading-none">{req.status === 'executing' ? 'Servicio en Ejecución' : 'Resumen de Servicio'}</h4>
+                                      </div>
+                                      <p className="text-sm text-[#c8c4d9] font-medium leading-relaxed max-w-xl">
+                                        {req.status === 'executing' ? 'Monitoreo en tiempo real del progreso técnico.' : 'El servicio ha finalizado satisfactoriamente.'}
+                                      </p>
+                                    </div>
+                                    <div className="flex gap-3">
+                                      {(req.status === 'completed' || req.status === 'rated') && (
+                                        <button onClick={() => { setSelectedRequestForReport(req); setIsReportModalOpen(true); }} className="px-6 py-3 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-[#5d3cfe] transition-all flex items-center gap-2">
+                                          <FileText className="w-4 h-4" /> Reporte
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                    <div className="space-y-6">
+                                      <h5 className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Bitácora</h5>
+                                      <div className="bg-[#0d0e12] p-6 rounded-3xl border border-white/5 space-y-4">
+                                        {req.checklist?.map((task: any) => (
+                                          <div key={task.id} className="flex items-center gap-4">
+                                            <div className={`w-5 h-5 rounded-full flex items-center justify-center ${task.isCompleted ? 'bg-[#52ffac]' : 'border border-[#474556]'}`}>{task.isCompleted && <Check className="w-3 h-3 text-[#0d0e12]" />}</div>
+                                            <span className={`text-[12px] font-bold ${task.isCompleted ? 'text-white' : 'text-[#474556] opacity-50'}`}>{task.description}</span>
+                                          </div>
+                                        )) || <p className="text-[10px] text-[#474556] italic">Cargando...</p>}
+                                      </div>
+                                    </div>
+                                    <div className="space-y-6">
+                                      <h5 className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] flex items-center gap-2"><Package className="w-4 h-4" /> Materiales</h5>
+                                      <div className="grid grid-cols-1 gap-3">
+                                        {req.materials?.map((m: any, idx: number) => (
+                                          <div key={idx} className="flex justify-between items-center bg-[#0d0e12] p-5 rounded-2xl border border-white/5">
+                                            <span className="text-xs font-bold text-white uppercase">{m.name} x{m.quantity}</span>
+                                            <span className="text-sm font-black text-[#52ffac]">${(m.price * m.quantity).toFixed(2)}</span>
+                                          </div>
+                                        )) || <p className="text-[10px] text-[#474556] italic">Sin materiales.</p>}
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
-
-                                {req.status === 'quoted' && (
-                                   <div className="bg-[#5d3cfe]/10 p-8 rounded-[2.5rem] border border-[#5d3cfe]/30 space-y-6">
-                                      <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
-                                         <div className="text-center md:text-left">
-                                            <p className="text-white font-black text-xl uppercase tracking-tight">Propuesta: ${req.price?.toFixed(2)} USD</p>
-                                            <p className="text-[11px] text-[#c8c4d9] font-medium mt-1 uppercase tracking-widest">Cita: {req.scheduledDate} @ {req.scheduledTime}</p>
-                                         </div>
-                                         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                                            <button
-                                              onClick={() => handleAcceptQuote(req.id, 'yappy')}
-                                              className="flex-1 px-8 py-4 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase shadow-xl shadow-[#52ffac]/20 hover:brightness-110 transition-all flex items-center justify-center gap-2 h-[56px]"
-                                            >
-                                              <Download className="w-4 h-4" /> Yappy
-                                            </button>
-                                            <div className="flex-1 min-w-[200px]">
-                                              <PayPalButtons
-                                                style={{ layout: "horizontal", shape: "pill", color: "blue", height: 55 }}
-                                                createOrder={async () => {
-                                                  try {
-                                                    const response = await fetch("/api/orders", {
-                                                      method: "POST",
-                                                      headers: { "Content-Type": "application/json" },
-                                                      body: JSON.stringify({ price: req.price, itemName: `Servicio: ${req.assetName}` })
-                                                    });
-                                                    if (!response.ok) {
-                                                      const errorData = await response.json().catch(() => ({}));
-                                                      throw new Error(errorData.error || "Error al crear la orden de pago");
-                                                    }
-                                                    const order = await response.json();
-                                                    return order.id;
-                                                  } catch (err: any) {
-                                                    console.error("❌ Error en createOrder:", err);
-                                                    toast.error(`Error al procesar el pago: ${err.message}`);
-                                                    throw err;
-                                                  }
-                                                }}
-                                                onApprove={async (data) => {
-                                                  try {
-                                                    const response = await fetch(`/api/orders/${data.orderID}/capture`, { method: "POST" });
-                                                    const result = await response.json();
-
-                                                    if (!response.ok) {
-                                                      const errorDetail = result.details?.[0];
-                                                      if (errorDetail?.issue === "INSTRUMENT_DECLINED") {
-                                                        throw new Error("La tarjeta fue rechazada. Por favor intenta con otro método en tu cuenta PayPal.");
-                                                      }
-                                                      throw new Error(result.message || "Error al procesar la captura del pago.");
-                                                    }
-
-                                                    if (result.status === "COMPLETED") {
-                                                      handleAcceptQuote(req.id, 'paypal');
-                                                    } else {
-                                                      toast.error("El pago no se pudo completar. Por favor verifica tu cuenta.");
-                                                    }
-                                                  } catch (err: any) {
-                                                    console.error("❌ Error en onApprove:", err);
-                                                    toast.error(`Pago fallido: ${err.message}`);
-                                                  }
-                                                }}
-                                              />
-                                            </div>
-                                         </div>
-                                      </div>
-                                      <p className="text-[9px] text-[#474556] font-bold uppercase text-center tracking-widest">Pagos procesados de forma segura con cifrado AES-256</p>
-                                   </div>
-                                )}
-                                {req.status === 'disputed' && req.unforeseenAmount && (
-                                   <div className="bg-amber-500/10 p-8 rounded-[3rem] border border-amber-500/30 space-y-6 animate-fade-in">
-                                      <div className="text-center md:text-left space-y-2"><p className="text-amber-400 font-black text-sm uppercase tracking-widest flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> IMPREVISTO DETECTADO</p><p className="text-white font-bold text-base leading-tight">Motivo: {req.unforeseenReason}</p></div>
-                                      <div className="flex flex-col md:flex-row gap-4 items-center justify-between pt-4 border-t border-white/5"><div className="text-2xl font-black text-[#52ffac]">$+{req.unforeseenAmount.toFixed(2)} <span className="text-[10px] text-[#474556] uppercase">USD</span></div><div className="flex gap-3 w-full md:w-auto"><button onClick={() => handleRejectUnforeseen(req.id)} className="flex-1 px-6 py-3 border border-rose-500/30 text-rose-500 rounded-xl text-[10px] font-black uppercase hover:bg-rose-500 hover:text-white transition-all">Rechazar</button><button onClick={() => handleApproveUnforeseen(req.id)} className="flex-1 px-8 py-3 bg-amber-500 text-black rounded-xl text-[10px] font-black uppercase shadow-lg shadow-amber-500/20 hover:brightness-110 transition-all">Aprobar y Pagar</button></div></div>
-                                   </div>
-                                )}
-                                {(req.status === 'executing' || req.status === 'completed' || req.status === 'rated') && (
-                                   <div className="bg-[#1c1d21] p-8 rounded-[3rem] border border-white/5 space-y-8 animate-fade-in shadow-2xl">
-                                      <div className="flex flex-col md:flex-row gap-6 items-start justify-between border-b border-white/5 pb-8">
-                                         <div className="space-y-4">
-                                            <div className="flex items-center gap-3 text-[#52ffac]">
-                                               {req.status === 'executing' ? <Activity className="w-6 h-6 animate-pulse" /> : <CheckCircle2 className="w-6 h-6" />}
-                                               <h4 className="text-xl font-black uppercase tracking-tighter leading-none">
-                                                  {req.status === 'executing' ? 'Servicio en Ejecución' : 'Resumen de Servicio'}
-                                               </h4>
-                                            </div>
-                                            <p className="text-sm text-[#c8c4d9] font-medium leading-relaxed max-w-xl">
-                                               {req.status === 'executing'
-                                                 ? 'Monitoreo en tiempo real del progreso técnico. El especialista está trabajando en su activo.'
-                                                 : 'El servicio ha finalizado satisfactoriamente. Aquí puede ver el desglose técnico final.'}
-                                            </p>
-                                         </div>
-                                         <div className="flex gap-3">
-                                            <div className="px-5 py-3 bg-black/30 rounded-2xl border border-white/5 text-center">
-                                               <p className="text-[8px] font-black text-[#474556] uppercase">Iniciado</p>
-                                               <p className="text-sm font-black text-white">{formatTime12h(req.visitStartedAt)}</p>
-                                            </div>
-                                            {req.status === 'executing' && req.serviceType === 'remote' && req.remoteLink && (
-                                               <a
-                                                 href={req.remoteLink.startsWith('http') ? req.remoteLink : `https://${req.remoteLink}`}
-                                                 target="_blank"
-                                                 rel="noreferrer"
-                                                 className="px-6 py-3 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase shadow-lg shadow-[#5d3cfe]/30 flex items-center gap-2 animate-bounce"
-                                               >
-                                                  <Monitor className="w-4 h-4" /> Unirse a {req.remotePlatform?.toUpperCase() || 'Sesión'}
-                                               </a>
-                                            )}
-                                            {(req.status === 'completed' || req.status === 'rated') && (
-                                               <div className="flex gap-2">
-                                                  <button onClick={() => { setSelectedRequestForReport(req); setIsReportModalOpen(true); }} className="px-6 py-3 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-[#5d3cfe] transition-all flex items-center gap-2">
-                                                     <FileText className="w-4 h-4" /> Reporte
-                                                  </button>
-                                                  {req.status === 'completed' && (
-                                                    <button onClick={() => { setActiveRequestForSignature(req.id); setIsSignatureModalOpen(true); }} className="px-8 py-3 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase shadow-lg">
-                                                       Calificar
-                                                    </button>
-                                                  )}
-                                                  <button
-                                                    onClick={async () => {
-                                                      if(window.confirm("¿Deseas eliminar este registro de tu vista?")) {
-                                                        await deleteDoc(doc(db, "requests", req.id));
-                                                        toast.success("Eliminado");
-                                                      }
-                                                    }}
-                                                    className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-2xl hover:bg-rose-500 hover:text-white transition-all"
-                                                  >
-                                                    <Trash2 className="w-4 h-4" />
-                                                  </button>
-                                               </div>
-                                            )}
-                                         </div>
-                                      </div>
-
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                         <div className="space-y-6">
-                                            <h5 className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] flex items-center gap-2">
-                                               <CheckCircle2 className="w-4 h-4" /> Bitácora de Tareas
-                                            </h5>
-                                            <div className="bg-[#0d0e12] p-6 rounded-3xl border border-white/5 space-y-4">
-                                               {req.checklist && req.checklist.length > 0 ? req.checklist.map((task: any) => (
-                                                  <div key={task.id} className="flex items-center gap-4">
-                                                     <div className={`w-5 h-5 rounded-full flex items-center justify-center ${task.isCompleted ? 'bg-[#52ffac]' : 'border border-[#474556]'}`}>
-                                                        {task.isCompleted && <Check className="w-3 h-3 text-[#0d0e12]" />}
-                                                     </div>
-                                                     <span className={`text-[12px] font-bold ${task.isCompleted ? 'text-white' : 'text-[#474556] opacity-50'}`}>
-                                                        {task.description}
-                                                     </span>
-                                                  </div>
-                                               )) : <p className="text-[10px] text-[#474556] italic">Sincronizando tareas...</p>}
-                                            </div>
-                                         </div>
-
-                                         <div className="space-y-6">
-                                            <h5 className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] flex items-center gap-2">
-                                               <Package className="w-4 h-4" /> Materiales & Repuestos
-                                            </h5>
-                                            <div className="grid grid-cols-1 gap-3">
-                                               {req.materials && req.materials.length > 0 ? req.materials.map((m: any, idx: number) => (
-                                                  <div key={idx} className="flex justify-between items-center bg-[#0d0e12] p-5 rounded-2xl border border-white/5">
-                                                     <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-xl bg-[#5d3cfe]/10 flex items-center justify-center text-[#c7bfff] font-black text-xs">x{Number(m.quantity) || 1}</div>
-                                                        <span className="text-xs font-bold text-white uppercase">{m.name}</span>
-                                                     </div>
-                                                     <span className="text-sm font-black text-[#52ffac]">${((Number(m.price) || 0) * (Number(m.quantity) || 1)).toFixed(2)}</span>
-                                                  </div>
-                                               )) : <p className="text-[10px] text-[#474556] italic">No hay materiales registrados.</p>}
-                                            </div>
-                                         </div>
-                                      </div>
-                                   </div>
-                                )}
-                             </div>
-                           ))}
-                        </div>
-                     </div>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
                   )}
                   {clientTab === 'audit' && (
                     <div className="space-y-10 animate-fade-in">
                        <header className="flex justify-between items-end">
-                          <div><h1 className="text-4xl font-black text-white tracking-tighter uppercase">Auditoría <span className="text-[#5d3cfe]">Lite</span></h1><p className="text-[#c8c4d9] font-medium mt-2 italic opacity-60">Resumen de cumplimiento técnico (Plan Profesional).</p></div>
-                          {subscription.planId === 'plan-enterprise' && (
-                            <button onClick={() => toast.success("Generando reporte Excel completo...")} className="px-6 py-3 bg-[#52ffac] text-black rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all hover:scale-105"><Download className="w-4 h-4" /> Exportar Full</button>
+                          <div><h1 className="text-4xl font-black text-white tracking-tighter uppercase">Auditoría <span className="text-[#5d3cfe]">de Flota</span></h1><p className="text-[#c8c4d9] font-medium mt-2 italic opacity-60">Resumen operativo y financiero para la toma de decisiones.</p></div>
+                          {(subscription.planId === 'plan-enterprise' || subscription.planId === 'plan-pro') && (
+                            <button
+                              onClick={() => {
+                                const data = assets.map(a => {
+                                  const urgent = reminders.filter(r => r.assetId === a.id && r.status === 'urgent').length;
+                                  return {
+                                    'UNIDAD': a.name.toUpperCase(),
+                                    'PLACA': a.licensePlate || 'N/A',
+                                    'S/N': a.serialNumber || 'N/A',
+                                    'TIPO': a.type.toUpperCase(),
+                                    'KILOMETRAJE': a.mileage || 0,
+                                    'ESTADO': urgent > 0 ? 'MANTENIMIENTO REQUERIDO' : 'OPERATIVO',
+                                    'SEDE': a.location || 'PANAMÁ CENTRO',
+                                    'REGISTRADO': a.registeredAt,
+                                    'PRÓXIMO MTTO': a.nextMaintenanceDate || 'PENDIENTE'
+                                  };
+                                });
+                                const ws = XLSX.utils.json_to_sheet(data);
+                                const wb = XLSX.utils.book_new();
+                                XLSX.utils.book_append_sheet(wb, ws, "Auditoría Flota");
+                                const dateStr = new Date().toISOString().split('T')[0];
+                                XLSX.writeFile(wb, `REPORTE_FULL_${dateStr}.xlsx`);
+                                toast.success("Descargando reporte de auditoría...");
+                              }}
+                              className="px-6 py-3 bg-[#52ffac] text-black rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-[0_10px_30px_rgba(82,255,172,0.3)]"
+                            >
+                              <Download className="w-4 h-4" /> Exportar Full
+                            </button>
                           )}
                        </header>
                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                          <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2rem] shadow-2xl">
-                             <span className="text-[9px] font-black text-[#474556] uppercase tracking-[0.3em]">Total Equipos</span>
+                          <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2rem] shadow-2xl relative overflow-hidden group">
+                             <span className="text-[9px] font-black text-[#474556] uppercase tracking-[0.3em]">Activos Totales</span>
                              <p className="text-4xl font-black text-white mt-2">{assets.length}</p>
+                             <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity"><Truck className="w-24 h-24" /></div>
                           </div>
-                          <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2rem] shadow-2xl">
-                             <span className="text-[9px] font-black text-[#474556] uppercase tracking-[0.3em]">Mttos. Al Día</span>
-                             <p className="text-4xl font-black text-emerald-500 mt-2">{assets.length - reminders.filter(r => r.status === 'urgent').length}</p>
+                          <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2rem] shadow-2xl relative overflow-hidden group">
+                             <span className="text-[9px] font-black text-[#474556] uppercase tracking-[0.3em]">Unidades Operativas</span>
+                             <p className="text-4xl font-black text-[#52ffac] mt-2">{assets.length - reminders.filter(r => r.status === 'urgent').length}</p>
+                             <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity"><CheckCircle2 className="w-24 h-24" /></div>
                           </div>
-                          <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2rem] shadow-2xl">
-                             <span className="text-[9px] font-black text-[#474556] uppercase tracking-[0.3em]">Acciones Pendientes</span>
+                          <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2rem] shadow-2xl relative overflow-hidden group">
+                             <span className="text-[9px] font-black text-[#474556] uppercase tracking-[0.3em]">Atención Requerida</span>
                              <p className="text-4xl font-black text-rose-500 mt-2">{reminders.filter(r => r.status === 'urgent').length}</p>
+                             <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity"><AlertTriangle className="w-24 h-24" /></div>
                           </div>
                        </div>
                        <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[3rem] shadow-2xl">
@@ -1509,8 +2033,12 @@ export default function App() {
                        </div>
                     </div>
                   )}
-                  {clientTab === 'inventory' && <InventoryModule items={inventory} assets={assets} onUpdateQuantity={handleUpdateInventoryQuantity} onAddItem={handleAddInventoryItem} onDeleteItem={handleDeleteInventoryItem} onUpdateItem={handleUpdateInventoryItem} />}
-                  {clientTab === 'subscriptions' && <SubscriptionModule subscription={subscription} onUpgrade={handleOpenSubscriptionPayment} role="client" />}
+                  {clientTab === 'inventory' && (
+                    <InventoryModule items={inventory} assets={assets} onUpdateQuantity={handleUpdateInventoryQuantity} onAddItem={handleAddInventoryItem} onDeleteItem={handleDeleteInventoryItem} onUpdateItem={handleUpdateInventoryItem} />
+                  )}
+                  {clientTab === 'subscriptions' && (
+                    <SubscriptionModule subscription={subscription} onUpgrade={handleOpenSubscriptionPayment} role="client" />
+                  )}
                   {clientTab === 'chat' && (
                     <div className="h-[calc(100vh-200px)]">
                       <SupportChatWidget
@@ -1535,6 +2063,61 @@ export default function App() {
 
               {role === 'tech' && (
                  <div className="space-y-12">
+                    {/* Barra de Estado de Disponibilidad */}
+                    <div className="bg-[#1c1d21] border border-white/5 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+                       <div className="flex items-center gap-4">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${getSelectedTechProfileObj().isOnline ? 'bg-[#52ffac] shadow-[0_0_20px_rgba(82,255,172,0.3)] text-black' : 'bg-[#121317] border border-white/10 text-[#474556]'}`}>
+                             {getSelectedTechProfileObj().isOnline ? <Zap className="w-6 h-6 animate-pulse" /> : <Zap className="w-6 h-6 opacity-20" />}
+                          </div>
+                          <div>
+                             <h4 className="text-sm font-black text-white uppercase tracking-tight">Estatus de Conexión</h4>
+                             <p className={`text-[10px] font-bold uppercase tracking-widest ${getSelectedTechProfileObj().isOnline ? 'text-[#52ffac]' : 'text-[#474556]'}`}>
+                                {getSelectedTechProfileObj().isOnline ? 'Transmitiendo ubicación en Radar' : 'Modo Invisible (Fuera de línea)'}
+                             </p>
+                          </div>
+                       </div>
+
+                       <button
+                          onClick={async () => {
+                             const isOnline = getSelectedTechProfileObj().isOnline;
+                             const techId = selectedTechProfileId;
+                             if (!techId) return;
+
+                             if (!isOnline) {
+                                // ACTIVAR POSICIÓN
+                                try {
+                                   const isNative = Capacitor.isNativePlatform();
+                                   if (isNative) {
+                                      const permission = await Geolocation.requestPermissions();
+                                      if (permission.location !== 'granted') return toast.error("Se requiere GPS para activar posición.");
+                                   }
+
+                                   const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
+                                   await updateDoc(doc(db, "technicians", techId), {
+                                      isOnline: true,
+                                      latitude: pos.coords.latitude,
+                                      longitude: pos.coords.longitude,
+                                      lastLocationUpdate: new Date().toISOString()
+                                   });
+                                   toast.success("¡En línea! Ahora eres visible en el radar para clientes.");
+                                } catch (err) {
+                                   toast.error("Error al obtener ubicación. Verifique el GPS.");
+                                   console.error(err);
+                                }
+                             } else {
+                                // DESACTIVAR POSICIÓN
+                                await updateDoc(doc(db, "technicians", techId), {
+                                   isOnline: false
+                                });
+                                toast("Modo Invisible Activado.", { icon: '🛡️' });
+                             }
+                          }}
+                          className={`px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${getSelectedTechProfileObj().isOnline ? 'bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white' : 'bg-[#52ffac] text-black shadow-[#52ffac]/20 hover:brightness-110'}`}
+                       >
+                          {getSelectedTechProfileObj().isOnline ? 'Desactivar Posición' : 'Iniciar Posición de Servicio'}
+                       </button>
+                    </div>
+
                     {techTab === 'received' && (
                        <div className="space-y-8">
                           <header className="flex justify-between items-center"><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Bandeja de <span className="text-[#5d3cfe]">Servicios</span></h1><button onClick={() => setTechTab('subscriptions')} className="px-6 py-2 bg-white/5 border border-white/10 text-white rounded-xl text-[9px] font-black uppercase hover:bg-[#5d3cfe]">Mejorar Plan Técnico</button></header>
@@ -1830,6 +2413,10 @@ export default function App() {
 
               {role === 'admin' && (
                 <div className="space-y-12 animate-fade-in-up">
+                   {adminTab === 'audit' && (
+                      <AuditLogsModule logs={auditLogs} />
+                   )}
+
                    {adminTab === 'finance' && (
                      <div className="space-y-12">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -2049,7 +2636,17 @@ export default function App() {
       )}
 
       {isAssetModalOpen && <AssetRegisterModal isOpen={isAssetModalOpen} onClose={() => setIsAssetModalOpen(false)} onAdd={handleAddAsset} assetToEdit={assetToEdit} maxAssets={planLimits.maxAssets} currentAssetsCount={assets.length} />}
-      {isTechModalOpen && activeTechForModal && <TechnicianProfileModal tech={activeTechForModal} isOpen={isTechModalOpen} onClose={() => setIsTechModalOpen(false)} assets={assets} onRequestQuote={handleRequestQuote} />}
+      {isTechModalOpen && activeTechForModal && (
+        <TechnicianProfileModal
+          tech={activeTechForModal}
+          isOpen={isTechModalOpen}
+          onClose={() => setIsTechModalOpen(false)}
+          assets={assets}
+          onRequestQuote={handleRequestQuote}
+          isAdmin={role === 'admin'}
+          onVerifyTech={(id) => handleVerifyTechnician(id, true)}
+        />
+      )}
       {isEditingTechProfile && <TechnicianEditProfileModal isOpen={isEditingTechProfile} onClose={() => setIsEditingTechProfile(false)} profile={getSelectedTechProfileObj()} onSave={handleUpdateTechProfile} />}
       {selectedRequestForReport && <ServiceReportModal isOpen={isReportModalOpen} onClose={() => { setIsReportModalOpen(false); setSelectedRequestForReport(null); }} request={selectedRequestForReport} />}
       {isCredentialModalOpen && (
@@ -2067,6 +2664,7 @@ export default function App() {
       <VideoCallModal isOpen={isVideoCallOpen} onClose={() => setIsVideoCallOpen(false)} roomName={videoCallRoom} userName={loggedInName} isVoiceOnly={isVideoVoiceOnly} />
       <QRScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanSuccess={(id) => { const tech = technicians.find(t => t.id === id); if (tech) toast(`✅ Especialista Validado: ${tech.name}`); }} technicians={technicians} />
       <SupportModal isOpen={isSupportModalOpen} onClose={() => setIsSupportModalOpen(false)} userEmail={loggedInEmail} userName={loggedInName} userId={user?.uid} userRole={role} plan={subscription.planId} />
+      <CorporateSupportModal isOpen={isCorporateSupportModalOpen} onClose={() => setIsCorporateSupportModalOpen(false)} userEmail={loggedInEmail} userName={loggedInName} userId={user?.uid} />
 
       {isRouteStartModalOpen && assetForRoute && (
         <RouteStartModal
@@ -2074,17 +2672,32 @@ export default function App() {
           onClose={() => setIsRouteStartModalOpen(false)}
           assetName={assetForRoute.name}
           onConfirm={async (dest) => {
-            setIsRouteStartModalOpen(false);
             const assetId = assetForRoute.id;
+            const loadingToast = toast.loading("Capturando señal GPS de despacho...");
 
             try {
-              // CAPTURA INMEDIATA (REAL)
-              const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
+              // CAPTURA CON TIMEOUT Y RESPALDO (Evita bloqueo infinito)
+              let position;
+              try {
+                position = await Geolocation.getCurrentPosition({
+                  enableHighAccuracy: true,
+                  timeout: 8000 // 8 segundos para alta precisión
+                });
+              } catch (geoErr) {
+                console.warn("GPS alta precisión falló, usando respaldo de red", geoErr);
+                position = await Geolocation.getCurrentPosition({
+                  enableHighAccuracy: false,
+                  timeout: 10000
+                });
+              }
+
+              if (!position || !position.coords) throw new Error("GPS Sin Respuesta");
+
               const startPoint = {
                 lat: position.coords.latitude,
                 lng: position.coords.longitude,
                 timestamp: new Date().toISOString(),
-                locationName: 'Punto de Despacho',
+                locationName: 'SALIDA DE BODEGA',
                 type: 'checkpoint'
               };
 
@@ -2098,9 +2711,13 @@ export default function App() {
                 longitude: position.coords.longitude,
                 routeHistory: arrayUnion(startPoint)
               });
-              toast.success(`Unidad despachada a ${dest}.`);
+
+              toast.success(`Unidad despachada a ${dest}.`, { id: loadingToast });
+              setIsRouteStartModalOpen(false); // Cerrar solo tras éxito
             } catch (err) {
-              toast.error("Error al obtener señal GPS inicial.");
+              console.error("Fallo despacho GPS:", err);
+              toast.error("No se detectó señal GPS. Mueva el equipo a zona abierta.", { id: loadingToast });
+              // No cerramos el modal para que el usuario pueda reintentar
             }
           }}
         />
@@ -2115,23 +2732,76 @@ export default function App() {
             setIsCheckpointModalOpen(false);
             const assetId = assetForRoute.id;
             try {
-              const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
-              const newPoint = {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
-                timestamp: new Date().toISOString(),
-                locationName: name,
-                type: 'checkpoint'
+              // 🏛️ DIRECTORIO MAESTRO MANTECHPRO (Base de Datos Interna Panamá - Zero Latency)
+              const mantechPOI: {[key: string]: {lat: number, lng: number, name: string}} = {
+                'metromall': { lat: 9.0522, lng: -79.4533, name: 'METROMALL PANAMÁ' },
+                'metro mall': { lat: 9.0522, lng: -79.4533, name: 'METROMALL PANAMÁ' },
+                'multiplaza': { lat: 8.9856, lng: -79.5117, name: 'MULTIPLAZA PACIFIC' },
+                'albrook': { lat: 8.9733, lng: -79.5533, name: 'ALBROOK MALL' },
+                'multicentro': { lat: 8.9789, lng: -79.5194, name: 'MULTICENTRO MALL' },
+                'soho': { lat: 8.9825, lng: -79.5144, name: 'SOHO CITY CENTER' },
+                'el dorado': { lat: 9.0094, lng: -79.5344, name: 'EL DORADO MALL' },
+                'los pueblos': { lat: 9.0494, lng: -79.4494, name: 'LOS PUEBLOS' },
+                'aeropuerto tocumen': { lat: 9.0664, lng: -79.3850, name: 'AEROPUERTO TOCUMEN' },
+                'tocumen': { lat: 9.0664, lng: -79.3850, name: 'AEROPUERTO TOCUMEN' },
+                'costa del este': { lat: 9.0142, lng: -79.4717, name: 'COSTA DEL ESTE' },
+                'puerto balboa': { lat: 8.9500, lng: -79.5667, name: 'PUERTO DE BALBOA' },
+                'puerto cristobal': { lat: 9.3500, lng: -79.9000, name: 'PUERTO CRISTOBAL' },
+                'zona libre': { lat: 9.3622, lng: -79.8889, name: 'ZONA LIBRE COLÓN' },
+                'aduana': { lat: 9.0167, lng: -79.5167, name: 'ADUANA PANAMÁ' },
+                'torre ancon': { lat: 9.0161, lng: -79.4697, name: 'TORRE ANCÓN (CDE)' },
+                'costa del este': { lat: 9.0142, lng: -79.4717, name: 'COSTA DEL ESTE' },
+                'metromall': { lat: 9.0522, lng: -79.4533, name: 'METROMALL PANAMÁ' },
               };
 
-              await updateDoc(doc(db, "assets", assetId), {
-                routeHistory: arrayUnion(newPoint),
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude
-              });
-              toast.success(`Parada "${name}" registrada con éxito.`);
+              let lat, lng, finalName = name.toUpperCase();
+              const queryStr = name.toLowerCase().trim();
+
+              // Búsqueda Inteligente: Busca si el texto ingresado contiene alguna palabra clave del directorio maestro
+              const matchedKey = Object.keys(mantechPOI).find(key => queryStr.includes(key));
+
+              if (matchedKey) {
+                lat = mantechPOI[matchedKey].lat;
+                lng = mantechPOI[matchedKey].lng;
+                finalName = mantechPOI[matchedKey].name;
+                toast.success(`🏛️ Punto Maestro: ${finalName}`, { icon: '✅' });
+              } else {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name + ', Panama')}&countrycodes=pa&limit=1`);
+                const data = await res.json();
+                if (data && data.length > 0) {
+                  lat = parseFloat(data[0].lat);
+                  lng = parseFloat(data[0].lon);
+                  finalName = data[0].display_name.split(',')[0].toUpperCase();
+                  toast.success(`🛰️ Localizado: ${finalName}`);
+                }
+              }
+
+              if (lat && lng) {
+                const newPoint = {
+                  lat,
+                  lng,
+                  timestamp: new Date().toISOString(),
+                  locationName: finalName,
+                  type: 'checkpoint'
+                };
+                await updateDoc(doc(db, "assets", assetId), {
+                  routeHistory: arrayUnion(newPoint)
+                });
+              } else {
+                const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
+                await updateDoc(doc(db, "assets", assetId), {
+                  routeHistory: arrayUnion({
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude,
+                    timestamp: new Date().toISOString(),
+                    locationName: name.toUpperCase(),
+                    type: 'checkpoint'
+                  })
+                });
+                toast(`📍 "${name}" no hallado. Usando tu GPS actual.`, { icon: '⚠️' });
+              }
             } catch (err) {
-              toast.error("Error al obtener ubicación para la parada.");
+              toast.error("Falla en el motor de búsqueda.");
             }
           }}
         />
@@ -2223,7 +2893,7 @@ export default function App() {
         </div>
       )}
 
-      <Chatbot247 />
+      <Chatbot247 assets={assets} requests={requests} />
     </div>
     </PayPalScriptProvider>
   );
