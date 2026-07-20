@@ -33,7 +33,16 @@ export interface Asset {
   routeStartedAt?: string;
   driverName?: string;
   fuelType?: FuelType;
-  routeHistory?: { lat: number; lng: number; timestamp: string; locationName?: string; type?: 'checkpoint' | 'track'; speed?: number }[]; // Añadido speed
+  // Finanzas y QR
+  qrCodeUrl?: string;
+  totalMaintenanceSpend?: number;
+  avgCostPerUnit?: number; // km o hora
+  performanceRating?: 'efficient' | 'average' | 'costly';
+  fuelEfficiency?: number; // km por galón
+  fuelLogs?: { date: string, gallons: number, price: number, mileage: number, photoUrl?: string, status: 'ok' | 'anomaly' }[];
+  preTripInspections?: { date: string, inspectorName: string, items: { label: string, status: 'ok' | 'fail' }[], observations?: string }[];
+  usageStats?: { dailyAvgKm?: number, predictedMaintenanceDate?: string };
+  routeHistory?: { lat: number; lng: number; timestamp: string; locationName?: string; type?: 'track'; speed?: number }[];
 }
 
 export interface MaintenanceReminder {
@@ -111,7 +120,9 @@ export interface JobRequest {
   techId: string;
   techName: string;
   description: string;
-  status: 'pending' | 'quoted' | 'accepted' | 'executing' | 'completed' | 'rated' | 'rejected' | 'disputed' | 'cancelled';
+  status: 'pending' | 'quoted' | 'accepted' | 'executing' | 'completed' | 'rated' | 'rejected' | 'disputed' | 'cancelled' | 'open_bidding';
+  isPublic?: boolean; // Si es true, aparece en el Market abierto
+  bids?: { techId: string; techName: string; price: number; time: string; timestamp: string }[];
   serviceType?: 'onsite' | 'remote';
   remotePlatform?: 'anydesk' | 'zoom' | 'meet' | 'teams' | 'whatsapp' | 'other';
   remoteLink?: string;

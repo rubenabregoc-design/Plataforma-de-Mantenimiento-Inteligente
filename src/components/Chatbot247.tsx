@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircleMore, MessageSquare, Send, X, Sparkles, User, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Logo from './Logo';
+import { useTranslation } from 'react-i18next';
 
 interface Message {
   id: string;
@@ -19,14 +20,15 @@ interface ChatbotProps {
 }
 
 export default function Chatbot247({ isInline = false, assets = [], requests = [], onScheduleService, initialMode = 'general' }: ChatbotProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(isInline);
   const [lastQuestion, setLastQuestion] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       text: initialMode === 'sales'
-        ? '¡Buen día! Es un placer saludarle. Soy su **Asesor MantechPro** 💼. Estoy a su entera disposición para ayudarle a optimizar la gestión y rentabilidad de sus equipos.\n\n¿Le gustaría conocer los beneficios que ofrecemos para **clientes** o prefiere información sobre cómo unirse a nuestra red de **técnicos** especializados?'
-        : '¡Hola! Es un placer atenderle. 👋 Soy su **Asesor MantechPro** para Panamá 🇵🇦.\n\nMi objetivo es brindarle el soporte necesario para que sus activos y flota operen siempre en óptimas condiciones. ¿En qué puedo asistirle el día de hoy?',
+        ? t('greetings_sales', '¡Buen día! Es un placer saludarle. Soy su **Asesor MantechPro** 💼. Estoy a su entera disposición para ayudarle a optimizar la gestión y rentabilidad de sus equipos.\n\n¿Le gustaría conocer los beneficios que ofrecemos para **clientes** o prefiere información sobre cómo unirse a nuestra red de **técnicos** especializados?')
+        : t('greetings', '¡Hola! Es un placer atenderle. 👋 Soy su **Asesor MantechPro** para Panamá 🇵🇦.\n\nMi objetivo es brindarle el soporte necesario para que sus activos y flota operen siempre en óptimas condiciones. ¿En qué puedo asistirle el día de hoy?'),
       sender: 'bot',
       timestamp: new Date()
     }
@@ -69,10 +71,10 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
       const farewells = ['gracias', 'ok', 'vale', 'entendido', 'adios', 'adiós', 'listo', 'excelente'];
       const techSupport = ['soporte', 'técnico', 'tecnico', 'ayuda', 'problema', 'falla', 'error', 'asistencia', 'dañado', 'reparación'];
       const salesKeywords = ['plan', 'precio', 'cuanto cuesta', 'costo', 'membresía', 'suscripcion', 'invertir', 'inversión'];
-      const complaints = ['no vino', 'no asistió', 'no asistio', 'no llego', 'no llegó', 'tarde', 'esperando', 'incumplimiento', 'malo', 'queja'];
+      const complaints = ['no vino', 'no asistió', 'no asistio', 'no llego', 'no llegó', 'tarde', 'esperando', 'incumplimiento', 'malo', 'queja', 'reclamo'];
 
       // Palabras Clave de Potestad Administrativa (Poder de Resolución)
-      const adminPowers = ['cancelar', 'quitar', 'reemplazar', 'cambiar técnico', 'reasignar', 'estado de contrato', 'estatus', 'folio', 'donde esta'];
+      const adminPowers = ['cancelar', 'quitar', 'reemplazar', 'cambiar técnico', 'reasignar', 'estado de contrato', 'estatus', 'número de contrato', 'donde esta'];
 
       const isGreeting = greetings.some(v => lowerInput.includes(v));
       const isFarewell = farewells.some(v => lowerInput.includes(v));
@@ -112,7 +114,10 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
             setLastQuestion(null);
         }
       }
-      // 2. FASE: GESTIÓN DE CONTRATOS Y TÉCNICOS (Búsqueda Real)
+      // 2. EXPLICACIÓN DE NÚMERO DE CONTRATO Y BÚSQUEDA POR ACTIVO
+      else if (lowerInput.includes('qué es el número de contrato') || lowerInput.includes('que es el numero de contrato') || (lowerInput.includes('contrato') && (lowerInput.includes('que') || lowerInput.includes('qué')) && lowerInput.includes('número'))) {
+        botResponse = "Con gusto le explico. El **Número de Contrato** es el identificador único de su servicio (ej: #101). Lo puede encontrar fácilmente en su pestaña de **Contratos**.\n\nRespecto a su duda sobre el equipo, nuestro sistema central vincula cada activo con su hoja de ruta técnica. Si usted me indica el nombre del equipo (ej: *Planta Eléctrica 02*), yo puedo rastrear quién es el especialista asignado para proceder con el cambio.\n\n¿Desea indicarme el nombre de su equipo ahora?";
+      }
       else if (isNumeric || isPowerQuery || (isComplaint && lowerInput.length > 3)) {
         const foundRequest = requests.find(r =>
           r.id.includes(lowerInput) ||
@@ -122,14 +127,14 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
         );
 
         if (foundRequest) {
-          botResponse = `He verificado el estado de su contrato activo. 🔍\n\n**ESTATUS ADMINISTRATIVO:**\n• **Folio**: #${foundRequest.id}\n• **Activo**: ${foundRequest.assetName}\n• **Técnico**: ${foundRequest.techName}\n• **Estado**: ${foundRequest.status.toUpperCase()}\n\nComo su asesor, tengo la potestad de anular esta asignación. Si lo desea, puedo reabrir el radar para que **usted elija personalmente** a un nuevo especialista de entre los candidatos disponibles.\n\n¿Desea que proceda a liberar el radar para su elección ahora mismo?`;
+          botResponse = `He verificado el estado de su contrato activo. 🔍\n\n**ESTATUS ADMINISTRATIVO:**\n• **Número de Contrato**: #${foundRequest.id}\n• **Activo**: ${foundRequest.assetName}\n• **Técnico**: ${foundRequest.techName}\n• **Estado**: ${foundRequest.status.toUpperCase()}\n\nComo su asesor, tengo la potestad de anular esta asignación. Si lo desea, puedo reabrir el radar para que **usted elija personalmente** a un nuevo especialista de entre los candidatos disponibles.\n\n¿Desea que proceda a liberar el radar para su elección ahora mismo?`;
           setLastQuestion('REASSIGN_TECH');
         } else if (isNumeric) {
-          botResponse = `He consultado el folio **#${lowerInput}** en nuestra base central, pero no logré localizar una coincidencia. 🙇‍♂️\n\nPor favor, verifique el número en su pestaña de **Contratos** o indíqueme simplemente el nombre de su equipo para que pueda asistirlo.`;
+          botResponse = `He consultado el número de contrato **#${lowerInput}** en nuestra base central, pero no logré localizar una coincidencia. 🙇‍♂️\n\nPor favor, verifique el número en su pestaña de **Contratos** o indíqueme simplemente el nombre de su activo para que pueda asistirlo.`;
         } else if (isPowerQuery && !foundRequest) {
-          botResponse = "Para ejercer mis facultades de cancelación o cambio, necesito identificar su contrato. 📝\n\n¿Podría facilitarme el **nombre de su equipo** o el **numero de folio**? Con esa información tomaré el control de la situación de inmediato.";
+          botResponse = "Para ejercer mis facultades de cancelación o cambio, necesito identificar su contrato. 📝\n\n¿Podría facilitarme el **nombre de su equipo** o el **número de contrato**? Con esa información tomaré el control de la situación de inmediato.";
         } else {
-          botResponse = "Le ofrezco una disculpa. Como su asesor, necesito el nombre de su equipo o el número de folio para ver el estado de sus servicios y tomar acciones correctivas. ¿Podría proporcionármelo?";
+          botResponse = "Le ofrezco una disculpa. Como su asesor, necesito el nombre de su equipo o el número de contrato para ver el estado de sus servicios y tomar acciones correctivas. ¿Podría proporcionármelo?";
         }
       }
       // 3. FASE: CONSULTA COMERCIAL (Ventas)

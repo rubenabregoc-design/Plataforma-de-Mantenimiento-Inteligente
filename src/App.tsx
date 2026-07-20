@@ -1,4 +1,5 @@
 import { Toaster, toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import * as XLSX from 'xlsx';
 import React, { useState, useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
@@ -45,7 +46,8 @@ import QRScannerModal from './components/QRScannerModal';
 import TechCredential from './components/TechCredential';
 import VideoCallModal from './components/VideoCallModal';
 import LandingPage from './components/LandingPage';
-import Logo from './components/Logo';
+import AssetIntelligentCard from './components/AssetIntelligentCard';
+import FuelAuditModule from './components/FuelAuditModule';
 import TechWalletModule from './components/TechWalletModule';
 import TechnicianRadar from './components/TechnicianRadar';
 import RouteStartModal from './components/RouteStartModal';
@@ -94,6 +96,7 @@ import {
 import { auth, db } from "./firebase";
 
 export default function App() {
+  const { t, i18n } = useTranslation();
   // Session state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthResolving, setIsAuthResolving] = useState(true);
@@ -127,7 +130,7 @@ export default function App() {
   // UI State
   const [adminTab, setAdminTab] = useState<'finance' | 'users' | 'logistics' | 'alerts' | 'inventory' | 'audit' | 'settings'>('finance');
   const [clientTab, setClientTab] = useState<'dashboard' | 'fleet' | 'ai' | 'marketplace' | 'quotes' | 'inventory' | 'audit' | 'subscriptions' | 'chat' | 'settings'>('dashboard');
-  const [techTab, setTechTab] = useState<'received' | 'agenda' | 'wallet' | 'mantech_id' | 'chat' | 'profile' | 'settings'>('received');
+  const [techTab, setTechTab] = useState<'received' | 'bidding_market' | 'agenda' | 'wallet' | 'mantech_id' | 'chat' | 'profile' | 'settings'>('received');
 
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [assetToEdit, setAssetToEdit] = useState<Asset | null>(null);
@@ -144,9 +147,12 @@ export default function App() {
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCorporateSupportModalOpen, setIsCorporateSupportModalOpen] = useState(false);
+  const [isFuelModalOpen, setIsFuelModalOpen] = useState(false);
+  const [isPreTripModalOpen, setIsPreTripModalOpen] = useState(false);
+  const [activeAssetForFuel, setActiveAssetForFuel] = useState<Asset | null>(null);
 
   // Marketplace UI State
-  const [marketViewMode, setMarketViewMode] = useState<'list' | 'radar'>('list');
+  const [marketViewMode, setMarketViewMode] = useState<'list' | 'radar' | 'bidding'>('list');
   const [isRouteStartModalOpen, setIsRouteStartModalOpen] = useState(false);
   const [isCheckpointModalOpen, setIsCheckpointModalOpen] = useState(false);
   const [assetForRoute, setAssetForRoute] = useState<Asset | null>(null);
@@ -556,20 +562,22 @@ export default function App() {
   };
 
   const handleRequestQuote = async (techId: string, assetId: string, description: string, suggestedDate?: string, suggestedTime?: string) => {
+    // ...
+  };
+
+  const handlePostOpenMarket = async (assetId: string, description: string) => {
     if (!user) return;
-    const tech = technicians.find(t => t.id === techId);
     const asset = assets.find(a => a.id === assetId);
-    if (!tech || !asset) return;
+    if (!asset) return;
     try {
       await addDoc(collection(db, "requests"), {
         clientId: user.uid, clientName: loggedInName, assetId, assetName: asset.name,
-        techId, techName: tech.name, techUserId: tech.userId || null,
-        description, status: 'pending', createdAt: serverTimestamp(),
-        scheduledDate: suggestedDate || '', scheduledTime: suggestedTime || '',
-        checklist: [{ id: '1', description: 'Inspección inicial', isCompleted: false }], materials: []
+        techId: 'open_market', techName: 'Subasta Abierta',
+        description, status: 'open_bidding', createdAt: serverTimestamp(),
+        isPublic: true, bids: []
       });
-      toast.success("¡Solicitud enviada al técnico exitosamente!");
-      setClientTab('quotes');
+      toast.success("¡Requerimiento publicado en la Subasta Abierta!");
+      setClientTab('marketplace');
     } catch (err) { console.error(err); }
   };
 
@@ -1087,6 +1095,55 @@ export default function App() {
   };
 
   const handleBulkRegisterAssets = async (assetsList: any[]) => {
+    // ...
+  };
+
+  const handleSaveFuelLog = async (assetId: string, log: any) => {
+    try {
+      const asset = assets.find(a => a.id === assetId);
+      if (!asset) return;
+
+      const newSpend = (asset.totalMaintenanceSpend || 0) + log.price;
+
+      // LÓGICA DE PREDICCIÓN (Idea 1)
+      const logs = asset.fuelLogs || [];
+      let dailyAvgKm = 15; // Estándar si no hay data
+      let predictedDate = asset.nextMaintenanceDate;
+
+      if (logs.length >= 2) {
+        const last = logs[logs.length-1];
+        const first = logs[0];
+        const daysDiff = (new Date(last.date).getTime() - new Date(first.date).getTime()) / (1000 * 3600 * 24);
+        const kmDiff = last.mileage - first.mileage;
+        if (daysDiff > 0) dailyAvgKm = kmDiff / daysDiff;
+
+        // Estimar cuándo llegará a los próximos 5000km de mtto
+        const kmRemaining = 5000 - (last.mileage % 5000);
+        const daysRemaining = kmRemaining / dailyAvgKm;
+        const estDate = new Date();
+        estDate.setDate(estDate.getDate() + daysRemaining);
+        predictedDate = estDate.toISOString().split('T')[0];
+      }
+
+      await updateDoc(doc(db, "assets", assetId), {
+        fuelLogs: arrayUnion(log),
+        mileage: log.mileage,
+        totalMaintenanceSpend: newSpend,
+        'usageStats.dailyAvgKm': Math.round(dailyAvgKm),
+        'usageStats.predictedMaintenanceDate': predictedDate
+      });
+      logActivity(user.uid, 'fuel_log', `Carga de combustible y predicción mtto: ${assetId}`, 'info');
+    } catch (err) { console.error(err); }
+  };
+
+  const handleSavePreTrip = async (assetId: string, inspection: any) => {
+    try {
+      await updateDoc(doc(db, "assets", assetId), {
+        preTripInspections: arrayUnion(inspection)
+      });
+      toast.success("Historial de seguridad actualizado.");
+    } catch (err) { console.error(err); }
+  };
     if (!user) return;
     try {
       toast.loading(`Registrando ${assetsList.length} unidades...`, { id: 'bulk-reg' });
@@ -1377,6 +1434,20 @@ export default function App() {
           </div>
         </div>
         <div className="flex items-center gap-3 md:gap-8">
+          <div className="flex bg-[#1c1d21] p-1 rounded-xl border border-[#2a2b2f]">
+             <button
+               onClick={() => i18n.changeLanguage('es')}
+               className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${i18n.language.startsWith('es') ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}
+             >
+               ES
+             </button>
+             <button
+               onClick={() => i18n.changeLanguage('en')}
+               className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${i18n.language.startsWith('en') ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}
+             >
+               EN
+             </button>
+          </div>
           <button onClick={() => setIsSupportModalOpen(true)} className="p-2.5 bg-[#1c1d21] border border-[#2a2b2f] rounded-xl text-[#c8c4d9] hover:text-white transition-all"><HelpCircle className="w-5 h-5" /></button>
           <button onClick={handleLogout} className="flex items-center gap-3 text-[#c8c4d9] hover:text-white font-black text-[10px] uppercase tracking-widest transition-all">
             <LogOut className="w-5 h-5" />
@@ -1415,30 +1486,31 @@ export default function App() {
           <nav className="space-y-1.5 flex-1 text-[11px] font-black uppercase tracking-wider">
             {role === 'client' ? (
               <>
-                <button onClick={() => setClientTab('dashboard')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'dashboard' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><LayoutDashboard className="w-4 h-4" /> Mis Equipos</button>
+                <button onClick={() => setClientTab('dashboard')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'dashboard' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><LayoutDashboard className="w-4 h-4" /> {t('my_assets', 'Mis Equipos')}</button>
                 {planLimits.fleet !== 'none' && (
-                  <button onClick={() => setClientTab('fleet')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'fleet' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Globe className="w-5 h-5" /> Flota B2B</button>
+                  <button onClick={() => setClientTab('fleet')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'fleet' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Globe className="w-5 h-5" /> {t('fleet_b2b', 'Flota B2B')}</button>
                 )}
-                <button onClick={() => setClientTab('ai')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'ai' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><BrainCircuit className="w-5 h-5 text-[#52ffac]" /> Autodiagnóstico</button>
-                <button onClick={() => setClientTab('marketplace')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'marketplace' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Store className="w-5 h-5" /> Buscar Expertos</button>
-                <button onClick={() => setClientTab('quotes')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'quotes' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileCheck2 className="w-4 h-4" /> Contratos</button>
+                <button onClick={() => setClientTab('ai')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'ai' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><BrainCircuit className="w-5 h-5 text-[#52ffac]" /> {t('self_diagnostic', 'Autodiagnóstico')}</button>
+                <button onClick={() => setClientTab('marketplace')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'marketplace' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Store className="w-5 h-5" /> {t('find_experts', 'Buscar Expertos')}</button>
+                <button onClick={() => setClientTab('quotes')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'quotes' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileCheck2 className="w-4 h-4" /> {t('contracts', 'Contratos')}</button>
                 {planLimits.maxAssets > 3 && (
-                  <button onClick={() => setClientTab('audit')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'audit' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileText className="w-4 h-4" /> Auditoría</button>
+                  <button onClick={() => setClientTab('audit')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'audit' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileText className="w-4 h-4" /> {t('audit', 'Auditoría')}</button>
                 )}
-                <button onClick={() => setClientTab('inventory')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'inventory' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Package className="w-4 h-4" /> Repuestos</button>
-                <button onClick={() => setClientTab('subscriptions')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'subscriptions' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Star className="w-4 h-4" /> Membresía</button>
-                <button onClick={() => setClientTab('chat')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'chat' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><MessageSquare className="w-4 h-4" /> Chat</button>
-                <button onClick={() => setClientTab('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> Seguridad</button>
+                <button onClick={() => setClientTab('inventory')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'inventory' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Package className="w-4 h-4" /> {t('spare_parts', 'Repuestos')}</button>
+                <button onClick={() => setClientTab('subscriptions')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'subscriptions' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Star className="w-4 h-4" /> {t('membership', 'Membresía')}</button>
+                <button onClick={() => setClientTab('chat')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'chat' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><MessageSquare className="w-4 h-4" /> {t('chat', 'Chat')}</button>
+                <button onClick={() => setClientTab('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> {t('settings', 'Configuración')}</button>
               </>
             ) : role === 'tech' ? (
               <>
                 <button onClick={() => setTechTab('received')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${techTab === 'received' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Inbox className="w-4 h-4" /> Bandeja</button>
+                <button onClick={() => setTechTab('bidding_market')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${techTab === 'bidding_market' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Layers className="w-4 h-4" /> Bolsa de Trabajo</button>
                 <button onClick={() => setTechTab('agenda')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${techTab === 'agenda' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><CalendarDays className="w-4 h-4" /> Agenda</button>
                 <button onClick={() => setTechTab('wallet')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${techTab === 'wallet' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><PieChart className="w-4 h-4" /> Billetera</button>
                 <button onClick={() => setTechTab('mantech_id')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${techTab === 'mantech_id' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><ShieldCheck className="w-4 h-4" /> Mantech ID</button>
                 <button onClick={() => setTechTab('chat')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${techTab === 'chat' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><MessageSquare className="w-4 h-4" /> Chat</button>
                 <button onClick={() => setTechTab('profile')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${techTab === 'profile' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><User className="w-4 h-4" /> Mi Perfil</button>
-                <button onClick={() => setTechTab('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${techTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> Seguridad</button>
+                <button onClick={() => setTechTab('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${techTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> Configuración</button>
               </>
             ) : (
               <>
@@ -1607,67 +1679,22 @@ export default function App() {
                                                   case 'solar_panels': return <Wind className={cls} />;
                                                   case 'industrial_equip': return <Package className={cls} />;
                                                   case 'house': return <Building2 className={cls} />;
-                                                  default: return <Package className={cls} />;
-                                                }
-                                              })()}
-                                            </div>
-                                            <div>
-                                               <p className="text-[9px] font-black text-[#474556] uppercase tracking-[0.3em] mb-1">Equipo / Marca</p>
-                                               <h4 className="font-black text-white text-2xl uppercase tracking-tighter leading-none">{a.name}</h4>
-                                               <p className="text-sm font-bold text-[#52ffac] uppercase tracking-widest mt-1.5">{a.details}</p>
-                                               {a.licensePlate && (
-                                                  <div className="mt-3 inline-flex items-center px-3 py-1 bg-black/50 border border-white/10 rounded-xl shadow-xl">
-                                                     <span className="text-[9px] font-black text-[#474556] uppercase mr-2">Placa:</span>
-                                                     <span className="text-[11px] font-black text-white tracking-widest">{a.licensePlate}</span>
-                                                  </div>
-                                               )}
-                                               {a.serialNumber && (
-                                                  <div className="mt-3 inline-flex items-center px-3 py-1 bg-black/50 border border-white/10 rounded-xl shadow-xl ml-2">
-                                                     <span className="text-[9px] font-black text-[#474556] uppercase mr-2">S/N:</span>
-                                                     <span className="text-[11px] font-black text-white tracking-widest">{a.serialNumber}</span>
-                                                  </div>
-                                               )}
-                                            </div>
-                                         </div>
-                                         <div className="flex gap-2">
-                                            <button onClick={() => { setAssetToEdit(a); setIsAssetModalOpen(true); }} className="p-3 text-[#474556] hover:text-white transition-all bg-white/5 border border-white/5 rounded-2xl"><Pencil className="w-4 h-4" /></button>
-                                            <button onClick={() => handleDeleteAsset(a.id)} className="p-3 text-[#474556] hover:text-rose-500 transition-all bg-white/5 border border-white/5 rounded-2xl"><Trash2 className="w-4 h-4" /></button>
-                                         </div>
-                                      </div>
-
-                                      <div className="py-6 px-6 bg-black/30 rounded-[2rem] border border-white/5 relative z-10 space-y-4">
-                                         <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                               <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Último Mtto.</p>
-                                               <p className="text-xs font-bold text-white/40 mt-1 uppercase">{a.lastMaintenanceDate || 'Sin Registro'}</p>
-                                            </div>
-                                            <div>
-                                               <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Próximo Mtto.</p>
-                                               <p className="text-sm font-black text-[#5d3cfe] mt-1 tracking-tight">{a.nextMaintenanceDate}</p>
-                                            </div>
-                                         </div>
-                                         <div className="h-px bg-white/5"></div>
-                                         <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                               <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Estatus Salud</p>
-                                               <p className="text-sm font-black text-emerald-500 uppercase mt-1">Óptimo</p>
-                                            </div>
-                                            <div>
-                                               <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Modelo Registrado</p>
-                                               <p className="text-xs font-bold text-[#52ffac] mt-1 uppercase">{a.details.split(' ')[0]}</p>
-                                            </div>
-                                         </div>
-                                         {a.observations && (
-                                            <div className="pt-2">
-                                               <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Detalles del Servicio</p>
-                                               <p className="text-[11px] text-white italic font-bold mt-1 leading-relaxed tracking-wide">"{a.observations.toUpperCase()}"</p>
-                                            </div>
-                                         )}
-                                      </div>
-                                      <button onClick={() => setClientTab('marketplace')} className="w-full py-4 bg-[#1c1d21] hover:bg-white text-white hover:text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] transition-all relative z-10">SOLICITAR TÉCNICO</button>
-                                   </div>
-                                 );
-                               })}
+                                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                               {paginated.map(a => (
+                                 <AssetIntelligentCard
+                                   key={a.id}
+                                   asset={a}
+                                   requests={requests}
+                                   onOpenDetails={(asset) => {
+                                     setActiveAssetForFuel(asset);
+                                     setIsFuelModalOpen(true);
+                                   }}
+                                   onOpenPreTrip={(asset) => {
+                                      setAssetToEdit(asset);
+                                      setIsPreTripModalOpen(true);
+                                   }}
+                                 />
+                               ))}
                             </div>
 
                             {pages > 1 && (
@@ -1741,6 +1768,7 @@ export default function App() {
                         <div className="bg-[#1c1d21] p-1.5 rounded-2xl border border-[#2a2b2f] flex">
                            <button onClick={() => setMarketViewMode('list')} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${marketViewMode === 'list' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}>Listado</button>
                            <button onClick={() => setMarketViewMode('radar')} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${marketViewMode === 'radar' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}>Radar Satelital</button>
+                           <button onClick={() => setMarketViewMode('bidding')} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${marketViewMode === 'bidding' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}>Subasta Pública</button>
                         </div>
                       </header>
 
@@ -1758,12 +1786,56 @@ export default function App() {
                              </div>
                            ))}
                         </div>
-                      ) : (
+                      ) : marketViewMode === 'radar' ? (
                         <TechnicianRadar
                           technicians={technicians.filter(t => marketFilter === 'all' || t.category === marketFilter)}
                           assets={assets}
                           onSelectTech={(t) => { setActiveTechForModal(t); setIsTechModalOpen(true); }}
                         />
+                      ) : (
+                        /* Subasta Pública View */
+                        <div className="space-y-8 animate-fade-in">
+                           <div className="p-8 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-6">
+                              <div className="flex items-center gap-4">
+                                 <div className="w-14 h-14 rounded-2xl bg-[#5d3cfe] flex items-center justify-center text-white shadow-xl shadow-[#5d3cfe]/20">
+                                    <Layers className="w-6 h-6" />
+                                 </div>
+                                 <div>
+                                    <h3 className="text-xl font-black text-white uppercase tracking-tight leading-none">Publicar Requerimiento</h3>
+                                    <p className="text-[10px] text-[#c8c4d9] font-medium mt-1 uppercase tracking-widest leading-relaxed">Crea una subasta y deja que los especialistas nivel Partner compitan por tu servicio.</p>
+                                 </div>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  const assetId = prompt("Ingrese el ID del equipo (o nombre):");
+                                  const desc = prompt("Describa el trabajo a realizar:");
+                                  if (assetId && desc) handlePostOpenMarket(assetId, desc);
+                                }}
+                                className="px-8 py-4 bg-[#52ffac] text-[#0d0e12] rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#52ffac]/20 hover:scale-105 transition-all"
+                              >
+                                Nueva Subasta +
+                              </button>
+                           </div>
+
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {requests.filter(r => r.status === 'open_bidding').map(req => (
+                                <div key={req.id} className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] space-y-6 relative overflow-hidden group">
+                                   <div className="flex justify-between items-center relative z-10">
+                                      <div className="flex items-center gap-3">
+                                         <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#5d3cfe]"><Package className="w-5 h-5" /></div>
+                                         <h4 className="font-black text-white uppercase tracking-tight">{req.assetName}</h4>
+                                      </div>
+                                      <span className="px-4 py-1.5 bg-indigo-500/10 text-indigo-400 rounded-full text-[8px] font-black uppercase tracking-widest">En Subasta</span>
+                                   </div>
+                                   <p className="text-xs text-[#c8c4d9] font-medium leading-relaxed italic opacity-60">"{req.description}"</p>
+                                   <div className="pt-6 border-t border-white/5 flex items-center justify-between">
+                                      <span className="text-[9px] font-black text-[#474556] uppercase tracking-widest">{req.bids?.length || 0} Propuestas Recibidas</span>
+                                      <button className="text-[10px] font-black text-[#52ffac] uppercase tracking-[0.2em] hover:underline transition-all">Ver Ofertas ➔</button>
+                                   </div>
+                                </div>
+                              ))}
+                           </div>
+                        </div>
                       )}
                     </div>
                   )}
@@ -1912,7 +1984,7 @@ export default function App() {
                                             </h5>
                                           </div>
                                         </div>
-                                        <ArrowRight className="w-4 h-4 text-[#474556] group-hover:text-rose-500 group-x-1 transition-all" />
+                                        <ArrowRight className="w-4 h-4 text-[#474556] group-hover:text-rose-500 group-hover:translate-x-1 transition-all" />
                                       </button>
                                     </div>
                                   )}
@@ -1962,7 +2034,8 @@ export default function App() {
                                     </div>
                                   </div>
                                 </div>
-                              )}
+                              </div>
+                            )}
                             </div>
                           ))
                         )}
@@ -2052,10 +2125,106 @@ export default function App() {
                     </div>
                   )}
                   {clientTab === 'settings' && (
-                    <div className="max-w-2xl mx-auto space-y-10 pb-20">
-                       <header className="text-center space-y-2"><h2 className="text-3xl font-black text-white uppercase tracking-tight">Seguridad de Cuenta</h2><p className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-[0.3em]">Validación Mantech ID Panamá</p></header>
-                       <MantechIDModule mantechId={{ status: userData?.recordStatus || 'unverified', idNumber: '', documentUrl: userData?.idCardUrl, policeRecordUrl: userData?.policeRecordUrl }} onUpload={handleUploadDoc} role="client" plan={subscription.planId} />
-                       <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[3rem] shadow-2xl"><button onClick={handleLogout} className="w-full py-5 border border-rose-500/20 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all">Cerrar Sesión Segura</button></div>
+                    <div className="max-w-3xl mx-auto space-y-12 pb-20 animate-fade-in">
+                       <header className="text-center space-y-3">
+                          <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Configuración <span className="text-[#5d3cfe]">Personal</span></h2>
+                          <p className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-[0.3em]">Gestión de Cuenta y Validación Mantech ID</p>
+                       </header>
+
+                       {/* Mantech ID Section */}
+                       <div className="space-y-6">
+                          <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                             <ShieldCheck className="w-4 h-4 text-[#52ffac]" /> Validación de Identidad
+                          </h3>
+                          <MantechIDModule
+                             mantechId={{
+                                status: userData?.recordStatus || 'unverified',
+                                idNumber: '',
+                                documentUrl: userData?.idCardUrl,
+                                policeRecordUrl: userData?.policeRecordUrl
+                             }}
+                             onUpload={handleUploadDoc}
+                             role="client"
+                             plan={subscription.planId}
+                          />
+                       </div>
+
+                       {/* Password & Security Section */}
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden group">
+                             <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-[#5d3cfe]">
+                                   <Settings className="w-6 h-6" />
+                                </div>
+                                <h4 className="font-black text-white uppercase text-sm">Cambiar Contraseña</h4>
+                             </div>
+                             <div className="space-y-4">
+                                <div className="space-y-1">
+                                   <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Nueva Clave</label>
+                                   <input type="password" placeholder="••••••••" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-white text-xs outline-none focus:border-[#5d3cfe] transition-all" />
+                                </div>
+                                <button className="w-full py-3 bg-[#1c1d21] border border-white/10 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#5d3cfe] transition-all">Actualizar Seguridad</button>
+                             </div>
+                          </div>
+
+                          <div className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden group">
+                             <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-[#52ffac]">
+                                   <BellRing className="w-6 h-6" />
+                                </div>
+                                <h4 className="font-black text-white uppercase text-sm">Notificaciones</h4>
+                             </div>
+                             <div className="space-y-4">
+                                <div className="flex items-center justify-between p-3 bg-[#0d0e12] rounded-xl border border-white/5">
+                                   <span className="text-[10px] font-bold text-[#c8c4d9] uppercase">Alertas de Mantenimiento</span>
+                                   <div className="w-10 h-5 bg-[#52ffac] rounded-full p-1 flex justify-end cursor-pointer"><div className="w-3 h-3 bg-black rounded-full shadow-sm"></div></div>
+                                </div>
+                                <div className="flex items-center justify-between p-3 bg-[#0d0e12] rounded-xl border border-white/5">
+                                   <span className="text-[10px] font-bold text-[#c8c4d9] uppercase">Chat en Tiempo Real</span>
+                                   <div className="w-10 h-5 bg-[#52ffac] rounded-full p-1 flex justify-end cursor-pointer"><div className="w-3 h-3 bg-black rounded-full shadow-sm"></div></div>
+                                </div>
+                             </div>
+                          </div>
+                       </div>
+
+                       {/* App Preferences */}
+                       <div className="bg-[#121317] border border-white/5 p-8 rounded-[3rem] shadow-2xl space-y-8">
+                          <h4 className="text-xs font-black text-white uppercase tracking-widest">Preferencias de Aplicación</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                             <div className="space-y-2">
+                                <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Idioma del Sistema</label>
+                                <select
+                                  value={i18n.language}
+                                  onChange={(e) => i18n.changeLanguage(e.target.value)}
+                                  className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-white text-[10px] font-black uppercase outline-none focus:border-[#5d3cfe]"
+                                >
+                                   <option value="es">Español (Panamá)</option>
+                                   <option value="en">English (International)</option>
+                                </select>
+                             </div>
+                             <div className="space-y-2">
+                                <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Unidades de Medida</label>
+                                <select className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-white text-[10px] font-black uppercase outline-none focus:border-[#5d3cfe]">
+                                   <option>Métrico (KM/ºC)</option>
+                                   <option>Imperial (MI/ºF)</option>
+                                </select>
+                             </div>
+                             <div className="space-y-2">
+                                <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Moneda Local</label>
+                                <div className="w-full bg-[#0d0e12]/50 border border-white/5 rounded-xl py-3 px-4 text-white/40 text-[10px] font-black uppercase">
+                                   USD / PAB (Balboa)
+                                </div>
+                             </div>
+                          </div>
+                       </div>
+
+                       <div className="bg-rose-500/5 border border-rose-500/10 p-8 rounded-[3rem] shadow-2xl flex flex-col items-center gap-6">
+                          <div className="text-center space-y-2">
+                             <h4 className="text-sm font-black text-rose-500 uppercase italic">Zona de Peligro</h4>
+                             <p className="text-[10px] text-white/40 uppercase font-medium">Estas acciones no se pueden deshacer.</p>
+                          </div>
+                          <button onClick={handleLogout} className="px-12 py-4 border border-rose-500/30 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-xl">Cerrar Sesión Segura</button>
+                       </div>
                     </div>
                   )}
                 </>
@@ -2117,6 +2286,55 @@ export default function App() {
                           {getSelectedTechProfileObj().isOnline ? 'Desactivar Posición' : 'Iniciar Posición de Servicio'}
                        </button>
                     </div>
+
+                    {techTab === 'bidding_market' && (
+                       <div className="space-y-8 animate-fade-in">
+                          <header>
+                             <h1 className="text-4xl font-black text-white uppercase tracking-tighter">Bolsa de <span className="text-[#5d3cfe]">Trabajo</span></h1>
+                             <p className="text-[10px] text-[#474556] font-black uppercase tracking-widest mt-2">Oportunidades de servicio abiertas a nivel nacional.</p>
+                          </header>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             {requests.filter(r => r.status === 'open_bidding').map(req => (
+                                <div key={req.id} className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] space-y-6 relative overflow-hidden group hover:border-[#5d3cfe]/30 transition-all">
+                                   <div className="flex justify-between items-center relative z-10">
+                                      <div className="flex items-center gap-3">
+                                         <div className="w-10 h-10 rounded-xl bg-[#5d3cfe]/10 flex items-center justify-center text-[#5d3cfe]"><Tool className="w-5 h-5" /></div>
+                                         <h4 className="font-black text-white uppercase tracking-tight">{req.assetName}</h4>
+                                      </div>
+                                      <span className="px-4 py-1.5 bg-[#52ffac]/10 text-[#52ffac] rounded-full text-[8px] font-black uppercase tracking-widest">Contrato Abierto</span>
+                                   </div>
+                                   <div className="p-5 bg-[#0d0e12] rounded-2xl border border-white/5 italic text-xs text-[#c8c4d9]">
+                                      "{req.description}"
+                                   </div>
+                                   <button
+                                     onClick={() => {
+                                       const price = prompt("Ingrese su oferta económica (USD):");
+                                       if (price) {
+                                         updateDoc(doc(db, "requests", req.id), {
+                                           status: 'quoted',
+                                           techId: selectedTechProfileId,
+                                           techName: loggedInName,
+                                           price: Number(price),
+                                           quotedAt: new Date().toISOString()
+                                         });
+                                         toast.success("¡Oferta enviada! El cliente revisará su propuesta.");
+                                       }
+                                     }}
+                                     className="w-full py-4 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[#5d3cfe]/20 active:scale-95 transition-all"
+                                   >
+                                      Enviar Cotización Directa ➔
+                                   </button>
+                                </div>
+                             ))}
+                             {requests.filter(r => r.status === 'open_bidding').length === 0 && (
+                                <div className="md:col-span-2 py-20 text-center bg-[#121317] rounded-[3rem] border border-dashed border-white/5 opacity-30">
+                                   <p className="text-[10px] font-black uppercase tracking-[0.3em]">No hay requerimientos abiertos en este momento.</p>
+                                </div>
+                             )}
+                          </div>
+                       </div>
+                    )}
 
                     {techTab === 'received' && (
                        <div className="space-y-8">
@@ -2402,10 +2620,99 @@ export default function App() {
                       />
                     )}
                     {techTab === 'settings' && (
-                       <div className="max-w-2xl mx-auto space-y-10 pb-20">
-                          <header className="text-center space-y-2"><h2 className="text-3xl font-black text-white uppercase tracking-tight">Centro de Seguridad Técnico</h2><p className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-[0.3em]">Validación Profesional MantechPro</p></header>
-                          <MantechIDModule mantechId={getSelectedTechProfileObj().mantechId || { status: 'unverified', idNumber: '' }} onUpload={handleUploadDoc} role="tech" plan={getSelectedTechProfileObj().plan} />
-                          <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[3rem] shadow-2xl"><button onClick={handleLogout} className="w-full py-5 border border-rose-500/20 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all">Cerrar Sesión Segura</button></div>
+                       <div className="max-w-3xl mx-auto space-y-12 pb-20 animate-fade-in">
+                          <header className="text-center space-y-3">
+                             <h2 className="text-4xl font-black text-white uppercase tracking-tighter leading-none">Centro de <span className="text-[#5d3cfe]">Configuración</span></h2>
+                             <p className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-[0.3em]">Validación Profesional y Ajustes de Perfil</p>
+                          </header>
+
+                          {/* Mantech ID Section */}
+                          <div className="space-y-6">
+                             <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                <ShieldCheck className="w-4 h-4 text-[#52ffac]" /> Validación Profesional
+                             </h3>
+                             <MantechIDModule
+                                mantechId={getSelectedTechProfileObj().mantechId || { status: 'unverified', idNumber: '' }}
+                                onUpload={handleUploadDoc}
+                                role="tech"
+                                plan={getSelectedTechProfileObj().plan}
+                             />
+                          </div>
+
+                          {/* Account Management */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                             <div className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden group">
+                                <div className="flex items-center gap-4">
+                                   <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-[#5d3cfe]">
+                                      <Plus className="w-6 h-6" />
+                                   </div>
+                                   <h4 className="font-black text-white uppercase text-sm">Seguridad de Acceso</h4>
+                                </div>
+                                <div className="space-y-4">
+                                   <div className="space-y-1">
+                                      <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Nueva Contraseña</label>
+                                      <input type="password" placeholder="••••••••" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-white text-xs outline-none focus:border-[#5d3cfe] transition-all" />
+                                   </div>
+                                   <button className="w-full py-3 bg-[#1c1d21] border border-white/10 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#5d3cfe] transition-all">Cambiar Clave</button>
+                                </div>
+                             </div>
+
+                             <div className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden group">
+                                <div className="flex items-center gap-4">
+                                   <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-[#52ffac]">
+                                      <Store className="w-6 h-6" />
+                                   </div>
+                                   <h4 className="font-black text-white uppercase text-sm">Disponibilidad en Market</h4>
+                                </div>
+                                <div className="space-y-4">
+                                   <div className="flex items-center justify-between p-3 bg-[#0d0e12] rounded-xl border border-white/5">
+                                      <span className="text-[10px] font-bold text-[#c8c4d9] uppercase">Alertas de Nuevos Trabajos</span>
+                                      <div className="w-10 h-5 bg-[#52ffac] rounded-full p-1 flex justify-end cursor-pointer"><div className="w-3 h-3 bg-black rounded-full shadow-sm"></div></div>
+                                   </div>
+                                   <div className="flex items-center justify-between p-3 bg-[#0d0e12] rounded-xl border border-white/5">
+                                      <span className="text-[10px] font-bold text-[#c8c4d9] uppercase">Visible en Radar GPS</span>
+                                      <div className={`w-10 h-5 rounded-full p-1 flex cursor-pointer transition-all ${getSelectedTechProfileObj().isOnline ? 'bg-[#52ffac] justify-end' : 'bg-[#1c1d21] border border-white/10 justify-start'}`}><div className="w-3 h-3 bg-black rounded-full shadow-sm"></div></div>
+                                   </div>
+                                </div>
+                             </div>
+                          </div>
+
+                          {/* App Preferences */}
+                          <div className="bg-[#121317] border border-white/5 p-8 rounded-[3rem] shadow-2xl space-y-8">
+                             <h4 className="text-xs font-black text-white uppercase tracking-widest">Preferencias Técnicas</h4>
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="space-y-2">
+                                   <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Idioma del Sistema</label>
+                                   <select
+                                     value={i18n.language}
+                                     onChange={(e) => i18n.changeLanguage(e.target.value)}
+                                     className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-white text-[10px] font-black uppercase outline-none focus:border-[#5d3cfe]"
+                                   >
+                                      <option value="es">Español</option>
+                                      <option value="en">English</option>
+                                   </select>
+                                </div>
+                                <div className="space-y-2">
+                                   <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Radio de Cobertura (KM)</label>
+                                   <input type="number" defaultValue={15} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-white text-[10px] font-black uppercase outline-none focus:border-[#5d3cfe]" />
+                                </div>
+                                <div className="space-y-2">
+                                   <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Notificación por Email</label>
+                                   <select className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-white text-[10px] font-black uppercase outline-none focus:border-[#5d3cfe]">
+                                      <option>Inmediata</option>
+                                      <option>Resumen Diario</option>
+                                   </select>
+                                </div>
+                             </div>
+                          </div>
+
+                          <div className="bg-rose-500/5 border border-rose-500/10 p-8 rounded-[3rem] shadow-2xl flex flex-col items-center gap-6 text-center">
+                             <div className="space-y-2">
+                                <h4 className="text-sm font-black text-rose-500 uppercase italic">Zona Roja</h4>
+                                <p className="text-[10px] text-white/40 uppercase font-medium">Al cerrar sesión se desactivará su posición en el radar satelital.</p>
+                             </div>
+                             <button onClick={handleLogout} className="px-12 py-4 border border-rose-500/30 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-xl">Desconectar Perfil Seguro</button>
+                          </div>
                        </div>
                     )}
                  </div>
@@ -2595,6 +2902,35 @@ export default function App() {
            </div>
         </main>
       </div>
+
+      {isPreTripModalOpen && assetToEdit && (
+        <PreTripInspectionModal
+          isOpen={isPreTripModalOpen}
+          onClose={() => setIsPreTripModalOpen(false)}
+          assetName={assetToEdit.name}
+          onSave={(inspection) => handleSavePreTrip(assetToEdit.id, inspection)}
+        />
+      )}
+
+      {isFuelModalOpen && activeAssetForFuel && (
+        <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+          <div className="w-full max-w-2xl bg-[#0d0e12] border border-white/10 rounded-[3rem] p-10 relative shadow-2xl animate-fade-in-up">
+            <button
+              onClick={() => setIsFuelModalOpen(false)}
+              className="absolute top-8 right-8 p-3 bg-white/5 hover:bg-rose-600 text-white rounded-2xl border border-white/10 transition-all group"
+            >
+              <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+            </button>
+            <FuelAuditModule
+              asset={activeAssetForFuel}
+              onSaveLog={(id, log) => {
+                handleSaveFuelLog(id, log);
+                setIsFuelModalOpen(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {isUnforeseenModalOpen && (
         <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">

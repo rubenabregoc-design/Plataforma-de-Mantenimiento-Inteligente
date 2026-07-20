@@ -1,21 +1,26 @@
 import React from 'react';
 import { MantechID } from '../types';
-import { ShieldCheck, UserCheck, AlertCircle, Upload, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, UserCheck, AlertCircle, Upload, ShieldAlert, CheckCircle2, Star, Clock } from 'lucide-react';
 
 interface MantechIDModuleProps {
   mantechId?: MantechID;
-  onUpload: (type: 'id' | 'record') => void;
+  onUpload: (type: 'id' | 'record', file: File) => void;
+  role?: 'client' | 'tech';
+  plan?: string;
 }
 
-export default function MantechIDModule({ mantechId, onUpload, role = 'tech', plan = 'basic' }: MantechIDModuleProps & { role?: 'client' | 'tech', plan?: string }) {
+export default function MantechIDModule({ mantechId, onUpload, role = 'tech', plan = 'basic' }: MantechIDModuleProps) {
   const status = mantechId?.status || 'unverified';
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [currentType, setCurrentType] = React.useState<'id' | 'record' | null>(null);
 
   const handleButtonClick = (type: 'id' | 'record') => {
+    // Si ya hay un documento, no permitimos cambiarlo si está pendiente o verificado
+    if (type === 'id' && mantechId?.documentUrl) return;
+    if (type === 'record' && mantechId?.policeRecordUrl) return;
+
     setCurrentType(type);
     if (fileInputRef.current) {
-      // Configurar aceptación según tipo
       fileInputRef.current.accept = type === 'id' ? 'image/*' : 'application/pdf,image/*';
       fileInputRef.current.click();
     }
@@ -25,14 +30,12 @@ export default function MantechIDModule({ mantechId, onUpload, role = 'tech', pl
     const file = e.target.files?.[0];
     if (file && currentType) {
       onUpload(currentType, file);
-      // Reset input para permitir subir el mismo archivo si se desea
       e.target.value = '';
     }
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden">
-      {/* Input oculto compatible con PC y Android */}
+    <div className="bg-[#121317] rounded-3xl border border-white/5 shadow-2xl overflow-hidden">
       <input
         type="file"
         ref={fileInputRef}
@@ -40,95 +43,89 @@ export default function MantechIDModule({ mantechId, onUpload, role = 'tech', pl
         onChange={onFileChange}
       />
 
-      <div className="p-6 bg-gradient-to-tr from-zinc-900 to-indigo-950 text-white flex items-center justify-between">
+      <div className="p-6 bg-gradient-to-tr from-zinc-900 to-indigo-950 text-white flex items-center justify-between border-b border-white/5">
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-xl ${status === 'verified' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-black uppercase tracking-widest text-sm">Mantech ID <span className="text-indigo-400">Verificado</span></h3>
-            <p className="text-[10px] text-zinc-300 font-medium">Seguridad y Confianza para el Mercado Panameño</p>
+            <h3 className="font-black uppercase tracking-widest text-sm text-white">Mantech ID <span className="text-indigo-400">Security</span></h3>
+            <p className="text-[10px] text-zinc-400 font-medium">Validación de Identidad Legal para Panamá</p>
           </div>
         </div>
-        {status === 'verified' && (
-          <div className="px-3 py-1 bg-emerald-500 rounded-full text-[9px] font-black uppercase flex items-center gap-1 shadow-lg shadow-emerald-500/20">
+        {status === 'verified' ? (
+          <div className="px-3 py-1 bg-emerald-500 text-[#0d0e12] rounded-full text-[9px] font-black uppercase flex items-center gap-1 shadow-lg shadow-emerald-500/20">
             <CheckCircle2 className="w-3 h-3" />
-            Verificado
+            Validado
           </div>
-        )}
-        {status === 'verified' && plan !== 'basic' && (
-           <div className="px-3 py-1 bg-amber-400 text-black rounded-full text-[9px] font-black uppercase flex items-center gap-1 shadow-lg shadow-amber-400/20 ml-2">
-             <Star className="w-3 h-3 fill-black" />
-             Sello Gold
-           </div>
-        )}
+        ) : (mantechId?.documentUrl || mantechId?.policeRecordUrl) ? (
+          <div className="px-3 py-1 bg-amber-500 text-[#0d0e12] rounded-full text-[9px] font-black uppercase flex items-center gap-1 animate-pulse">
+            <Clock className="w-3 h-3" />
+            Por Validar
+          </div>
+        ) : null}
       </div>
 
       <div className="p-6 space-y-6">
-        {status === 'unverified' && (
-          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex gap-4">
-            <ShieldCheck className="w-6 h-6 text-indigo-600 shrink-0" />
-            <div className="space-y-1">
-              <p className="text-xs font-black text-indigo-900 uppercase tracking-tight">Sello de Seguridad Opcional</p>
-              <p className="text-[11px] text-indigo-800 font-medium leading-relaxed">
-                {role === 'client'
-                  ? "Obtén mayor prioridad y confianza con los técnicos validando tu identidad. Este paso es opcional y no limita tus funciones actuales."
-                  : "Aumenta tu visibilidad y accede a contratos corporativos validando tu perfil profesional. El sello es un distintivo de confianza para tus clientes."}
-              </p>
-            </div>
-          </div>
-        )}
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-5 border-2 border-dashed border-zinc-200 rounded-3xl hover:border-indigo-400 transition-all group cursor-pointer text-center space-y-3">
-            <div className="w-12 h-12 bg-zinc-50 rounded-full mx-auto flex items-center justify-center text-zinc-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
-              <UserCheck className="w-6 h-6" />
+          {/* CÉDULA */}
+          <div className={`p-6 border-2 border-dashed rounded-[2rem] transition-all text-center space-y-4 ${mantechId?.documentUrl ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-white/5 bg-[#0d0e12] hover:border-[#5d3cfe]/50'}`}>
+            <div className={`w-14 h-14 rounded-2xl mx-auto flex items-center justify-center transition-all ${mantechId?.documentUrl ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-[#474556]'}`}>
+              {mantechId?.documentUrl ? <CheckCircle2 className="w-7 h-7" /> : <UserCheck className="w-7 h-7" />}
             </div>
             <div>
-              <p className="text-xs font-black text-zinc-900 uppercase">Cédula de Identidad</p>
-              <p className="text-[10px] text-zinc-500 font-medium">JPG o PNG (Frente y reverso)</p>
+              <p className="text-xs font-black text-white uppercase tracking-tight">Documento de Identidad</p>
+              <p className="text-[10px] text-[#474556] font-medium mt-1">Cédula o Pasaporte vigente</p>
             </div>
             <button
               type="button"
+              disabled={!!mantechId?.documentUrl}
               onClick={() => handleButtonClick('id')}
-              className="px-4 py-1.5 bg-zinc-100 group-hover:bg-indigo-600 group-hover:text-white rounded-xl text-[10px] font-black uppercase transition-all"
+              className={`w-full py-3 rounded-xl text-[10px] font-black uppercase transition-all ${mantechId?.documentUrl ? 'bg-emerald-500/10 text-emerald-400 cursor-not-allowed' : 'bg-[#5d3cfe] text-white shadow-lg'}`}
             >
-              {mantechId?.documentUrl ? 'Documento Subido' : 'Seleccionar Archivo'}
+              {mantechId?.documentUrl ? 'Cédula Registrada' : 'Subir Documento'}
             </button>
+            {mantechId?.documentUrl && (
+              <p className="text-[9px] text-[#474556] font-black uppercase flex items-center justify-center gap-1">
+                <ShieldAlert className="w-3 h-3 text-amber-500" /> Sujeto a validación por auditoría
+              </p>
+            )}
           </div>
 
+          {/* RÉCORD / REFERENCIAS (Solo para Técnicos) */}
           {role === 'tech' && (
-            <div className="p-5 border-2 border-dashed border-zinc-200 rounded-3xl hover:border-indigo-400 transition-all group cursor-pointer text-center space-y-3">
-              <div className="w-12 h-12 bg-zinc-50 rounded-full mx-auto flex items-center justify-center text-zinc-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
-                <ShieldCheck className="w-6 h-6" />
+            <div className={`p-6 border-2 border-dashed rounded-[2rem] transition-all text-center space-y-4 ${mantechId?.policeRecordUrl ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-white/5 bg-[#0d0e12] hover:border-[#5d3cfe]/50'}`}>
+              <div className={`w-14 h-14 rounded-2xl mx-auto flex items-center justify-center transition-all ${mantechId?.policeRecordUrl ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-[#474556]'}`}>
+                {mantechId?.policeRecordUrl ? <ShieldCheck className="w-7 h-7" /> : <ShieldAlert className="w-7 h-7" />}
               </div>
               <div>
-                <p className="text-xs font-black text-zinc-900 uppercase">Validación MantechPro</p>
-                <p className="text-[10px] text-zinc-500 font-medium">Historial de Confianza Interno</p>
+                <p className="text-xs font-black text-white uppercase tracking-tight">Récord Policivo</p>
+                <p className="text-[10px] text-[#474556] font-medium mt-1">Antecedentes legales (Panamá)</p>
               </div>
-              <div className="space-y-2">
-                 <button
-                   type="button"
-                   onClick={() => handleButtonClick('record')}
-                   className="w-full px-4 py-1.5 bg-zinc-100 group-hover:bg-indigo-600 group-hover:text-white rounded-xl text-[10px] font-black uppercase transition-all"
-                 >
-                   {mantechId?.policeRecordUrl ? 'Historial Cargado' : 'Subir Referencias'}
-                 </button>
-                 <p className="text-[9px] text-indigo-600 font-black uppercase tracking-tight">Sello de Validación MantechPro</p>
-                 <p className="text-[8px] text-zinc-400 font-medium uppercase tracking-tighter leading-tight">Procesado automáticamente por nuestro sistema de confianza.</p>
-              </div>
+              <button
+                type="button"
+                disabled={!!mantechId?.policeRecordUrl}
+                onClick={() => handleButtonClick('record')}
+                className={`w-full py-3 rounded-xl text-[10px] font-black uppercase transition-all ${mantechId?.policeRecordUrl ? 'bg-emerald-500/10 text-emerald-400 cursor-not-allowed' : 'bg-[#5d3cfe] text-white shadow-lg'}`}
+              >
+                {mantechId?.policeRecordUrl ? 'Historial Cargado' : 'Subir Antecedentes'}
+              </button>
             </div>
           )}
         </div>
 
-        <div className="pt-4 border-t border-zinc-100 flex items-center justify-between gap-4">
-          <p className="text-[10px] text-zinc-400 leading-tight">
-            * Tus documentos están protegidos bajo la Ley de Protección de Datos Personales de Panamá. Solo serán revisados por auditores autorizados.
-          </p>
-          <div className="shrink-0 flex gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-            <span className="w-2 h-2 rounded-full bg-zinc-200"></span>
-            <span className="w-2 h-2 rounded-full bg-zinc-200"></span>
+        <div className="pt-6 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+          <div className="space-y-1">
+            <p className="text-[10px] text-[#474556] font-black uppercase flex items-center gap-2 justify-center md:justify-start">
+               <ShieldCheck className="w-3 h-3 text-[#52ffac]" /> Protocolo de Privacidad Ley 81
+            </p>
+            <p className="text-[9px] text-[#474556] max-w-md">
+              Sus documentos se almacenan con cifrado militar AES-256 y solo son visibles para auditores certificados de MantechPro.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 bg-[#1c1d21] border border-white/5 rounded-xl">
+             <div className="w-1.5 h-1.5 rounded-full bg-[#52ffac] animate-pulse"></div>
+             <span className="text-[8px] font-black text-white/50 uppercase tracking-widest">Nivel de Seguridad: Master Pro</span>
           </div>
         </div>
       </div>
