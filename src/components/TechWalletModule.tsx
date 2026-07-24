@@ -81,7 +81,104 @@ export default function TechWalletModule({ wallet, techId, onWithdraw, plan = 'b
                  Solicitar Retiro
                </button>
                <button
-                 onClick={() => toast("Generando Factura Fiscal Digital. Estará disponible en su historial en breve.", { icon: '📄' })}
+                 onClick={() => {
+                   const printContent = `
+                     <html>
+                       <head>
+                         <title>Factura Fiscal Digital - MantechPro</title>
+                         <style>
+                           body { font-family: 'Inter', sans-serif; padding: 40px; color: #1a1a1a; line-height: 1.6; }
+                           .header { display: flex; justify-content: space-between; border-bottom: 4px solid #5d3cfe; padding-bottom: 20px; margin-bottom: 40px; }
+                           .logo { font-size: 24px; font-weight: 900; color: #5d3cfe; text-transform: uppercase; }
+                           .invoice-info { text-align: right; }
+                           .section { margin-bottom: 30px; }
+                           .section-title { font-size: 10px; font-weight: 900; color: #666; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+                           table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                           th { text-align: left; background: #f8f8f8; padding: 12px; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #eee; }
+                           td { padding: 12px; font-size: 12px; border-bottom: 1px solid #eee; }
+                           .total-box { margin-top: 30px; margin-left: auto; width: 250px; background: #fdfdfd; border: 1px solid #eee; padding: 20px; border-radius: 12px; }
+                           .total-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+                           .grand-total { font-size: 18px; font-weight: 900; color: #5d3cfe; border-top: 2px solid #5d3cfe; pt: 10px; }
+                           .footer { margin-top: 50px; font-size: 10px; color: #999; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
+                           .stamp { display: inline-block; border: 2px solid #52ffac; color: #52ffac; padding: 10px 20px; border-radius: 8px; font-weight: 900; transform: rotate(-5deg); margin-top: 20px; }
+                         </style>
+                       </head>
+                       <body>
+                         <div class="header">
+                           <div>
+                             <div class="logo">MantechPro Panama</div>
+                             <div style="font-size: 12px; color: #666;">Infraestructura de Ingeniería Operativa</div>
+                           </div>
+                           <div class="invoice-info">
+                             <div style="font-weight: 900; font-size: 14px;">FACTURA FISCAL DIGITAL</div>
+                             <div style="color: #666; font-size: 11px;">No. MP-${Math.floor(Math.random()*1000000)}</div>
+                             <div style="color: #666; font-size: 11px;">Fecha: ${new Date().toLocaleDateString('es-PA')}</div>
+                           </div>
+                         </div>
+
+                         <div class="section" style="display: flex; gap: 40px;">
+                           <div style="flex: 1;">
+                             <div class="section-title">Emisor (Especialista)</div>
+                             <div style="font-weight: 700;">${bankInfo.ownerName || 'Especialista MantechPro'}</div>
+                             <div style="font-size: 11px; color: #666;">Proveedor de Servicios Técnicos Certificado</div>
+                           </div>
+                           <div style="flex: 1;">
+                             <div class="section-title">Receptor</div>
+                             <div style="font-weight: 700;">MantechPro Panama S.A.</div>
+                             <div style="font-size: 11px; color: #666;">RUC: 155712124-2-2024 DV 55</div>
+                           </div>
+                         </div>
+
+                         <table>
+                           <thead>
+                             <tr>
+                               <th>Descripción del Servicio / Liquidación</th>
+                               <th>Fecha</th>
+                               <th style="text-align: right;">Monto (USD)</th>
+                             </tr>
+                           </thead>
+                           <tbody>
+                             ${(wallet.transactions || []).filter(t => t.type === 'debit').map(t => `
+                               <tr>
+                                 <td>${t.description}</td>
+                                 <td>${new Date(t.timestamp).toLocaleDateString()}</td>
+                                 <td style="text-align: right; font-weight: 700;">$${t.amount.toFixed(2)}</td>
+                               </tr>
+                             `).join('') || `<tr><td colspan="3" style="text-align: center; color: #999; padding: 40px;">No hay liquidaciones pendientes para facturar.</td></tr>`}
+                           </tbody>
+                         </table>
+
+                         <div class="total-box">
+                           <div class="total-row">
+                             <span style="font-size: 11px; color: #666;">Subtotal:</span>
+                             <span style="font-weight: 700;">$${(wallet.transactions || []).filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0).toFixed(2)}</span>
+                           </div>
+                           <div class="total-row">
+                             <span style="font-size: 11px; color: #666;">ITBMS (7%):</span>
+                             <span style="font-weight: 700;">$0.00</span>
+                           </div>
+                           <div class="total-row grand-total" style="margin-top: 10px; padding-top: 10px;">
+                             <span>TOTAL:</span>
+                             <span>$${(wallet.transactions || []).filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0).toFixed(2)}</span>
+                           </div>
+                         </div>
+
+                         <div class="stamp">VALIDADO POR SISTEMA</div>
+
+                         <div class="footer">
+                           Esta es una factura digital generada automáticamente por el Nodo de Finanzas de MantechPro.<br/>
+                           La validez de este documento está sujeta a la verificación del ID de transacción en el Ledger Central.<br/>
+                           © 2026 MantechPro Panama - Protocolo Financiero Sat-Link V4
+                         </div>
+                       </body>
+                     </html>
+                   `;
+                   const win = window.open('', '_blank');
+                   win?.document.write(printContent);
+                   win?.document.close();
+                   setTimeout(() => win?.print(), 500);
+                   toast.success("Factura Fiscal generada exitosamente.");
+                 }}
                  className="flex-1 py-3.5 bg-[#121317] border border-[#2a2b2f] text-white hover:border-[#5d3cfe] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
                >
                  Generar Factura Fiscal

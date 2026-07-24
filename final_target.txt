@@ -1,0 +1,30 @@
+﻿                              )}
+                           </div>
+                        </section>
+                      </div>
+                   )}
+                   {adminTab === 'settings' && <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl"><header><h1 className="text-4xl font-black text-white tracking-tighter">Ajustes <span className="text-[#5d3cfe]">Sistema</span></h1></header><div className="mt-10"><button onClick={handleLogout} className="px-10 py-5 bg-rose-600/10 border border-rose-600/20 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all">Cerrar SesiÃ³n Root</button></div></div>}
+                </div>
+              )}
+           </div>
+        </main>
+      </div>
+
+      {isHomeSOSOpen && (
+        <HomeEmergencySOS
+          isOpen={isHomeSOSOpen}
+          onClose={() => setIsHomeSOSOpen(false)}
+          assets={assets}
+          technicians={technicians}
+          onCallTech={(tech) => {
+            handleRequestQuote(tech.id, assets[0]?.id || '', "EMERGENCIA: Soporte tÃ©cnico de urgencia solicitado vÃ­a SOS Hogar.");
+            setIsHomeSOSOpen(false);
+          }}
+        />
+      )}
+
+      {isPreTripModalOpen && assetToEdit && (
+        <PreTripInspectionModal
+          isOpen={isPreTripModalOpen}
+          onClose={() => setIsPreTripModalOpen(false)}
+          assetName={assetToEdit.name}

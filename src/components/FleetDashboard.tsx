@@ -172,12 +172,13 @@ interface FleetDashboardProps {
   onTogglePause?: () => void;
   onAddCheckpoint?: (asset: Asset) => void;
   onContactSupport?: () => void;
+  onOpenEngineeringReport?: (asset: Asset) => void;
   trackingAssetId?: string | null;
   tripStatus?: 'idle' | 'active' | 'paused';
   mode?: 'lite' | 'full';
 }
 
-export default function FleetDashboard({ assets, reminders, onManageAsset, onBulkUpdate, onBulkDelete, onBulkRegister, onStartGps, onTogglePause, onAddCheckpoint, onContactSupport, trackingAssetId, tripStatus = 'idle', mode = 'lite' }: FleetDashboardProps) {
+export default function FleetDashboard({ assets, reminders, onManageAsset, onBulkUpdate, onBulkDelete, onBulkRegister, onStartGps, onTogglePause, onAddCheckpoint, onContactSupport, onOpenEngineeringReport, trackingAssetId, tripStatus = 'idle', mode = 'lite' }: FleetDashboardProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'table' | 'history'>(mode === 'full' ? 'table' : 'grid');
   const [activeSubTab, setActiveSubTab] = useState<'fleet' | 'fuel' | 'api' | 'support'>('fleet');
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null);
@@ -617,6 +618,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                          <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest">Unidad / Marca</th>
                          <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Placa</th>
                          <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Kilometraje</th>
+                         <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Vida Útil (ROL)</th>
                          <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Próximo Mtto</th>
                          <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest">Estado</th>
                          <th className="p-4"></th>
@@ -626,6 +628,18 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                       {paginatedAssets.map((asset) => {
                          const nextKm = (asset.mileage || 0) + 5000;
                          const isCritical = (asset.mileage || 0) >= nextKm - 500;
+
+                         // Sensor Virtual MDM-V4
+                         const currentKm = asset.mileage || 0;
+                         const lastServiceKm = currentKm - (currentKm % 5000);
+                         const kmSinceService = currentKm - lastServiceKm;
+                         const baseRol = Math.max(0, 100 - (kmSinceService / 5000) * 100);
+
+                         // Factores MDM (Mock basados en placa para demostración)
+                         const thermalFactor = (asset.licensePlate?.charCodeAt(0) || 0) % 5; // Simula horas ralentí
+                         const altitudeFactor = (asset.licensePlate?.charCodeAt(1) || 0) % 3; // Simula montaña
+                         const rol = Math.round(baseRol - thermalFactor - altitudeFactor);
+
                          return (
                             <tr key={asset.id} className="border-b border-[#474556]/10 hover:bg-white/[0.02] transition-colors">
                                <td className="p-4 text-center"><input type="checkbox" checked={selectedIds.includes(asset.id)} onChange={(e) => { if(e.target.checked) setSelectedIds([...selectedIds, asset.id]); else setSelectedIds(selectedIds.filter(id => id !== asset.id)); }} className="rounded border-[#474556]/30 bg-[#0d0e12] text-[#5d3cfe]" /></td>
@@ -655,6 +669,20 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                                      </div>
                                   )}
                                </td>
+                               <td className="p-4 text-center">
+                                  <div className="flex flex-col items-center gap-1">
+                                     <div className="flex items-center gap-2">
+                                        <span className={`text-xs font-black ${rol < 20 ? 'text-rose-500' : rol < 50 ? 'text-amber-500' : 'text-[#52ffac]'}`}>{rol}%</span>
+                                        <Activity className={`w-3 h-3 ${rol < 20 ? 'text-rose-500 animate-pulse' : 'text-[#474556]'}`} />
+                                     </div>
+                                     <div className="w-16 bg-[#0d0e12] h-1 rounded-full overflow-hidden border border-white/5">
+                                        <div
+                                          className={`h-full transition-all duration-1000 ${rol < 20 ? 'bg-rose-500' : rol < 50 ? 'bg-amber-500' : 'bg-[#52ffac]'}`}
+                                          style={{ width: `${rol}%` }}
+                                        ></div>
+                                     </div>
+                                  </div>
+                               </td>
                                <td className="p-4 text-center font-black text-[#c7bfff]">{nextKm.toLocaleString()} Km</td>
                                <td className="p-4"><span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase ${isCritical ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'}`}>{isCritical ? 'URGENTE' : 'ÓPTIMO'}</span></td>
                                <td className="p-4 text-right">
@@ -665,6 +693,13 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                                          <button onClick={onTogglePause} className={`p-2 rounded-lg ${tripStatus === 'paused' ? 'bg-amber-500 text-black' : 'bg-amber-500/10 text-amber-500'}`}>{tripStatus === 'paused' ? <Zap className="w-4 h-4 fill-current" /> : <Clock className="w-4 h-4" />}</button>
                                        </>
                                      )}
+                                     <button
+                                       onClick={() => onOpenEngineeringReport?.(asset)}
+                                       className="p-2 bg-white/5 text-[#5d3cfe] border border-[#5d3cfe]/20 hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"
+                                       title="Reporte NASA MDM-V4"
+                                     >
+                                        <Cpu className="w-4 h-4" />
+                                     </button>
                                      <button onClick={() => { setHistoryAssetId(asset.id); setViewMode('history'); }} className="p-2 bg-[#1a1b20] text-[#c7bfff] hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"><FileText className="w-4 h-4" /></button>
                                      <button onClick={() => onStartGps?.(asset.id)} className={`p-2 rounded-lg transition-all ${trackingAssetId === asset.id ? 'bg-rose-500 text-white animate-pulse' : 'bg-[#1a1b20] text-[#52ffac] hover:bg-[#52ffac] hover:text-black'}`}><MapPin className="w-4 h-4" /></button>
                                   </div>
@@ -689,6 +724,14 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {paginatedAssets.map((asset) => {
                   const isUrgent = reminders.some(r => r.assetId === asset.id && r.status === 'urgent');
+
+                  // Sensor Virtual MDM-V4 logic
+                  const currentKm = asset.mileage || 0;
+                  const lastServiceKm = currentKm - (currentKm % 5000);
+                  const kmSinceService = currentKm - lastServiceKm;
+                  const baseRol = Math.max(0, 100 - (kmSinceService / 5000) * 100);
+                  const rol = Math.round(baseRol - ((asset.licensePlate?.charCodeAt(0) || 0) % 8)); // Simulación de desgaste multivariable
+
                   return (
                     <div key={asset.id} className={`bg-[#1f1f24] rounded-2xl border transition-all p-5 hover:shadow-xl group relative overflow-hidden ${isUrgent ? 'border-rose-500/50 bg-rose-500/5' : 'border-[#474556]/30'}`}>
                       <div className="flex justify-between items-start mb-4">
@@ -700,14 +743,39 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                           )}
                         </div>
                       </div>
+
                       <h4 className="font-black text-white text-sm tracking-tight uppercase">{asset.name}</h4>
                       <p className="text-[10px] text-[#c8c4d9] mb-4 opacity-60 uppercase">{asset.details}</p>
+
+                      {/* MDM Health Progress Bar */}
+                      <div className="mb-4 p-3 bg-black/40 rounded-xl border border-white/5 space-y-2">
+                         <div className="flex justify-between items-center">
+                            <span className="text-[7px] font-black text-[#474556] uppercase tracking-widest flex items-center gap-1">
+                               <Cpu className="w-2.5 h-2.5" /> Sensor Virtual (ROL)
+                            </span>
+                            <span className={`text-[9px] font-black ${rol < 20 ? 'text-rose-500' : 'text-[#52ffac]'}`}>{rol}%</span>
+                         </div>
+                         <div className="w-full bg-[#1a1b20] h-1.5 rounded-full overflow-hidden border border-white/5">
+                            <div
+                               className={`h-full transition-all duration-1000 ${rol < 20 ? 'bg-rose-500' : rol < 50 ? 'bg-amber-500' : 'bg-[#52ffac]'}`}
+                               style={{ width: `${rol}%` }}
+                            ></div>
+                         </div>
+                      </div>
+
                       <div className="grid grid-cols-2 gap-4 border-t border-[#474556]/20 pt-4">
                          <div><p className="text-[8px] font-black text-[#474556] uppercase">Km Actual</p><p className="text-xs font-black text-white">{asset.mileage?.toLocaleString()} Km</p></div>
                          <div><p className="text-[8px] font-black text-[#474556] uppercase">Próximo</p><p className="text-xs font-black text-[#5d3cfe]">{( (asset.mileage || 0) + 5000 ).toLocaleString()} Km</p></div>
                       </div>
                       <div className="flex gap-2 mt-4">
                          <button onClick={() => onStartGps?.(asset.id)} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[9px] font-black uppercase transition-all border ${trackingAssetId === asset.id ? 'bg-rose-500 border-rose-500 text-white animate-pulse' : 'bg-[#1a1b20] border-[#474556]/30 text-[#52ffac] hover:bg-[#52ffac] hover:text-black'}`}><MapPin className="w-3.5 h-3.5" /> {trackingAssetId === asset.id ? 'Finalizar' : 'Iniciar'}</button>
+                         <button
+                           onClick={() => onOpenEngineeringReport?.(asset)}
+                           className="p-3 bg-white/5 border border-[#5d3cfe]/20 text-[#5d3cfe] hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"
+                           title="Reporte NASA MDM-V4"
+                         >
+                            <Cpu className="w-4 h-4" />
+                         </button>
                          <button onClick={() => { setHistoryAssetId(asset.id); setViewMode('history'); }} className="p-3 bg-[#1a1b20] border border-[#474556]/30 text-[#c7bfff] hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"><FileText className="w-4 h-4" /></button>
                          <button onClick={() => onManageAsset?.(asset)} className="p-3 bg-[#1a1b20] border border-[#474556]/30 text-white hover:bg-white/10 rounded-xl transition-all"><ChevronRight className="w-4 h-4" /></button>
                       </div>

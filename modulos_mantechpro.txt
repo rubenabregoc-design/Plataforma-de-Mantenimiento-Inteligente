@@ -1,0 +1,155 @@
+================================================================================
+          ECOSISTEMA INTEGRAL DE MÓDULOS — MANTECHPRO MASTER V5
+================================================================================
+Modelo: Cliente → Portafolio de Activos → Categoría
+
+---
+
+## 0. CAMBIO DE MODELO RESPECTO A V4
+
+**V4 (obsoleto):** El cliente pertenece a una categoría fija (Construcción, Salud, PH, General). El sidebar se arma según esa etiqueta de cuenta.
+
+**V5 (actual):** El cliente **tiene un portafolio de activos**. Cada activo pertenece a una categoría. El sidebar y el dashboard se arman dinámicamente según los activos que el cliente tiene registrados — no según una etiqueta única de cuenta.
+
+**Por qué importa:** un mismo cliente (ej. un médico) puede tener un activo de Salud (equipo de Rayos X en su clínica) y un activo General (su auto, su casa) simultáneamente. El sistema debe servir ambos mundos sin forzar una sola identidad de cuenta.
+
+**Esquema de datos sugerido (Firestore):**
+
+```
+clientes/{clienteId}
+  nombre, contacto, mantechIdNivel, walletBalance...
+
+activos/{activoId}
+  clienteId       → referencia al dueño
+  categoria       → "SALUD" | "CONSTRUCCION" | "PH" | "GENERAL"
+  tipo            → ej. "Equipo de Rayos X", "Excavadora CAT320", "Bomba de agua", "Auto personal"
+  ubicacion       → dirección o proyecto asociado
+  metadatos       → específicos por tipo (horas de uso, nro. serie, fecha instalación...)
+
+servicios/{servicioId}
+  activoId        → referencia al activo que originó el servicio
+  categoria       → heredada del activo, usada para triage/SLA
+  tecnicoId, estado, checklist, evidencias...
+```
+
+El **triage y el SLA** ya no se disparan "porque el cliente es de tal categoría" — se disparan **por el tipo de activo que reportó la falla**, lo cual es un dato mucho más preciso para enrutar al técnico correcto.
+
+**El selector superior (GENERAL / PH / SALUD / CONSTRUCCIÓN)** deja de ser "quién soy" y pasa a ser un **filtro de vista sobre el portafolio propio del cliente**. Solo se muestran las pestañas donde el cliente tiene al menos un activo registrado; el resto aparece atenuado con opción de "+ Agregar activo".
+
+---
+
+## I. CAPA 1 — MÓDULOS DE CUENTA (CORE, SIEMPRE VISIBLES)
+
+Independientes del tipo de activo. Aparecen en el sidebar de cualquier cliente, sin importar su portafolio.
+
+| Módulo | Función |
+|---|---|
+| Chat Encriptado | Comunicación segura con Data Masking (privacidad de datos) |
+| Billetera Digital (Wallet) | Cobros vía Yappy/PayPal, liberación de fondos tras firma de conformidad |
+| Mantech ID | Validación de identidad (Cédula, Récord Policivo). Nivel base para todo cliente/técnico; se extiende con sellos por categoría (ver Capa 2 — Salud) |
+| Contratos | Repositorio de acuerdos de servicio y membresías activas |
+| Membresía | Plan del cliente y beneficios asociados |
+| Buscar Expertos | Marketplace de técnicos con reseñas y radar GPS |
+| Bóveda de Garantías | Archivo de firmas y recibos digitales para respaldo legal |
+| Motor de Notificaciones Push | Alertas preventivas y avisos de mantenimiento, cruzando todos los activos |
+| Explorar Módulos | Descubrimiento de funciones nuevas o no activadas aún |
+
+---
+
+## II. CAPA 2 — MÓDULOS DE ACTIVO (DEPENDEN DEL TIPO DE ACTIVO SELECCIONADO)
+
+Se activan al entrar a un activo específico del portafolio (ej. "Clínica Central" o "Mi Auto"). Este es el contenido verdaderamente dinámico.
+
+### 🏥 SALUD — Activos: equipo biomédico, clínicas, hospitales
+> Enfoque: normativa biomédica, precisión y seguridad del paciente.
+- **Reportes de Ingeniería:** certificados técnicos listos para auditorías del MINSA.
+- **Checklists de Alta Precisión:** protocolos para equipos de Rayos X, MRI y esterilización.
+- **Videollamada Técnica (Nivel 3):** soporte remoto con ingenieros de fábrica — variante especializada del módulo Core de videollamada.
+- **Mantech ID — Sello Gold Biomédico:** extensión del Mantech ID base para técnicos certificados en equipo médico.
+- **Historial de Trazabilidad:** vida útil de sensores y partes críticas.
+
+### 🏢 PH — Activos: edificios, áreas comunes
+> Enfoque: control de activos críticos y cumplimiento de normas de áreas comunes.
+- **Tablero Vertical PH:** monitor de bombas de agua, elevadores y plantas eléctricas.
+- **Inventario de Repuestos (PH):** stock de filtros de piscina, luces y químicos — variante del módulo de Inventario Core, con catálogo propio.
+- **Programador Preventivo:** alertas legales para limpieza de tanques y revisiones de gas.
+- **Logística Satelital:** seguimiento del arribo de contratistas de mantenimiento.
+- **Gestor de Disputas (Escrow PH):** retención de pagos hasta conformidad de la administración — vista de cliente sobre el motor de disputas central (ver Capa 3).
+
+### 🚧 CONSTRUCCIÓN — Activos: maquinaria amarilla, proyectos de obra
+> Enfoque: maximización de horas de uso y control estricto de costos operativos.
+- **Módulo de Flota B2B:** ubicación y estatus de excavadoras y camiones.
+- **Auditoría de Combustible:** consumo de diésel vs. horas de motor.
+- **Inspección Pre-Trip:** reporte fotográfico diario del operador antes de iniciar labor.
+- **ROI MantechPro:** ahorro generado por detección temprana de averías.
+- **SOS de Obra:** despacho de mecánicos de campo con taller móvil directo al proyecto.
+
+### 🏠 GENERAL — Activos: hogar, vehículo personal, oficina
+> Enfoque: rapidez, simplicidad y confianza para el usuario final.
+- **Módulo SOS 24/7 (Hogar):** emergencias de plomería, electricidad y cerrajería.
+- **Autodiagnóstico Técnico V2.0:** guía para resolución de fallas menores sin costo.
+- **Checkout Embebido:** pasarela de pagos Yappy y Tarjeta de Crédito para servicios puntuales.
+
+---
+
+## III. CAPA 3 — MÓDULOS DE PORTAFOLIO (AGREGAN TODOS LOS ACTIVOS)
+
+Vista consolidada cuando el cliente selecciona "GENERAL" como filtro superior, o entra al panel principal sin elegir un activo específico. Le da sentido real a esa pestaña, que en el diseño anterior no tenía contenido propio.
+
+- **Diagnóstico Técnico Predictivo:** análisis de fallas por palabras clave y lógica local, con causas probables y presupuestos estimados del mercado panameño — aplica sin importar la categoría del activo que reporta la falla.
+- **Monitor de Ejecución en Tiempo Real:** progreso del técnico, checklist de tareas y materiales cargados a factura, para cualquier servicio activo del portafolio.
+- **Inventario de Repuestos (Consolidado):** vista global de stock e insumos vinculados a todos los activos del cliente, con alertas de reabastecimiento.
+- **Alertas de Urgencia Cruzadas:** panel único que muestra alertas activas de todos los activos, sin importar su categoría.
+- **Cálculo de ROI Consolidado:** ahorro total generado por prevención de fallas, sumando todas las categorías del portafolio.
+
+---
+
+## IV. MÓDULOS DE OPERACIÓN PROFESIONAL (TÉCNICOS)
+
+Panel del técnico, no del cliente. No depende del portafolio de activos sino de las órdenes asignadas.
+
+| Módulo | Función |
+|---|---|
+| Bandeja de Misiones | Solicitudes directas y órdenes de trabajo activas |
+| Agenda Inteligente | Calendario sincronizado con bloqueo de horas automático |
+| Billetera Digital (Wallet) | Saldos, comisiones y retiros del técnico |
+| Mantech ID (Seguridad) | Carga y validación de Cédula y Récord Policivo |
+| Credencial Digital QR | Identificación profesional escaneable con seguro técnico |
+| Checklist de Inspección | Tareas obligatorias para cierre de servicio |
+| Proof of Work | Evidencia fotográfica obligatoria (antes/después) |
+
+---
+
+## V. MÓDULOS DE CONTROL MAESTRO (ADMINISTRADOR)
+
+Panel interno de MantechPro. Opera sobre todos los clientes, activos y técnicos del sistema.
+
+| Módulo | Función |
+|---|---|
+| Consola Financiera Global | Auditoría de ingresos y utilidades en tiempo real |
+| Maestro de Usuarios | Control de cuentas, roles y suspensión de nodos |
+| Logística Satelital Central | Mapa de calor de servicios activos en Panamá |
+| Inventario Global | Stock crítico de repuestos y suministros, cruzando todas las categorías |
+| Logs de Auditoría Militar | Registro inmutable de cada acción en el sistema |
+| Gestor de Disputas (Central) | Arbitraje en reclamos y congelación de fondos de garantía — motor único; la vista de PH en Capa 2 es un subconjunto filtrado de este módulo |
+
+---
+
+## VI. NOTA DE IMPLEMENTACIÓN — SIDEBAR DINÁMICO
+
+Con este modelo, el sidebar en Next.js debería construirse así, a alto nivel:
+
+```
+1. Cargar activos del cliente → activos = getActivosByCliente(clienteId)
+2. Derivar categorías presentes → categorias = únicas(activos.map(a => a.categoria))
+3. Renderizar Capa 1 (Core) siempre
+4. Renderizar tabs superiores solo para categorías presentes en `categorias`
+   + tab atenuada "+ Agregar activo" para las ausentes
+5. Al seleccionar una tab/activo → renderizar módulos de Capa 2 correspondientes
+6. Tab "GENERAL" o vista sin activo seleccionado → renderizar Capa 3 (Portafolio)
+```
+
+Esto reemplaza cualquier lógica de tipo `if (cliente.vertical === "CONSTRUCCION")` por una consulta sobre la colección `activos`, que es más flexible y escala naturalmente si mañana agregas una quinta categoría (ej. Automotriz o Agroindustrial) sin tocar el modelo de cliente.
+
+---
+Panamá Hub — MantechPro Industries Inc. © 2026 — V5

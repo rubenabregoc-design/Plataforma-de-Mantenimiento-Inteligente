@@ -1,9 +1,86 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // REGLAS DE DESARROLLO PERMISIVAS
-    match /{document=**} {
-      allow read, write: if true;
+
+    // Función para verificar si es Admin
+    function isAdmin() {
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Reglas para Usuarios
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Reglas para Activos (Equipos/Flota)
+    match /assets/{assetId} {
+      allow read: if true; // Permitir lectura pública para el showcase/market
+      allow write: if request.auth != null && (resource == null || resource.data.ownerId == request.auth.uid || isAdmin());
+      allow create: if request.auth != null;
+    }
+
+    // Reglas para Contratos (Requests)
+    match /requests/{requestId} {
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.clientId ||
+        request.auth.uid == resource.data.techUserId ||
+        isAdmin()
+      );
+      allow write: if request.auth != null && (
+        request.auth.uid == resource.data.clientId ||
+        request.auth.uid == resource.data.techUserId ||
+        isAdmin()
+      );
+      allow create: if request.auth != null;
+    }
+
+    // Reglas para Chat
+    match /messages/{messageId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Reglas para Técnicos
+    match /technicians/{techId} {
+      allow read: if true; // Lectura pública para el Marketplace
+      allow write: if request.auth != null && (
+        resource == null ||
+        !('userId' in resource.data) ||
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+    }
+
+    // Reglas para Recordatorios
+    match /reminders/{remId} {
+      allow read: if request.auth != null && (request.auth.uid == resource.data.clientId || isAdmin());
+      allow write: if request.auth != null && (request.auth.uid == resource.data.clientId || isAdmin());
+      allow create: if request.auth != null;
+    }
+
+    // Reglas para Agenda
+    match /agenda/{eventId} {
+      allow read: if request.auth != null && (request.auth.uid == resource.data.techUserId || request.auth.uid == resource.data.reservedFor || isAdmin());
+      allow write: if request.auth != null && (request.auth.uid == resource.data.techUserId || isAdmin());
+      allow create: if request.auth != null;
+    }
+
+    // Reglas para Inventario
+    match /inventory/{itemId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Reglas para Logs de Auditoría
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if request.auth != null; // El sistema registra logs
+    }
+
+    // Reglas de Configuración (Showcase, CMS, Landing)
+    match /config/{docId} {
+      allow read: if true; // Lectura pública para la configuración de la App y Showcase
+      allow write: if isAdmin();
     }
   }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Asset, AssetType } from '../types';
-import { Plus, X, Car, ShieldCheck, Cpu, Sliders, BatteryCharging, Zap, Boxes, Home, Edit2, Search, CheckCircle2 } from 'lucide-react';
+import { Asset, AssetType, AssetCategory } from '../types';
+import { Plus, X, Car, ShieldCheck, Cpu, Sliders, BatteryCharging, Zap, Boxes, Home, Edit2, Search, CheckCircle2, Droplets, PlugZap, Building2, Stethoscope, HardHat, LayoutGrid, Bike } from 'lucide-react';
 
 interface AssetRegisterModalProps {
   isOpen: boolean;
@@ -14,6 +14,8 @@ interface AssetRegisterModalProps {
 export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit, maxAssets = 3, currentAssetsCount = 0 }: AssetRegisterModalProps) {
   const [name, setName] = useState(assetToEdit?.name || '');
   const [type, setType] = useState<AssetType>(assetToEdit?.type || 'car');
+  const [category, setCategory] = useState<AssetCategory>(assetToEdit?.category || 'GENERAL');
+  const [riskLevel, setRiskLevel] = useState<RiskLevel>(assetToEdit?.riskLevel || 'low');
   const [details, setDetails] = useState(assetToEdit?.details || '');
   const [licensePlate, setLicensePlate] = useState(assetToEdit?.licensePlate || '');
   const [mileage, setMileage] = useState<number>(assetToEdit?.mileage || 0);
@@ -29,6 +31,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
     if (assetToEdit) {
       setName(assetToEdit.name);
       setType(assetToEdit.type);
+      setCategory(assetToEdit.category || 'GENERAL');
       setDetails(assetToEdit.details);
       setLicensePlate(assetToEdit.licensePlate || '');
       setMileage(assetToEdit.mileage || 0);
@@ -42,6 +45,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
     } else {
       setName('');
       setType('car');
+      setCategory('GENERAL');
       setDetails('');
       setLicensePlate('');
       setMileage(0);
@@ -65,7 +69,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
     }
     if (!name || !lastMaintenance || !nextMaintenance) return;
     onAdd({
-      name, type, details,
+      name, type, category, riskLevel, details,
       licensePlate: (type === 'car' || type === 'moto') ? licensePlate : undefined,
       mileage: (type === 'car' || type === 'moto') ? Number(mileage) : undefined,
       lastMaintenanceDate: lastMaintenance,
@@ -89,6 +93,9 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       case 'solar_panels': return <BatteryCharging className={cls} />;
       case 'industrial_equip': return <Boxes className={cls} />;
       case 'house': return <Home className={cls} />;
+      case 'plumbing': return <Droplets className={cls} />;
+      case 'electrical': return <PlugZap className={cls} />;
+      case 'moto': return <Bike className={cls} />;
       default: return <ShieldCheck className={cls} />;
     }
   };
@@ -109,19 +116,65 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
         </header>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
+          <div className="space-y-4">
+            <label className="text-[10px] font-black text-[#474556] uppercase tracking-[0.2em] ml-1">Capa de Negocio (Categoría)</label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {(['GENERAL', 'PH', 'SALUD', 'CONSTRUCCION'] as AssetCategory[]).map(cat => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategory(cat)}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-3xl border transition-all ${category === cat ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-xl scale-105' : 'bg-[#1c1d21] border-[#2a2b2f] text-[#474556] hover:border-[#5d3cfe]/30'}`}
+                >
+                  {cat === 'GENERAL' && <LayoutGrid className="w-5 h-5" />}
+                  {cat === 'PH' && <Building2 className="w-5 h-5" />}
+                  {cat === 'SALUD' && <Stethoscope className="w-5 h-5" />}
+                  {cat === 'CONSTRUCCION' && <HardHat className="w-5 h-5" />}
+                  <span className="text-[9px] font-black">{cat}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <label className="text-[10px] font-black text-[#474556] uppercase tracking-[0.2em] ml-1">Nivel de Riesgo Operativo (Punto #22)</label>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { id: 'low', label: 'Bajo', desc: 'Limpieza/Pintura', color: 'bg-indigo-500' },
+                { id: 'medium', label: 'Medio', desc: 'AC/Plomería', color: 'bg-amber-500' },
+                { id: 'high', label: 'Alto', desc: 'Electricidad/Industrial', color: 'bg-rose-500' }
+              ].map(r => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setRiskLevel(r.id as RiskLevel)}
+                  className={`p-4 rounded-[1.5rem] border text-left transition-all ${riskLevel === r.id ? 'bg-white/5 border-white/20 shadow-xl' : 'border-white/5 opacity-40'}`}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] font-black uppercase text-white">{r.label}</span>
+                    {riskLevel === r.id && <div className={`w-1.5 h-1.5 rounded-full ${r.color} animate-pulse`} />}
+                  </div>
+                  <p className="text-[8px] font-bold text-[#474556] uppercase">{r.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-[#474556] uppercase tracking-[0.2em] ml-1">Tipo de Activo</label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-               {(['car', 'ac', 'computer', 'generator', 'solar_panels', 'moto', 'industrial_equip', 'house'] as AssetType[]).map(t => {
+            <label className="text-[10px] font-black text-[#474556] uppercase tracking-[0.2em] ml-1">Tipo de Activo Específico</label>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+               {(['car', 'moto', 'ac', 'computer', 'generator', 'solar_panels', 'industrial_equip', 'house', 'plumbing', 'electrical'] as AssetType[]).map(t => {
                  const labels: Record<AssetType, string> = {
                    car: 'Auto / Camión',
+                   moto: 'Moto',
                    ac: 'Aire Acond.',
                    computer: 'Computación',
                    generator: 'Planta Eléc.',
                    solar_panels: 'Panel Solar',
-                   moto: 'Moto',
                    industrial_equip: 'Equipo Ind.',
-                   house: 'Propiedad'
+                   house: 'Propiedad',
+                   plumbing: 'Plomería',
+                   electrical: 'Electricidad'
                  };
                  return (
                    <button key={t} type="button" onClick={() => setType(t)} className={`flex items-center gap-2 p-3 rounded-xl border text-[9px] font-black uppercase transition-all ${type === t ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-lg' : 'bg-[#1c1d21] border-[#2a2b2f] text-[#c8c4d9] hover:border-[#c7bfff]/30'}`}>
@@ -165,7 +218,31 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
                   <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Conductor Asignado</label>
                   <input type="text" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="Nombre del Chofer" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none" />
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-4">
+            <label className="text-[10px] font-black text-[#474556] uppercase tracking-[0.2em] ml-1">Nivel de Riesgo Operativo (Punto #22)</label>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { id: 'low', label: 'Bajo', desc: 'Limpieza/Pintura', color: 'bg-indigo-500' },
+                { id: 'medium', label: 'Medio', desc: 'AC/Plomería', color: 'bg-amber-500' },
+                { id: 'high', label: 'Alto', desc: 'Electricidad/Industrial', color: 'bg-rose-500' }
+              ].map(r => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setRiskLevel(r.id as RiskLevel)}
+                  className={`p-4 rounded-[1.5rem] border text-left transition-all ${riskLevel === r.id ? 'bg-white/5 border-white/20 shadow-xl' : 'border-white/5 opacity-40'}`}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] font-black uppercase text-white">{r.label}</span>
+                    {riskLevel === r.id && <div className={`w-1.5 h-1.5 rounded-full ${r.color} animate-pulse`} />}
+                  </div>
+                  <p className="text-[8px] font-bold text-[#474556] uppercase">{r.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
                   <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Tipo de Combustible</label>
                   <div className="flex gap-2">
                     {(['diesel', 'gas91', 'gas95'] as const).map(f => (

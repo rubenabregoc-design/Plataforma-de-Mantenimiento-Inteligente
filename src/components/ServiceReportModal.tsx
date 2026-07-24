@@ -127,169 +127,166 @@ export default function ServiceReportModal({ isOpen, onClose, request }: Service
       {/* DOCUMENTO MAESTRO (RIGID LETTER) */}
       <article
         id="printable-report"
-        className="w-full max-w-[8.5in] bg-white text-zinc-900 shadow-2xl flex flex-col border-t-[12px] border-[#0d0e12] p-[0.6in] shrink-0"
-        style={{ minHeight: '11in', boxSizing: 'border-box' }}
+        className="w-full max-w-[8.5in] bg-white text-zinc-900 shadow-2xl flex flex-col border-t-[12px] border-[#0d0e12] p-[0.4in] shrink-0"
+        style={{ height: '11in', boxSizing: 'border-box', overflow: 'hidden' }}
       >
 
         {/* HEADER CORPORATIVO */}
-        <header className="flex justify-between items-start border-b-2 border-zinc-100 pb-8 mb-10">
-          <div className="flex items-center gap-6">
-             <div className="w-16 h-16 bg-[#0d0e12] rounded-2xl flex items-center justify-center p-3 shadow-xl">
+        <header className="flex justify-between items-start border-b-2 border-zinc-100 pb-4 mb-6">
+          <div className="flex items-center gap-4">
+             <div className="w-14 h-14 bg-[#0d0e12] rounded-2xl flex items-center justify-center p-2.5 shadow-xl">
                 <img src="/logo.svg" alt="Logo" className="w-full h-full object-contain" />
              </div>
              <div>
-                <h1 className="text-3xl font-black tracking-tighter leading-tight uppercase">
+                <h1 className="text-2xl font-black tracking-tighter leading-tight uppercase">
                    Mantech<span className="text-[#5d3cfe]">Pro</span>
                 </h1>
-                <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-zinc-400 mt-1">
+                <p className="text-[9px] font-bold uppercase tracking-[0.4em] text-zinc-400 mt-0.5">
                    Ingeniería Operativa Panamá
                 </p>
              </div>
           </div>
 
           <div className="text-right">
-             <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">Número de Reporte</h3>
-             <p className="font-black text-2xl text-[#0d0e12] leading-none tracking-tighter uppercase">
+             <h3 className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-0.5">Número de Reporte</h3>
+             <p className="font-black text-xl text-[#0d0e12] leading-none tracking-tighter uppercase">
                 #{request.id.substring(0,8).toUpperCase()}
              </p>
-             <p className="text-[11px] font-bold text-zinc-500 mt-3 uppercase tracking-widest">{docDate}</p>
+             {request.cufe && (
+               <p className="text-[7px] font-black text-[#5d3cfe] mt-1 uppercase tracking-tighter">
+                 CUFE: {request.cufe}
+               </p>
+             )}
+             <p className="text-[10px] font-bold text-zinc-500 mt-2 uppercase tracking-widest">{docDate}</p>
           </div>
         </header>
 
         {/* RESUMEN EJECUTIVO */}
-        <div className="grid grid-cols-6 gap-2 mb-12">
+        <div className="grid grid-cols-6 gap-2 mb-8">
           {[
             { label: 'Activo', value: request.assetName || '---' },
             { label: 'Especialista', value: request.techName || '---' },
+            { label: 'Empresa', value: request.techCompanyName || 'MantechPro Independent' },
             { label: 'Modalidad', value: request.serviceType === 'remote' ? `REMOTO` : 'PRESENCIAL' },
-            { label: 'Plataforma / Pago', value: request.serviceType === 'remote' ? request.remotePlatform?.toUpperCase() : request.paymentMethod?.toUpperCase() || 'YAPPY' },
             { label: 'Tiempo', value: getTimeDisplay() },
-            { label: 'Inversión', value: `$${Number(request.price || 0).toFixed(2)}`, highlight: true },
+            { label: 'Inversión Total', value: `$${Number(request.price || 0).toFixed(2)}`, highlight: true },
           ].map((item, i) => (
-            <div key={i} className={`p-3 rounded-xl border ${item.highlight ? 'border-[#52ffac] bg-emerald-50/20' : 'border-zinc-100 bg-zinc-50/50'}`}>
-              <h3 className="text-[7px] font-black uppercase text-zinc-400 mb-1.5">{item.label}</h3>
-              <p className="text-[9px] font-black text-zinc-900 uppercase leading-tight truncate">{item.value}</p>
+            <div key={i} className={`p-2 rounded-xl border ${item.highlight ? 'border-[#5d3cfe] bg-indigo-50/20' : 'border-zinc-100 bg-zinc-50/50'}`}>
+              <h3 className="text-[6px] font-black uppercase text-zinc-400 mb-1">{item.label}</h3>
+              <p className="text-[8px] font-black text-zinc-900 uppercase leading-tight truncate">{item.value}</p>
+              {item.highlight && request.itbmsAmount && (
+                <p className="text-[5px] text-zinc-400 font-bold uppercase mt-0.5">Incluye ITBMS (7%)</p>
+              )}
             </div>
           ))}
         </div>
 
         {/* CONTENIDO TÉCNICO */}
-        <div className="flex-1 space-y-12">
+        <div className="flex-1 space-y-6">
 
           <section>
-             <div className="flex items-center gap-3 border-b-2 border-zinc-100 pb-3 mb-5">
-                <FileText className="w-5 h-5 text-[#5d3cfe]" />
-                <h2 className="text-[13px] font-black uppercase tracking-widest text-zinc-800">Descripción de Intervención</h2>
+             <div className="flex items-center gap-2 border-b-2 border-zinc-100 pb-2 mb-3">
+                <FileText className="w-4 h-4 text-[#5d3cfe]" />
+                <h2 className="text-[11px] font-black uppercase tracking-widest text-zinc-800">Descripción de Intervención</h2>
              </div>
-             <div className="bg-zinc-50 p-8 rounded-2xl border border-zinc-100 shadow-inner relative">
-                <div className="absolute top-0 left-0 w-1.5 h-full bg-[#5d3cfe]"></div>
-                <p className="text-[14px] leading-relaxed italic text-zinc-700 font-medium">
+             <div className="bg-zinc-50 p-6 rounded-2xl border border-zinc-100 shadow-inner relative">
+                <div className="absolute top-0 left-0 w-1 h-full bg-[#5d3cfe]"></div>
+                <p className="text-[12px] leading-relaxed italic text-zinc-700 font-medium">
                    "{request.description}"
                 </p>
              </div>
           </section>
 
+          {/* EVIDENCIA INALTERABLE (Proof of Work) */}
+          {request.proofOfWork && (
+            <section>
+              <div className="flex items-center gap-2 border-b-2 border-zinc-100 pb-2 mb-3">
+                <ShieldCheck className="w-4 h-4 text-[#52ffac]" />
+                <h2 className="text-[11px] font-black uppercase tracking-widest text-zinc-800">Evidencia Inalterable</h2>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="aspect-video rounded-xl overflow-hidden border-2 border-zinc-100 shadow-sm relative">
+                    <img src={request.proofOfWork.oldPartPhoto} className="w-full h-full object-cover grayscale" alt="Vieja" />
+                    <div className="absolute bottom-1.5 left-1.5 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg">
+                      <span className="text-[6px] font-black text-white uppercase tracking-widest">Captured • Old Part</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="aspect-video rounded-xl overflow-hidden border-2 border-zinc-100 shadow-sm relative">
+                    <img src={request.proofOfWork.newPartPhoto} className="w-full h-full object-cover" alt="Nueva" />
+                    <div className="absolute bottom-1.5 left-1.5 bg-[#52ffac]/90 backdrop-blur-md px-2 py-1 rounded-lg">
+                      <span className="text-[6px] font-black text-black uppercase tracking-widest">Verified • New Part</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Marca de Agua de Ubicación */}
+              <div className="mt-3 p-3 bg-zinc-50 rounded-xl border border-zinc-100 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="w-3 h-3 text-[#5d3cfe]" />
+                    <span className="text-[8px] font-bold text-zinc-800">{request.proofOfWork.location.lat.toFixed(4)}, {request.proofOfWork.location.lng.toFixed(4)}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 border-l border-zinc-200 pl-4">
+                    <Clock className="w-3 h-3 text-[#5d3cfe]" />
+                    <span className="text-[8px] font-bold text-zinc-800">{new Date(request.proofOfWork.timestamp).toLocaleString('es-PA')}</span>
+                  </div>
+                </div>
+                <p className="text-[7px] font-black text-zinc-300 uppercase italic">Hash: {request.id.substring(0,8)}</p>
+              </div>
+            </section>
+          )}
+
           <section>
-             <div className="flex items-center gap-3 border-b-2 border-zinc-100 pb-3 mb-5">
-                <CheckCircle2 className="w-5 h-5 text-[#5d3cfe]" />
-                <h2 className="text-[13px] font-black uppercase tracking-widest text-zinc-800">Tareas Realizadas</h2>
+             <div className="flex items-center gap-2 border-b-2 border-zinc-100 pb-2 mb-3">
+                <CheckCircle2 className="w-4 h-4 text-[#5d3cfe]" />
+                <h2 className="text-[11px] font-black uppercase tracking-widest text-zinc-800">Tareas Realizadas</h2>
              </div>
              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b-2 border-zinc-100 text-[10px] font-black uppercase text-zinc-400">
-                    <th className="py-3">Descripción de la Labor</th>
-                    <th className="py-3 text-right">Validación</th>
-                  </tr>
-                </thead>
                 <tbody>
-                  {request.checklist?.map((task) => (
+                  {request.checklist?.slice(0, 6).map((task) => (
                     <tr key={task.id} className="border-b border-zinc-50">
-                      <td className="py-4 text-[12px] font-bold text-zinc-800 uppercase">{task.description}</td>
-                      <td className="py-4 text-right">
-                        <span className={`px-3 py-1 rounded-full font-black uppercase text-[8px] tracking-widest ${task.isCompleted ? 'bg-emerald-100 text-emerald-600' : 'bg-zinc-100 text-zinc-400'}`}>
-                          {task.isCompleted ? 'CERTIFICADO' : 'PENDIENTE'}
-                        </span>
+                      <td className="py-2 text-[10px] font-bold text-zinc-800 uppercase">{task.description}</td>
+                      <td className="py-2 text-right">
+                        <span className="px-2 py-0.5 rounded-full font-black uppercase text-[7px] bg-emerald-100 text-emerald-600">CERTIFICADO</span>
                       </td>
                     </tr>
                   ))}
                 </tbody>
              </table>
           </section>
-
-          {request.materials && request.materials.length > 0 && (
-            <section>
-              <div className="flex items-center gap-3 border-b-2 border-zinc-100 pb-3 mb-5">
-                <Package className="w-5 h-5 text-[#5d3cfe]" />
-                <h2 className="text-[13px] font-black uppercase tracking-widest text-zinc-800">Insumos y Repuestos</h2>
-              </div>
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b-2 border-zinc-100 text-[10px] font-black uppercase text-zinc-400">
-                    <th className="py-3">Descripción de Material</th>
-                    <th className="py-3 text-center">Cant.</th>
-                    <th className="py-3 text-right">Monto Unit.</th>
-                    <th className="py-3 text-right">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {request.materials.map((m, idx) => (
-                    <tr key={idx} className="border-b border-zinc-50">
-                      <td className="py-4 text-[11px] font-black text-zinc-800 uppercase">{m.name}</td>
-                      <td className="py-4 text-center font-black text-[#5d3cfe] text-sm">x{m.quantity}</td>
-                      <td className="py-4 text-right font-bold text-zinc-400">${Number(m.price).toFixed(2)}</td>
-                      <td className="py-4 text-right font-black text-zinc-900 text-sm">${(Number(m.price) * Number(m.quantity)).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
-          )}
         </div>
 
         {/* ÁREA DE FIRMAS Y CIERRE */}
-        <div className="mt-12 pt-10 border-t-2 border-zinc-100">
-           <div className="grid grid-cols-2 gap-12">
-              <div className="space-y-4">
-                 <h3 className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] border-b border-zinc-100 pb-2">Especialista Responsable</h3>
-                 <div className="h-16 flex items-end">
-                    <p className="text-sm font-black uppercase tracking-tight">{request.techName}</p>
-                 </div>
-                 <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest">ID Técnico Certificado • MantechPro</p>
+        <div className="mt-6 pt-6 border-t-2 border-zinc-100">
+           <div className="grid grid-cols-2 gap-8">
+              <div className="space-y-2">
+                 <h3 className="text-[8px] font-black text-zinc-400 uppercase tracking-[0.3em] border-b border-zinc-100 pb-1">Especialista</h3>
+                 <p className="text-xs font-black uppercase tracking-tight">{request.techName}</p>
+                 <p className="text-[7px] text-zinc-400 font-bold uppercase tracking-widest">{request.techCompanyName || 'Técnico Certificado MantechPro'}</p>
               </div>
 
-              <div className="space-y-4 text-center">
-                 <h3 className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] border-b border-zinc-100 pb-2">Validación del Cliente</h3>
-                 <div className="h-16 flex items-center justify-center bg-zinc-50 rounded-2xl relative border-2 border-dashed border-zinc-200 overflow-hidden mx-auto max-w-[200px]">
-                    {request.clientSignature ? (
-                      <img src={request.clientSignature} className="max-h-12 opacity-90 object-contain scale-125" alt="Firma" />
-                    ) : (
-                      <div className="flex flex-col items-center gap-1 opacity-20">
-                         <span className="text-xl text-zinc-300">-</span>
-                         <span className="text-[7px] font-black uppercase tracking-widest">PENDIENTE</span>
-                      </div>
-                    )}
-                    {request.clientSignature && <div className="absolute top-1 right-1 flex items-center gap-1 text-[6px] font-black text-emerald-600 bg-white px-2 py-0.5 rounded-full border border-emerald-100 shadow-sm"><BadgeCheck className="w-2.5 h-2.5" /> ID VERIFIED</div>}
+              <div className="space-y-2 text-center">
+                 <h3 className="text-[8px] font-black text-zinc-400 uppercase tracking-[0.3em] border-b border-zinc-100 pb-1">Validación Cliente</h3>
+                 <div className="h-12 flex items-center justify-center bg-zinc-50 rounded-xl relative border border-dashed border-zinc-200 overflow-hidden mx-auto max-w-[150px]">
+                    {request.clientSignature && <img src={request.clientSignature} className="max-h-8 object-contain" alt="Firma" />}
                  </div>
-                 <div className="space-y-1">
-                    <p className="text-[11px] font-black uppercase tracking-tighter text-zinc-900">{request.clientName}</p>
-                    <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest">Firma Biométrica Registrada</p>
-                 </div>
+                 <p className="text-[9px] font-black uppercase tracking-tighter text-zinc-900">{request.clientName}</p>
               </div>
            </div>
         </div>
 
         {/* PIE DE PÁGINA CORPORATIVO */}
-        <footer className="mt-16 pt-8 flex justify-between items-center text-zinc-400 border-t-2 border-zinc-100">
+        <footer className="mt-auto pt-4 flex justify-between items-center text-zinc-400 border-t-2 border-zinc-100">
           <div className="flex items-center gap-3">
-             <MapPin className="w-4 h-4 text-[#5d3cfe]" />
-             <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 leading-none">MantechPro Industries Panama S.A.</p>
-                <p className="text-[8px] font-bold uppercase text-zinc-400 mt-1">Red de Soporte Operativo • Master Node Panamá</p>
-             </div>
+             <MapPin className="w-3 h-3 text-[#5d3cfe]" />
+             <p className="text-[8px] font-black uppercase tracking-[0.2em] text-zinc-900">MantechPro Industries Panama S.A.</p>
           </div>
           <div className="text-right">
-             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-800">ORIGINAL - COPIA FIEL</p>
-             <p className="text-[8px] font-bold uppercase text-[#5d3cfe] mt-1">Documento Técnico GOB.PA</p>
+             <p className="text-[8px] font-black uppercase tracking-widest text-zinc-800">ORIGINAL - COPIA FIEL</p>
           </div>
         </footer>
       </article>

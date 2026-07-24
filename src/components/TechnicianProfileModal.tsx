@@ -85,6 +85,12 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
               </div>
 
               <div>
+                {tech.companyName && (
+                  <div className="mb-2 inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-xl">
+                    <Briefcase className="w-3.5 h-3.5 text-[#5d3cfe]" />
+                    <span className="text-[9px] font-black text-white uppercase tracking-wider">{tech.companyName}</span>
+                  </div>
+                )}
                 <h3 className="text-3xl font-black text-white tracking-tighter uppercase italic leading-none">{tech.name}</h3>
                 <p className="text-xs font-black text-[#5d3cfe] uppercase tracking-[0.3em] mt-3">Especialista Certificado</p>
               </div>
@@ -104,6 +110,21 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
                    </div>
                    <p className="text-[8px] font-black text-[#474556] uppercase tracking-widest">Servicios</p>
                 </div>
+              </div>
+
+              {/* QR de Validación Externa */}
+              <div className="bg-[#121317] p-6 rounded-[2rem] border border-[#5d3cfe]/20 shadow-2xl flex flex-col items-center gap-4 group">
+                 <div className="p-2 bg-white rounded-2xl shadow-xl transition-transform group-hover:scale-105">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://mantechpro.com/verify/${tech.id}&color=000000&bgcolor=ffffff`}
+                      alt="QR de Validación"
+                      className="w-24 h-24"
+                    />
+                 </div>
+                 <div className="text-center">
+                    <p className="text-[8px] font-black text-[#5d3cfe] uppercase tracking-[0.2em] mb-1">Sello Digital de Confianza</p>
+                    <p className="text-[7px] font-medium text-[#474556] uppercase">Escanee para verificar autenticidad en red</p>
+                 </div>
               </div>
 
               <div className="space-y-4">

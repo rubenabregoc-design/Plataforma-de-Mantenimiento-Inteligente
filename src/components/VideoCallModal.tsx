@@ -69,16 +69,17 @@ export default function VideoCallModal({ isOpen, onClose, roomName, userName, is
       const answerCandidates = collection(callDoc, 'answerCandidates');
       const offerCandidates = collection(callDoc, 'offerCandidates');
 
+      const callData = (await getDoc(callDoc)).data();
+      const isJoining = !!callData;
+
       pc.current.onicecandidate = (event) => {
         if (event.candidate) {
-          const candCollection = status === 'Uniendo...' ? answerCandidates : offerCandidates;
+          const candCollection = isJoining ? answerCandidates : offerCandidates;
           addDoc(candCollection, event.candidate.toJSON());
         }
       };
 
-      const callData = (await getDoc(callDoc)).data();
-
-      if (!callData) {
+      if (!isJoining) {
         // SOY EL QUE LLAMA (OFFERER)
         setStatus('Llamando...');
         const offerDescription = await pc.current.createOffer();
@@ -169,7 +170,7 @@ export default function VideoCallModal({ isOpen, onClose, roomName, userName, is
                    <div className="w-24 h-24 rounded-full bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 flex items-center justify-center animate-pulse">
                       <User className="w-10 h-10 text-[#5d3cfe]" />
                    </div>
-                   <div className="absolute -top-2 -right-2 bg-rose-600 px-2 py-1 rounded-lg text-[7px] font-black text-white uppercase">Encifrado</div>
+                   <div className="absolute -top-2 -right-2 bg-rose-600 px-2 py-1 rounded-lg text-[7px] font-black text-white uppercase">Cifrado</div>
                 </div>
                 <div className="text-center space-y-1">
                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white">Sincronizando Nodo</p>

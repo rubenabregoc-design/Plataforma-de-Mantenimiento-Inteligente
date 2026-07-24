@@ -1,4 +1,4 @@
-import { QrCode, TrendingDown, TrendingUp, DollarSign, PenTool as Tool, Calendar, FileText, Download, ShieldCheck, Clock } from 'lucide-react';
+import { QrCode, TrendingDown, TrendingUp, DollarSign, PenTool as Tool, Calendar, FileText, Download, ShieldCheck, Clock, ShieldAlert, BookOpen, BadgeCheck, Bike } from 'lucide-react';
 
 interface AssetIntelligentCardProps {
   asset: Asset;
@@ -15,6 +15,10 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
   const unit = asset.type === 'generator' || asset.type === 'industrial_equip' ? 'Hora' : 'KM';
   const usage = asset.mileage || asset.usageHours || 1;
   const costPerUnit = totalSpend / usage;
+
+  // Cálculo de Garantía
+  const isUnderWarranty = asset.purchaseDate && asset.warrantyMonths &&
+    (new Date(asset.purchaseDate).setMonth(new Date(asset.purchaseDate).getMonth() + asset.warrantyMonths) > Date.now());
 
   // Idea 1: QR Code dinámico
   const qrData = `https://mantechpro.pa/asset/${asset.id}`;
@@ -42,7 +46,7 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
 
         {/* Decoración de fondo */}
         <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity transform rotate-12">
-          <Tool className="w-24 h-24 text-white" />
+          {asset.type === 'moto' ? <Bike className="w-24 h-24 text-white" /> : <Tool className="w-24 h-24 text-white" />}
         </div>
       </div>
 
@@ -61,6 +65,20 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
             </div>
           </div>
         </div>
+
+        {/* Bóveda de Garantías */}
+        {asset.purchaseDate && (
+           <div className={`p-4 rounded-2xl border flex items-center justify-between ${isUnderWarranty ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-rose-500/5 border-rose-500/20'}`}>
+              <div className="flex items-center gap-3">
+                 <BadgeCheck className={`w-5 h-5 ${isUnderWarranty ? 'text-[#52ffac]' : 'text-rose-500'}`} />
+                 <div>
+                    <p className="text-[8px] font-black text-[#474556] uppercase tracking-widest leading-none">Estatus de Garantía</p>
+                    <h5 className="text-white font-bold uppercase text-[10px] mt-1">{isUnderWarranty ? 'Vigente' : 'Vencida'}</h5>
+                 </div>
+              </div>
+              <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">{asset.warrantyMonths} meses</span>
+           </div>
+        )}
 
         {/* Resumen de Estado y Predicción */}
         <div className="space-y-4">
