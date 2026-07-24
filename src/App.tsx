@@ -71,7 +71,7 @@ import {
   Layers, ShieldCheck, Star, CheckCircle2, Bike,
   UserX, Clock, LogOut, User, ChevronRight, ChevronLeft,
   ShieldAlert, HelpCircle, Wrench, Search, Check, X, MapPin, BadgeCheck, Video, Monitor, Download,
-  Calendar, AlertTriangle, Pencil, Trash2, FileText, Settings, Eye, EyeOff, Sparkles, Inbox, Car, Wind, Package, Globe, PieChart, Building2, Activity, CreditCard, ExternalLink, QrCode, Cpu, Zap, Navigation, Wifi, Wallet, ArrowRight, Fingerprint, LifeBuoy, FileShield
+  Calendar, AlertTriangle, Pencil, Trash2, FileText, Settings, Eye, EyeOff, Sparkles, Inbox, Car, Wind, Package, Globe, PieChart, Building2, Activity, CreditCard, ExternalLink, QrCode, Cpu, Zap, Navigation, Wifi, Wallet, ArrowRight, Fingerprint, LifeBuoy
 } from 'lucide-react';
 
 // Firebase
@@ -210,7 +210,7 @@ export default function App() {
                 { id: 'marketplace', label: 'Radar Especialistas', icon: Search },
                 { id: 'mantech_id', label: 'Mantech ID', icon: Fingerprint },
                 { id: 'fleet', label: 'Control de Flota', icon: Truck },
-                { id: 'warranty', label: 'Bóveda de Garantías', icon: FileShield },
+                { id: 'warranty', label: 'Bóveda de Garantías', icon: ShieldCheck },
                 { id: 'inventory', label: 'Inventario Repuestos', icon: Package },
                 { id: 'subscriptions', label: 'Plan Membresía', icon: Star },
                 { id: 'settings', label: 'Ajustes del Nodo', icon: Settings },
