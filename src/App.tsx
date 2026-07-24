@@ -55,6 +55,7 @@ import HomeEmergencySOS from './components/HomeEmergencySOS';
 import VerticalDashboard from './components/VerticalDashboard';
 import AppScreensShowcase from './components/AppScreensShowcase';
 import LandingCMS from './components/LandingCMS';
+import NotificationCenter from './components/NotificationCenter';
 import { ChecklistService } from './services/checklistService';
 import { ROIService } from './services/roiService';
 import LandingPage from './components/LandingPage';
@@ -124,6 +125,8 @@ export default function App() {
 
   const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
+  const [showNotificationCenter, setShowNotificationCenter] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [role, setRole] = useState<'client' | 'tech' | 'admin'>('client');
   const [verticalMode, setVerticalMode] = useState<AssetCategory>('GENERAL');
 
@@ -238,6 +241,13 @@ export default function App() {
   const lastPosRef = useRef<any>(null);
 
   // PUSH NOTIFICATIONS SETUP
+  useEffect(() => {
+    if (!isLoggedIn || !user) return;
+    const q = query(collection(db, "notifications"), where("userId", "==", user.uid), where("read", "==", false));
+    const unsub = onSnapshot(q, (snap) => setUnreadCount(snap.size));
+    return () => unsub();
+  }, [isLoggedIn, user]);
+
   useEffect(() => {
     if (Capacitor.isNativePlatform()) setupPushNotifications();
   }, []);
@@ -648,8 +658,32 @@ export default function App() {
         <Toaster position="top-center" />
         <nav className="h-20 bg-[#0d0e12]/80 backdrop-blur-md border-b border-[#2a2b2f] flex items-center justify-between px-10 shrink-0 z-[100]">
           <div className="flex items-center gap-10"><MantechProLogo size="sm" /></div>
-          <div className="flex items-center gap-8"><button onClick={handleLogout} className="text-[#c8c4d9] hover:text-white font-black text-[10px] uppercase tracking-widest">Salir</button></div>
+          <div className="flex items-center gap-8">
+            {/* Notificaciones */}
+            <button
+              onClick={() => setShowNotificationCenter(true)}
+              className="relative p-2.5 rounded-2xl bg-white/5 border border-white/10 hover:bg-[#5d3cfe]/10 hover:border-[#5d3cfe]/30 transition-all group"
+            >
+              <Bell className="w-5 h-5 text-[#c8c4d9] group-hover:text-[#5d3cfe] transition-colors" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#5d3cfe] text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-[#0d0e12] animate-pulse">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            <button onClick={handleLogout} className="text-[#c8c4d9] hover:text-white font-black text-[10px] uppercase tracking-widest">Salir</button>
+          </div>
         </nav>
+
+        <AnimatePresence>
+          {showNotificationCenter && user && (
+            <NotificationCenter
+              userId={user.uid}
+              onClose={() => setShowNotificationCenter(false)}
+            />
+          )}
+        </AnimatePresence>
         <div className="flex flex-1 overflow-hidden relative">
           <aside className="w-72 bg-[#0d0e12] border-r border-[#2a2b2f] p-8 flex flex-col shrink-0 overflow-y-auto custom-scrollbar">
             <nav className="space-y-1.5 flex-1 text-[11px] font-black uppercase tracking-wider">
