@@ -15,9 +15,16 @@ service cloud.firestore {
 
     // Reglas para Activos (Equipos/Flota)
     match /assets/{assetId} {
-      allow read: if true; // Permitir lectura pública para el showcase/market
-      allow write: if request.auth != null && (resource == null || resource.data.ownerId == request.auth.uid || isAdmin());
+      allow read: if request.auth != null && (resource == null || resource.data.clientId == request.auth.uid || isAdmin());
+      allow write: if request.auth != null && (resource == null || resource.data.clientId == request.auth.uid || isAdmin());
       allow create: if request.auth != null;
+    }
+
+    // Reglas para Notificaciones
+    match /notifications/{notifId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if true; // El sistema o robot crea notificaciones
     }
 
     // Reglas para Contratos (Requests)
@@ -53,8 +60,8 @@ service cloud.firestore {
 
     // Reglas para Recordatorios
     match /reminders/{remId} {
-      allow read: if request.auth != null && (request.auth.uid == resource.data.clientId || isAdmin());
-      allow write: if request.auth != null && (request.auth.uid == resource.data.clientId || isAdmin());
+      allow read: if request.auth != null && (resource == null || resource.data.clientId == request.auth.uid || isAdmin());
+      allow write: if request.auth != null && (resource == null || resource.data.clientId == request.auth.uid || isAdmin());
       allow create: if request.auth != null;
     }
 

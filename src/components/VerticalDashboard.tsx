@@ -33,6 +33,13 @@ export default function VerticalDashboard({ type, assets, requests, userName }: 
         metricLabel: 'Renta Activa (Horas)',
         color: '#f59e0b'
       };
+      default: return {
+        title: 'Gestión de Activos',
+        subtitle: 'Control inteligente de mantenimiento.',
+        icon: <ShieldCheck className="w-8 h-8 text-[#5d3cfe]" />,
+        metricLabel: 'Equipos Prioritarios',
+        color: '#5d3cfe'
+      };
     }
   };
 

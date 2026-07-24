@@ -248,7 +248,12 @@ export default function App() {
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <FuelAuditModule assets={assets} />
-                    <VerticalDashboard assets={assets} />
+                    <VerticalDashboard
+                      type="ph"
+                      assets={assets}
+                      requests={requests}
+                      userName={userData?.name || 'Usuario'}
+                    />
                   </div>
                 </div>
               )}
