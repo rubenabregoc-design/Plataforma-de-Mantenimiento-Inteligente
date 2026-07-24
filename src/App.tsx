@@ -44,7 +44,6 @@ import FleetDashboard from './components/FleetDashboard';
 import Chatbot247 from './components/Chatbot247';
 import QRScannerModal from './components/QRScannerModal';
 import TechCredential from './components/TechCredential';
-import MantechProLogo from './components/Logo';
 import VideoCallModal from './components/VideoCallModal';
 import LandingPage from './components/LandingPage';
 import AssetIntelligentCard from './components/AssetIntelligentCard';
@@ -407,6 +406,13 @@ export default function App() {
   const [marketFilter, setMarketFilter] = useState<TechCategory | 'all'>('all');
   const [globalSearch, setGlobalSearch] = useState('');
 
+  useEffect(() => {
+    if (!isLoggedIn || !user) return;
+    const q = query(collection(db, "notifications"), where("userId", "==", user.uid), where("read", "==", false));
+    const unsub = onSnapshot(q, (snap) => setUnreadCount(snap.size));
+    return () => unsub();
+  }, [isLoggedIn, user]);
+
   // Logic: Auth
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -505,12 +511,6 @@ export default function App() {
         setAuditLogs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       });
     }
-
-    // Listener de Notificaciones Unread
-    const qNotif = query(collection(db, "notifications"), where("userId", "==", user.uid), where("read", "==", false));
-    const unsubNotif = onSnapshot(qNotif, (snap) => setUnreadCount(snap.size));
-
-    return () => { unsubNotif(); };
   }, [isLoggedIn, user, role]);
 
   useEffect(() => {
@@ -1463,7 +1463,7 @@ export default function App() {
              </button>
           </div>
 
-          {/* Notificaciones Master */}
+          {/* Botón de Notificaciones */}
           <button
             onClick={() => setShowNotificationCenter(true)}
             className="relative p-2.5 rounded-2xl bg-white/5 border border-white/10 hover:bg-[#5d3cfe]/10 hover:border-[#5d3cfe]/30 transition-all group"
@@ -1562,15 +1562,15 @@ export default function App() {
                     <div className="space-y-10 animate-fade-in">
                       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                          <div>
-                            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Mis Equipos</h1>
-                            <p className="text-[#c8c4d9] font-medium mt-3 italic opacity-60">Monitoreo activo de tus activos en Panam├í.</p>
+                            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Mi <span className="text-[#5d3cfe]">Portafolio</span></h1>
+                            <p className="text-[#c8c4d9] font-medium mt-3 italic opacity-60">Gestión activa de activos en Panamá.</p>
                          </div>
                          <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
                             <div className="relative flex-1 md:w-64">
                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#474556]" />
                                <input
                                  type="text"
-                                 placeholder="Buscar por placa o marca..."
+                                 placeholder="Buscar equipo..."
                                  value={assetSearchQuery}
                                  onChange={(e) => { setAssetSearchQuery(e.target.value); setAssetCurrentPage(1); }}
                                  className="w-full bg-[#121317] border border-[#2a2b2f] rounded-2xl py-3 pl-12 pr-6 text-xs text-white focus:border-[#5d3cfe] outline-none transition-all"
@@ -1582,190 +1582,47 @@ export default function App() {
 
                       {isDataLoading ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                           {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-64" />)}
+                           {[1,2,3].map(i => <Skeleton key={i} className="h-64" />)}
                         </div>
-                      ) : (() => {
-                        const filtered = assets.filter(a =>
-                          a.name.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
-                          a.licensePlate?.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
-                          a.serialNumber?.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
-                          a.details?.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
-                          a.type.toLowerCase().includes(assetSearchQuery.toLowerCase())
-                        );
-                        const total = filtered.length;
-                        const pages = Math.ceil(total / assetPageSize);
-                        const start = (assetCurrentPage - 1) * assetPageSize;
-                        const paginated = filtered.slice(start, start + assetPageSize);
-
-                        return (
-                          <div className="space-y-10">
-                            {/* Dashboard Bulk Actions */}
-                            <div className="flex items-center justify-between bg-[#121317] border border-[#2a2b2f] p-4 rounded-2xl shadow-xl">
-                               <div className="flex items-center gap-4">
-                                  <label className="flex items-center gap-3 cursor-pointer group">
-                                     <div className="relative flex items-center justify-center">
-                                        <input
-                                          type="checkbox"
-                                          className="sr-only peer"
-                                          checked={selectedDashboardIds.length === paginated.length && paginated.length > 0}
-                                          onChange={(e) => {
-                                             if (e.target.checked) setSelectedDashboardIds(paginated.map(a => a.id));
-                                             else setSelectedDashboardIds([]);
-                                          }}
-                                        />
-                                        <div className="w-5 h-5 border-2 border-[#474556] rounded-md transition-all peer-checked:border-[#5d3cfe] peer-checked:bg-[#5d3cfe]"></div>
-                                        <Check className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
-                                     </div>
-                                     <span className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest group-hover:text-white transition-colors">Seleccionar Todo (P├ígina)</span>
-                                  </label>
-                               </div>
-
-                               {selectedDashboardIds.length > 0 && (
-                                  <button
-                                    onClick={() => {
-                                       const confirmDelete = async () => {
-                                          toast.loading(`Borrando ${selectedDashboardIds.length} unidades...`, { id: 'bulk-dash-del' });
-                                          try {
-                                             const batch = selectedDashboardIds.map(id => deleteDoc(doc(db, "assets", id)));
-                                             await Promise.all(batch);
-                                             setSelectedDashboardIds([]);
-                                             toast.success("Limpieza masiva exitosa.", { id: 'bulk-dash-del' });
-                                          } catch (err) {
-                                             toast.error("Falla en la purga.", { id: 'bulk-dash-del' });
-                                          }
-                                       };
-
-                                       toast((t) => (
-                                          <div className="flex flex-col gap-4 p-4 bg-[#121317] border border-white/10 rounded-2xl shadow-2xl min-w-[300px]">
-                                            <div className="flex items-center gap-3">
-                                              <div className="p-2 bg-rose-600/20 text-rose-500 rounded-lg"><Trash2 className="w-5 h-5" /></div>
-                                              <div><p className="text-xs font-black text-white uppercase">┬┐Purgar {selectedDashboardIds.length} Equipos?</p><p className="text-[9px] text-white/50 font-bold uppercase">Acci├│n irreversible en la nube</p></div>
-                                            </div>
-                                            <div className="flex gap-2">
-                                              <button onClick={() => toast.dismiss(t.id)} className="flex-1 py-2.5 bg-white/5 text-white rounded-xl text-[9px] font-black uppercase">Abortar</button>
-                                              <button onClick={() => { toast.dismiss(t.id); confirmDelete(); }} className="flex-1 py-2.5 bg-rose-600 text-white rounded-xl text-[9px] font-black uppercase shadow-lg">Confirmar</button>
-                                            </div>
-                                          </div>
-                                       ), { duration: 8000, position: 'bottom-center' });
-                                    }}
-                                    className="px-6 py-2 bg-rose-600 text-white text-[9px] font-black rounded-xl uppercase shadow-lg shadow-rose-600/20 flex items-center gap-2 hover:bg-rose-700 transition-all animate-fade-in-up"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" /> Purgar Lote ({selectedDashboardIds.length})
-                                  </button>
-                               )}
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                               {paginated.map(a => {
-                                 const isSelected = selectedDashboardIds.includes(a.id);
-                                 return (
-                                 <div key={a.id} className={`bg-[#121317] border p-8 rounded-[2.5rem] space-y-6 shadow-2xl transition-all relative overflow-hidden group ${isSelected ? 'border-[#5d3cfe] ring-2 ring-[#5d3cfe]/20 bg-[#5d3cfe]/5' : 'border-[#2a2b2f] hover:border-[#5d3cfe]/40'}`}>
-                                      {/* Checkbox Individual */}
-                                      <div className="absolute top-6 left-6 z-20">
-                                         <label className="cursor-pointer group">
-                                            <div className="relative flex items-center justify-center">
-                                               <input
-                                                 type="checkbox"
-                                                 className="sr-only peer"
-                                                 checked={isSelected}
-                                                 onChange={(e) => {
-                                                   if (e.target.checked) setSelectedDashboardIds([...selectedDashboardIds, a.id]);
-                                                   else setSelectedDashboardIds(selectedDashboardIds.filter(id => id !== a.id));
-                                                 }}
-                                               />
-                                               <div className={`w-6 h-6 border-2 rounded-lg transition-all ${isSelected ? 'border-[#5d3cfe] bg-[#5d3cfe] shadow-lg shadow-[#5d3cfe]/30' : 'border-[#474556] bg-black/40 group-hover:border-[#c7bfff]/50'}`}></div>
-                                               <Check className="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
-                                            </div>
-                                         </label>
-                                      </div>
-
-                                      <div className="absolute -bottom-6 -right-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                                        {(() => {
-                                          const cls = "w-32 h-32";
-                                          switch(a.type) {
-                                            case 'car': return <Car className={cls} />;
-                                            case 'ac': return <Wind className={cls} />;
-                                            case 'computer': return <Cpu className={cls} />;
-                                            case 'generator': return <Zap className={cls} />;
-                                            case 'solar_panels': return <Wind className={cls} />;
-                                            case 'industrial_equip': return <Package className={cls} />;
-                                            case 'house': return <Building2 className={cls} />;
-                                            default: return <Package className={cls} />;
-                                          }
-                                        })()}
-                                      </div>
-                                     <div className="flex justify-between items-start relative z-10 pl-10">
-                                         <div className="flex items-center gap-5">
-                                            <div className="w-16 h-16 rounded-2xl bg-[#1c1d21] border border-white/5 flex items-center justify-center text-white shadow-inner">
-                                              {(() => {
-                                                const cls = "w-8 h-8";
-                                                switch(a.type) {
-                                                  case 'car': return <Car className={cls} />;
-                                                  case 'ac': return <Wind className={cls} />;
-                                                  case 'computer': return <Cpu className={cls} />;
-                                                  case 'generator': return <Zap className={cls} />;
-                                                  case 'solar_panels': return <Wind className={cls} />;
-                                                  case 'industrial_equip': return <Package className={cls} />;
-                                                  case 'house': return <Building2 className={cls} />;
-                                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                               {paginated.map(a => (
-                                 <AssetIntelligentCard
-                                   key={a.id}
-                                   asset={a}
-                                   requests={requests}
-                                   onOpenDetails={(asset) => {
-                                     setActiveAssetForFuel(asset);
-                                     setIsFuelModalOpen(true);
-                                   }}
-                                   onOpenPreTrip={(asset) => {
-                                      setAssetToEdit(asset);
-                                      setIsPreTripModalOpen(true);
-                                   }}
-                                 />
-                               ))}
-                            </div>
-
-                            {pages > 1 && (
-                               <div className="flex justify-center items-center gap-4 pt-10">
-                                  <button
-                                    disabled={assetCurrentPage === 1}
-                                    onClick={() => setAssetCurrentPage(p => p - 1)}
-                                    className="p-3 bg-[#121317] border border-[#2a2b2f] rounded-xl text-[#c8c4d9] disabled:opacity-20 hover:text-white transition-all shadow-xl"
-                                  >
-                                     <ChevronLeft className="w-5 h-5" />
-                                  </button>
-                                  <div className="flex gap-2">
-                                     {Array.from({ length: pages }).map((_, i) => (
-                                       <button
-                                         key={i}
-                                         onClick={() => setAssetCurrentPage(i + 1)}
-                                         className={`w-10 h-10 rounded-xl text-[10px] font-black transition-all ${assetCurrentPage === i + 1 ? 'bg-[#5d3cfe] text-white shadow-lg shadow-[#5d3cfe]/30' : 'bg-[#121317] text-[#474556] border border-[#2a2b2f]'}`}
-                                       >
-                                         {i + 1}
-                                       </button>
-                                     ))}
-                                  </div>
-                                  <button
-                                    disabled={assetCurrentPage === pages}
-                                    onClick={() => setAssetCurrentPage(p => p + 1)}
-                                    className="p-3 bg-[#121317] border border-[#2a2b2f] rounded-xl text-[#c8c4d9] disabled:opacity-20 hover:text-white transition-all shadow-xl"
-                                  >
-                                     <ChevronRight className="w-5 h-5" />
-                                  </button>
-                               </div>
-                            )}
-
-                            {total === 0 && (
-                               <div className="py-20 text-center space-y-4">
-                                  <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto border border-white/5 opacity-20">
-                                     <LayoutDashboard className="w-8 h-8" />
-                                  </div>
-                                  <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em]">No se encontraron equipos con esa placa o nombre.</p>
-                               </div>
-                            )}
+                      ) : (
+                        <div className="space-y-12">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {assets.filter(a =>
+                              a.name.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
+                              a.licensePlate?.toLowerCase().includes(assetSearchQuery.toLowerCase())
+                            ).slice((assetCurrentPage - 1) * assetPageSize, assetCurrentPage * assetPageSize).map(a => (
+                              <AssetIntelligentCard
+                                key={a.id}
+                                asset={a}
+                                requests={requests}
+                                onOpenDetails={(asset) => {
+                                  setActiveAssetForFuel(asset);
+                                  setIsFuelModalOpen(true);
+                                }}
+                                onOpenPreTrip={(asset) => {
+                                   setAssetToEdit(asset);
+                                   setIsPreTripModalOpen(true);
+                                }}
+                              />
+                            ))}
                           </div>
-                        );
-                      })()}
+
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <FuelAuditModule
+                              assets={assets}
+                              onSaveLog={handleSaveFuelLog}
+                            />
+                            <HomeEmergencySOS />
+                          </div>
+
+                          <VerticalDashboard
+                            type="ph"
+                            assets={assets}
+                            requests={requests}
+                            userName={userData?.name || 'Usuario'}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                   {clientTab === 'fleet' && (
