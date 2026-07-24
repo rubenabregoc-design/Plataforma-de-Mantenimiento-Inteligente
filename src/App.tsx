@@ -1158,6 +1158,8 @@ export default function App() {
       toast.success("Historial de seguridad actualizado.");
     } catch (err) { console.error(err); }
   };
+
+  const handleBulkRegisterAssets = async (assetsList: any[]) => {
     if (!user) return;
     try {
       toast.loading(`Registrando ${assetsList.length} unidades...`, { id: 'bulk-reg' });
