@@ -130,7 +130,7 @@ export default function App() {
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<UserSubscription>({
-    planId: 'plan-basic',
+    planId: 'plan-free',
     status: 'active',
     startDate: new Date().toISOString(),
     nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
@@ -176,7 +176,7 @@ export default function App() {
   const getPlanLimits = (planId: string) => {
     switch(planId) {
       case 'plan-pro': return {
-        maxAssets: 15,
+        maxAssets: 25,
         commission: 0.10,
         fleet: 'lite',
         diag: 'assisted',
@@ -194,9 +194,19 @@ export default function App() {
         support: 'critica',
         subaccounts: 5
       };
-      default: return {
-        maxAssets: 3,
+      case 'plan-basic': return {
+        maxAssets: 5,
         commission: 0.15,
+        fleet: 'none',
+        diag: 'manual',
+        sites: 1,
+        history: 10,
+        support: 'estandar'
+      };
+      case 'plan-free':
+      default: return {
+        maxAssets: 2,
+        commission: 0.20,
         fleet: 'none',
         diag: 'manual',
         sites: 1,
@@ -531,16 +541,16 @@ export default function App() {
       const now = new Date();
       const expiry = new Date(subscription.nextBillingDate);
 
-      if (now > expiry && subscription.planId !== 'plan-basic' && subscription.status === 'active') {
-        console.log("⚠️ Suscripción expirada. Retornando a Plan Básico.");
+      if (now > expiry && subscription.planId !== 'plan-free' && subscription.status === 'active') {
+        console.log("⚠️ Suscripción expirada. Retornando a Plan Gratis.");
         const expiredSub = {
           ...subscription,
           status: 'expired',
-          planId: 'plan-basic' // Opcional: degradar automáticamente
+          planId: 'plan-free'
         };
         await updateDoc(doc(db, "users", user.uid), { subscription: expiredSub });
         setSubscription(expiredSub as UserSubscription);
-        toast.error("Tu plan MantechPro ha expirado. Has sido retornado al Plan Básico. Renueva tu membresía.", { duration: 6000 });
+        toast.error("Tu plan MantechPro ha expirado. Has sido retornado al Plan Gratis. Renueva tu membresía.", { duration: 6000 });
       }
     };
 
@@ -556,7 +566,21 @@ export default function App() {
         const res = await createUserWithEmailAndPassword(auth, loginEmail, loginPassword);
         const u = res.user;
         const tId = authRole === 'tech' ? `tech-${Date.now()}` : null;
-        await setDoc(doc(db, "users", u.uid), { uid: u.uid, email: loginEmail, name: loginName, role: authRole, techId: tId, createdAt: serverTimestamp() });
+        const defaultSub = {
+          planId: authRole === 'tech' ? 'plan-basic' : 'plan-free',
+          status: 'active',
+          startDate: new Date().toISOString(),
+          nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        };
+        await setDoc(doc(db, "users", u.uid), {
+          uid: u.uid,
+          email: loginEmail,
+          name: loginName,
+          role: authRole,
+          techId: tId,
+          subscription: defaultSub,
+          createdAt: serverTimestamp()
+        });
         if (authRole === 'tech' && tId) await setDoc(doc(db, "technicians", tId), { id: tId, name: loginName, category: 'mecanico', rating: 5.0, reviewCount: 0, completedJobs: 0, experienceYears: 5, location: 'Panamá', hourlyRate: 25, bio: 'Técnico certificado.', plan: 'basic', userId: u.uid });
       } else {
         try {
@@ -893,14 +917,22 @@ export default function App() {
   const [selectedPlanForPayment, setSelectedPlanForPlanPayment] = useState<any>(null);
 
   const handleOpenSubscriptionPayment = (planId: string) => {
-    const plan = [
-      { id: 'plan-basic', name: 'Básico', price: 0 },
-      { id: 'plan-pro', name: 'Profesional', price: 15 },
-      { id: 'plan-enterprise', name: 'Corporativo', price: 45 }
-    ].find(p => p.id === planId);
+    const plansData = role === 'tech' ? [
+      { id: 'plan-basic', name: 'Técnico Standard', price: 0 },
+      { id: 'plan-pro', name: 'Técnico Pro', price: 45 },
+      { id: 'plan-enterprise', name: 'Partner Élite', price: 99 }
+    ] : [
+      { id: 'plan-free', name: 'Gratis', price: 0 },
+      { id: 'plan-basic', name: 'Emprendedor', price: 29 },
+      { id: 'plan-pro', name: 'Profesional', price: 89 },
+      { id: 'plan-enterprise', name: 'Enterprise', price: 199 }
+    ];
+    const plan = plansData.find(p => p.id === planId);
 
-    if (planId === 'plan-basic') {
-      handleConfirmSubscriptionUpgrade('plan-basic');
+    const isFreePlan = (role === 'tech' && planId === 'plan-basic') || (role === 'client' && planId === 'plan-free');
+
+    if (isFreePlan) {
+      handleConfirmSubscriptionUpgrade(planId);
       return;
     }
 
@@ -913,7 +945,9 @@ export default function App() {
       const nextBilling = new Date();
       nextBilling.setDate(nextBilling.getDate() + 30);
 
-      if (planId === 'plan-basic' || isInstant) {
+      const isActuallyFree = (role === 'tech' && planId === 'plan-basic') || (role === 'client' && planId === 'plan-free');
+
+      if (isActuallyFree || isInstant) {
         // ACTIVACIÓN INSTANTÁNEA (Básico o PayPal)
         const newSub = {
           planId,
