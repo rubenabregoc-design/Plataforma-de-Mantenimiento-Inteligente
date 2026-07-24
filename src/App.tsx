@@ -59,6 +59,7 @@ import VerticalDashboard from './components/VerticalDashboard';
 import HomeEmergencySOS from './components/HomeEmergencySOS';
 import WarrantyVaultModule from './components/WarrantyVaultModule';
 import AssetEngineeringReportModal from './components/AssetEngineeringReportModal';
+import Logo from './components/Logo';
 
 // Servicios PROFESIONALES (Clean Architecture)
 import { AssetService } from './services/assetService';
