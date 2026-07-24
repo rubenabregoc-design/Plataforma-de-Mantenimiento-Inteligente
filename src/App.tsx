@@ -7,6 +7,7 @@ import { PushNotifications } from '@capacitor/push-notifications';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Geolocation } from '@capacitor/geolocation';
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
+import { AnimatePresence } from 'framer-motion';
 import {
   initialAssets, 
   initialReminders, 
@@ -236,7 +237,7 @@ export default function App() {
     localStorage.setItem('mantech_trip_status', tripStatus);
   }, [tripStatus]);
 
-  // Recuperar rastreo tras reinicio de p├ígina
+  // Recuperar rastreo tras reinicio de página
   useEffect(() => {
     if (isLoggedIn && trackingAssetId && tripStatus !== 'idle') {
       startGpsTracking(trackingAssetId, true); // Reanudar silenciosamente
@@ -246,7 +247,7 @@ export default function App() {
   const toggleGpsPause = () => {
     if (tripStatus === 'active') {
       setTripStatus('paused');
-      toast("Ruta Pausada: Kilometraje detenido.", { icon: 'ÔÅ©´©Å' });
+      toast("Ruta Pausada: Kilometraje detenido.", { icon: '⏸️' });
     } else if (tripStatus === 'paused') {
       setTripStatus('active');
       lastPosRef.current = null;
@@ -309,17 +310,17 @@ export default function App() {
              if (asset) {
                 const newKm = (asset.mileage || 0) + dist;
 
-                // C├ílculo de velocidad (Km/h)
+                // Cálculo de velocidad (Km/h)
                 const timeDiffHours = (Date.now() - new Date(lastPosRef.current.timestamp).getTime()) / (1000 * 60 * 60);
                 const currentSpeed = timeDiffHours > 0 ? (dist / timeDiffHours) : 0;
 
-                // B├ÜSQUEDA DE NOMBRE DE AVENIDA (Reverse Geocoding)
+                // BÚSQUEDA DE NOMBRE DE AVENIDA (Reverse Geocoding)
                 const getStreet = async () => {
                   try {
                     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}`);
                     const data = await res.json();
                     return data.address?.road || data.display_name.split(',')[0];
-                  } catch { return 'V├¡a en tr├ínsito'; }
+                  } catch { return 'Vía en tránsito'; }
                 };
 
                 const newPoint = {
@@ -374,7 +375,7 @@ export default function App() {
       await axios.post('http://localhost:3000/api/push-notification', {
         title,
         body,
-        token: 'ADMIN_TOKEN_MASTER' // En producci├│n esto vendr├¡a del Firestore del Admin
+        token: 'ADMIN_TOKEN_MASTER' // En producción esto vendría del Firestore del Admin
       });
     } catch (err) { console.error("Notification failed", err); }
   };
@@ -394,7 +395,7 @@ export default function App() {
   const [bidMaterials, setBidMaterials] = useState<MaterialItem[]>([]);
   const [newBidMaterial, setNewBidMaterial] = useState({ name: '', price: '', quantity: '1' });
   const [bidChecklist, setBidChecklist] = useState<{id: string, description: string, isCompleted: boolean}[]>([
-    { id: '1', description: 'Inspecci├│n t├®cnica inicial', isCompleted: false },
+    { id: '1', description: 'Inspección técnica inicial', isCompleted: false },
     { id: '2', description: 'Desarmado y limpieza', isCompleted: false },
     { id: '3', description: 'Pruebas de funcionamiento', isCompleted: false }
   ]);
@@ -405,13 +406,6 @@ export default function App() {
 
   const [marketFilter, setMarketFilter] = useState<TechCategory | 'all'>('all');
   const [globalSearch, setGlobalSearch] = useState('');
-
-  useEffect(() => {
-    if (!isLoggedIn || !user) return;
-    const q = query(collection(db, "notifications"), where("userId", "==", user.uid), where("read", "==", false));
-    const unsub = onSnapshot(q, (snap) => setUnreadCount(snap.size));
-    return () => unsub();
-  }, [isLoggedIn, user]);
 
   // Logic: Auth
   useEffect(() => {
@@ -476,7 +470,7 @@ export default function App() {
       setRequests(list);
       if (list.length > 0 && !activeChatRequestId) setActiveChatRequestId(list[0].id);
     });
-    // Suscripci├│n de Activos con Filtro de Soft Delete
+    // Suscripción de Activos con Filtro de Soft Delete
     const qAssets = role === 'admin'
       ? query(collection(db, "assets"), where("status", "!=", "deleted"))
       : query(collection(db, "assets"), where("clientId", "==", user.uid), where("status", "!=", "deleted"));
@@ -487,9 +481,9 @@ export default function App() {
         setIsDataLoading(false);
       },
       (err) => {
-        console.error("ÔØî Error en suscripci├│n de activos:", err);
+        console.error("❌ Error en suscripción de activos:", err);
         if (err.message.includes("requires an index")) {
-          toast.error("Error de base de datos: Falta un ├¡ndice. Revisa la consola para crearlo.");
+          toast.error("Error de base de datos: Falta un índice. Revisa la consola para crearlo.");
         }
         setIsDataLoading(false); // Detener skeleton aunque falle
       }
@@ -506,11 +500,17 @@ export default function App() {
       onSnapshot(collection(db, "users"), (snap) => {
         setAllUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       });
-      // Listener de Logs de Auditor├¡a Profesional
+      // Listener de Logs de Auditoría Profesional
       onSnapshot(query(collection(db, "audit_logs"), orderBy("timestamp", "desc")), (snap) => {
         setAuditLogs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       });
     }
+
+    // Listener de Notificaciones Unread
+    const qNotif = query(collection(db, "notifications"), where("userId", "==", user.uid), where("read", "==", false));
+    const unsubNotif = onSnapshot(qNotif, (snap) => setUnreadCount(snap.size));
+
+    return () => { unsubNotif(); };
   }, [isLoggedIn, user, role]);
 
   useEffect(() => {
@@ -522,7 +522,7 @@ export default function App() {
     });
   }, [isLoggedIn, activeChatRequestId]);
 
-  // Guardia de Suscripci├│n: Verifica expiraci├│n cada vez que carga la app
+  // Guardia de Suscripción: Verifica expiración cada vez que carga la app
   useEffect(() => {
     if (!isLoggedIn || !userData || role !== 'client') return;
 
@@ -531,15 +531,15 @@ export default function App() {
       const expiry = new Date(subscription.nextBillingDate);
 
       if (now > expiry && subscription.planId !== 'plan-basic' && subscription.status === 'active') {
-        console.log("ÔÜá´©Å Suscripci├│n expirada. Retornando a Plan B├ísico.");
+        console.log("⚠️ Suscripción expirada. Retornando a Plan Básico.");
         const expiredSub = {
           ...subscription,
           status: 'expired',
-          planId: 'plan-basic' // Opcional: degradar autom├íticamente
+          planId: 'plan-basic' // Opcional: degradar automáticamente
         };
         await updateDoc(doc(db, "users", user.uid), { subscription: expiredSub });
         setSubscription(expiredSub as UserSubscription);
-        toast.error("Tu plan MantechPro ha expirado. Has sido retornado al Plan B├ísico. Renueva tu membres├¡a.", { duration: 6000 });
+        toast.error("Tu plan MantechPro ha expirado. Has sido retornado al Plan Básico. Renueva tu membresía.", { duration: 6000 });
       }
     };
 
@@ -556,7 +556,7 @@ export default function App() {
         const u = res.user;
         const tId = authRole === 'tech' ? `tech-${Date.now()}` : null;
         await setDoc(doc(db, "users", u.uid), { uid: u.uid, email: loginEmail, name: loginName, role: authRole, techId: tId, createdAt: serverTimestamp() });
-        if (authRole === 'tech' && tId) await setDoc(doc(db, "technicians", tId), { id: tId, name: loginName, category: 'mecanico', rating: 5.0, reviewCount: 0, completedJobs: 0, experienceYears: 5, location: 'Panam├í', hourlyRate: 25, bio: 'T├®cnico certificado.', plan: 'basic', userId: u.uid });
+        if (authRole === 'tech' && tId) await setDoc(doc(db, "technicians", tId), { id: tId, name: loginName, category: 'mecanico', rating: 5.0, reviewCount: 0, completedJobs: 0, experienceYears: 5, location: 'Panamá', hourlyRate: 25, bio: 'Técnico certificado.', plan: 'basic', userId: u.uid });
       } else {
         try {
           const res = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
@@ -590,7 +590,7 @@ export default function App() {
         description, status: 'open_bidding', createdAt: serverTimestamp(),
         isPublic: true, bids: []
       });
-      toast.success("┬íRequerimiento publicado en la Subasta Abierta!");
+      toast.success("¡Requerimiento publicado en la Subasta Abierta!");
       setClientTab('marketplace');
     } catch (err) { console.error(err); }
   };
@@ -621,7 +621,7 @@ export default function App() {
         status: 'quoted',
         techUserId: user.uid
       });
-      toast.success(`Cotizaci├│n enviada. Ganancia neta: $${techEarnings.toFixed(2)} (Comisi├│n ${commissionRate*100}%)`);
+      toast.success(`Cotización enviada. Ganancia neta: $${techEarnings.toFixed(2)} (Comisión ${commissionRate*100}%)`);
       setDraftingBidRequestId(null);
       setBidMaterials([]);
     } catch (err) { console.error(err); }
@@ -634,12 +634,12 @@ export default function App() {
     try {
       if (method === 'yappy') {
         await updateDoc(doc(db, "requests", requestId), { status: 'pending_verification', paidAt: serverTimestamp(), paymentMethod: method });
-        await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: `He realizado el pago v├¡a YAPPY por $${req.price}. Quedo a la espera de la verificaci├│n oficial.`, timestamp: serverTimestamp() });
+        await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: `He realizado el pago vía YAPPY por $${req.price}. Quedo a la espera de la verificación oficial.`, timestamp: serverTimestamp() });
 
         // Notificar al Admin
-        notifyAdmin("­ƒÆ│ PAGO PENDIENTE", `El cliente ${req.clientName} envi├│ un pago de $${req.price} v├¡a YAPPY.`);
+        notifyAdmin("💳 PAGO PENDIENTE", `El cliente ${req.clientName} envió un pago de $${req.price} vía YAPPY.`);
 
-        toast.success("Pago enviado. El Administrador lo verificar├í en breve.");
+        toast.success("Pago enviado. El Administrador lo verificará en breve.");
       } else {
         await updateDoc(doc(db, "requests", requestId), { status: 'accepted', paidAt: serverTimestamp(), paymentMethod: method });
         await addDoc(collection(db, "agenda"), {
@@ -649,8 +649,8 @@ export default function App() {
           duration: `${req.scheduledDuration}h`, travelTime: `${req.scheduledTravelTime} min`,
           status: 'pending', createdAt: serverTimestamp()
         });
-        await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `┬íHola! He recibido tu confirmaci├│n y pago v├¡a ${method.toUpperCase()}. Cita confirmada oficialmente.`, timestamp: serverTimestamp() });
-        toast.success("┬íCita confirmada y agendada exitosamente!");
+        await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `¡Hola! He recibido tu confirmación y pago vía ${method.toUpperCase()}. Cita confirmada oficialmente.`, timestamp: serverTimestamp() });
+        toast.success("¡Cita confirmada y agendada exitosamente!");
       }
       setClientTab('chat');
     } catch (err) { console.error(err); }
@@ -669,7 +669,7 @@ export default function App() {
         duration: `${req.scheduledDuration}h`, travelTime: `${req.scheduledTravelTime} min`,
         status: 'pending', createdAt: serverTimestamp()
       });
-      await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `┬íHola! El Administrador ha confirmado tu pago v├¡a ${req.paymentMethod?.toUpperCase()}. Cita confirmada oficialmente.`, timestamp: serverTimestamp() });
+      await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `¡Hola! El Administrador ha confirmado tu pago vía ${req.paymentMethod?.toUpperCase()}. Cita confirmada oficialmente.`, timestamp: serverTimestamp() });
       toast.success("Pago verificado. La cita ha sido agendada.");
     } catch (err) { console.error(err); }
   };
@@ -678,11 +678,11 @@ export default function App() {
     if (!requestId) return;
     try {
       await updateDoc(doc(db, "requests", requestId), { status: 'disputed', unforeseenReason: reason, unforeseenAmount: extraCost, unforeseenCategory: category, unforeseenAt: serverTimestamp() });
-      await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `ÔÜá´©Å REPORTE DE IMPREVISTO [${category.toUpperCase()}]: ${reason}. Costo: $${extraCost}. Favor aprobar en panel para no comprometer la garant├¡a.`, timestamp: serverTimestamp() });
+      await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `⚠️ REPORTE DE IMPREVISTO [${category.toUpperCase()}]: ${reason}. Costo: $${extraCost}. Favor aprobar en panel para no comprometer la garantía.`, timestamp: serverTimestamp() });
 
       // Notificar al Admin
       const req = requests.find(r => r.id === requestId);
-      notifyAdmin("ÔÜá´©Å IMPREVISTO DETECTADO", `${req?.techName} report├│ un extra de $${extraCost} para ${req?.assetName}.`);
+      notifyAdmin("⚠️ IMPREVISTO DETECTADO", `${req?.techName} reportó un extra de $${extraCost} para ${req?.assetName}.`);
 
       setIsUnforeseenModalOpen(false);
       toast.success("Imprevisto reportado al sistema correctamente.");
@@ -696,17 +696,17 @@ export default function App() {
     try {
       const newPrice = (req.price || 0) + req.unforeseenAmount;
       await updateDoc(doc(db, "requests", requestId), { status: 'executing', price: newPrice, commission: newPrice * 0.15, technicianEarnings: newPrice * 0.85, unforeseenAmount: 0, unforeseenPaidAt: serverTimestamp() });
-      await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: `Ô£à IMPREVISTO PAGADO: $${req.unforeseenAmount}. Puede continuar.`, timestamp: serverTimestamp() });
-      toast.success("Costo adicional aprobado. El t├®cnico puede continuar.");
+      await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: `✅ IMPREVISTO PAGADO: $${req.unforeseenAmount}. Puede continuar.`, timestamp: serverTimestamp() });
+      toast.success("Costo adicional aprobado. El técnico puede continuar.");
     } catch (err) { console.error(err); }
   };
 
   const handleRejectUnforeseen = async (requestId: string) => {
     if (!requestId) return;
-    if (!window.confirm("ÔÜá´©Å ATENCI├ôN: Al continuar sin pagar el imprevisto, la GARANT├ìA TOTAL del servicio quedar├í ANULADA. ┬┐Deseas proceder bajo tu responsabilidad?")) return;
+    if (!window.confirm("⚠️ ATENCIÓN: Al continuar sin pagar el imprevisto, la GARANTÍA TOTAL del servicio quedará ANULADA. ¿Deseas proceder bajo tu responsabilidad?")) return;
     try {
       await updateDoc(doc(db, "requests", requestId), { status: 'executing', guaranteeStatus: 'voided', unforeseenAmount: 0 });
-      await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: "ÔØî IMPREVISTO RECHAZADO: El cliente decide continuar sin realizar la reparaci├│n sugerida. LA GARANT├ìA QUEDA ANULADA.", timestamp: serverTimestamp() });
+      await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: "❌ IMPREVISTO RECHAZADO: El cliente decide continuar sin realizar la reparación sugerida. LA GARANTÍA QUEDA ANULADA.", timestamp: serverTimestamp() });
     } catch (e) { console.error(e); }
   };
 
@@ -720,7 +720,7 @@ export default function App() {
     const nextDate = tomorrow.toISOString().split('T')[0];
 
     try {
-      const reason = "Continuaci├│n de servicio - D├¡a 2";
+      const reason = "Continuación de servicio - Día 2";
       const history = [...(req.rescheduleHistory || []), {
         oldDate: req.scheduledDate || '',
         oldTime: req.scheduledTime || '',
@@ -731,7 +731,7 @@ export default function App() {
       }];
 
       await updateDoc(doc(db, "requests", requestId), {
-        status: 'accepted', // Vuelve a aceptado para iniciar ma├▒ana
+        status: 'accepted', // Vuelve a aceptado para iniciar mañana
         scheduledDate: nextDate,
         rescheduleCount: (req.rescheduleCount || 0) + 1,
         rescheduleHistory: history
@@ -740,16 +740,16 @@ export default function App() {
       // Actualizar agenda
       const q = query(collection(db, "agenda"), where("requestId", "==", requestId));
       const snap = await getDocs(q);
-      snap.forEach(d => updateDoc(doc(db, "agenda", d.id), { date: nextDate, title: 'CONTINUACI├ôN MA├æANA' }));
+      snap.forEach(d => updateDoc(doc(db, "agenda", d.id), { date: nextDate, title: 'CONTINUACIÓN MAÑANA' }));
 
       await addDoc(collection(db, "messages"), {
         requestId,
         sender: 'tech',
-        text: `­ƒôó PAUSA LOG├ìSTICA: El servicio no pudo concluir hoy. Se ha reprogramado autom├íticamente para ma├▒ana ${nextDate} a la misma hora para finalizar la labor.`,
+        text: `📢 PAUSA LOGÍSTICA: El servicio no pudo concluir hoy. Se ha reprogramado automáticamente para mañana ${nextDate} a la misma hora para finalizar la labor.`,
         timestamp: serverTimestamp()
       });
 
-      toast.success("Servicio pausado. Reprogramado autom├íticamente para ma├▒ana.");
+      toast.success("Servicio pausado. Reprogramado automáticamente para mañana.");
     } catch (err) { console.error(err); }
   };
 
@@ -774,7 +774,7 @@ export default function App() {
 
       setIsSignatureModalOpen(false);
       setActiveRequestForSignature(null);
-      toast.success(newStatus === 'completed' ? "┬íServicio Finalizado y Liquidado!" : "┬íGracias por tu calificaci├│n!");
+      toast.success(newStatus === 'completed' ? "¡Servicio Finalizado y Liquidado!" : "¡Gracias por tu calificación!");
 
       if (newStatus === 'completed') {
          const tech = technicians.find(t => t.id === req.techId);
@@ -782,7 +782,7 @@ export default function App() {
             const finalR = Math.max(1, ratingVal - ((req.rescheduleCount || 0) * 0.2));
             const nRating = ((tech.rating * tech.reviewCount) + finalR) / (tech.reviewCount + 1);
 
-            // ACTUALIZACI├ôN DE BILLETERA: Liquidaci├│n autom├ítica de fondos
+            // ACTUALIZACIÓN DE BILLETERA: Liquidación automática de fondos
             const earnings = Number(req.technicianEarnings || 0);
             const currentBalance = Number(tech.wallet?.balance || 0);
             const newBalance = currentBalance + earnings;
@@ -809,7 +809,7 @@ export default function App() {
          }
       }
       setIsSignatureModalOpen(false);
-      toast.success("┬íServicio completado y calificado exitosamente!");
+      toast.success("¡Servicio completado y calificado exitosamente!");
     } catch (err) { console.error(err); }
   };
 
@@ -823,16 +823,16 @@ export default function App() {
       const q = query(collection(db, "agenda"), where("requestId", "==", requestId));
       const snap = await getDocs(q);
       snap.forEach(d => updateDoc(doc(db, "agenda", d.id), { date, time, title: 'REPROGRAMADO' }));
-      await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `­ƒôó REPROGRAMADA: ${date} @ ${time}. Motivo: ${reason}`, timestamp: serverTimestamp() });
+      await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `📢 REPROGRAMADA: ${date} @ ${time}. Motivo: ${reason}`, timestamp: serverTimestamp() });
       toast.success("Cita reprogramada exitosamente.");
     } catch (err) { console.error(err); }
   };
 
   const handleReportTechnicianFailure = async (requestId: string) => {
     if (!requestId) return;
-    if (!window.confirm("ÔÜá´©Å ┬┐El t├®cnico no concluy├│? Solo recibir├í el 5% de la inspecci├│n inicial. ┬┐Deseas reportar?")) return;
-    await updateDoc(doc(db, "requests", requestId), { status: 'cancelled', cancellationReason: 'Incumplimiento del t├®cnico / Penalidad 5%', penaltyApplied: true });
-    toast.success("Caso reportado a Auditor├¡a. El equipo tomar├í acci├│n.");
+    if (!window.confirm("⚠️ ¿El técnico no concluyó? Solo recibirá el 5% de la inspección inicial. ¿Deseas reportar?")) return;
+    await updateDoc(doc(db, "requests", requestId), { status: 'cancelled', cancellationReason: 'Incumplimiento del técnico / Penalidad 5%', penaltyApplied: true });
+    toast.success("Caso reportado a Auditoría. El equipo tomará acción.");
   };
 
   const handleCancelRequest = async (requestId: string) => {
@@ -840,21 +840,21 @@ export default function App() {
      const req = requests.find(r => r.id === requestId);
      if(!req) return;
      if (req.status === 'executing') {
-        if (!window.confirm("ÔÜá´©Å EN EJECUCI├ôN: Se liquidar├í el 50% por avance de obra. ┬┐Deseas proceder?")) return;
+        if (!window.confirm("⚠️ EN EJECUCIÓN: Se liquidará el 50% por avance de obra. ¿Deseas proceder?")) return;
      } else {
-        if (!window.confirm("┬┐Deseas cancelar?")) return;
+        if (!window.confirm("¿Deseas cancelar?")) return;
      }
      await updateDoc(doc(db, "requests", requestId), { status: 'cancelled', cancelledAt: serverTimestamp() });
      toast.success("Solicitud cancelada.");
   };
 
   const handleRequestWithdrawal = async (techId: string, amount: number) => {
-    if (amount <= 0) return toast.error("El monto ingresado no es v├ílido.");
+    if (amount <= 0) return toast.error("El monto ingresado no es válido.");
     try {
       const tech = technicians.find(t => t.id === techId);
       if (!tech || (tech.wallet?.balance || 0) < amount) return toast.error("Saldo insuficiente para procesar este retiro.");
 
-      // 1. Crear transacci├│n de d├®bito (Pendiente)
+      // 1. Crear transacción de débito (Pendiente)
       const newTransaction = {
         id: `WD-${Date.now().toString().substring(7)}`,
         amount: amount,
@@ -866,16 +866,16 @@ export default function App() {
 
       const updatedTransactions = [newTransaction, ...(tech.wallet?.transactions || [])];
 
-      // 2. Restar del balance y mover a auditor├¡a
+      // 2. Restar del balance y mover a auditoría
       await updateDoc(doc(db, "technicians", techId), {
         'wallet.balance': (tech.wallet?.balance || 0) - amount,
         'wallet.transactions': updatedTransactions
       });
 
       // 3. Notificar al Admin para que haga la transferencia real
-      notifyAdmin("­ƒÅª SOLICITUD DE RETIRO", `El t├®cnico ${tech.name} solicita un retiro de B/. ${amount.toFixed(2)}. Verificar datos bancarios.`);
+      notifyAdmin("🏦 SOLICITUD DE RETIRO", `El técnico ${tech.name} solicita un retiro de B/. ${amount.toFixed(2)}. Verificar datos bancarios.`);
 
-      toast.success("Solicitud de retiro enviada a Tesorer├¡a. El dep├│sito se reflejar├í en un m├íximo de 24h.");
+      toast.success("Solicitud de retiro enviada a Tesorería. El depósito se reflejará en un máximo de 24h.");
     } catch (err) { console.error(err); }
   };
 
@@ -893,7 +893,7 @@ export default function App() {
 
   const handleOpenSubscriptionPayment = (planId: string) => {
     const plan = [
-      { id: 'plan-basic', name: 'B├ísico', price: 0 },
+      { id: 'plan-basic', name: 'Básico', price: 0 },
       { id: 'plan-pro', name: 'Profesional', price: 15 },
       { id: 'plan-enterprise', name: 'Corporativo', price: 45 }
     ].find(p => p.id === planId);
@@ -913,7 +913,7 @@ export default function App() {
       nextBilling.setDate(nextBilling.getDate() + 30);
 
       if (planId === 'plan-basic' || isInstant) {
-        // ACTIVACI├ôN INSTANT├üNEA (B├ísico o PayPal)
+        // ACTIVACIÓN INSTANTÁNEA (Básico o PayPal)
         const newSub = {
           planId,
           status: 'active',
@@ -923,21 +923,21 @@ export default function App() {
         await updateDoc(doc(db, "users", user.uid), { subscription: newSub });
         setSubscription(newSub as UserSubscription);
         setIsSubPaymentModalOpen(false);
-        if (isInstant) toast.success(`┬íFelicidades! Tu cuenta ha sido mejorada al plan ${planId.split('-')[1].toUpperCase()}.`, { duration: 5000 });
+        if (isInstant) toast.success(`¡Felicidades! Tu cuenta ha sido mejorada al plan ${planId.split('-')[1].toUpperCase()}.`, { duration: 5000 });
         return;
       }
 
-      // FLUJO MANUAL (Yappy): Queda en espera de verificaci├│n Admin
+      // FLUJO MANUAL (Yappy): Queda en espera de verificación Admin
       await updateDoc(doc(db, "users", user.uid), {
         'subscription.requestedPlanId': planId,
         'subscription.status': 'pending_payment_verification',
         'subscription.paymentAt': new Date().toISOString()
       });
 
-      notifyAdmin("­ƒÆÄ NUEVA SUSCRIPCI├ôN (YAPPY)", `El usuario ${loggedInName} solicita subir al plan ${planId.split('-')[1].toUpperCase()}. Verificar transferencia manual.`);
+      notifyAdmin("💎 NUEVA SUSCRIPCIÓN (YAPPY)", `El usuario ${loggedInName} solicita subir al plan ${planId.split('-')[1].toUpperCase()}. Verificar transferencia manual.`);
 
       setIsSubPaymentModalOpen(false);
-      toast("Solicitud recibida. El Administrador activar├í tu plan tras confirmar la transferencia por Yappy.", { icon: "­ƒôí", duration: 6000 });
+      toast("Solicitud recibida. El Administrador activará tu plan tras confirmar la transferencia por Yappy.", { icon: "📡", duration: 6000 });
     } catch (err) { console.error(err); }
   };
 
@@ -957,7 +957,7 @@ export default function App() {
         subscription: newSub
       });
 
-      // Si es t├®cnico, actualizar tambi├®n su perfil de t├®cnico
+      // Si es técnico, actualizar también su perfil de técnico
       const userSnap = await getDoc(doc(db, "users", userId));
       if (userSnap.exists() && userSnap.data().role === 'tech') {
         const techId = userSnap.data().techId || `tech-${userId}`;
@@ -966,7 +966,7 @@ export default function App() {
         });
       }
 
-      toast.success("Suscripci├│n aprobada y activada correctamente.");
+      toast.success("Suscripción aprobada y activada correctamente.");
     } catch (err) { console.error(err); }
   };
 
@@ -1003,7 +1003,7 @@ export default function App() {
   const handleUploadAvatar = async (file: File) => {
     if (!user) return;
 
-    // Motor de Compresi├│n de Imagen (Evita error de 1MB en Firestore)
+    // Motor de Compresión de Imagen (Evita error de 1MB en Firestore)
     const compressImage = (file: File): Promise<string> => {
       return new Promise((resolve) => {
         const reader = new FileReader();
@@ -1013,7 +1013,7 @@ export default function App() {
           img.src = event.target?.result as string;
           img.onload = () => {
             const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 400; // Resoluci├│n profesional para avatar
+            const MAX_WIDTH = 400; // Resolución profesional para avatar
             const scaleSize = MAX_WIDTH / img.width;
             canvas.width = MAX_WIDTH;
             canvas.height = img.height * scaleSize;
@@ -1021,7 +1021,7 @@ export default function App() {
             const ctx = canvas.getContext('2d');
             ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-            // Exportar como JPG con calidad 0.7 (reduce peso dr├ísticamente)
+            // Exportar como JPG con calidad 0.7 (reduce peso drásticamente)
             const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
             resolve(dataUrl);
           };
@@ -1056,8 +1056,8 @@ export default function App() {
             <Trash2 className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs font-black text-white uppercase tracking-tight">┬┐Confirmar Eliminaci├│n?</p>
-            <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mt-0.5">Operaci├│n irreversible</p>
+            <p className="text-xs font-black text-white uppercase tracking-tight">¿Confirmar Eliminación?</p>
+            <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mt-0.5">Operación irreversible</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -1104,7 +1104,7 @@ export default function App() {
       toast.success(`Limpieza masiva completada.`, { id: 'bulk-del' });
     } catch (err) {
       console.error(err);
-      toast.error("Error en la eliminaci├│n masiva.", { id: 'bulk-del' });
+      toast.error("Error en la eliminación masiva.", { id: 'bulk-del' });
     }
   };
 
@@ -1119,9 +1119,9 @@ export default function App() {
 
       const newSpend = (asset.totalMaintenanceSpend || 0) + log.price;
 
-      // L├ôGICA DE PREDICCI├ôN (Idea 1)
+      // LÓGICA DE PREDICCIÓN (Idea 1)
       const logs = asset.fuelLogs || [];
-      let dailyAvgKm = 15; // Est├índar si no hay data
+      let dailyAvgKm = 15; // Estándar si no hay data
       let predictedDate = asset.nextMaintenanceDate;
 
       if (logs.length >= 2) {
@@ -1131,7 +1131,7 @@ export default function App() {
         const kmDiff = last.mileage - first.mileage;
         if (daysDiff > 0) dailyAvgKm = kmDiff / daysDiff;
 
-        // Estimar cu├índo llegar├í a los pr├│ximos 5000km de mtto
+        // Estimar cuándo llegará a los próximos 5000km de mtto
         const kmRemaining = 5000 - (last.mileage % 5000);
         const daysRemaining = kmRemaining / dailyAvgKm;
         const estDate = new Date();
@@ -1146,7 +1146,7 @@ export default function App() {
         'usageStats.dailyAvgKm': Math.round(dailyAvgKm),
         'usageStats.predictedMaintenanceDate': predictedDate
       });
-      logActivity(user.uid, 'fuel_log', `Carga de combustible y predicci├│n mtto: ${assetId}`, 'info');
+      logActivity(user.uid, 'fuel_log', `Carga de combustible y predicción mtto: ${assetId}`, 'info');
     } catch (err) { console.error(err); }
   };
 
@@ -1167,7 +1167,7 @@ export default function App() {
         registeredAt: new Date().toISOString().split('T')[0]
       }));
       await Promise.all(batch);
-      toast.success(`┬íMisi├│n cumplida! ${assetsList.length} unidades integradas al ecosistema.`, { id: 'bulk-reg' });
+      toast.success(`¡Misión cumplida! ${assetsList.length} unidades integradas al ecosistema.`, { id: 'bulk-reg' });
     } catch (err) {
       console.error(err);
       toast.error("Error en el registro masivo.", { id: 'bulk-reg' });
@@ -1186,7 +1186,7 @@ export default function App() {
       if (assetToEdit) {
         await AssetService.updateAsset(assetToEdit.id, cleanData);
         await logActivity(user.uid, loggedInName, 'UPDATE_ASSET', `Editado equipo: ${data.name}`);
-        toast.success("Equipo actualizado con ├®xito.");
+        toast.success("Equipo actualizado con éxito.");
       } else {
         await AssetService.createAsset({
           ...cleanData,
@@ -1222,8 +1222,8 @@ export default function App() {
             <Trash2 className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs font-black text-white uppercase tracking-tight">┬┐Eliminar Equipo?</p>
-            <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mt-0.5">Se perder├í todo el historial</p>
+            <p className="text-xs font-black text-white uppercase tracking-tight">¿Eliminar Equipo?</p>
+            <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mt-0.5">Se perderá todo el historial</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -1237,7 +1237,7 @@ export default function App() {
             onClick={async () => {
               toast.dismiss(t.id);
               try {
-                // SOFT DELETE (Estandard de producci├│n)
+                // SOFT DELETE (Estandard de producción)
                 await AssetService.softDeleteAsset(id);
                 await logActivity(user.uid, loggedInName, 'DELETE_ASSET', `Eliminado (Soft Delete) activo ID: ${id}`);
                 toast.success("Unidad movida a la papelera.");
@@ -1254,7 +1254,7 @@ export default function App() {
     ), { duration: 5000, position: 'bottom-center' });
   };
 
-  // ­ƒñû MOTOR DE AUDITOR├ìA T├ëCNICA 24/7 (AUTOMATIZADO - GRADO INDUSTRIAL)
+  // 🤖 MOTOR DE AUDITORÍA TÉCNICA 24/7 (AUTOMATIZADO - GRADO INDUSTRIAL)
   useEffect(() => {
     if (!isLoggedIn || role !== 'client') return;
 
@@ -1269,43 +1269,43 @@ export default function App() {
 
         let logEntry = null;
 
-        // 1. Auditor├¡a de Mantenimiento Preventivo (Autom├ítica)
+        // 1. Auditoría de Mantenimiento Preventivo (Automática)
         const kmToService = 5000 - ((unit.mileage || 0) % 5000);
         if (kmToService < 300) {
-           // Buscar t├®cnico responsable (el ├║ltimo que trabaj├│ en esta unidad)
+           // Buscar técnico responsable (el último que trabajó en esta unidad)
            const lastJob = requests
              .filter(r => r.assetId === unit.id && (r.status === 'completed' || r.status === 'executing'))
              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 
-           const techName = lastJob ? `Responsable: ${lastJob.techName}` : 'Sin T├®cnico Asignado';
+           const techName = lastJob ? `Responsable: ${lastJob.techName}` : 'Sin Técnico Asignado';
 
            logEntry = {
              type: 'maintenance_warning',
-             message: `PROTOCOLO 24/7: Unidad ${unit.name} cerca de l├¡mite de servicio (${kmToService}km restantes). Auditando componentes. [${techName}]`,
+             message: `PROTOCOLO 24/7: Unidad ${unit.name} cerca de límite de servicio (${kmToService}km restantes). Auditando componentes. [${techName}]`,
              severity: 'warning'
            };
         }
 
-        // 2. Auditor├¡a de Integridad GPS (Sin molestar al usuario)
+        // 2. Auditoría de Integridad GPS (Sin molestar al usuario)
         if (inactiveMinutes > 60) {
            logEntry = {
              type: 'signal_info',
-             message: `REGISTRO 24/7: P├®rdida de se├▒al prolongada en ${unit.name}. Bit├ícora t├®cnica actualizada autom├íticamente.`,
+             message: `REGISTRO 24/7: Pérdida de señal prolongada en ${unit.name}. Bitácora técnica actualizada automáticamente.`,
              severity: 'info'
            };
         }
 
         if (logEntry) {
-           console.log(`­ƒøí´©Å LOG AUDITOR├ìA 24/7: ${logEntry.message}`);
+           console.log(`🛡️ LOG AUDITORÍA 24/7: ${logEntry.message}`);
            toast(logEntry.message, {
              duration: 6000,
-             icon: logEntry.severity === 'warning' ? 'ÔÜÖ´©Å' : '­ƒôí',
+             icon: logEntry.severity === 'warning' ? '⚙️' : '📡',
              position: 'bottom-right',
              style: { border: '1px solid #5d3cfe', background: '#0d0e12', color: '#fff', fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold' }
            });
         }
       });
-    }, 600000); // Revisi├│n cada 10 minutos (Silenciosa y Eficiente)
+    }, 600000); // Revisión cada 10 minutos (Silenciosa y Eficiente)
 
     return () => clearInterval(auditInterval);
   }, [isLoggedIn, assets, role]);
@@ -1315,7 +1315,7 @@ export default function App() {
     return map[s] || s.toUpperCase();
   };
 
-  const getSelectedTechProfileObj = () => technicians.find(t => t.id === selectedTechProfileId) || { id: selectedTechProfileId || 'new', name: loggedInName, category: 'mecanico', title: 'T├®cnico Especialista', rating: 5.0, reviewCount: 0, completedJobs: 0, plan: 'basic' } as TechProfile;
+  const getSelectedTechProfileObj = () => technicians.find(t => t.id === selectedTechProfileId) || { id: selectedTechProfileId || 'new', name: loggedInName, category: 'mecanico', title: 'Técnico Especialista', rating: 5.0, reviewCount: 0, completedJobs: 0, plan: 'basic' } as TechProfile;
 
   if (isAuthResolving) return <div className="h-screen w-full bg-[#0d0e12] flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-[#5d3cfe]"></div></div>;
 
@@ -1335,7 +1335,7 @@ export default function App() {
             </button>
             <div className="text-center space-y-3 flex flex-col items-center">
               <Logo size="md" className="md:scale-125 mb-1" />
-              <p className="text-[#c8c4d9] text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em]">Central Log├¡stica Panam├í</p>
+              <p className="text-[#c8c4d9] text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em]">Central Logística Panamá</p>
             </div>
             <div className="flex bg-[#1c1d21] p-1.5 rounded-2xl border border-[#2a2b2f]">
                <button onClick={() => setAuthMode('login')} className={`flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${authMode === 'login' ? 'bg-[#5d3cfe] text-white shadow-lg shadow-[#5d3cfe]/20' : 'text-[#474556]'}`}>Ingresar</button>
@@ -1345,9 +1345,9 @@ export default function App() {
               {authMode === 'register' && <div className="space-y-2 text-left"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Nombre</label><input type="text" value={loginName} onChange={e => setLoginName(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white" required /></div>}
               <div className="space-y-2 text-left"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Correo</label><input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white" required /></div>
               <div className="space-y-2 text-left"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Clave</label><input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white" required /></div>
-              {authMode === 'register' && <div className="space-y-2 text-left"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Tipo</label><select value={authRole} onChange={e => setAuthRole(e.target.value as any)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white"><option value="client">Cliente</option><option value="tech">T├®cnico</option></select></div>}
+              {authMode === 'register' && <div className="space-y-2 text-left"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Tipo</label><select value={authRole} onChange={e => setAuthRole(e.target.value as any)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white"><option value="client">Cliente</option><option value="tech">Técnico</option></select></div>}
               {authError && <p className="text-rose-500 text-[10px] font-black uppercase text-center">{authError}</p>}
-              <button type="submit" className="w-full py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-[#5d3cfe]/30 hover:brightness-110 active:scale-95 transition-all">Entrar Ô×ö</button>
+              <button type="submit" className="w-full py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-[#5d3cfe]/30 hover:brightness-110 active:scale-95 transition-all">Entrar ➔</button>
             </form>
           </div>
         </div>
@@ -1356,7 +1356,7 @@ export default function App() {
         <div className="fixed inset-0 z-[300] bg-[#0d0e12]/98 backdrop-blur-3xl flex items-center justify-center p-4">
           <div className="w-full max-w-5xl bg-[#121317] border border-white/10 rounded-[3rem] overflow-hidden shadow-[0_0_100px_rgba(93,60,254,0.15)] animate-fade-in-up relative flex flex-col md:flex-row h-full max-h-[85vh]">
 
-            {/* Bot├│n de Cierre T├íctico */}
+            {/* Botón de Cierre Táctico */}
             <button
               onClick={() => setIsDemoModalOpen(false)}
               className="absolute top-8 right-8 z-50 p-3 bg-white/5 hover:bg-rose-600 text-white rounded-2xl border border-white/10 transition-all active:scale-90 group"
@@ -1370,7 +1370,7 @@ export default function App() {
                   <Logo size="md" />
                   <div className="space-y-4">
                      <h3 className="text-3xl font-black text-white leading-none uppercase tracking-tighter">Ecosistema <br /><span className="text-[#5d3cfe]">Master V4</span></h3>
-                     <p className="text-xs font-bold text-[#c8c4d9] uppercase tracking-widest opacity-60 leading-relaxed">Infraestructura de Grado Industrial para Panam├í.</p>
+                     <p className="text-xs font-bold text-[#c8c4d9] uppercase tracking-widest opacity-60 leading-relaxed">Infraestructura de Grado Industrial para Panamá.</p>
                   </div>
                </div>
 
@@ -1382,20 +1382,20 @@ export default function App() {
                      </div>
                      <p className="text-[10px] text-white/40 font-medium">Uptime del 99.9% con redundancia satelital distribuida.</p>
                   </div>
-                  <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.3em] text-center">┬® 2026 MantechPro Panama</p>
+                  <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.3em] text-center">© 2026 MantechPro Panama</p>
                </div>
             </div>
 
-            {/* LADO DERECHO: Pilares Tecnol├│gicos */}
+            {/* LADO DERECHO: Pilares Tecnológicos */}
             <div className="md:w-2/3 p-12 overflow-y-auto custom-scrollbar bg-grid-white/[0.02]">
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {[
-                    { t: "Rastreo Sat-Link V4", d: "Telemetr├¡a en tiempo real con latencia <1s. Protocolo militar de encriptaci├│n.", i: Globe, c: "#52ffac" },
+                    { t: "Rastreo Sat-Link V4", d: "Telemetría en tiempo real con latencia <1s. Protocolo militar de encriptación.", i: Globe, c: "#52ffac" },
                     { t: "IA Predictiva", d: "Algoritmos que analizan el desgaste de piezas antes de que ocurra la falla.", i: BrainCircuit, c: "#5d3cfe" },
                     { t: "Custodia Escrow", d: "Seguridad bancaria en pagos. El fondo se libera solo tras tu firma digital.", i: ShieldCheck, c: "#f59e0b" },
-                    { t: "Mantech ID", d: "Base de datos de t├®cnicos con r├®cord policivo y certificaciones validadas.", i: BadgeCheck, c: "#e11d48" },
-                    { t: "Log├¡stica B2B", d: "Gesti├│n de flotas masivas, inventarios de repuestos y auditor├¡a financiera.", i: Truck, c: "#c7bfff" },
-                    { t: "Soporte 24/7", d: "Asistente virtual y t├®cnicos de emergencia disponibles en todo el pa├¡s.", i: MessageSquare, c: "#ffffff" }
+                    { t: "Mantech ID", d: "Base de datos de técnicos con récord policivo y certificaciones validadas.", i: BadgeCheck, c: "#e11d48" },
+                    { t: "Logística B2B", d: "Gestión de flotas masivas, inventarios de repuestos y auditoría financiera.", i: Truck, c: "#c7bfff" },
+                    { t: "Soporte 24/7", d: "Asistente virtual y técnicos de emergencia disponibles en todo el país.", i: MessageSquare, c: "#ffffff" }
                   ].map((f, idx) => (
                     <div key={idx} className="p-8 bg-[#1c1d21]/50 border border-white/5 rounded-[2.5rem] hover:border-white/20 transition-all group">
                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6 shadow-2xl transition-transform group-hover:scale-110" style={{ backgroundColor: `${f.c}10`, color: f.c }}>
@@ -1409,8 +1409,8 @@ export default function App() {
 
                <div className="mt-10 p-8 bg-[#5d3cfe] rounded-[2.5rem] flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xl shadow-[#5d3cfe]/20">
                   <div>
-                     <h4 className="text-xl font-black text-white uppercase tracking-tighter leading-none">┬┐Listo para escalar?</h4>
-                     <p className="text-[10px] text-white/80 font-bold uppercase tracking-widest mt-2">Prueba el autodiagn├│stico ahora mismo.</p>
+                     <h4 className="text-xl font-black text-white uppercase tracking-tighter leading-none">¿Listo para escalar?</h4>
+                     <p className="text-[10px] text-white/80 font-bold uppercase tracking-widest mt-2">Prueba el autodiagnóstico ahora mismo.</p>
                   </div>
                   <button
                     onClick={() => setIsDemoModalOpen(false)}
@@ -1507,7 +1507,7 @@ export default function App() {
              <div className="overflow-hidden">
                <h4 className="font-black text-white text-xs tracking-tight truncate uppercase leading-tight">{loggedInName}</h4>
                <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest mt-1">
-                 {role === 'client' ? 'CLIENTE' : role === 'tech' ? 'T├ëCNICO' : 'ADMINISTRADOR'}
+                 {role === 'client' ? 'CLIENTE' : role === 'tech' ? 'TÉCNICO' : 'ADMINISTRADOR'}
                </p>
              </div>
           </div>
@@ -1518,16 +1518,16 @@ export default function App() {
                 {planLimits.fleet !== 'none' && (
                   <button onClick={() => setClientTab('fleet')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'fleet' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Globe className="w-5 h-5" /> {t('fleet_b2b', 'Flota B2B')}</button>
                 )}
-                <button onClick={() => setClientTab('ai')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'ai' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><BrainCircuit className="w-5 h-5 text-[#52ffac]" /> {t('self_diagnostic', 'Autodiagn├│stico')}</button>
+                <button onClick={() => setClientTab('ai')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'ai' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><BrainCircuit className="w-5 h-5 text-[#52ffac]" /> {t('self_diagnostic', 'Autodiagnóstico')}</button>
                 <button onClick={() => setClientTab('marketplace')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'marketplace' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Store className="w-5 h-5" /> {t('find_experts', 'Buscar Expertos')}</button>
                 <button onClick={() => setClientTab('quotes')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'quotes' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileCheck2 className="w-4 h-4" /> {t('contracts', 'Contratos')}</button>
                 {planLimits.maxAssets > 3 && (
-                  <button onClick={() => setClientTab('audit')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'audit' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileText className="w-4 h-4" /> {t('audit', 'Auditor├¡a')}</button>
+                  <button onClick={() => setClientTab('audit')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'audit' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileText className="w-4 h-4" /> {t('audit', 'Auditoría')}</button>
                 )}
                 <button onClick={() => setClientTab('inventory')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'inventory' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Package className="w-4 h-4" /> {t('spare_parts', 'Repuestos')}</button>
-                <button onClick={() => setClientTab('subscriptions')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'subscriptions' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Star className="w-4 h-4" /> {t('membership', 'Membres├¡a')}</button>
+                <button onClick={() => setClientTab('subscriptions')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'subscriptions' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Star className="w-4 h-4" /> {t('membership', 'Membresía')}</button>
                 <button onClick={() => setClientTab('chat')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'chat' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><MessageSquare className="w-4 h-4" /> {t('chat', 'Chat')}</button>
-                <button onClick={() => setClientTab('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> {t('settings', 'Configuraci├│n')}</button>
+                <button onClick={() => setClientTab('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> {t('settings', 'Configuración')}</button>
               </>
             ) : role === 'tech' ? (
               <>
@@ -1538,17 +1538,17 @@ export default function App() {
                 <button onClick={() => setTechTab('mantech_id')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${techTab === 'mantech_id' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><ShieldCheck className="w-4 h-4" /> Mantech ID</button>
                 <button onClick={() => setTechTab('chat')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${techTab === 'chat' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><MessageSquare className="w-4 h-4" /> Chat</button>
                 <button onClick={() => setTechTab('profile')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${techTab === 'profile' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><User className="w-4 h-4" /> Mi Perfil</button>
-                <button onClick={() => setTechTab('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${techTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> Configuraci├│n</button>
+                <button onClick={() => setTechTab('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${techTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> Configuración</button>
               </>
             ) : (
               <>
                 <button onClick={() => setAdminTab('finance')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${adminTab === 'finance' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><DollarSign className="w-4 h-4" /> Finanzas</button>
                 <button onClick={() => setAdminTab('audit')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${adminTab === 'audit' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileText className="w-4 h-4" /> Logs Actividad</button>
-                <button onClick={() => setAdminTab('logistics')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${adminTab === 'logistics' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Truck className="w-4 h-4" /> Log├¡stica</button>
+                <button onClick={() => setAdminTab('logistics')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${adminTab === 'logistics' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Truck className="w-4 h-4" /> Logística</button>
                 <button onClick={() => setAdminTab('users')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${adminTab === 'users' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Users className="w-4 h-4" /> Usuarios</button>
                 <button onClick={() => setAdminTab('inventory')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${adminTab === 'inventory' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Package className="w-4 h-4" /> Inventario</button>
                 <button onClick={() => setAdminTab('alerts')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${adminTab === 'alerts' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><BellRing className="w-4 h-4" /> Alertas</button>
-                <button onClick={() => setAdminTab('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${adminTab === 'settings' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> Configuraci├│n</button>
+                <button onClick={() => setAdminTab('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${adminTab === 'settings' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> Configuración</button>
               </>
             )}
           </nav>
@@ -1562,15 +1562,15 @@ export default function App() {
                     <div className="space-y-10 animate-fade-in">
                       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                          <div>
-                            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Mi <span className="text-[#5d3cfe]">Portafolio</span></h1>
-                            <p className="text-[#c8c4d9] font-medium mt-3 italic opacity-60">Gestión activa de activos en Panamá.</p>
+                            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Mis Equipos</h1>
+                            <p className="text-[#c8c4d9] font-medium mt-3 italic opacity-60">Monitoreo activo de tus activos en Panamá.</p>
                          </div>
                          <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
                             <div className="relative flex-1 md:w-64">
                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#474556]" />
                                <input
                                  type="text"
-                                 placeholder="Buscar equipo..."
+                                 placeholder="Buscar por placa o marca..."
                                  value={assetSearchQuery}
                                  onChange={(e) => { setAssetSearchQuery(e.target.value); setAssetCurrentPage(1); }}
                                  className="w-full bg-[#121317] border border-[#2a2b2f] rounded-2xl py-3 pl-12 pr-6 text-xs text-white focus:border-[#5d3cfe] outline-none transition-all"
@@ -1582,47 +1582,183 @@ export default function App() {
 
                       {isDataLoading ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                           {[1,2,3].map(i => <Skeleton key={i} className="h-64" />)}
+                           {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-64" />)}
                         </div>
-                      ) : (
-                        <div className="space-y-12">
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {assets.filter(a =>
-                              a.name.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
-                              a.licensePlate?.toLowerCase().includes(assetSearchQuery.toLowerCase())
-                            ).slice((assetCurrentPage - 1) * assetPageSize, assetCurrentPage * assetPageSize).map(a => (
-                              <AssetIntelligentCard
-                                key={a.id}
-                                asset={a}
-                                requests={requests}
-                                onOpenDetails={(asset) => {
-                                  setActiveAssetForFuel(asset);
-                                  setIsFuelModalOpen(true);
-                                }}
-                                onOpenPreTrip={(asset) => {
-                                   setAssetToEdit(asset);
-                                   setIsPreTripModalOpen(true);
-                                }}
-                              />
-                            ))}
-                          </div>
+                      ) : (() => {
+                        const filtered = assets.filter(a =>
+                          a.name.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
+                          a.licensePlate?.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
+                          a.serialNumber?.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
+                          a.details?.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
+                          a.type.toLowerCase().includes(assetSearchQuery.toLowerCase())
+                        );
+                        const total = filtered.length;
+                        const pages = Math.ceil(total / assetPageSize);
+                        const start = (assetCurrentPage - 1) * assetPageSize;
+                        const paginated = filtered.slice(start, start + assetPageSize);
 
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <FuelAuditModule
-                              assets={assets}
-                              onSaveLog={handleSaveFuelLog}
-                            />
-                            <HomeEmergencySOS />
-                          </div>
+                        return (
+                          <div className="space-y-10">
+                            {/* Dashboard Bulk Actions */}
+                            <div className="flex items-center justify-between bg-[#121317] border border-[#2a2b2f] p-4 rounded-2xl shadow-xl">
+                               <div className="flex items-center gap-4">
+                                  <label className="flex items-center gap-3 cursor-pointer group">
+                                     <div className="relative flex items-center justify-center">
+                                        <input
+                                          type="checkbox"
+                                          className="sr-only peer"
+                                          checked={selectedDashboardIds.length === paginated.length && paginated.length > 0}
+                                          onChange={(e) => {
+                                             if (e.target.checked) setSelectedDashboardIds(paginated.map(a => a.id));
+                                             else setSelectedDashboardIds([]);
+                                          }}
+                                        />
+                                        <div className="w-5 h-5 border-2 border-[#474556] rounded-md transition-all peer-checked:border-[#5d3cfe] peer-checked:bg-[#5d3cfe]"></div>
+                                        <Check className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
+                                     </div>
+                                     <span className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest group-hover:text-white transition-colors">Seleccionar Todo (Página)</span>
+                                  </label>
+                               </div>
 
-                          <VerticalDashboard
-                            type="ph"
-                            assets={assets}
-                            requests={requests}
-                            userName={userData?.name || 'Usuario'}
-                          />
-                        </div>
-                      )}
+                               {selectedDashboardIds.length > 0 && (
+                                  <button
+                                    onClick={() => {
+                                       const confirmDelete = async () => {
+                                          toast.loading(`Borrando ${selectedDashboardIds.length} unidades...`, { id: 'bulk-dash-del' });
+                                          try {
+                                             const batch = selectedDashboardIds.map(id => deleteDoc(doc(db, "assets", id)));
+                                             await Promise.all(batch);
+                                             setSelectedDashboardIds([]);
+                                             toast.success("Limpieza masiva exitosa.", { id: 'bulk-dash-del' });
+                                          } catch (err) {
+                                             toast.error("Falla en la purga.", { id: 'bulk-dash-del' });
+                                          }
+                                       };
+
+                                       toast((t) => (
+                                          <div className="flex flex-col gap-4 p-4 bg-[#121317] border border-white/10 rounded-2xl shadow-2xl min-w-[300px]">
+                                            <div className="flex items-center gap-3">
+                                              <div className="p-2 bg-rose-600/20 text-rose-500 rounded-lg"><Trash2 className="w-5 h-5" /></div>
+                                              <div><p className="text-xs font-black text-white uppercase">¿Purgar {selectedDashboardIds.length} Equipos?</p><p className="text-[9px] text-white/50 font-bold uppercase">Acción irreversible en la nube</p></div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                              <button onClick={() => toast.dismiss(t.id)} className="flex-1 py-2.5 bg-white/5 text-white rounded-xl text-[9px] font-black uppercase">Abortar</button>
+                                              <button onClick={() => { toast.dismiss(t.id); confirmDelete(); }} className="flex-1 py-2.5 bg-rose-600 text-white rounded-xl text-[9px] font-black uppercase shadow-lg">Confirmar</button>
+                                            </div>
+                                          </div>
+                                       ), { duration: 8000, position: 'bottom-center' });
+                                    }}
+                                    className="px-6 py-2 bg-rose-600 text-white text-[9px] font-black rounded-xl uppercase shadow-lg shadow-rose-600/20 flex items-center gap-2 hover:bg-rose-700 transition-all animate-fade-in-up"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" /> Purgar Lote ({selectedDashboardIds.length})
+                                  </button>
+                               )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                               {paginated.map(a => {
+                                 const isSelected = selectedDashboardIds.includes(a.id);
+                                 return (
+                                 <div key={a.id} className={`bg-[#121317] border p-8 rounded-[2.5rem] space-y-6 shadow-2xl transition-all relative overflow-hidden group ${isSelected ? 'border-[#5d3cfe] ring-2 ring-[#5d3cfe]/20 bg-[#5d3cfe]/5' : 'border-[#2a2b2f] hover:border-[#5d3cfe]/40'}`}>
+                                      {/* Checkbox Individual */}
+                                      <div className="absolute top-6 left-6 z-20">
+                                         <label className="cursor-pointer group">
+                                            <div className="relative flex items-center justify-center">
+                                               <input
+                                                 type="checkbox"
+                                                 className="sr-only peer"
+                                                 checked={isSelected}
+                                                 onChange={(e) => {
+                                                   if (e.target.checked) setSelectedDashboardIds([...selectedDashboardIds, a.id]);
+                                                   else setSelectedDashboardIds(selectedDashboardIds.filter(id => id !== a.id));
+                                                 }}
+                                               />
+                                               <div className={`w-6 h-6 border-2 rounded-lg transition-all ${isSelected ? 'border-[#5d3cfe] bg-[#5d3cfe] shadow-lg shadow-[#5d3cfe]/30' : 'border-[#474556] bg-black/40 group-hover:border-[#c7bfff]/50'}`}></div>
+                                               <Check className="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
+                                            </div>
+                                         </label>
+                                      </div>
+
+                                      <div className="absolute -bottom-6 -right-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                                        {(() => {
+                                          const cls = "w-32 h-32";
+                                          switch(a.type) {
+                                            case 'car': return <Car className={cls} />;
+                                            case 'ac': return <Wind className={cls} />;
+                                            case 'computer': return <Cpu className={cls} />;
+                                            case 'generator': return <Zap className={cls} />;
+                                            case 'solar_panels': return <Wind className={cls} />;
+                                            case 'industrial_equip': return <Package className={cls} />;
+                                            case 'house': return <Building2 className={cls} />;
+                                            default: return <Package className={cls} />;
+                                          }
+                                        })()}
+                                      </div>
+                                     <div className="flex justify-between items-start relative z-10 pl-10">
+                                         <div className="flex items-center gap-5">
+                                            <div className="w-16 h-16 rounded-2xl bg-[#1c1d21] border border-white/5 flex items-center justify-center text-white shadow-inner">
+                                              {(() => {
+                                                const cls = "w-8 h-8";
+                                                switch(a.type) {
+                                                  case 'car': return <Car className={cls} />;
+                                                  case 'ac': return <Wind className={cls} />;
+                                                  case 'computer': return <Cpu className={cls} />;
+                                                  case 'generator': return <Zap className={cls} />;
+                                                  case 'solar_panels': return <Wind className={cls} />;
+                                                  case 'industrial_equip': return <Package className={cls} />;
+                                                  case 'house': return <Building2 className={cls} />;
+                                                  default: return <Package className={cls} />;
+                                                }
+                                              })()}
+                                            </div>
+                                         </div>
+                                     </div>
+                                 </div>
+                                 );
+                               })}
+                            </div>
+
+                            {pages > 1 && (
+                               <div className="flex justify-center items-center gap-4 pt-10">
+                                  <button
+                                    disabled={assetCurrentPage === 1}
+                                    onClick={() => setAssetCurrentPage(p => p - 1)}
+                                    className="p-3 bg-[#121317] border border-[#2a2b2f] rounded-xl text-[#c8c4d9] disabled:opacity-20 hover:text-white transition-all shadow-xl"
+                                  >
+                                     <ChevronLeft className="w-5 h-5" />
+                                  </button>
+                                  <div className="flex gap-2">
+                                     {Array.from({ length: pages }).map((_, i) => (
+                                       <button
+                                         key={i}
+                                         onClick={() => setAssetCurrentPage(i + 1)}
+                                         className={`w-10 h-10 rounded-xl text-[10px] font-black transition-all ${assetCurrentPage === i + 1 ? 'bg-[#5d3cfe] text-white shadow-lg shadow-[#5d3cfe]/30' : 'bg-[#121317] text-[#474556] border border-[#2a2b2f]'}`}
+                                       >
+                                         {i + 1}
+                                       </button>
+                                     ))}
+                                  </div>
+                                  <button
+                                    disabled={assetCurrentPage === pages}
+                                    onClick={() => setAssetCurrentPage(p => p + 1)}
+                                    className="p-3 bg-[#121317] border border-[#2a2b2f] rounded-xl text-[#c8c4d9] disabled:opacity-20 hover:text-white transition-all shadow-xl"
+                                  >
+                                     <ChevronRight className="w-5 h-5" />
+                                  </button>
+                               </div>
+                            )}
+
+                            {total === 0 && (
+                               <div className="py-20 text-center space-y-4">
+                                  <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto border border-white/5 opacity-20">
+                                     <LayoutDashboard className="w-8 h-8" />
+                                  </div>
+                                  <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em]">No se encontraron equipos con esa placa o nombre.</p>
+                               </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                   {clientTab === 'fleet' && (
@@ -1648,12 +1784,12 @@ export default function App() {
                       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                         <div>
                            <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-none">Marketplace <span className="text-[#5d3cfe]">Expertos</span></h1>
-                           <div className="flex gap-3 overflow-x-auto pb-4 mt-6 custom-scrollbar">{['Todos', 'Mec├ínico', 'T├®cnico A/C', 'Electricista', 'Inform├ítico'].map(c => (<button key={c} onClick={() => setMarketFilter(c === 'Todos' ? 'all' : c.toLowerCase().replace(' ', '_') as any)} className={`flex-shrink-0 px-8 py-3 rounded-full border transition-all text-[10px] font-black uppercase tracking-widest ${marketFilter === (c === 'Todos' ? 'all' : c.toLowerCase().replace(' ', '_')) ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'border-[#2a2b2f] text-[#c8c4d9] hover:border-[#5d3cfe]'}`}>{c}</button>))}</div>
+                           <div className="flex gap-3 overflow-x-auto pb-4 mt-6 custom-scrollbar">{['Todos', 'Mecánico', 'Técnico A/C', 'Electricista', 'Informático'].map(c => (<button key={c} onClick={() => setMarketFilter(c === 'Todos' ? 'all' : c.toLowerCase().replace(' ', '_') as any)} className={`flex-shrink-0 px-8 py-3 rounded-full border transition-all text-[10px] font-black uppercase tracking-widest ${marketFilter === (c === 'Todos' ? 'all' : c.toLowerCase().replace(' ', '_')) ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'border-[#2a2b2f] text-[#c8c4d9] hover:border-[#5d3cfe]'}`}>{c}</button>))}</div>
                         </div>
                         <div className="bg-[#1c1d21] p-1.5 rounded-2xl border border-[#2a2b2f] flex">
                            <button onClick={() => setMarketViewMode('list')} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${marketViewMode === 'list' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}>Listado</button>
                            <button onClick={() => setMarketViewMode('radar')} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${marketViewMode === 'radar' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}>Radar Satelital</button>
-                           <button onClick={() => setMarketViewMode('bidding')} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${marketViewMode === 'bidding' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}>Subasta P├║blica</button>
+                           <button onClick={() => setMarketViewMode('bidding')} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${marketViewMode === 'bidding' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}>Subasta Pública</button>
                         </div>
                       </header>
 
@@ -1678,7 +1814,7 @@ export default function App() {
                           onSelectTech={(t) => { setActiveTechForModal(t); setIsTechModalOpen(true); }}
                         />
                       ) : (
-                        /* Subasta P├║blica View */
+                        /* Subasta Pública View */
                         <div className="space-y-8 animate-fade-in">
                            <div className="p-8 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-6">
                               <div className="flex items-center gap-4">
@@ -1715,7 +1851,7 @@ export default function App() {
                                    <p className="text-xs text-[#c8c4d9] font-medium leading-relaxed italic opacity-60">"{req.description}"</p>
                                    <div className="pt-6 border-t border-white/5 flex items-center justify-between">
                                       <span className="text-[9px] font-black text-[#474556] uppercase tracking-widest">{req.bids?.length || 0} Propuestas Recibidas</span>
-                                      <button className="text-[10px] font-black text-[#52ffac] uppercase tracking-[0.2em] hover:underline transition-all">Ver Ofertas Ô×ö</button>
+                                      <button className="text-[10px] font-black text-[#52ffac] uppercase tracking-[0.2em] hover:underline transition-all">Ver Ofertas ➔</button>
                                    </div>
                                 </div>
                               ))}
@@ -1807,7 +1943,7 @@ export default function App() {
                               {/* Execution / Result View */}
                               {(req.status === 'executing' || req.status === 'completed' || req.status === 'rated') && (
                                 <div className="space-y-8 animate-fade-in">
-                                  {/* Panel de Validaci├│n de Asistencia (Solo Cliente) */}
+                                  {/* Panel de Validación de Asistencia (Solo Cliente) */}
                                   {role === 'client' && req.status === 'executing' && !req.clientConfirmedArrival && (
                                     <div className="flex flex-col md:flex-row gap-4 mb-8">
                                       <div className="flex-1 p-6 bg-white/5 border border-white/5 rounded-3xl flex items-center justify-between group hover:border-[#52ffac]/30 transition-all">
@@ -1816,43 +1952,43 @@ export default function App() {
                                             <User className="w-5 h-5" />
                                           </div>
                                           <div>
-                                            <p className="text-[10px] font-black text-[#474556] uppercase tracking-widest leading-none">Validaci├│n {req.serviceType === 'remote' ? 'Digital' : 'F├¡sica'}</p>
+                                            <p className="text-[10px] font-black text-[#474556] uppercase tracking-widest leading-none">Validación {req.serviceType === 'remote' ? 'Digital' : 'Física'}</p>
                                             <h5 className="text-white font-bold uppercase mt-1">
-                                              {req.serviceType === 'remote' ? '┬┐Se estableci├│ la conexi├│n?' : '┬┐El t├®cnico est├í en sitio?'}
+                                              {req.serviceType === 'remote' ? '¿Se estableció la conexión?' : '¿El técnico está en sitio?'}
                                             </h5>
                                           </div>
                                         </div>
                                         <button
                                           onClick={() => {
                                             const confirmMsg = req.serviceType === 'remote'
-                                              ? "┬┐Confirma que el t├®cnico ya se encuentra brind├índole soporte remoto?"
-                                              : "┬┐Confirma que el t├®cnico ya se encuentra trabajando en su activo?";
+                                              ? "¿Confirma que el técnico ya se encuentra brindándole soporte remoto?"
+                                              : "¿Confirma que el técnico ya se encuentra trabajando en su activo?";
                                             if(window.confirm(confirmMsg)) {
                                               updateDoc(doc(db, "requests", req.id), {
                                                 clientConfirmedArrival: true,
                                                 clientArrivalTimestamp: new Date().toISOString()
                                               });
-                                              toast.success("Conexi├│n confirmada. ┬íGracias!");
+                                              toast.success("Conexión confirmada. ¡Gracias!");
                                             }
                                           }}
                                           className="px-6 py-2.5 bg-[#52ffac] text-[#0d0e12] rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-[#52ffac]/20 hover:scale-105 transition-all"
                                         >
-                                          {req.serviceType === 'remote' ? 'Confirmar Conexi├│n' : 'Confirmar Llegada'}
+                                          {req.serviceType === 'remote' ? 'Confirmar Conexión' : 'Confirmar Llegada'}
                                         </button>
                                       </div>
 
                                       <button
                                         onClick={() => {
                                           const reportMsg = req.serviceType === 'remote'
-                                            ? "┬┐Desea reportar que el t├®cnico NO se conect├│ a pesar de haber marcado inicio de sesi├│n?"
-                                            : "┬┐Desea reportar que el t├®cnico NO asisti├│ a pesar de haber marcado inicio de visita?";
+                                            ? "¿Desea reportar que el técnico NO se conectó a pesar de haber marcado inicio de sesión?"
+                                            : "¿Desea reportar que el técnico NO asistió a pesar de haber marcado inicio de visita?";
                                           if(window.confirm(reportMsg)) {
                                             updateDoc(doc(db, "requests", req.id), {
                                               issueReportedByClient: true,
-                                              issueDescription: req.serviceType === 'remote' ? "Incumplimiento: El t├®cnico no se conect├│." : "Incumplimiento: El t├®cnico no asisti├│ f├¡sicamente.",
+                                              issueDescription: req.serviceType === 'remote' ? "Incumplimiento: El técnico no se conectó." : "Incumplimiento: El técnico no asistió físicamente.",
                                               status: 'disputed'
                                             });
-                                            notifyAdmin("­ƒÜ¿ INCUMPLIMIENTO DIGITAL", `El cliente ${req.clientName} reporta que el t├®cnico ${req.techName} no se ha conectado.`);
+                                            notifyAdmin("🚨 INCUMPLIMIENTO DIGITAL", `El cliente ${req.clientName} reporta que el técnico ${req.techName} no se ha conectado.`);
                                             toast.error("Incumplimiento reportado. El sistema ha bloqueado los fondos.");
                                           }
                                         }}
@@ -1865,7 +2001,7 @@ export default function App() {
                                           <div>
                                             <p className="text-[10px] font-black text-[#474556] uppercase tracking-widest leading-none group-hover:text-rose-400">Reportar Falla</p>
                                             <h5 className="text-white/60 font-bold uppercase mt-1 group-hover:text-white">
-                                              {req.serviceType === 'remote' ? 'No se conect├│' : 'No est├í aqu├¡'}
+                                              {req.serviceType === 'remote' ? 'No se conectó' : 'No está aquí'}
                                             </h5>
                                           </div>
                                         </div>
@@ -1879,10 +2015,10 @@ export default function App() {
                                     <div className="space-y-4">
                                       <div className="flex items-center gap-3 text-[#52ffac]">
                                         {req.status === 'executing' ? <Activity className="w-6 h-6 animate-pulse" /> : <CheckCircle2 className="w-6 h-6" />}
-                                        <h4 className="text-xl font-black uppercase tracking-tighter leading-none">{req.status === 'executing' ? 'Servicio en Ejecuci├│n' : 'Resumen de Servicio'}</h4>
+                                        <h4 className="text-xl font-black uppercase tracking-tighter leading-none">{req.status === 'executing' ? 'Servicio en Ejecución' : 'Resumen de Servicio'}</h4>
                                       </div>
                                       <p className="text-sm text-[#c8c4d9] font-medium leading-relaxed max-w-xl">
-                                        {req.status === 'executing' ? 'Monitoreo en tiempo real del progreso t├®cnico.' : 'El servicio ha finalizado satisfactoriamente.'}
+                                        {req.status === 'executing' ? 'Monitoreo en tiempo real del progreso técnico.' : 'El servicio ha finalizado satisfactoriamente.'}
                                       </p>
                                     </div>
                                     <div className="flex gap-3">
@@ -1896,7 +2032,7 @@ export default function App() {
 
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                     <div className="space-y-6">
-                                      <h5 className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Bit├ícora</h5>
+                                      <h5 className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Bitácora</h5>
                                       <div className="bg-[#0d0e12] p-6 rounded-3xl border border-white/5 space-y-4">
                                         {req.checklist?.map((task: any) => (
                                           <div key={task.id} className="flex items-center gap-4">
@@ -1930,7 +2066,7 @@ export default function App() {
                   {clientTab === 'audit' && (
                     <div className="space-y-10 animate-fade-in">
                        <header className="flex justify-between items-end">
-                          <div><h1 className="text-4xl font-black text-white tracking-tighter uppercase">Auditor├¡a <span className="text-[#5d3cfe]">de Flota</span></h1><p className="text-[#c8c4d9] font-medium mt-2 italic opacity-60">Resumen operativo y financiero para la toma de decisiones.</p></div>
+                          <div><h1 className="text-4xl font-black text-white tracking-tighter uppercase">Auditoría <span className="text-[#5d3cfe]">de Flota</span></h1><p className="text-[#c8c4d9] font-medium mt-2 italic opacity-60">Resumen operativo y financiero para la toma de decisiones.</p></div>
                           {(subscription.planId === 'plan-enterprise' || subscription.planId === 'plan-pro') && (
                             <button
                               onClick={() => {
@@ -1943,17 +2079,17 @@ export default function App() {
                                     'TIPO': a.type.toUpperCase(),
                                     'KILOMETRAJE': a.mileage || 0,
                                     'ESTADO': urgent > 0 ? 'MANTENIMIENTO REQUERIDO' : 'OPERATIVO',
-                                    'SEDE': a.location || 'PANAM├ü CENTRO',
+                                    'SEDE': a.location || 'PANAMÁ CENTRO',
                                     'REGISTRADO': a.registeredAt,
-                                    'PR├ôXIMO MTTO': a.nextMaintenanceDate || 'PENDIENTE'
+                                    'PRÓXIMO MTTO': a.nextMaintenanceDate || 'PENDIENTE'
                                   };
                                 });
                                 const ws = XLSX.utils.json_to_sheet(data);
                                 const wb = XLSX.utils.book_new();
-                                XLSX.utils.book_append_sheet(wb, ws, "Auditor├¡a Flota");
+                                XLSX.utils.book_append_sheet(wb, ws, "Auditoría Flota");
                                 const dateStr = new Date().toISOString().split('T')[0];
                                 XLSX.writeFile(wb, `REPORTE_FULL_${dateStr}.xlsx`);
-                                toast.success("Descargando reporte de auditor├¡a...");
+                                toast.success("Descargando reporte de auditoría...");
                               }}
                               className="px-6 py-3 bg-[#52ffac] text-black rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-[0_10px_30px_rgba(82,255,172,0.3)]"
                             >
@@ -1973,7 +2109,7 @@ export default function App() {
                              <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity"><CheckCircle2 className="w-24 h-24" /></div>
                           </div>
                           <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2rem] shadow-2xl relative overflow-hidden group">
-                             <span className="text-[9px] font-black text-[#474556] uppercase tracking-[0.3em]">Atenci├│n Requerida</span>
+                             <span className="text-[9px] font-black text-[#474556] uppercase tracking-[0.3em]">Atención Requerida</span>
                              <p className="text-4xl font-black text-rose-500 mt-2">{reminders.filter(r => r.status === 'urgent').length}</p>
                              <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity"><AlertTriangle className="w-24 h-24" /></div>
                           </div>
@@ -1983,8 +2119,8 @@ export default function App() {
                           <div className="space-y-4">
                              {assets.map(a => (
                                <div key={a.id} className="flex justify-between items-center py-4 border-b border-white/5">
-                                  <div><p className="text-sm font-bold text-white uppercase">{a.name}</p><p className="text-[9px] text-[#474556] uppercase tracking-widest">{a.details} ÔÇó Sede: {a.location || 'Principal'}</p></div>
-                                  <div className="text-right"><p className="text-[10px] font-black text-[#5d3cfe] uppercase">Pr├│ximo Mtto.</p><p className="text-xs font-bold text-white/60">{a.nextMaintenanceDate}</p></div>
+                                  <div><p className="text-sm font-bold text-white uppercase">{a.name}</p><p className="text-[9px] text-[#474556] uppercase tracking-widest">{a.details} • Sede: {a.location || 'Principal'}</p></div>
+                                  <div className="text-right"><p className="text-[10px] font-black text-[#5d3cfe] uppercase">Próximo Mtto.</p><p className="text-xs font-bold text-white/60">{a.nextMaintenanceDate}</p></div>
                                </div>
                              ))}
                           </div>
@@ -2012,14 +2148,14 @@ export default function App() {
                   {clientTab === 'settings' && (
                     <div className="max-w-3xl mx-auto space-y-12 pb-20 animate-fade-in">
                        <header className="text-center space-y-3">
-                          <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Configuraci├│n <span className="text-[#5d3cfe]">Personal</span></h2>
-                          <p className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-[0.3em]">Gesti├│n de Cuenta y Validaci├│n Mantech ID</p>
+                          <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Configuración <span className="text-[#5d3cfe]">Personal</span></h2>
+                          <p className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-[0.3em]">Gestión de Cuenta y Validación Mantech ID</p>
                        </header>
 
                        {/* Mantech ID Section */}
                        <div className="space-y-6">
                           <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
-                             <ShieldCheck className="w-4 h-4 text-[#52ffac]" /> Validaci├│n de Identidad
+                             <ShieldCheck className="w-4 h-4 text-[#52ffac]" /> Validación de Identidad
                           </h3>
                           <MantechIDModule
                              mantechId={{
@@ -2041,12 +2177,12 @@ export default function App() {
                                 <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-[#5d3cfe]">
                                    <Settings className="w-6 h-6" />
                                 </div>
-                                <h4 className="font-black text-white uppercase text-sm">Cambiar Contrase├▒a</h4>
+                                <h4 className="font-black text-white uppercase text-sm">Cambiar Contraseña</h4>
                              </div>
                              <div className="space-y-4">
                                 <div className="space-y-1">
                                    <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Nueva Clave</label>
-                                   <input type="password" placeholder="ÔÇóÔÇóÔÇóÔÇóÔÇóÔÇóÔÇóÔÇó" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-white text-xs outline-none focus:border-[#5d3cfe] transition-all" />
+                                   <input type="password" placeholder="••••••••" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-white text-xs outline-none focus:border-[#5d3cfe] transition-all" />
                                 </div>
                                 <button className="w-full py-3 bg-[#1c1d21] border border-white/10 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#5d3cfe] transition-all">Actualizar Seguridad</button>
                              </div>
@@ -2074,7 +2210,7 @@ export default function App() {
 
                        {/* App Preferences */}
                        <div className="bg-[#121317] border border-white/5 p-8 rounded-[3rem] shadow-2xl space-y-8">
-                          <h4 className="text-xs font-black text-white uppercase tracking-widest">Preferencias de Aplicaci├│n</h4>
+                          <h4 className="text-xs font-black text-white uppercase tracking-widest">Preferencias de Aplicación</h4>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                              <div className="space-y-2">
                                 <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Idioma del Sistema</label>
@@ -2083,15 +2219,15 @@ export default function App() {
                                   onChange={(e) => i18n.changeLanguage(e.target.value)}
                                   className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-white text-[10px] font-black uppercase outline-none focus:border-[#5d3cfe]"
                                 >
-                                   <option value="es">Espa├▒ol (Panam├í)</option>
+                                   <option value="es">Español (Panamá)</option>
                                    <option value="en">English (International)</option>
                                 </select>
                              </div>
                              <div className="space-y-2">
                                 <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Unidades de Medida</label>
                                 <select className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-white text-[10px] font-black uppercase outline-none focus:border-[#5d3cfe]">
-                                   <option>M├®trico (KM/┬║C)</option>
-                                   <option>Imperial (MI/┬║F)</option>
+                                   <option>Métrico (KM/ºC)</option>
+                                   <option>Imperial (MI/ºF)</option>
                                 </select>
                              </div>
                              <div className="space-y-2">
@@ -2108,7 +2244,7 @@ export default function App() {
                              <h4 className="text-sm font-black text-rose-500 uppercase italic">Zona de Peligro</h4>
                              <p className="text-[10px] text-white/40 uppercase font-medium">Estas acciones no se pueden deshacer.</p>
                           </div>
-                          <button onClick={handleLogout} className="px-12 py-4 border border-rose-500/30 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-xl">Cerrar Sesi├│n Segura</button>
+                          <button onClick={handleLogout} className="px-12 py-4 border border-rose-500/30 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-xl">Cerrar Sesión Segura</button>
                        </div>
                     </div>
                   )}
@@ -2124,9 +2260,9 @@ export default function App() {
                              {getSelectedTechProfileObj().isOnline ? <Zap className="w-6 h-6 animate-pulse" /> : <Zap className="w-6 h-6 opacity-20" />}
                           </div>
                           <div>
-                             <h4 className="text-sm font-black text-white uppercase tracking-tight">Estatus de Conexi├│n</h4>
+                             <h4 className="text-sm font-black text-white uppercase tracking-tight">Estatus de Conexión</h4>
                              <p className={`text-[10px] font-bold uppercase tracking-widest ${getSelectedTechProfileObj().isOnline ? 'text-[#52ffac]' : 'text-[#474556]'}`}>
-                                {getSelectedTechProfileObj().isOnline ? 'Transmitiendo ubicaci├│n en Radar' : 'Modo Invisible (Fuera de l├¡nea)'}
+                                {getSelectedTechProfileObj().isOnline ? 'Transmitiendo ubicación en Radar' : 'Modo Invisible (Fuera de línea)'}
                              </p>
                           </div>
                        </div>
@@ -2138,12 +2274,12 @@ export default function App() {
                              if (!techId) return;
 
                              if (!isOnline) {
-                                // ACTIVAR POSICI├ôN
+                                // ACTIVAR POSICIÓN
                                 try {
                                    const isNative = Capacitor.isNativePlatform();
                                    if (isNative) {
                                       const permission = await Geolocation.requestPermissions();
-                                      if (permission.location !== 'granted') return toast.error("Se requiere GPS para activar posici├│n.");
+                                      if (permission.location !== 'granted') return toast.error("Se requiere GPS para activar posición.");
                                    }
 
                                    const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
@@ -2153,22 +2289,22 @@ export default function App() {
                                       longitude: pos.coords.longitude,
                                       lastLocationUpdate: new Date().toISOString()
                                    });
-                                   toast.success("┬íEn l├¡nea! Ahora eres visible en el radar para clientes.");
+                                   toast.success("¡En línea! Ahora eres visible en el radar para clientes.");
                                 } catch (err) {
-                                   toast.error("Error al obtener ubicaci├│n. Verifique el GPS.");
+                                   toast.error("Error al obtener ubicación. Verifique el GPS.");
                                    console.error(err);
                                 }
                              } else {
-                                // DESACTIVAR POSICI├ôN
+                                // DESACTIVAR POSICIÓN
                                 await updateDoc(doc(db, "technicians", techId), {
                                    isOnline: false
                                 });
-                                toast("Modo Invisible Activado.", { icon: '­ƒøí´©Å' });
+                                toast("Modo Invisible Activado.", { icon: '🛡️' });
                              }
                           }}
                           className={`px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${getSelectedTechProfileObj().isOnline ? 'bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white' : 'bg-[#52ffac] text-black shadow-[#52ffac]/20 hover:brightness-110'}`}
                        >
-                          {getSelectedTechProfileObj().isOnline ? 'Desactivar Posici├│n' : 'Iniciar Posici├│n de Servicio'}
+                          {getSelectedTechProfileObj().isOnline ? 'Desactivar Posición' : 'Iniciar Posición de Servicio'}
                        </button>
                     </div>
 
@@ -2194,7 +2330,7 @@ export default function App() {
                                    </div>
                                    <button
                                      onClick={() => {
-                                       const price = prompt("Ingrese su oferta econ├│mica (USD):");
+                                       const price = prompt("Ingrese su oferta económica (USD):");
                                        if (price) {
                                          updateDoc(doc(db, "requests", req.id), {
                                            status: 'quoted',
@@ -2203,12 +2339,12 @@ export default function App() {
                                            price: Number(price),
                                            quotedAt: new Date().toISOString()
                                          });
-                                         toast.success("┬íOferta enviada! El cliente revisar├í su propuesta.");
+                                         toast.success("¡Oferta enviada! El cliente revisará su propuesta.");
                                        }
                                      }}
                                      className="w-full py-4 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[#5d3cfe]/20 active:scale-95 transition-all"
                                    >
-                                      Enviar Cotizaci├│n Directa Ô×ö
+                                      Enviar Cotización Directa ➔
                                    </button>
                                 </div>
                              ))}
@@ -2223,7 +2359,7 @@ export default function App() {
 
                     {techTab === 'received' && (
                        <div className="space-y-8">
-                          <header className="flex justify-between items-center"><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Bandeja de <span className="text-[#5d3cfe]">Servicios</span></h1><button onClick={() => setTechTab('subscriptions')} className="px-6 py-2 bg-white/5 border border-white/10 text-white rounded-xl text-[9px] font-black uppercase hover:bg-[#5d3cfe]">Mejorar Plan T├®cnico</button></header>
+                          <header className="flex justify-between items-center"><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Bandeja de <span className="text-[#5d3cfe]">Servicios</span></h1><button onClick={() => setTechTab('subscriptions')} className="px-6 py-2 bg-white/5 border border-white/10 text-white rounded-xl text-[9px] font-black uppercase hover:bg-[#5d3cfe]">Mejorar Plan Técnico</button></header>
                           <div className="grid grid-cols-1 gap-6">
                             {requests.map(req => (
                               <div key={req.id} className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden group hover:border-[#5d3cfe]/30 transition-all">
@@ -2231,7 +2367,7 @@ export default function App() {
                                 <div className="p-5 bg-[#0d0e12] rounded-2xl border border-[#2a2b2f] italic text-xs text-[#c8c4d9]">"{req.description}"</div>
                                 {req.status === 'pending' && (
                                    <div className="pt-8 border-t border-[#2a2b2f] space-y-8 animate-fade-in">
-                                      {/* SECCI├ôN 1: DATOS LOG├ìSTICOS */}
+                                      {/* SECCIÓN 1: DATOS LOGÍSTICOS */}
                                       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                                          <div className="space-y-2">
                                             <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Tarifa Sugerida</label>
@@ -2257,13 +2393,13 @@ export default function App() {
                                             </select>
                                          </div>
                                          <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Duraci├│n Labor</label>
+                                            <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Duración Labor</label>
                                             <select value={bidDuration} onChange={e => setBidDuration(Number(e.target.value))} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white font-black text-xs appearance-none outline-none focus:border-[#5d3cfe] transition-all">
                                                <option value={1}>1 Hora</option>
                                                <option value={2}>2 Horas</option>
                                                <option value={4}>4 Horas</option>
                                                <option value={6}>6 Horas</option>
-                                               <option value={8}>D├¡a Completo</option>
+                                               <option value={8}>Día Completo</option>
                                             </select>
                                          </div>
                                          <div className="space-y-2">
@@ -2288,15 +2424,15 @@ export default function App() {
                                          )}
                                          {bidServiceType === 'remote' && (
                                             <div className="space-y-2 animate-fade-in">
-                                               <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Enlace / ID de Conexi├│n</label>
+                                               <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Enlace / ID de Conexión</label>
                                                <div className="relative">
-                                                  <input type="text" value={bidRemoteLink} onChange={e => setBidRemoteLink(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white font-black text-xs outline-none focus:border-[#5d3cfe] transition-all" placeholder="URL o ID de sesi├│n" />
+                                                  <input type="text" value={bidRemoteLink} onChange={e => setBidRemoteLink(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white font-black text-xs outline-none focus:border-[#5d3cfe] transition-all" placeholder="URL o ID de sesión" />
                                                   <ExternalLink className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#474556] pointer-events-none" />
                                                </div>
                                             </div>
                                          )}
                                          <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">T. Llegada / Conexi├│n (Min)</label>
+                                            <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">T. Llegada / Conexión (Min)</label>
                                             <div className="relative">
                                                <input type="number" value={bidTravelTime} onChange={e => setBidTravelTime(Number(e.target.value))} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white font-black text-sm outline-none focus:border-[#5d3cfe] transition-all" placeholder="30" />
                                                <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#474556] pointer-events-none" />
@@ -2304,7 +2440,7 @@ export default function App() {
                                          </div>
                                       </div>
 
-                                      {/* SECCI├ôN 2: CRONOGRAMA Y MATERIALES (NUEVO) */}
+                                      {/* SECCIÓN 2: CRONOGRAMA Y MATERIALES (NUEVO) */}
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                          <div className="space-y-4">
                                             <div className="flex justify-between items-center px-1">
@@ -2339,7 +2475,7 @@ export default function App() {
                                                      }}
                                                      className="col-span-3 bg-[#5d3cfe] text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg active:scale-95"
                                                   >
-                                                     A├▒adir
+                                                     Añadir
                                                   </button>
                                                </div>
 
@@ -2386,18 +2522,18 @@ export default function App() {
                                       </div>
 
                                       <button onClick={() => { setDraftingBidRequestId(req.id); handleSubmitBid(req.id); }} className="w-full py-5 bg-[#5d3cfe] text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[#5d3cfe]/20 active:scale-95 transition-all flex items-center justify-center gap-4 group">
-                                         ENVIAR PROPUESTA T├ëCNICA Ô×ö
+                                         ENVIAR PROPUESTA TÉCNICA ➔
                                       </button>
                                    </div>
                                 )}
                                 {req.status === 'accepted' && (
                                    <button onClick={() => updateDoc(doc(db,"requests",req.id), {status:'executing', visitStartedAt: new Date().toISOString()})} className="w-full py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl">
-                                      {req.serviceType === 'remote' ? <><Video className="w-4 h-4 inline mr-2 mb-1" /> Iniciar Sesi├│n Remota</> : <><MapPin className="w-4 h-4 inline mr-2 mb-1" /> Iniciar Visita F├¡sica</>}
+                                      {req.serviceType === 'remote' ? <><Video className="w-4 h-4 inline mr-2 mb-1" /> Iniciar Sesión Remota</> : <><MapPin className="w-4 h-4 inline mr-2 mb-1" /> Iniciar Visita Física</>}
                                    </button>
                                 )}
                                 {req.status === 'executing' && (
                                    <div className="space-y-6">
-                                      {/* Lista de Materiales Cargados para el T├®cnico */}
+                                      {/* Lista de Materiales Cargados para el Técnico */}
                                       {req.materials && req.materials.length > 0 && (
                                          <div className="bg-[#0d0e12] p-5 rounded-3xl border border-white/5 space-y-4">
                                             <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
@@ -2422,17 +2558,17 @@ export default function App() {
                                          </div>
                                       )}
 
-                                      {/* Checklist de Progreso para el T├®cnico */}
+                                      {/* Checklist de Progreso para el Técnico */}
                                       <div className="bg-[#0d0e12] p-5 rounded-3xl border border-white/5 space-y-4">
                                          <div className="flex justify-between items-center">
                                             <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                                               <CheckCircle2 className="w-4 h-4 text-[#5d3cfe]" /> Bit├ícora de ejecuci├│n
+                                               <CheckCircle2 className="w-4 h-4 text-[#5d3cfe]" /> Bitácora de ejecución
                                             </p>
                                             <button
                                                onClick={() => handleContinueTomorrow(req.id)}
                                                className="px-4 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-lg text-[8px] font-black uppercase hover:bg-amber-500 hover:text-black transition-all"
                                             >
-                                               Pausar y Continuar Ma├▒ana
+                                               Pausar y Continuar Mañana
                                             </button>
                                          </div>
                                          <div className="grid grid-cols-1 gap-2">
@@ -2463,7 +2599,7 @@ export default function App() {
                           </div>
                        </div>
                     )}
-                    {techTab === 'agenda' && <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl space-y-8"><header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Agenda <span className="text-[#5d3cfe]">Log├¡stica</span></h1></header><div className="grid grid-cols-1 gap-4">{agenda.map(e => (<div key={e.id} className="p-6 bg-[#1c1d21] border border-[#2a2b2f] rounded-3xl flex justify-between items-center group hover:border-[#5d3cfe]/30 transition-all"><div className="flex gap-6 items-center"><div className="p-4 bg-[#0d0e12] rounded-2xl text-center min-w-[100px] border border-[#2a2b2f]"><span className="text-xs font-black text-[#5d3cfe]">{e.date}</span><p className="text-[10px] font-bold text-white mt-1">{e.time}</p></div><div><h4 className="text-lg font-black text-white uppercase tracking-tight">{e.title}</h4><p className="text-[10px] font-bold text-[#c8c4d9] mt-1 italic opacity-60">Cliente: {e.clientName}</p></div></div><button onClick={() => { const nd = prompt("Nueva Fecha:", e.date); if(nd) handleReschedule(e.requestId || '', nd, e.time, "Motivo log├¡stico"); }} className="px-6 py-2 bg-[#0d0e12] border border-[#2a2b2f] text-white rounded-xl text-[9px] font-black uppercase hover:bg-[#5d3cfe]">Mover</button></div>))}</div></div>}
+                    {techTab === 'agenda' && <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl space-y-8"><header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Agenda <span className="text-[#5d3cfe]">Logística</span></h1></header><div className="grid grid-cols-1 gap-4">{agenda.map(e => (<div key={e.id} className="p-6 bg-[#1c1d21] border border-[#2a2b2f] rounded-3xl flex justify-between items-center group hover:border-[#5d3cfe]/30 transition-all"><div className="flex gap-6 items-center"><div className="p-4 bg-[#0d0e12] rounded-2xl text-center min-w-[100px] border border-[#2a2b2f]"><span className="text-xs font-black text-[#5d3cfe]">{e.date}</span><p className="text-[10px] font-bold text-white mt-1">{e.time}</p></div><div><h4 className="text-lg font-black text-white uppercase tracking-tight">{e.title}</h4><p className="text-[10px] font-bold text-[#c8c4d9] mt-1 italic opacity-60">Cliente: {e.clientName}</p></div></div><button onClick={() => { const nd = prompt("Nueva Fecha:", e.date); if(nd) handleReschedule(e.requestId || '', nd, e.time, "Motivo logístico"); }} className="px-6 py-2 bg-[#0d0e12] border border-[#2a2b2f] text-white rounded-xl text-[9px] font-black uppercase hover:bg-[#5d3cfe]">Mover</button></div>))}</div></div>}
                     {techTab === 'wallet' && (
                       <TechWalletModule
                         wallet={getSelectedTechProfileObj().wallet || { balance: 0, pendingBalance: 0, transactions: [] }}
@@ -2507,14 +2643,14 @@ export default function App() {
                     {techTab === 'settings' && (
                        <div className="max-w-3xl mx-auto space-y-12 pb-20 animate-fade-in">
                           <header className="text-center space-y-3">
-                             <h2 className="text-4xl font-black text-white uppercase tracking-tighter leading-none">Centro de <span className="text-[#5d3cfe]">Configuraci├│n</span></h2>
-                             <p className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-[0.3em]">Validaci├│n Profesional y Ajustes de Perfil</p>
+                             <h2 className="text-4xl font-black text-white uppercase tracking-tighter leading-none">Centro de <span className="text-[#5d3cfe]">Configuración</span></h2>
+                             <p className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-[0.3em]">Validación Profesional y Ajustes de Perfil</p>
                           </header>
 
                           {/* Mantech ID Section */}
                           <div className="space-y-6">
                              <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
-                                <ShieldCheck className="w-4 h-4 text-[#52ffac]" /> Validaci├│n Profesional
+                                <ShieldCheck className="w-4 h-4 text-[#52ffac]" /> Validación Profesional
                              </h3>
                              <MantechIDModule
                                 mantechId={getSelectedTechProfileObj().mantechId || { status: 'unverified', idNumber: '' }}
@@ -2535,8 +2671,8 @@ export default function App() {
                                 </div>
                                 <div className="space-y-4">
                                    <div className="space-y-1">
-                                      <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Nueva Contrase├▒a</label>
-                                      <input type="password" placeholder="ÔÇóÔÇóÔÇóÔÇóÔÇóÔÇóÔÇóÔÇó" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-white text-xs outline-none focus:border-[#5d3cfe] transition-all" />
+                                      <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Nueva Contraseña</label>
+                                      <input type="password" placeholder="••••••••" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-white text-xs outline-none focus:border-[#5d3cfe] transition-all" />
                                    </div>
                                    <button className="w-full py-3 bg-[#1c1d21] border border-white/10 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#5d3cfe] transition-all">Cambiar Clave</button>
                                 </div>
@@ -2564,7 +2700,7 @@ export default function App() {
 
                           {/* App Preferences */}
                           <div className="bg-[#121317] border border-white/5 p-8 rounded-[3rem] shadow-2xl space-y-8">
-                             <h4 className="text-xs font-black text-white uppercase tracking-widest">Preferencias T├®cnicas</h4>
+                             <h4 className="text-xs font-black text-white uppercase tracking-widest">Preferencias Técnicas</h4>
                              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="space-y-2">
                                    <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Idioma del Sistema</label>
@@ -2573,7 +2709,7 @@ export default function App() {
                                      onChange={(e) => i18n.changeLanguage(e.target.value)}
                                      className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-white text-[10px] font-black uppercase outline-none focus:border-[#5d3cfe]"
                                    >
-                                      <option value="es">Espa├▒ol</option>
+                                      <option value="es">Español</option>
                                       <option value="en">English</option>
                                    </select>
                                 </div>
@@ -2582,7 +2718,7 @@ export default function App() {
                                    <input type="number" defaultValue={15} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-white text-[10px] font-black uppercase outline-none focus:border-[#5d3cfe]" />
                                 </div>
                                 <div className="space-y-2">
-                                   <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Notificaci├│n por Email</label>
+                                   <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Notificación por Email</label>
                                    <select className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-white text-[10px] font-black uppercase outline-none focus:border-[#5d3cfe]">
                                       <option>Inmediata</option>
                                       <option>Resumen Diario</option>
@@ -2594,7 +2730,7 @@ export default function App() {
                           <div className="bg-rose-500/5 border border-rose-500/10 p-8 rounded-[3rem] shadow-2xl flex flex-col items-center gap-6 text-center">
                              <div className="space-y-2">
                                 <h4 className="text-sm font-black text-rose-500 uppercase italic">Zona Roja</h4>
-                                <p className="text-[10px] text-white/40 uppercase font-medium">Al cerrar sesi├│n se desactivar├í su posici├│n en el radar satelital.</p>
+                                <p className="text-[10px] text-white/40 uppercase font-medium">Al cerrar sesión se desactivará su posición en el radar satelital.</p>
                              </div>
                              <button onClick={handleLogout} className="px-12 py-4 border border-rose-500/30 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-xl">Desconectar Perfil Seguro</button>
                           </div>
@@ -2623,7 +2759,7 @@ export default function App() {
                               <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity"><TrendingUp className="w-32 h-32" /></div>
                            </div>
                            <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
-                              <span className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] block mb-4">Membres├¡as</span>
+                              <span className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] block mb-4">Membresías</span>
                               <h2 className="text-6xl font-black text-amber-500 italic tracking-tighter leading-none">$120</h2>
                               <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity"><Star className="w-32 h-32" /></div>
                            </div>
@@ -2647,12 +2783,12 @@ export default function App() {
                                      onClick={() => handleApproveSubscription(u.uid, u.subscription.requestedPlanId)}
                                      className="px-8 py-3 bg-amber-500 text-black rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 hover:scale-105 transition-all"
                                    >
-                                     Aprobar Membres├¡a
+                                     Aprobar Membresía
                                    </button>
                                 </div>
                               ))}
                               {allUsers.filter(u => u.subscription?.status === 'pending_payment_verification').length === 0 && (
-                                <p className="text-[10px] text-[#474556] font-bold uppercase italic ml-4">No hay membres├¡as por verificar.</p>
+                                <p className="text-[10px] text-[#474556] font-bold uppercase italic ml-4">No hay membresías por verificar.</p>
                               )}
                            </div>
                         </div>
@@ -2660,7 +2796,7 @@ export default function App() {
                    )}
                    {adminTab === 'logistics' && (
                      <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl space-y-12">
-                       <header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Log├¡stica <span className="text-[#5d3cfe]">Central</span></h1></header>
+                       <header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Logística <span className="text-[#5d3cfe]">Central</span></h1></header>
 
                        <section className="space-y-6">
                           <h3 className="text-sm font-black text-[#5d3cfe] uppercase tracking-widest">Pagos por Verificar (YAPPY)</h3>
@@ -2673,26 +2809,26 @@ export default function App() {
                                      </div>
                                      <div>
                                         <h4 className="text-sm font-black text-white uppercase tracking-tight">{r.clientName}</h4>
-                                        <p className="text-[10px] font-bold text-[#c8c4d9] mt-1 italic opacity-60">Monto: ${r.price} ÔÇó Servicio: {r.assetName}</p>
+                                        <p className="text-[10px] font-bold text-[#c8c4d9] mt-1 italic opacity-60">Monto: ${r.price} • Servicio: {r.assetName}</p>
                                      </div>
                                   </div>
                                   <button onClick={() => handleConfirmPayment(r.id)} className="px-8 py-3 bg-amber-500 text-black rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 hover:scale-105 transition-all">Verificar Pago</button>
                                </div>
                              ))}
-                             {requests.filter(r => r.status === 'pending_verification').length === 0 && <p className="text-[10px] text-[#474556] font-bold uppercase italic ml-4">No hay pagos pendientes de revisi├│n.</p>}
+                             {requests.filter(r => r.status === 'pending_verification').length === 0 && <p className="text-[10px] text-[#474556] font-bold uppercase italic ml-4">No hay pagos pendientes de revisión.</p>}
                           </div>
                        </section>
 
                        <section className="space-y-6">
-                          <h3 className="text-sm font-black text-[#474556] uppercase tracking-widest">Servicios en Ejecuci├│n</h3>
+                          <h3 className="text-sm font-black text-[#474556] uppercase tracking-widest">Servicios en Ejecución</h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              {requests.filter(r => r.status === 'accepted' || r.status === 'executing').map(r => (
                                <div key={r.id} className="p-6 bg-[#1c1d21] border border-[#2a2b2f] rounded-3xl flex justify-between items-center hover:border-[#5d3cfe]/30 transition-all">
                                   <div className="flex gap-4 items-center">
                                      <div className="p-3 rounded-2xl bg-[#5d3cfe]/10 text-[#c7bfff]"><Truck className="w-6 h-6" /></div>
-                                     <div><h4 className="text-sm font-black text-white uppercase tracking-tight">{r.assetName}</h4><p className="text-[10px] font-bold text-[#474556] uppercase mt-1">T├®cnico: {r.techName}</p></div>
+                                     <div><h4 className="text-sm font-black text-white uppercase tracking-tight">{r.assetName}</h4><p className="text-[10px] font-bold text-[#474556] uppercase mt-1">Técnico: {r.techName}</p></div>
                                   </div>
-                                  {r.rescheduleCount && <span className="px-3 py-1 bg-rose-500/10 text-rose-500 rounded-full text-[8px] font-black animate-pulse">├ó┼í┬á├»┬©┬Å {r.rescheduleCount} MOVIDAS</span>}
+                                  {r.rescheduleCount && <span className="px-3 py-1 bg-rose-500/10 text-rose-500 rounded-full text-[8px] font-black animate-pulse">âš ï¸ {r.rescheduleCount} MOVIDAS</span>}
                                </div>
                              ))}
                           </div>
@@ -2703,14 +2839,14 @@ export default function App() {
                       <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl space-y-8">
                         <header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Maestro de <span className="text-[#5d3cfe]">Usuarios</span></h1></header>
                         <table className="w-full text-left text-xs">
-                          <thead><tr className="border-b border-[#2a2b2f] text-[#474556] uppercase font-black"><th className="py-4">Nombre</th><th className="py-4">Documentaci├│n</th><th className="py-4 text-right">Aprobaci├│n</th></tr></thead>
+                          <thead><tr className="border-b border-[#2a2b2f] text-[#474556] uppercase font-black"><th className="py-4">Nombre</th><th className="py-4">Documentación</th><th className="py-4 text-right">Aprobación</th></tr></thead>
                           <tbody className="divide-y divide-[#1c1d21]">
                             {technicians.map(t => (
                               <tr key={t.id} className="group">
                                 <td className="py-6 font-black text-white uppercase">{t.name}</td>
                                 <td className="py-6">
                                    <div className="flex gap-3">
-                                      {t.policeRecordUrl && <a href={t.policeRecordUrl} target="_blank" rel="noreferrer" className="px-3 py-1 bg-[#1c1d21] text-indigo-400 rounded-lg text-[9px] font-black uppercase border border-indigo-400/20">R├®cord</a>}
+                                      {t.policeRecordUrl && <a href={t.policeRecordUrl} target="_blank" rel="noreferrer" className="px-3 py-1 bg-[#1c1d21] text-indigo-400 rounded-lg text-[9px] font-black uppercase border border-indigo-400/20">Récord</a>}
                                       {t.idCardUrl && <a href={t.idCardUrl} target="_blank" rel="noreferrer" className="px-3 py-1 bg-[#1c1d21] text-[#52ffac] rounded-lg text-[9px] font-black uppercase border border-[#52ffac]/20">ID</a>}
                                    </div>
                                 </td>
@@ -2739,7 +2875,7 @@ export default function App() {
                         </section>
 
                         <section className="space-y-8 pt-8 border-t border-[#2a2b2f]">
-                           <header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Alertas <span className="text-amber-500">Operativas</span></h1><p className="text-[10px] text-[#474556] font-black uppercase tracking-widest mt-2">Detecci├│n de paradas prolongadas (&gt;2h)</p></header>
+                           <header><h1 className="text-4xl font-black text-white uppercase tracking-tighter">Alertas <span className="text-amber-500">Operativas</span></h1><p className="text-[10px] text-[#474556] font-black uppercase tracking-widest mt-2">Detección de paradas prolongadas (&gt;2h)</p></header>
                            <div className="space-y-4">
                               {assets.filter(a => a.routeHistory && a.routeHistory.length > 0).map(asset => {
                                  const lastPoint = asset.routeHistory![asset.routeHistory!.length - 1];
@@ -2762,7 +2898,7 @@ export default function App() {
                                             onClick={() => window.open(`https://www.google.com/maps?q=${lastPoint.lat},${lastPoint.lng}`, '_blank')}
                                             className="px-6 py-2 bg-amber-500 text-black rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl"
                                           >
-                                            Ver Ubicaci├│n
+                                            Ver Ubicación
                                           </button>
                                        </div>
                                     );
@@ -2775,13 +2911,13 @@ export default function App() {
                                  const hours = (Date.now() - new Date(lastPoint.timestamp).getTime()) / (1000 * 60 * 60);
                                  return hours < 2 || trackingAssetId !== a.id;
                               }) && (
-                                 <p className="text-[10px] text-[#474556] font-bold uppercase italic ml-4">No se detectan anomal├¡as de tiempo en la flota activa.</p>
+                                 <p className="text-[10px] text-[#474556] font-bold uppercase italic ml-4">No se detectan anomalías de tiempo en la flota activa.</p>
                               )}
                            </div>
                         </section>
                       </div>
                    )}
-                   {adminTab === 'settings' && <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl"><header><h1 className="text-4xl font-black text-white tracking-tighter">Ajustes <span className="text-[#5d3cfe]">Sistema</span></h1></header><div className="mt-10"><button onClick={handleLogout} className="px-10 py-5 bg-rose-600/10 border border-rose-600/20 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all">Cerrar Sesi├│n Root</button></div></div>}
+                   {adminTab === 'settings' && <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl"><header><h1 className="text-4xl font-black text-white tracking-tighter">Ajustes <span className="text-[#5d3cfe]">Sistema</span></h1></header><div className="mt-10"><button onClick={handleLogout} className="px-10 py-5 bg-rose-600/10 border border-rose-600/20 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all">Cerrar Sesión Root</button></div></div>}
                 </div>
               )}
            </div>
@@ -2820,9 +2956,9 @@ export default function App() {
       {isUnforeseenModalOpen && (
         <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
           <div className="w-full max-w-lg bg-[#121317] border border-[#2a2b2f] rounded-[3rem] p-10 space-y-8 shadow-2xl animate-fade-in-up">
-            <div className="text-center space-y-2"><h3 className="text-2xl font-black text-amber-500 uppercase italic">Reportar <span className="text-white">Gasto Extra</span></h3><p className="text-[10px] text-[#c8c4d9] font-bold uppercase tracking-widest opacity-60">Solicitar aprobaci├│n de imprevisto.</p></div>
+            <div className="text-center space-y-2"><h3 className="text-2xl font-black text-amber-500 uppercase italic">Reportar <span className="text-white">Gasto Extra</span></h3><p className="text-[10px] text-[#c8c4d9] font-bold uppercase tracking-widest opacity-60">Solicitar aprobación de imprevisto.</p></div>
             <div className="space-y-4">
-              <div className="space-y-2"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Motivo T├®cnico</label><input type="text" value={unforeseenInputs.reason} onChange={e => setUnforeseenInputs({...unforeseenInputs, reason: e.target.value})} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white text-sm" /></div>
+              <div className="space-y-2"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Motivo Técnico</label><input type="text" value={unforeseenInputs.reason} onChange={e => setUnforeseenInputs({...unforeseenInputs, reason: e.target.value})} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white text-sm" /></div>
               <div className="space-y-2"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Costo Adicional</label><input type="number" value={unforeseenInputs.amount} onChange={e => setUnforeseenInputs({...unforeseenInputs, amount: e.target.value})} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white font-black text-xl" /></div>
             </div>
             <div className="flex gap-4"><button onClick={() => setIsUnforeseenModalOpen(false)} className="flex-1 py-4 bg-[#1c1d21] text-[#c8c4d9] rounded-xl text-[10px] font-black uppercase">Cancelar</button><button onClick={() => handleTriggerUnforeseen(activeRequestForUnforeseen.id, unforeseenInputs.reason, Number(unforeseenInputs.amount), unforeseenInputs.category)} className="flex-1 py-4 bg-amber-500 text-black rounded-xl text-[10px] font-black uppercase shadow-lg shadow-amber-500/20">Enviar</button></div>
@@ -2833,7 +2969,7 @@ export default function App() {
       {isMaterialModalOpen && (
         <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
           <div className="w-full max-w-lg bg-[#121317] border border-[#2a2b2f] rounded-[3rem] p-10 space-y-8 shadow-2xl">
-            <div className="text-center space-y-2"><h3 className="text-2xl font-black text-white uppercase">Cargar <span className="text-[#5d3cfe]">Material</span></h3><p className="text-[10px] text-[#c8c4d9] font-bold uppercase tracking-widest opacity-60">Gesti├│n de insumos y repuestos.</p></div>
+            <div className="text-center space-y-2"><h3 className="text-2xl font-black text-white uppercase">Cargar <span className="text-[#5d3cfe]">Material</span></h3><p className="text-[10px] text-[#c8c4d9] font-bold uppercase tracking-widest opacity-60">Gestión de insumos y repuestos.</p></div>
             <div className="space-y-4">
               <div className="space-y-2"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Nombre</label><input type="text" value={materialInputs.name} onChange={e => setMaterialInputs({...materialInputs, name: e.target.value})} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white text-sm" /></div>
               <div className="grid grid-cols-2 gap-4">
@@ -2849,7 +2985,7 @@ export default function App() {
       {isSignatureModalOpen && (
         <div className="fixed inset-0 z-[500] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] space-y-10 shadow-2xl">
-             <div className="text-center space-y-2"><h3 className="text-2xl font-black text-white uppercase tracking-tight">Cierre de <span className="text-[#5d3cfe]">Garant├¡a</span></h3><p className="text-[10px] text-[#c8c4d9] font-bold uppercase tracking-widest opacity-60">Firme y califique para liberar el pago.</p></div>
+             <div className="text-center space-y-2"><h3 className="text-2xl font-black text-white uppercase tracking-tight">Cierre de <span className="text-[#5d3cfe]">Garantía</span></h3><p className="text-[10px] text-[#c8c4d9] font-bold uppercase tracking-widest opacity-60">Firme y califique para liberar el pago.</p></div>
              <div className="flex justify-center gap-3 py-4 border-y border-[#2a2b2f]/50">{[1,2,3,4,5].map(s => <button key={s} onClick={() => setRatingVal(s)} className="transform hover:scale-110"><Star className={`w-10 h-10 ${ratingVal >= s ? 'fill-amber-500 text-amber-500 shadow-[0_0_20px_#f59e0b40]' : 'text-[#2a2b2f]'}`} /></button>)}</div>
              <SignaturePad onSave={sig => handleCompleteJob(activeRequestForSignature || '', sig)} onCancel={() => { setIsSignatureModalOpen(false); setActiveRequestForSignature(null); }} />
           </div>
@@ -2883,7 +3019,7 @@ export default function App() {
         </div>
       )}
       <VideoCallModal isOpen={isVideoCallOpen} onClose={() => setIsVideoCallOpen(false)} roomName={videoCallRoom} userName={loggedInName} isVoiceOnly={isVideoVoiceOnly} />
-      <QRScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanSuccess={(id) => { const tech = technicians.find(t => t.id === id); if (tech) toast(`Ô£à Especialista Validado: ${tech.name}`); }} technicians={technicians} />
+      <QRScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanSuccess={(id) => { const tech = technicians.find(t => t.id === id); if (tech) toast(`✅ Especialista Validado: ${tech.name}`); }} technicians={technicians} />
       <SupportModal isOpen={isSupportModalOpen} onClose={() => setIsSupportModalOpen(false)} userEmail={loggedInEmail} userName={loggedInName} userId={user?.uid} userRole={role} plan={subscription.planId} />
       <CorporateSupportModal isOpen={isCorporateSupportModalOpen} onClose={() => setIsCorporateSupportModalOpen(false)} userEmail={loggedInEmail} userName={loggedInName} userId={user?.uid} />
 
@@ -2894,7 +3030,7 @@ export default function App() {
           assetName={assetForRoute.name}
           onConfirm={async (dest) => {
             const assetId = assetForRoute.id;
-            const loadingToast = toast.loading("Capturando se├▒al GPS de despacho...");
+            const loadingToast = toast.loading("Capturando señal GPS de despacho...");
 
             try {
               // CAPTURA CON TIMEOUT Y RESPALDO (Evita bloqueo infinito)
@@ -2902,10 +3038,10 @@ export default function App() {
               try {
                 position = await Geolocation.getCurrentPosition({
                   enableHighAccuracy: true,
-                  timeout: 8000 // 8 segundos para alta precisi├│n
+                  timeout: 8000 // 8 segundos para alta precisión
                 });
               } catch (geoErr) {
-                console.warn("GPS alta precisi├│n fall├│, usando respaldo de red", geoErr);
+                console.warn("GPS alta precisión falló, usando respaldo de red", geoErr);
                 position = await Geolocation.getCurrentPosition({
                   enableHighAccuracy: false,
                   timeout: 10000
@@ -2934,10 +3070,10 @@ export default function App() {
               });
 
               toast.success(`Unidad despachada a ${dest}.`, { id: loadingToast });
-              setIsRouteStartModalOpen(false); // Cerrar solo tras ├®xito
+              setIsRouteStartModalOpen(false); // Cerrar solo tras éxito
             } catch (err) {
               console.error("Fallo despacho GPS:", err);
-              toast.error("No se detect├│ se├▒al GPS. Mueva el equipo a zona abierta.", { id: loadingToast });
+              toast.error("No se detectó señal GPS. Mueva el equipo a zona abierta.", { id: loadingToast });
               // No cerramos el modal para que el usuario pueda reintentar
             }
           }}
@@ -2953,10 +3089,10 @@ export default function App() {
             setIsCheckpointModalOpen(false);
             const assetId = assetForRoute.id;
             try {
-              // ­ƒÅø´©Å DIRECTORIO MAESTRO MANTECHPRO (Base de Datos Interna Panam├í - Zero Latency)
+              // 🏛️ DIRECTORIO MAESTRO MANTECHPRO (Base de Datos Interna Panamá - Zero Latency)
               const mantechPOI: {[key: string]: {lat: number, lng: number, name: string}} = {
-                'metromall': { lat: 9.0522, lng: -79.4533, name: 'METROMALL PANAM├ü' },
-                'metro mall': { lat: 9.0522, lng: -79.4533, name: 'METROMALL PANAM├ü' },
+                'metromall': { lat: 9.0522, lng: -79.4533, name: 'METROMALL PANAMÁ' },
+                'metro mall': { lat: 9.0522, lng: -79.4533, name: 'METROMALL PANAMÁ' },
                 'multiplaza': { lat: 8.9856, lng: -79.5117, name: 'MULTIPLAZA PACIFIC' },
                 'albrook': { lat: 8.9733, lng: -79.5533, name: 'ALBROOK MALL' },
                 'multicentro': { lat: 8.9789, lng: -79.5194, name: 'MULTICENTRO MALL' },
@@ -2968,24 +3104,24 @@ export default function App() {
                 'costa del este': { lat: 9.0142, lng: -79.4717, name: 'COSTA DEL ESTE' },
                 'puerto balboa': { lat: 8.9500, lng: -79.5667, name: 'PUERTO DE BALBOA' },
                 'puerto cristobal': { lat: 9.3500, lng: -79.9000, name: 'PUERTO CRISTOBAL' },
-                'zona libre': { lat: 9.3622, lng: -79.8889, name: 'ZONA LIBRE COL├ôN' },
-                'aduana': { lat: 9.0167, lng: -79.5167, name: 'ADUANA PANAM├ü' },
-                'torre ancon': { lat: 9.0161, lng: -79.4697, name: 'TORRE ANC├ôN (CDE)' },
+                'zona libre': { lat: 9.3622, lng: -79.8889, name: 'ZONA LIBRE COLÓN' },
+                'aduana': { lat: 9.0167, lng: -79.5167, name: 'ADUANA PANAMÁ' },
+                'torre ancon': { lat: 9.0161, lng: -79.4697, name: 'TORRE ANCÓN (CDE)' },
                 'costa del este': { lat: 9.0142, lng: -79.4717, name: 'COSTA DEL ESTE' },
-                'metromall': { lat: 9.0522, lng: -79.4533, name: 'METROMALL PANAM├ü' },
+                'metromall': { lat: 9.0522, lng: -79.4533, name: 'METROMALL PANAMÁ' },
               };
 
               let lat, lng, finalName = name.toUpperCase();
               const queryStr = name.toLowerCase().trim();
 
-              // B├║squeda Inteligente: Busca si el texto ingresado contiene alguna palabra clave del directorio maestro
+              // Búsqueda Inteligente: Busca si el texto ingresado contiene alguna palabra clave del directorio maestro
               const matchedKey = Object.keys(mantechPOI).find(key => queryStr.includes(key));
 
               if (matchedKey) {
                 lat = mantechPOI[matchedKey].lat;
                 lng = mantechPOI[matchedKey].lng;
                 finalName = mantechPOI[matchedKey].name;
-                toast.success(`­ƒÅø´©Å Punto Maestro: ${finalName}`, { icon: 'Ô£à' });
+                toast.success(`🏛️ Punto Maestro: ${finalName}`, { icon: '✅' });
               } else {
                 const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name + ', Panama')}&countrycodes=pa&limit=1`);
                 const data = await res.json();
@@ -2993,7 +3129,7 @@ export default function App() {
                   lat = parseFloat(data[0].lat);
                   lng = parseFloat(data[0].lon);
                   finalName = data[0].display_name.split(',')[0].toUpperCase();
-                  toast.success(`­ƒø░´©Å Localizado: ${finalName}`);
+                  toast.success(`🛰️ Localizado: ${finalName}`);
                 }
               }
 
@@ -3019,10 +3155,10 @@ export default function App() {
                     type: 'checkpoint'
                   })
                 });
-                toast(`­ƒôì "${name}" no hallado. Usando tu GPS actual.`, { icon: 'ÔÜá´©Å' });
+                toast(`📍 "${name}" no hallado. Usando tu GPS actual.`, { icon: '⚠️' });
               }
             } catch (err) {
-              toast.error("Falla en el motor de b├║squeda.");
+              toast.error("Falla en el motor de búsqueda.");
             }
           }}
         />
@@ -3033,7 +3169,7 @@ export default function App() {
           <div className="w-full max-w-lg bg-[#121317] border border-[#2a2b2f] rounded-[3rem] p-10 space-y-8 shadow-2xl animate-fade-in-up max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="text-center space-y-2">
                <h3 className="text-2xl font-black text-white uppercase italic">Mejorar a <span className="text-[#5d3cfe]">{selectedPlanForPayment.name}</span></h3>
-               <p className="text-[10px] text-[#c8c4d9] font-black uppercase tracking-widest opacity-60">Inversi├│n mensual: ${selectedPlanForPayment.price}.00 USD</p>
+               <p className="text-[10px] text-[#c8c4d9] font-black uppercase tracking-widest opacity-60">Inversión mensual: ${selectedPlanForPayment.price}.00 USD</p>
             </div>
 
             <div className="space-y-4">
@@ -3053,7 +3189,7 @@ export default function App() {
                      const order = await response.json();
                      return order.id;
                    } catch (err: any) {
-                     console.error("├ó┬Ø┼Æ Error en createOrder:", err);
+                     console.error("âŒ Error en createOrder:", err);
                      toast.error(`Error al procesar el pago: ${err.message}`);
                      throw err;
                    }
@@ -3066,7 +3202,7 @@ export default function App() {
                      if (!response.ok) {
                        const errorDetail = result.details?.[0];
                        if (errorDetail?.issue === "INSTRUMENT_DECLINED") {
-                         throw new Error("La tarjeta fue rechazada. Por favor intenta con otro m├®todo en tu cuenta PayPal.");
+                         throw new Error("La tarjeta fue rechazada. Por favor intenta con otro método en tu cuenta PayPal.");
                        }
                        throw new Error(result.message || "Error al procesar la captura del pago.");
                      }
@@ -3077,7 +3213,7 @@ export default function App() {
                        toast.error("El pago no se pudo completar. Por favor verifica tu cuenta.");
                      }
                    } catch (err: any) {
-                     console.error("ÔØî Error en onApprove:", err);
+                     console.error("❌ Error en onApprove:", err);
                      toast.error(`Pago fallido: ${err.message}`);
                    }
                  }}
@@ -3088,19 +3224,19 @@ export default function App() {
                   <div className="h-px bg-[#2a2b2f] flex-1"></div>
                </div>
 
-               {/* BYPASS DE INGENIER├ìA PARA PRUEBAS R├üPIDAS */}
+               {/* BYPASS DE INGENIERÍA PARA PRUEBAS RÁPIDAS */}
                <button
                  onClick={() => handleConfirmSubscriptionUpgrade(selectedPlanForPayment.id, true)}
                  className="w-full py-3 bg-rose-600/10 border border-rose-600/20 text-rose-500 rounded-xl text-[8px] font-black uppercase tracking-[0.2em] hover:bg-rose-600 hover:text-white transition-all mb-2"
                >
-                 ÔÜá´©Å Simular Pago Exitoso (Bypass Dev)
+                 ⚠️ Simular Pago Exitoso (Bypass Dev)
                </button>
 
                <button
                  onClick={() => handleConfirmSubscriptionUpgrade(selectedPlanForPayment.id, false)}
                  className="w-full py-5 border border-[#2a2b2f] text-[#c8c4d9] rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white/5 transition-all flex items-center justify-center gap-3"
                >
-                 <Download className="w-4 h-4" /> Pago v├¡a Yappy (Manual)
+                 <Download className="w-4 h-4" /> Pago vía Yappy (Manual)
                </button>
             </div>
 
