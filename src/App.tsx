@@ -1108,10 +1108,6 @@ export default function App() {
     }
   };
 
-  const handleBulkRegisterAssets = async (assetsList: any[]) => {
-    // ...
-  };
-
   const handleSaveFuelLog = async (assetId: string, log: any) => {
     try {
       const asset = assets.find(a => a.id === assetId);
