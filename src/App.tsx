@@ -93,9 +93,21 @@ export default function App() {
       // Punto #1: Compresión en el cliente para evitar el límite de 1MB de Firestore
       const compressedBase64 = await compressImage(file, 300, 0.6);
 
+      // Actualizar documento de usuario global
       await setDoc(doc(db, "users", user.uid), {
         profileImage: compressedBase64
       }, { merge: true });
+
+      // Si es técnico, actualizar también su perfil de marketplace para que el carnet se vea bien
+      if (role === 'tech') {
+        const userSnap = await getDoc(doc(db, "users", user.uid));
+        const techId = userSnap.data()?.techId;
+        if (techId) {
+          await updateDoc(doc(db, "technicians", techId), {
+            profileImage: compressedBase64
+          });
+        }
+      }
 
       toast.success("Avatar optimizado y actualizado.", { id: loadingToast });
     } catch (err) {
