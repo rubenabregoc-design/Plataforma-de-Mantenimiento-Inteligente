@@ -138,12 +138,50 @@ export function useBusinessLogic() {
     } catch (err) { console.error(err); }
   };
 
+  const handleSaveMaterial = async (requestId: string, name: string, price: number, quantity: number, category: string) => {
+    if (!requestId) return;
+    const req = requests.find(r => r.id === requestId);
+    if (!req) return;
+    const newMaterials = [...(req.materials || []), { name, price, quantity, category, addedAt: new Date().toISOString() }];
+    await updateDoc(doc(db, "requests", requestId), { materials: newMaterials });
+    toast.success("Material registrado.");
+  };
+
+  const handleTriggerUnforeseen = async (requestId: string, reason: string, extraCost: number, category: string) => {
+    if (!requestId) return;
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        status: 'disputed',
+        unforeseenReason: reason,
+        unforeseenAmount: extraCost,
+        unforeseenCategory: category,
+        unforeseenAt: serverTimestamp()
+      });
+      await addDoc(collection(db, "messages"), {
+        requestId, sender: 'tech',
+        text: `🚨 IMPREVISTO [${category.toUpperCase()}]: ${reason}. Costo: $${extraCost}.`,
+        timestamp: serverTimestamp()
+      });
+      toast.success("Imprevisto reportado.");
+    } catch (err) { console.error(err); }
+  };
+
+  const handleToggleTask = async (requestId: string, taskId: string) => {
+    const req = requests.find(r => r.id === requestId);
+    if (!req || !req.checklist) return;
+    const newChecklist = req.checklist.map(t => t.id === taskId ? { ...t, isCompleted: !t.isCompleted } : t);
+    await updateDoc(doc(db, "requests", requestId), { checklist: newChecklist });
+  };
+
   return {
     notifyAdmin,
     handlePostOpenMarket,
     handleAcceptQuote,
     handleCompleteJob,
     handleConfirmPayment,
-    handleApproveSubscription
+    handleApproveSubscription,
+    handleSaveMaterial,
+    handleTriggerUnforeseen,
+    handleToggleTask
   };
 }

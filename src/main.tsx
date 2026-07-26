@@ -6,12 +6,15 @@ import './i18n';
 
 import {AuthProvider} from './context/AuthContext';
 import {DataProvider} from './context/DataContext';
+import {UIProvider} from './context/UIContext';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
       <DataProvider>
-        <App />
+        <UIProvider>
+          <App />
+        </UIProvider>
       </DataProvider>
     </AuthProvider>
   </StrictMode>,
