@@ -27,13 +27,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isDataLoading, setIsDataLoading] = useState(true);
 
   useEffect(() => {
-    if (!isLoggedIn || !user) {
+    if (!isLoggedIn || !user || !role) {
       setIsDataLoading(false);
       return;
     }
 
     const unsubTechs = onSnapshot(collection(db, "technicians"), (snap) =>
-      setTechnicians(snap.docs.map(d => ({ id: d.id, ...d.data() })) as TechProfile[])
+      setTechnicians(snap.docs.map(d => ({ id: d.id, ...d.data() })) as TechProfile[]),
+      (err) => console.error("Tech Snapshot Error:", err)
     );
 
     const qReq = role === 'admin'
@@ -42,23 +43,25 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const unsubReqs = onSnapshot(qReq, (snap) => {
       setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })) as JobRequest[]);
-    });
+    }, (err) => console.error("Req Snapshot Error:", err));
 
     const qAssets = role === 'admin'
-      ? query(collection(db, "assets"), where("status", "!=", "deleted"))
-      : query(collection(db, "assets"), where("clientId", "==", user.uid), where("status", "!=", "deleted"));
+      ? collection(db, "assets")
+      : query(collection(db, "assets"), where("clientId", "==", user.uid));
 
     const unsubAssets = onSnapshot(qAssets, (snap) => {
       setAssets(snap.docs.map(d => ({ id: d.id, ...d.data() })) as Asset[]);
       setIsDataLoading(false);
-    });
+    }, (err) => console.error("Asset Snapshot Error:", err));
 
     const unsubInven = onSnapshot(collection(db, "inventory"), (snap) =>
-      setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })) as InventoryItem[])
+      setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })) as InventoryItem[]),
+      (err) => console.error("Inv Snapshot Error:", err)
     );
 
     const unsubReminders = onSnapshot(collection(db, "reminders"), (snap) =>
-      setReminders(snap.docs.map(d => ({ id: d.id, ...d.data() })) as MaintenanceReminder[])
+      setReminders(snap.docs.map(d => ({ id: d.id, ...d.data() })) as MaintenanceReminder[]),
+      (err) => console.error("Rem Snapshot Error:", err)
     );
 
     const qAgenda = role === 'tech'
@@ -67,7 +70,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const unsubAgenda = onSnapshot(qAgenda, (snap) => {
       setAgenda(snap.docs.map(d => ({ id: d.id, ...d.data() })) as AgendaEvent[]);
-    });
+    }, (err) => console.error("Agenda Snapshot Error:", err));
 
     return () => {
       unsubTechs();

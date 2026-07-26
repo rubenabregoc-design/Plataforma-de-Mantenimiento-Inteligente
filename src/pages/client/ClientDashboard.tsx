@@ -7,8 +7,8 @@ import VerticalDashboard from '../../components/VerticalDashboard';
 import Skeleton from '../../components/Skeleton';
 import {
   Search, ChevronLeft, ChevronRight, LayoutDashboard, Trash2, Check, Download,
-  Truck, CheckCircle2, AlertTriangle, Globe, BrainCircuit, ShieldCheck,
-  Store, FileCheck2, FileText, Package, Star, MessageSquare, ArrowRight, Video, MapPin, Activity
+  Truck, CheckCircle2, AlertTriangle, Globe, BrainCircuit, ShieldCheck, Layers, Package,
+  Store, FileCheck2, FileText, Star, MessageSquare, ArrowRight, Video, MapPin, Activity
 } from 'lucide-react';
 import FleetDashboard from '../../components/FleetDashboard';
 import DiagnosticAIView from '../../components/DiagnosticAIView';
