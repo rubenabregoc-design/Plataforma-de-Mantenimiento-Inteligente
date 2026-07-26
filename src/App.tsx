@@ -27,6 +27,7 @@ import MessageSquare from 'lucide-react/dist/esm/icons/message-square';
 import Logo from './components/Logo';
 
 import { AssetService } from './services/assetService';
+import { cleanForFirebase } from './utils/firebaseHelpers';
 
 export default function App() {
   const { user, isLoggedIn, subscription, logout } = useAuth();
@@ -60,7 +61,10 @@ export default function App() {
   // --- HANDLERS ---
   const handleAddAsset = async (data: any) => {
     if (!user) return;
-    const cleanData = Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== undefined));
+
+    // Limpieza profunda de datos para Firebase (Elimina undefined)
+    const cleanData = cleanForFirebase(data);
+
     try {
       if (activeData.asset) {
         await AssetService.updateAsset(activeData.asset.id, cleanData);
@@ -69,7 +73,10 @@ export default function App() {
         await AssetService.createAsset({ ...cleanData, clientId: user.uid, registeredAt: new Date().toISOString() });
         toast.success("Equipo registrado.");
       }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error("Firebase Error:", err);
+      toast.error("Error al guardar el activo.");
+    }
     closeModal('asset');
   };
 

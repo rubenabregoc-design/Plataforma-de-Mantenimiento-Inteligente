@@ -137,22 +137,43 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       return;
     }
 
+    // --- LIMPIEZA DE DATOS UNDEFINED PARA FIREBASE ---
+    const cleanSpecs: any = {};
+    const specsSource = { btu, refrigerant, acType, processor, ram, os, sqMeters, floors, pipeMaterial, voltage, amps, phases, panelCount, inverterCapacity };
+
+    Object.entries(specsSource).forEach(([key, val]) => {
+      if (val && val !== '') cleanSpecs[key] = val;
+    });
+
     onAdd({
       name, type, category, riskLevel, criticalityLevel: criticality, details,
-      licensePlate: (type === 'car' || type === 'moto') ? licensePlate : undefined,
+      licensePlate: (type === 'car' || type === 'moto') ? (licensePlate || null) : undefined,
       mileage: (type === 'car' || type === 'moto') ? Number(mileage) : undefined,
       usageHours: (type === 'generator' || type === 'industrial_equip') ? Number(usageHours) : undefined,
       lastMaintenanceDate: lastMaintenance,
       nextMaintenanceDate: nextMaintenance,
-      observations, location, serialNumber,
-      driverName: (type === 'car' || type === 'moto') ? driverName : undefined,
-      fuelType: (type === 'car' || type === 'moto') ? fuelType : undefined,
-      specs: {
-        btu, refrigerant, acType, processor, ram, os, sqMeters, floors, pipeMaterial, voltage, amps, phases, panelCount, inverterCapacity
-      }
+      observations: observations || null,
+      location: location || null,
+      serialNumber: serialNumber || null,
+      driverName: (type === 'car' || type === 'moto') ? (driverName || null) : undefined,
+      fuelType: (type === 'car' || type === 'moto') ? (fuelType || null) : undefined,
+      specs: Object.keys(cleanSpecs).length > 0 ? cleanSpecs : undefined
     });
     onClose();
   };
+
+  const assetTypes: { id: AssetType, label: string, icon: any }[] = [
+    { id: 'car', label: 'Vehículo', icon: Car },
+    { id: 'ac', label: 'Aire Acond.', icon: Sliders },
+    { id: 'generator', label: 'Planta Eléc.', icon: Zap },
+    { id: 'computer', label: 'Cómputo/IT', icon: Cpu },
+    { id: 'industrial_equip', label: 'Maquinaria', icon: Boxes },
+    { id: 'solar_panels', label: 'Sist. Solar', icon: BatteryCharging },
+    { id: 'house', label: 'Inmueble', icon: Home },
+    { id: 'plumbing', label: 'Fontanería', icon: Droplets },
+    { id: 'electrical', label: 'Electricidad', icon: PlugZap },
+    { id: 'moto', label: 'Moto', icon: Bike }
+  ];
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#0d0e12]/95 backdrop-blur-2xl overflow-y-auto">

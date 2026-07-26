@@ -1,52 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Función básica de autenticación
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Permitir leer perfiles de técnicos a todos los registrados
-    match /technicians/{techId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn(); // Ajustar en producción
-    }
-
-    // Reglas para Usuarios
-    match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
-    }
-
-    // Reglas para Activos (Assets)
-    match /assets/{assetId} {
-      allow read, write: if isSignedIn() && (resource == null || resource.data.clientId == request.auth.uid || request.resource.data.clientId == request.auth.uid);
-    }
-
-    // Reglas para Solicitudes (Requests)
-    match /requests/{requestId} {
-      allow read, write: if isSignedIn();
-    }
-
-    // Reglas para Inventario
-    match /inventory/{itemId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
-    }
-
-    // Reglas para Agenda
-    match /agenda/{eventId} {
-      allow read, write: if isSignedIn();
-    }
-
-    // Reglas para Recordatorios
-    match /reminders/{remId} {
-      allow read, write: if isSignedIn();
-    }
-
-    // Regla de respaldo para desarrollo
+    // REGLA MAESTRA TEMPORAL PARA DESARROLLO
+    // Permite lectura y escritura a cualquier usuario autenticado en todas las colecciones
     match /{document=**} {
-      allow read, write: if isSignedIn();
+      allow read, write: if request.auth != null;
     }
   }
 }

@@ -86,6 +86,14 @@ export default function ClientDashboard() {
             </div>
           ) : (
             <div className="space-y-12">
+              {/* Bienvenido Banner Movido Arriba */}
+              <VerticalDashboard
+                type="ph"
+                assets={assets}
+                requests={requests}
+                userName={userData?.name || 'Usuario'}
+              />
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {assets.filter(a =>
                   a.name.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
@@ -101,20 +109,16 @@ export default function ClientDashboard() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <FuelAuditModule
-                  assets={assets}
-                  onSaveLog={() => {}}
-                />
-                <HomeEmergencySOS />
-              </div>
-
-              <VerticalDashboard
-                type="ph"
-                assets={assets}
-                requests={requests}
-                userName={userData?.name || 'Usuario'}
-              />
+              {/* Fuel Audit solo se muestra si hay activos relevantes (Car, Moto, Generator) */}
+              {assets.some(a => ['car', 'moto', 'generator'].includes(a.type)) && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <FuelAuditModule
+                    assets={assets.filter(a => ['car', 'moto', 'generator'].includes(a.type))}
+                    onSaveLog={() => {}}
+                  />
+                  <HomeEmergencySOS />
+                </div>
+              )}
             </div>
           )}
         </div>
