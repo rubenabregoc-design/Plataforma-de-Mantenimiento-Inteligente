@@ -208,6 +208,34 @@ export function useBusinessLogic() {
     } catch (err) { console.error(err); }
   };
 
+  const handleRequestQuote = async (techId: string, assetId: string, description: string, suggestedDate?: string, suggestedTime?: string) => {
+    if (!user) return;
+    const tech = technicians.find(t => t.id === techId);
+    const asset = assets.find(a => a.id === assetId);
+    if (!tech || !asset) return;
+
+    try {
+      await addDoc(collection(db, "requests"), {
+        clientId: user.uid,
+        clientName: loggedInName,
+        assetId,
+        assetName: asset.name,
+        techId,
+        techName: tech.name,
+        techUserId: tech.userId,
+        description,
+        status: 'pending',
+        createdAt: serverTimestamp(),
+        scheduledDate: suggestedDate || null,
+        scheduledTime: suggestedTime || null
+      });
+      toast.success("Solicitud enviada al técnico.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al enviar la solicitud.");
+    }
+  };
+
   return {
     notifyAdmin,
     handlePostOpenMarket,
@@ -222,6 +250,7 @@ export function useBusinessLogic() {
     handleUpdateInventoryQuantity,
     handleAddInventoryItem,
     handleDeleteInventoryItem,
-    handleUpdateInventoryItem
+    handleUpdateInventoryItem,
+    handleRequestQuote
   };
 }

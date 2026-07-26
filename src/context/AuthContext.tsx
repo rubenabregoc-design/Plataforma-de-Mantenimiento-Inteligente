@@ -21,7 +21,7 @@ import { toast } from 'react-hot-toast';
 interface AuthContextType {
   user: FirebaseUser | null;
   userData: any | null;
-  role: 'client' | 'tech' | 'admin';
+  role: 'client' | 'tech' | 'admin' | null;
   isLoggedIn: boolean;
   isAuthResolving: boolean;
   subscription: UserSubscription;
@@ -38,7 +38,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userData, setUserData] = useState<any>(null);
-  const [role, setRole] = useState<'client' | 'tech' | 'admin'>('client');
+  const [role, setRole] = useState<'client' | 'tech' | 'admin' | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthResolving, setIsAuthResolving] = useState(true);
   const [loggedInName, setLoggedInName] = useState('');
@@ -105,12 +105,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsLoggedIn(true);
         } catch (err) {
           console.error("Auth setup error:", err);
+          setRole('client');
+          setIsLoggedIn(true);
         }
       } else {
         setIsLoggedIn(false);
         setUser(null);
         setUserData(null);
-        setRole('client');
+        setRole(null);
       }
       setIsAuthResolving(false);
     });

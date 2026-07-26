@@ -46,7 +46,7 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0d0e12]/95 backdrop-blur-xl overflow-y-auto">
+    <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-[#0d0e12]/95 backdrop-blur-xl overflow-y-auto">
       <div className="w-full max-w-4xl bg-[#121317] rounded-[3rem] shadow-2xl border border-white/5 flex flex-col md:flex-row animate-fade-in-up my-auto max-h-[95vh] overflow-hidden">
         
         {/* SIDEBAR TÉCNICO - IZQUIERDA */}

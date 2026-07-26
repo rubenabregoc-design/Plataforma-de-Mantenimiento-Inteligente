@@ -15,6 +15,7 @@ import AppRouter from './routes/AppRouter';
 import NotificationCenter from './components/NotificationCenter';
 import SupportModal from './components/SupportModal';
 import AssetRegisterModal from './components/AssetRegisterModal';
+import TechnicianProfileModal from './components/TechnicianProfileModal';
 import SignaturePad from './components/SignaturePad';
 import Star from 'lucide-react/dist/esm/icons/star';
 import X from 'lucide-react/dist/esm/icons/x';
@@ -30,7 +31,7 @@ import { AssetService } from './services/assetService';
 import { cleanForFirebase } from './utils/firebaseHelpers';
 
 export default function App() {
-  const { user, isLoggedIn, subscription, logout } = useAuth();
+  const { user, isLoggedIn, subscription, logout, role } = useAuth();
   const { assets } = useData();
   const { modals, activeData, closeModal, openModal } = useUI();
   const business = useBusinessLogic();
@@ -113,6 +114,18 @@ export default function App() {
             assetToEdit={activeData.asset}
             maxAssets={planLimits.maxAssets}
             currentAssetsCount={assets.length}
+          />
+        )}
+
+        {modals.tech && (
+          <TechnicianProfileModal
+            isOpen={modals.tech}
+            onClose={() => closeModal('tech')}
+            tech={activeData.tech}
+            assets={assets}
+            onRequestQuote={business.handleRequestQuote}
+            isAdmin={role === 'admin'}
+            onVerifyTech={(tid) => business.handleVerifyTechnician(tid, true)}
           />
         )}
 
