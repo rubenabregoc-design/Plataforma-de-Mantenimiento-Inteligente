@@ -68,6 +68,22 @@ export interface Asset {
   criticalityLevel?: 'low' | 'medium' | 'high' | 'critical';
   maintenanceContractUrl?: string;
   routeHistory?: { lat: number; lng: number; timestamp: string; locationName?: string; type?: 'track'; speed?: number }[];
+  specs?: {
+    btu?: string;
+    refrigerant?: string;
+    acType?: 'split' | 'central' | 'vrf';
+    processor?: string;
+    ram?: string;
+    os?: string;
+    sqMeters?: string;
+    floors?: string;
+    pipeMaterial?: string;
+    voltage?: string;
+    amps?: string;
+    phases?: string;
+    panelCount?: string;
+    inverterCapacity?: string;
+  };
 }
 
 export interface MaintenanceReminder {
