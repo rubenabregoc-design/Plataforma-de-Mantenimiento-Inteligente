@@ -20,6 +20,7 @@ export default function AuthPage() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginName, setLoginName] = useState('');
+  const [loginCedula, setLoginCedula] = useState('');
   const [authError, setAuthError] = useState('');
 
   const handleLogin = async (e: any) => {
@@ -36,10 +37,32 @@ export default function AuthPage() {
           startDate: new Date().toISOString(),
           nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
         };
-        await setDoc(doc(db, "users", u.uid), {
+
+        const userData = {
           uid: u.uid, email: loginEmail, name: loginName, role: authRole,
+          cedula: loginCedula, // Registro inmutable de cédula
           techId: tId, subscription: defaultSub, createdAt: serverTimestamp()
-        });
+        };
+
+        await setDoc(doc(db, "users", u.uid), userData);
+
+        if (authRole === 'tech' && tId) {
+          await setDoc(doc(db, "technicians", tId), {
+            id: tId,
+            userId: u.uid,
+            name: loginName,
+            cedula: loginCedula,
+            category: 'mecanico', // Default
+            isVerified: false,
+            isOnline: false,
+            rating: 5,
+            reviewCount: 0,
+            completedJobs: 0,
+            plan: 'basic',
+            wallet: { balance: 0, pendingBalance: 0, transactions: [] }
+          });
+        }
+
       } else {
         const res = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
         await logActivity(res.user.uid, res.user.email || 'user', 'LOGIN', `Acceso desde AuthPage`);
@@ -70,7 +93,19 @@ export default function AuthPage() {
                <button onClick={() => setAuthMode('register')} className={`flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${authMode === 'register' ? 'bg-[#5d3cfe] text-white shadow-lg shadow-[#5d3cfe]/20' : 'text-[#474556]'}`}>Registrarse</button>
             </div>
             <form onSubmit={handleLogin} className="space-y-6">
-              {authMode === 'register' && <div className="space-y-2 text-left"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Nombre</label><input type="text" value={loginName} onChange={e => setLoginName(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white" required /></div>}
+              {authMode === 'register' && (
+                <>
+                  <div className="space-y-2 text-left">
+                    <label className="text-[10px] font-black text-[#474556] uppercase ml-1">Nombre Completo</label>
+                    <input type="text" value={loginName} onChange={e => setLoginName(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white" placeholder="Ej: Juan Pérez" required />
+                  </div>
+                  <div className="space-y-2 text-left">
+                    <label className="text-[10px] font-black text-[#474556] uppercase ml-1">Cédula de Identidad</label>
+                    <input type="text" value={loginCedula} onChange={e => setLoginCedula(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white" placeholder="Ej: 8-888-8888" required />
+                    <p className="text-[7px] text-[#474556] font-bold uppercase ml-1 mt-1">* Este dato es inmutable y será verificado.</p>
+                  </div>
+                </>
+              )}
               <div className="space-y-2 text-left"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Correo</label><input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white" required /></div>
               <div className="space-y-2 text-left"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Clave</label><input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white" required /></div>
               {authMode === 'register' && <div className="space-y-2 text-left"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Tipo</label><select value={authRole} onChange={e => setAuthRole(e.target.value as any)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white"><option value="client">Cliente</option><option value="tech">Técnico</option></select></div>}
