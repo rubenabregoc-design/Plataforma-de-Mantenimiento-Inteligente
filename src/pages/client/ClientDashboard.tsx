@@ -276,7 +276,7 @@ export default function ClientDashboard() {
       {clientTab === 'settings' && (
         <div className="max-w-3xl mx-auto space-y-12 pb-20 animate-fade-in text-center">
            <header className="space-y-4">
-              <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Ajustes del <span className="text-[#5d3cfe]">Nodo</span></h2>
+              <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Ajustes de <span className="text-[#5d3cfe]">Cuenta</span></h2>
               <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em]">Gestión de Seguridad e Identidad</p>
            </header>
            <MantechIDModule

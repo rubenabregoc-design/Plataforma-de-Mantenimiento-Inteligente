@@ -118,6 +118,22 @@ export default function TechDashboard() {
       {techTab === 'subscriptions' && (
         <SubscriptionModule subscription={subscription} onUpgrade={(planId) => openModal('payment', { plan: planId })} role="tech" />
       )}
+
+      {techTab === 'settings' && (
+        <div className="max-w-3xl mx-auto space-y-12 pb-20 animate-fade-in text-center">
+           <header className="space-y-4">
+              <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Ajustes de <span className="text-[#5d3cfe]">Perfil</span></h2>
+              <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em]">Validación de Credenciales y Sello Oficial</p>
+           </header>
+           <MantechIDModule
+              mantechId={techProfile.mantechId || { status: 'unverified', idNumber: '' }}
+              onUpload={() => {}}
+              role="tech"
+              plan={techProfile.plan}
+           />
+           <button onClick={logout} className="px-12 py-4 border border-rose-500/30 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-xl mt-12">Cerrar Sesión Segura</button>
+        </div>
+      )}
     </div>
   );
 }

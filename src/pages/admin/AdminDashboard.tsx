@@ -114,7 +114,7 @@ export default function AdminDashboard() {
       {adminTab === 'settings' && (
         <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl text-center">
           <header className="mb-10 text-center"><h1 className="text-4xl font-black text-white tracking-tighter uppercase">Consola <span className="text-[#5d3cfe]">Root Mantech</span></h1></header>
-          <button onClick={logout} className="px-12 py-5 bg-rose-600/10 border border-rose-600/20 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-xl">Desconectar Nodo Maestro</button>
+          <button onClick={logout} className="px-12 py-5 bg-rose-600/10 border border-rose-600/20 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-xl">Desconectar Sesión Maestra</button>
         </div>
       )}
     </div>

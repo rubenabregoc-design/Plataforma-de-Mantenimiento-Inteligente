@@ -24,7 +24,7 @@ export default function AppRouter(props: any) {
 
   return (
     <DashboardLayout {...props}>
-      <Suspense fallback={<div className="p-20 text-center text-[#474556] font-black uppercase tracking-[0.3em] animate-pulse">Iniciando Nodo...</div>}>
+      <Suspense fallback={<div className="p-20 text-center text-[#474556] font-black uppercase tracking-[0.3em] animate-pulse">Iniciando Plataforma...</div>}>
         {role === 'client' && <ClientDashboard />}
         {role === 'tech' && <TechDashboard />}
         {role === 'admin' && <AdminDashboard />}

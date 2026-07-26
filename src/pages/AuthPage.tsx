@@ -125,7 +125,7 @@ export default function AuthPage() {
               )}
               {authError && <p className="text-rose-500 text-[9px] font-black uppercase text-center bg-rose-500/10 py-2 rounded-lg">{authError}</p>}
               <button type="submit" className="w-full py-4 bg-[#5d3cfe] text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-[#5d3cfe]/30 hover:brightness-110 active:scale-95 transition-all mt-2">
-                {authMode === 'login' ? 'Acceder al Nodo ➔' : 'Crear Cuenta Segura ➔'}
+                {authMode === 'login' ? 'Entrar a Mantech Pro ➔' : 'Crear Cuenta Segura ➔'}
               </button>
             </form>
           </div>
