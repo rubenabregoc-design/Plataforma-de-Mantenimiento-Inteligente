@@ -26,12 +26,14 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useUI } from '../../context/UIContext';
+import { useBusinessLogic } from '../../hooks/useBusinessLogic';
 
 export default function ClientDashboard() {
   const { t, i18n } = useTranslation();
   const { userData, subscription, user, loggedInName, logout } = useAuth();
   const { assets, requests, reminders, inventory, technicians, isDataLoading } = useData();
   const { tabs, setTab, openModal } = useUI();
+  const business = useBusinessLogic();
 
   const clientTab = tabs.client;
   const assetPageSize = 6;
@@ -163,13 +165,51 @@ export default function ClientDashboard() {
                {technicians.filter(t => marketFilter === 'all' || t.category === marketFilter).map(t => (
                  <div key={t.id} className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[3rem] flex flex-col gap-6 relative overflow-hidden group hover:border-[#5d3cfe]/50 transition-all shadow-2xl">
                     <div className="flex items-center gap-5"><div className="w-16 h-16 rounded-2xl bg-[#1c1d21] border border-[#2a2b2f] flex items-center justify-center text-[#c7bfff] font-black text-2xl shadow-inner">{t.name[0]}</div><div><h4 className="font-black text-white text-base uppercase tracking-tight">{t.name}</h4><p className="text-[10px] font-black text-[#52ffac] uppercase tracking-[0.2em] mt-1">{t.category.replace('_',' ')}</p></div></div>
-                    <div className="grid grid-cols-3 gap-4 py-4 border-y border-[#2a2b2f]/50 bg-[#0d0e12]/30 px-4 rounded-2xl text-center"><div><div className="text-amber-500 font-black text-sm flex items-center justify-center gap-1"><Star className="w-3 h-3 fill-amber-400" /> {t.rating}</div><span className="text-[8px] text-[#474556] font-bold uppercase">Rating</span></div><div><div className="text-white font-black text-sm">{t.experienceYears}a</div><span className="text-[8px] text-[#474556] font-bold uppercase">Exp.</span></div><div><div className="text-[#52ffac] font-black text-sm">${t.hourlyRate}</div><span className="text-[8px] text-[#474556] font-bold uppercase">Hr.</span></div></div>
+                    <div className="grid grid-cols-3 gap-4 py-4 border-y border-[#2a2b2f]/50 bg-[#0d0e12]/30 px-4 rounded-2xl text-center"><div><div className="text-amber-500 font-black text-sm flex items-center justify-center gap-1"><Star className="w-3 h-3 fill-amber-500" /> {t.rating}</div><span className="text-[8px] text-[#474556] font-bold uppercase">Rating</span></div><div><div className="text-white font-black text-sm">{t.experienceYears}a</div><span className="text-[8px] text-[#474556] font-bold uppercase">Exp.</span></div><div><div className="text-[#52ffac] font-black text-sm">${t.hourlyRate}</div><span className="text-[8px] text-[#474556] font-bold uppercase">Hr.</span></div></div>
                     <button onClick={() => openModal('tech', { tech: t })} className="w-full py-4 bg-[#1c1d21] hover:bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg active:scale-[0.98]">Ver Perfil & Agendar</button>
                  </div>
                ))}
             </div>
+          ) : marketViewMode === 'bidding' ? (
+            <div className="space-y-8 animate-fade-in">
+              <div className="p-8 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-[#5d3cfe] flex items-center justify-center text-white shadow-xl">
+                      <Layers className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black text-white uppercase tracking-tight leading-none">Subasta de Servicios</h3>
+                      <p className="text-[10px] text-[#c8c4d9] uppercase tracking-widest mt-1">Especialistas Partner compiten por tu ticket.</p>
+                    </div>
+                </div>
+                <button onClick={() => {
+                   const assetId = prompt("ID de activo:");
+                   const desc = prompt("Descripción:");
+                   if(assetId && desc) business.handlePostOpenMarket(assetId, desc);
+                }} className="px-8 py-4 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase shadow-xl">Nueva Subasta +</button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 {requests.filter(r => r.status === 'open_bidding').map(req => (
+                    <div key={req.id} className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] space-y-6 relative overflow-hidden group">
+                       <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-3">
+                             <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#5d3cfe]"><Package className="w-5 h-5" /></div>
+                             <h4 className="font-black text-white uppercase tracking-tight">{req.assetName}</h4>
+                          </div>
+                          <span className="px-4 py-1.5 bg-indigo-500/10 text-indigo-400 rounded-full text-[8px] font-black uppercase tracking-widest">En Subasta</span>
+                       </div>
+                       <p className="text-xs text-[#c8c4d9] italic opacity-60">"{req.description}"</p>
+                       <div className="pt-6 border-t border-white/5 flex items-center justify-between">
+                          <span className="text-[9px] font-black text-[#474556] uppercase tracking-widest">{req.bids?.length || 0} Propuestas</span>
+                          <button className="text-[10px] font-black text-[#52ffac] uppercase tracking-[0.2em]">Ver Ofertas ➔</button>
+                       </div>
+                    </div>
+                 ))}
+              </div>
+            </div>
           ) : (
-             <div className="py-20 text-center opacity-20 uppercase tracking-widest text-[10px] font-black">Módulo en Sincronización Satelital...</div>
+             <div className="py-20 text-center opacity-20 uppercase tracking-widest text-[10px] font-black">Escaneando técnicos en el Radar...</div>
           )}
         </div>
       )}
@@ -178,7 +218,7 @@ export default function ClientDashboard() {
         <div className="space-y-10 animate-fade-in">
           <header><h1 className="text-4xl font-black text-white tracking-tighter uppercase">Contratos <span className="text-[#52ffac]">Activos</span></h1></header>
           <div className="space-y-6">
-            {requests.map(req => (
+            {requests.filter(r => r.status !== 'open_bidding').map(req => (
               <div key={req.id} className="bg-[#121317] border border-white/10 p-10 rounded-[2.5rem] space-y-10 shadow-2xl relative overflow-hidden">
                 <div className="flex justify-between items-center relative z-10">
                   <h4 className="font-black text-white text-2xl uppercase tracking-tighter">{req.assetName}</h4>
@@ -187,13 +227,19 @@ export default function ClientDashboard() {
                   </span>
                 </div>
                 {req.status === 'quoted' && (
-                  <div className="bg-[#5d3cfe]/10 p-8 rounded-[2.5rem] border border-[#5d3cfe]/30 flex justify-between items-center">
+                  <div className="bg-[#5d3cfe]/10 p-8 rounded-[2.5rem] border border-[#5d3cfe]/30 flex justify-between items-center animate-fade-in">
                     <p className="text-white font-black text-xl uppercase tracking-tight">Propuesta: ${req.price?.toFixed(2)} USD</p>
-                    <button onClick={() => openModal('payment', { request: req })} className="px-8 py-4 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase shadow-xl">Gestionar Pago</button>
+                    <button onClick={() => openModal('payment', { request: req })} className="px-8 py-4 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase shadow-xl shadow-[#52ffac]/20 hover:scale-105 transition-all">Gestionar Pago</button>
                   </div>
                 )}
                 {req.status === 'executing' && (
-                  <button onClick={() => openModal('signature', { requestId: req.id })} className="w-full py-5 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl">Cerrar Servicio & Liberar Pago</button>
+                  <div className="bg-[#1c1d21] p-8 rounded-[2.5rem] border border-white/5 space-y-6 shadow-2xl">
+                     <div className="flex items-center gap-3 text-[#52ffac]">
+                        <Activity className="w-6 h-6 animate-pulse" />
+                        <h4 className="text-xl font-black uppercase tracking-tighter">Servicio en Ejecución</h4>
+                     </div>
+                     <button onClick={() => openModal('signature', { requestId: req.id })} className="w-full py-5 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Cerrar Servicio & Liberar Pago</button>
+                  </div>
                 )}
               </div>
             ))}
@@ -202,7 +248,14 @@ export default function ClientDashboard() {
       )}
 
       {clientTab === 'inventory' && (
-        <InventoryModule items={inventory} assets={assets} onUpdateQuantity={() => {}} onAddItem={() => {}} onDeleteItem={() => {}} onUpdateItem={() => {}} />
+        <InventoryModule
+           items={inventory}
+           assets={assets}
+           onUpdateQuantity={(id, d) => updateDoc(doc(db,"inventory",id), {quantity: d})}
+           onAddItem={(item) => addDoc(collection(db,"inventory"), {...item, createdAt: serverTimestamp()})}
+           onDeleteItem={(id) => deleteDoc(doc(db,"inventory",id))}
+           onUpdateItem={(item) => { const {id, ...data} = item; updateDoc(doc(db,"inventory",id), data); }}
+        />
       )}
 
       {clientTab === 'subscriptions' && (
@@ -210,7 +263,7 @@ export default function ClientDashboard() {
       )}
 
       {clientTab === 'chat' && (
-        <div className="h-[calc(100vh-200px)]">
+        <div className="h-[calc(100vh-200px)] animate-fade-in">
           <SupportChatWidget
             request={requests.find(r => r.id === activeChatRequestId) || null}
             role="client"
@@ -232,7 +285,7 @@ export default function ClientDashboard() {
               role="client"
               plan={subscription.planId}
            />
-           <button onClick={logout} className="px-12 py-4 border border-rose-500/30 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-xl">Cerrar Sesión Segura</button>
+           <button onClick={logout} className="px-12 py-4 border border-rose-500/30 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-xl mt-12">Cerrar Sesión Segura</button>
         </div>
       )}
     </div>
