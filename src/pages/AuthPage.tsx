@@ -79,38 +79,54 @@ export default function AuthPage() {
         requests={requests}
       />
       {modals.auth && (
-        <div className="fixed inset-0 z-[200] bg-[#0d0e12]/90 backdrop-blur-md flex flex-col items-center justify-center p-4 overflow-y-auto custom-scrollbar">
-          <div className="max-w-md w-full bg-[#121317] border border-[#2a2b2f] p-8 md:p-10 rounded-[2.5rem] space-y-6 md:space-y-8 shadow-2xl relative animate-fade-in-up my-auto">
-            <button onClick={() => closeModal('auth')} className="absolute -top-4 -right-4 p-4 text-white hover:bg-rose-600 bg-[#1c1d21] border border-white/10 rounded-2xl shadow-2xl z-50 transition-all active:scale-90 group">
-              <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+        <div className="fixed inset-0 z-[200] bg-[#0d0e12]/95 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="max-w-md w-full max-h-[90vh] bg-[#121317] border border-[#2a2b2f] p-6 md:p-8 rounded-[2rem] space-y-4 md:space-y-6 shadow-2xl relative animate-fade-in-up overflow-y-auto custom-scrollbar">
+            <button onClick={() => closeModal('auth')} className="absolute top-4 right-4 p-3 text-white hover:bg-rose-600 bg-[#1c1d21] border border-white/10 rounded-xl shadow-2xl z-50 transition-all active:scale-90 group">
+              <X className="w-4 h-4 group-hover:rotate-90 transition-transform" />
             </button>
-            <div className="text-center space-y-3 flex flex-col items-center">
-              <Logo size="md" className="md:scale-125 mb-1" />
-              <p className="text-[#c8c4d9] text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em]">Central Logística Panamá</p>
+            <div className="text-center space-y-2 flex flex-col items-center">
+              <Logo size="sm" />
+              <p className="text-[#c8c4d9] text-[8px] font-black uppercase tracking-[0.3em]">Central Logística Panamá</p>
             </div>
-            <div className="flex bg-[#1c1d21] p-1.5 rounded-2xl border border-[#2a2b2f]">
-               <button onClick={() => setAuthMode('login')} className={`flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${authMode === 'login' ? 'bg-[#5d3cfe] text-white shadow-lg shadow-[#5d3cfe]/20' : 'text-[#474556]'}`}>Ingresar</button>
-               <button onClick={() => setAuthMode('register')} className={`flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${authMode === 'register' ? 'bg-[#5d3cfe] text-white shadow-lg shadow-[#5d3cfe]/20' : 'text-[#474556]'}`}>Registrarse</button>
+            <div className="flex bg-[#1c1d21] p-1 rounded-xl border border-[#2a2b2f]">
+               <button onClick={() => setAuthMode('login')} className={`flex-1 py-2 text-[9px] font-black uppercase rounded-lg transition-all ${authMode === 'login' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556]'}`}>Ingresar</button>
+               <button onClick={() => setAuthMode('register')} className={`flex-1 py-2 text-[9px] font-black uppercase rounded-lg transition-all ${authMode === 'register' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556]'}`}>Registrarse</button>
             </div>
-            <form onSubmit={handleLogin} className="space-y-6">
+            <form onSubmit={handleLogin} className="space-y-4">
               {authMode === 'register' && (
                 <>
-                  <div className="space-y-2 text-left">
-                    <label className="text-[10px] font-black text-[#474556] uppercase ml-1">Nombre Completo</label>
-                    <input type="text" value={loginName} onChange={e => setLoginName(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white" placeholder="Ej: Juan Pérez" required />
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Nombre Completo</label>
+                    <input type="text" value={loginName} onChange={e => setLoginName(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#5d3cfe]" placeholder="Ej: Juan Pérez" required />
                   </div>
-                  <div className="space-y-2 text-left">
-                    <label className="text-[10px] font-black text-[#474556] uppercase ml-1">Cédula de Identidad</label>
-                    <input type="text" value={loginCedula} onChange={e => setLoginCedula(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white" placeholder="Ej: 8-888-8888" required />
-                    <p className="text-[7px] text-[#474556] font-bold uppercase ml-1 mt-1">* Este dato es inmutable y será verificado.</p>
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Cédula de Identidad</label>
+                    <input type="text" value={loginCedula} onChange={e => setLoginCedula(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#5d3cfe]" placeholder="Ej: 8-888-8888" required />
+                    <p className="text-[7px] text-[#474556] font-bold uppercase ml-1 mt-1">* Inmutable para verificación.</p>
                   </div>
                 </>
               )}
-              <div className="space-y-2 text-left"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Correo</label><input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white" required /></div>
-              <div className="space-y-2 text-left"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Clave</label><input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white" required /></div>
-              {authMode === 'register' && <div className="space-y-2 text-left"><label className="text-[10px] font-black text-[#474556] uppercase ml-1">Tipo</label><select value={authRole} onChange={e => setAuthRole(e.target.value as any)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-2xl py-4 px-5 text-white"><option value="client">Cliente</option><option value="tech">Técnico</option></select></div>}
-              {authError && <p className="text-rose-500 text-[10px] font-black uppercase text-center">{authError}</p>}
-              <button type="submit" className="w-full py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-[#5d3cfe]/30 hover:brightness-110 active:scale-95 transition-all">Entrar ➔</button>
+              <div className="space-y-1.5 text-left">
+                <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Correo</label>
+                <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#5d3cfe]" required />
+              </div>
+              <div className="space-y-1.5 text-left">
+                <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Clave</label>
+                <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#5d3cfe]" required />
+              </div>
+              {authMode === 'register' && (
+                <div className="space-y-1.5 text-left">
+                  <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Tipo de Usuario</label>
+                  <select value={authRole} onChange={e => setAuthRole(e.target.value as any)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#5d3cfe]">
+                    <option value="client">Cliente</option>
+                    <option value="tech">Técnico</option>
+                  </select>
+                </div>
+              )}
+              {authError && <p className="text-rose-500 text-[9px] font-black uppercase text-center bg-rose-500/10 py-2 rounded-lg">{authError}</p>}
+              <button type="submit" className="w-full py-4 bg-[#5d3cfe] text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-[#5d3cfe]/30 hover:brightness-110 active:scale-95 transition-all mt-2">
+                {authMode === 'login' ? 'Acceder al Nodo ➔' : 'Crear Cuenta Segura ➔'}
+              </button>
             </form>
           </div>
         </div>
