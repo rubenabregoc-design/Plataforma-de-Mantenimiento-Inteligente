@@ -8,7 +8,7 @@ import { useUI } from './context/UIContext';
 import { useGpsTracking } from './hooks/useGpsTracking';
 import { useBusinessLogic } from './hooks/useBusinessLogic';
 import { db } from './firebase';
-import { doc, updateDoc, setDoc, query, collection, where, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, getDoc, query, collection, where, onSnapshot } from 'firebase/firestore';
 
 // Router & Components
 import AppRouter from './routes/AppRouter';
@@ -189,20 +189,36 @@ export default function App() {
                 <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] space-y-4">
                    <div className="flex justify-between items-center">
                       <span className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest">Concepto</span>
-                      <span className="text-xs font-black text-white uppercase">{activeData.plan ? `Upgrade Plan: ${activeData.plan.replace('plan-','').toUpperCase()}` : 'Pago de Servicio'}</span>
+                      <span className="text-xs font-black text-white uppercase">
+                        {activeData.plan
+                          ? `Suscripción ${role === 'tech' ? 'Especialista' : 'Corporativa'}: ${activeData.plan.replace('plan-','').toUpperCase()}`
+                          : `Pago de Servicio: ${activeData.request?.assetName}`}
+                      </span>
                    </div>
                    <div className="h-px bg-white/5"></div>
                    <div className="flex justify-between items-end">
                       <span className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest mb-1">Total a Pagar</span>
-                      <p className="text-4xl font-black text-[#52ffac] italic tracking-tighter leading-none">${activeData.plan === 'plan-pro' ? '89' : activeData.plan === 'plan-enterprise' ? '199' : activeData.plan === 'plan-basic' ? '29' : activeData.request?.price || '0'}.00</p>
+                      <p className="text-4xl font-black text-[#52ffac] italic tracking-tighter leading-none">
+                        ${(() => {
+                          if (activeData.plan) {
+                            if (role === 'tech') return activeData.plan === 'plan-pro' ? '45' : '99';
+                            return activeData.plan === 'plan-pro' ? '89' : activeData.plan === 'plan-enterprise' ? '199' : '29';
+                          }
+                          return activeData.request?.price || '0';
+                        })()}.00
+                      </p>
                    </div>
                 </div>
 
                 <div className="space-y-4">
                    <button
                      onClick={() => {
-                        business.handleAcceptQuote(activeData.request?.id || '', 'yappy');
-                        toast.success("Solicitud enviada para verificación.");
+                        if (activeData.plan) {
+                          business.handleApproveSubscription(user!.uid, activeData.plan);
+                        } else {
+                          business.handleAcceptQuote(activeData.request?.id || '', 'yappy');
+                        }
+                        toast.success("Solicitud enviada para verificación manual.");
                         closeModal('payment');
                      }}
                      className="w-full py-5 bg-[#52ffac] text-[#0d0e12] rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[#52ffac]/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3"
@@ -213,14 +229,30 @@ export default function App() {
                    <div className="p-1">
                       <PayPalButtons
                         style={{ layout: "horizontal", shape: "pill", color: "blue", height: 55 }}
-                        createOrder={async () => { return "sb"; }}
-                        onApprove={async () => {
-                           if(activeData.plan) {
-                              business.handleApproveSubscription(user!.uid, activeData.plan);
-                           } else {
-                              business.handleAcceptQuote(activeData.request?.id || '', 'paypal');
-                           }
-                           closeModal('payment');
+                        createOrder={(data, actions) => {
+                          const price = activeData.plan
+                            ? (role === 'tech'
+                                ? (activeData.plan === 'plan-pro' ? '45.00' : '99.00')
+                                : (activeData.plan === 'plan-pro' ? '89.00' : activeData.plan === 'plan-enterprise' ? '199.00' : '29.00'))
+                            : (activeData.request?.price || '0').toString();
+
+                          return actions.order.create({
+                            purchase_units: [{
+                              description: activeData.plan ? `MantechPro Subscription: ${activeData.plan}` : `MantechPro Service: ${activeData.request?.assetName}`,
+                              amount: { currency_code: "USD", value: price }
+                            }]
+                          });
+                        }}
+                        onApprove={async (data, actions) => {
+                           return actions.order!.capture().then(async () => {
+                             if(activeData.plan) {
+                                await business.handleApproveSubscription(user!.uid, activeData.plan);
+                             } else {
+                                await business.handleAcceptQuote(activeData.request?.id || '', 'paypal');
+                             }
+                             closeModal('payment');
+                             toast.success("Pago procesado exitosamente.");
+                           });
                         }}
                       />
                    </div>

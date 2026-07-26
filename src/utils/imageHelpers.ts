@@ -2,8 +2,20 @@
  * Comprime y redimensiona una imagen en el cliente antes de subirla.
  * Útil para evitar el límite de 1MB de Firestore Documents.
  */
-export const compressImage = (file: File, maxWidth = 400, quality = 0.7): Promise<string> => {
+export const compressImage = (file: File, maxWidth = 400, quality = 0.6): Promise<string> => {
   return new Promise((resolve, reject) => {
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      reject(new Error('El archivo no es una imagen válida.'));
+      return;
+    }
+
+    // Validar tamaño máximo de entrada (5MB para procesar)
+    if (file.size > 5 * 1024 * 1024) {
+      reject(new Error('La imagen original excede los 5MB. Por favor use una más pequeña.'));
+      return;
+    }
+
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = (event) => {
@@ -34,8 +46,8 @@ export const compressImage = (file: File, maxWidth = 400, quality = 0.7): Promis
         // Retornar como Base64 comprimido
         resolve(canvas.toDataURL('image/jpeg', quality));
       };
-      img.onerror = reject;
+      img.onerror = () => reject(new Error('Error al procesar la imagen.'));
     };
-    reader.onerror = reject;
+    reader.onerror = () => reject(new Error('Error al leer el archivo.'));
   });
 };
