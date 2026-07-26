@@ -11,6 +11,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  onSnapshot,
   serverTimestamp
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
@@ -54,24 +55,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let unsubscribeDoc: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
         setLoggedInEmail(firebaseUser.email || '');
 
-        try {
-          const userRef = doc(db, "users", firebaseUser.uid);
-          const userSnap = await getDoc(userRef);
+        const userRef = doc(db, "users", firebaseUser.uid);
 
-          if (userSnap.exists()) {
-            const data = userSnap.data();
+        // Listener en tiempo real para los datos del usuario
+        unsubscribeDoc = onSnapshot(userRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
             setUserData(data);
 
-            // Admin Logic
+            // Lógica de Rol
             if (firebaseUser.email === 'admin@mantech.com') {
-              if (data.role !== 'admin') {
-                await updateDoc(userRef, { role: 'admin' });
-              }
               setRole('admin');
             } else {
               setRole(data.role || 'client');
@@ -90,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setSubscription(data.subscription);
             }
           } else {
-            // Si el documento no existe, intentamos recuperar o asignar rol cliente
+            // Manejo de usuario nuevo sin documento
             if (firebaseUser.email === 'admin@mantech.com') {
               const adminData = {
                 uid: firebaseUser.uid,
@@ -99,31 +99,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 role: 'admin',
                 createdAt: serverTimestamp()
               };
-              await setDoc(userRef, adminData);
-              setRole('admin');
-              setLoggedInName('Administrador Central');
-              setUserData(adminData);
+              setDoc(userRef, adminData);
             } else {
               setRole('client');
               setLoggedInName(firebaseUser.displayName || 'Usuario');
             }
           }
           setIsLoggedIn(true);
-        } catch (err) {
-          console.error("Auth setup error:", err);
-          setRole('client');
-          setIsLoggedIn(true);
-        }
+          setIsAuthResolving(false);
+        });
+
       } else {
         setIsLoggedIn(false);
         setUser(null);
         setUserData(null);
         setRole(null);
+        setIsAuthResolving(false);
+        if (unsubscribeDoc) unsubscribeDoc();
       }
-      setIsAuthResolving(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeDoc) unsubscribeDoc();
+    };
   }, []);
 
   // Expiration Guard
