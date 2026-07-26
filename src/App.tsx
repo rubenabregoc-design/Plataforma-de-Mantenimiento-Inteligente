@@ -149,6 +149,62 @@ export default function App() {
           <NotificationCenter userId={user.uid} onClose={() => closeModal('notification')} />
         )}
 
+        {modals.payment && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+             <div className="w-full max-w-lg bg-[#121317] border border-[#2a2b2f] rounded-[3rem] p-10 space-y-8 shadow-2xl animate-fade-in-up relative">
+                <button onClick={() => closeModal('payment')} className="absolute top-8 right-8 p-3 bg-white/5 rounded-2xl hover:bg-rose-600/20 text-white transition-all"><X className="w-5 h-5" /></button>
+                <div className="text-center space-y-3">
+                   <div className="w-16 h-16 bg-[#52ffac]/10 rounded-3xl flex items-center justify-center mx-auto text-[#52ffac] border border-[#52ffac]/20 shadow-lg shadow-[#52ffac]/10">
+                      <CreditCard className="w-8 h-8" />
+                   </div>
+                   <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">Checkout Seguro</h3>
+                   <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.3em]">Procesamiento Encriptado AES-256</p>
+                </div>
+
+                <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] space-y-4">
+                   <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest">Concepto</span>
+                      <span className="text-xs font-black text-white uppercase">{activeData.plan ? `Upgrade Plan: ${activeData.plan.replace('plan-','').toUpperCase()}` : 'Pago de Servicio'}</span>
+                   </div>
+                   <div className="h-px bg-white/5"></div>
+                   <div className="flex justify-between items-end">
+                      <span className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest mb-1">Total a Pagar</span>
+                      <p className="text-4xl font-black text-[#52ffac] italic tracking-tighter leading-none">${activeData.plan === 'plan-pro' ? '89' : activeData.plan === 'plan-enterprise' ? '199' : activeData.plan === 'plan-basic' ? '29' : activeData.request?.price || '0'}.00</p>
+                   </div>
+                </div>
+
+                <div className="space-y-4">
+                   <button
+                     onClick={() => {
+                        business.handleAcceptQuote(activeData.request?.id || '', 'yappy');
+                        toast.success("Solicitud enviada para verificación.");
+                        closeModal('payment');
+                     }}
+                     className="w-full py-5 bg-[#52ffac] text-[#0d0e12] rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[#52ffac]/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3"
+                   >
+                      <Download className="w-4 h-4" /> Pagar vía YAPPY (Manual)
+                   </button>
+
+                   <div className="p-1">
+                      <PayPalButtons
+                        style={{ layout: "horizontal", shape: "pill", color: "blue", height: 55 }}
+                        createOrder={async () => { return "sb"; }}
+                        onApprove={async () => {
+                           if(activeData.plan) {
+                              business.handleApproveSubscription(user!.uid, activeData.plan);
+                           } else {
+                              business.handleAcceptQuote(activeData.request?.id || '', 'paypal');
+                           }
+                           closeModal('payment');
+                        }}
+                      />
+                   </div>
+                </div>
+                <p className="text-[8px] text-[#474556] font-bold uppercase text-center tracking-widest">Al confirmar, usted acepta los términos de uso y licencia MantechPro.</p>
+             </div>
+          </div>
+        )}
+
         {modals.demo && (
           <div className="fixed inset-0 z-[300] bg-[#0d0e12]/98 backdrop-blur-3xl flex items-center justify-center p-4">
             <div className="w-full max-w-5xl bg-[#121317] border border-white/10 rounded-[3rem] overflow-hidden shadow-[0_0_100px_rgba(93,60,254,0.15)] animate-fade-in-up relative flex flex-col md:flex-row h-full max-h-[85vh]">

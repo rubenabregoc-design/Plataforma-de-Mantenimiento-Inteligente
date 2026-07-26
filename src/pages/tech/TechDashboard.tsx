@@ -129,6 +129,7 @@ export default function TechDashboard() {
               mantechId={techProfile.mantechId || { status: 'unverified', idNumber: '' }}
               onUpload={() => {}}
               role="tech"
+              cedula={userData?.cedula}
               plan={techProfile.plan}
            />
            <button onClick={logout} className="px-12 py-4 border border-rose-500/30 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-xl mt-12">Cerrar Sesión Segura</button>

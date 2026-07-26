@@ -5,16 +5,16 @@ import { ShieldCheck, UserCheck, Upload, ShieldAlert, CheckCircle2, Clock } from
 interface MantechIDModuleProps {
   mantechId?: MantechID;
   userName?: string; // Nombre del técnico
+  cedula?: string;   // Cédula inmutable del perfil
   onUpload: (type: 'id' | 'record', file: File) => void;
   role?: 'client' | 'tech';
   plan?: string;
 }
 
-export default function MantechIDModule({ mantechId, userName, onUpload, role = 'tech' }: MantechIDModuleProps) {
+export default function MantechIDModule({ mantechId, userName, cedula, onUpload, role = 'tech' }: MantechIDModuleProps) {
   const status = mantechId?.status || 'unverified';
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [currentType, setCurrentType] = React.useState<'id' | 'record' | null>(null);
-  const [idInput, setIdInput] = React.useState(mantechId?.idNumber || '');
 
   const handleButtonClick = (type: 'id' | 'record') => {
     if (type === 'id' && mantechId?.documentUrl) return;
@@ -112,16 +112,15 @@ export default function MantechIDModule({ mantechId, userName, onUpload, role = 
           </div>
         )}
 
-        {/* INPUT DE CÉDULA */}
-        <div className="bg-[#0d0e12] p-6 rounded-[2rem] border border-white/5 space-y-3">
-          <label className="text-[9px] font-black text-[#474556] uppercase tracking-widest ml-1">Confirmación de Identidad (Cédula)</label>
-          <input
-            type="text"
-            value={idInput}
-            onChange={(e) => setIdInput(e.target.value.toUpperCase())}
-            placeholder="8-888-8888"
-            className="w-full bg-[#1c1d21] border border-white/5 rounded-xl py-3.5 px-5 text-white font-black text-sm outline-none focus:border-[#5d3cfe] transition-all"
-          />
+        {/* VISUALIZACIÓN DE CÉDULA INMUTABLE */}
+        <div className="bg-[#0d0e12] p-6 rounded-[2rem] border border-white/5 flex items-center justify-between group">
+          <div>
+            <label className="text-[9px] font-black text-[#474556] uppercase tracking-widest ml-1">Identidad Registrada (Inmutable)</label>
+            <p className="text-xl font-black text-white ml-1 mt-1 tracking-tighter italic">{cedula || '---'}</p>
+          </div>
+          <div className="p-3 bg-white/5 rounded-2xl">
+             <ShieldCheck className="w-6 h-6 text-[#52ffac] opacity-40 group-hover:opacity-100 transition-opacity" />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -157,7 +156,7 @@ export default function MantechIDModule({ mantechId, userName, onUpload, role = 
               <button
                 type="button"
                 onClick={async () => {
-                  if (!idInput) { alert("⚠️ Debe ingresar su número de cédula arriba para generar el récord."); return; }
+                  if (!cedula) { alert("⚠️ Error de perfil: Cédula no localizada."); return; }
 
                   const isAlreadyActive = !!mantechId?.policeRecordUrl;
 
@@ -195,7 +194,7 @@ export default function MantechIDModule({ mantechId, userName, onUpload, role = 
                           <p>Por medio del presente documento, el Nodo de Seguridad de <b>MantechPro Industries Panama S.A.</b> certifica que tras la validación biométrica y el cruce de datos en nuestro Ledger de Integridad:</p>
 
                           <div class="data-row"><span class="label">Especialista Auditado:</span><br/><b>${userName?.toUpperCase() || 'ESPECIALISTA MANTECHPRO'}</b></div>
-                          <div class="data-row"><span class="label">Documento de Identidad:</span><br/><b>${idInput}</b></div>
+                          <div class="data-row"><span class="label">Documento de Identidad:</span><br/><b>${cedula}</b></div>
                           <div class="data-row"><span class="label">Estatus de Conducta:</span><br/><b style="color: #059669;">ÓPTIMO - SIN INCIDENCIAS REPORTADAS</b></div>
                           <div class="data-row"><span class="label">Activado y Validado por:</span><br/><b>NODO CENTRAL MANTECH IA (AUTORIZACIÓN DIGITAL)</b></div>
                           <div class="data-row"><span class="label">Fecha de Activación:</span><br/>${new Date().toLocaleString('es-PA')}</div>

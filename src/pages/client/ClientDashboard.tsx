@@ -300,6 +300,7 @@ export default function ClientDashboard() {
               mantechId={{ status: userData?.recordStatus || 'unverified', idNumber: '' }}
               onUpload={() => {}}
               role="client"
+              cedula={userData?.cedula}
               plan={subscription.planId}
            />
            <button onClick={logout} className="px-12 py-4 border border-rose-500/30 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-xl mt-12">Cerrar Sesión Segura</button>
