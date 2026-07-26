@@ -1,10 +1,27 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // REGLA MAESTRA TEMPORAL PARA DESARROLLO
-    // Desbloquea todas las colecciones para usuarios autenticados
+
+    // Función para validar autenticación
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Regla de Desarrollo Abierto Blindada
+    // Permite lectura de configuración pública incluso sin estar logueado (para Landing Page)
+    match /app_config/{docId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // El resto de colecciones requieren estar logueado
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isSignedIn();
     }
   }
 }

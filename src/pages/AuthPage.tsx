@@ -69,7 +69,15 @@ export default function AuthPage() {
         const res = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
         await logActivity(res.user.uid, res.user.email || 'user', 'LOGIN', `Acceso desde AuthPage`);
       }
-    } catch (err: any) { setAuthError(err.message); }
+    } catch (err: any) {
+      let friendlyMsg = "Error al procesar la solicitud.";
+      if (err.code === 'auth/email-already-in-use') friendlyMsg = "Este correo ya está registrado en el sistema.";
+      if (err.code === 'auth/invalid-credential') friendlyMsg = "Credenciales incorrectas. Verifique su correo o clave.";
+      if (err.code === 'auth/weak-password') friendlyMsg = "La clave debe tener al menos 6 caracteres.";
+      if (err.code === 'auth/invalid-email') friendlyMsg = "El formato del correo no es válido.";
+
+      setAuthError(friendlyMsg);
+    }
   };
 
   return (

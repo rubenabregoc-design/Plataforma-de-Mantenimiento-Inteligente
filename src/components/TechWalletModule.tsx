@@ -22,12 +22,29 @@ export default function TechWalletModule({ wallet, techId, onWithdraw, plan = 'b
     yappyNumber: wallet.yappyNumber || ''
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
 
   const planInfo = {
     basic: { name: 'Básico', speed: '3-5 Días Hábiles', color: 'text-amber-500 bg-amber-500/10' },
     pro: { name: 'Profesional', speed: '48 Horas', color: 'text-cyan-400 bg-cyan-400/10 border border-cyan-400/20' },
     enterprise: { name: 'Corporativo', speed: '24 Horas', color: 'text-emerald-400 bg-emerald-400/10 border border-emerald-400/20' }
   }[plan];
+
+  const handleWithdrawRequest = () => {
+    const amount = Number(withdrawAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("Ingrese un monto válido.");
+      return;
+    }
+    if (amount > wallet.balance) {
+      toast.error("El monto excede su saldo disponible.");
+      return;
+    }
+    onWithdraw(techId, amount);
+    setShowWithdrawModal(false);
+    setWithdrawAmount('');
+  };
 
   const handleSaveBank = async () => {
     setIsSaving(true);
@@ -70,12 +87,7 @@ export default function TechWalletModule({ wallet, techId, onWithdraw, plan = 'b
             <h2 className="text-5xl font-black tracking-tighter text-white">${(wallet.balance || 0).toFixed(2)}</h2>
             <div className="flex gap-3 mt-8">
                <button
-                 onClick={() => {
-                   const amt = prompt("Monto a retirar:", wallet.balance.toString());
-                   if(amt) {
-                     onWithdraw(techId, Number(amt));
-                   }
-                 }}
+                 onClick={() => setShowWithdrawModal(true)}
                  className="flex-1 py-3.5 bg-[#5d3cfe] hover:brightness-110 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-[#5d3cfe]/20"
                >
                  Solicitar Retiro
@@ -373,6 +385,64 @@ export default function TechWalletModule({ wallet, techId, onWithdraw, plan = 'b
            )}
         </div>
       </div>
+
+      {/* Withdraw Modal */}
+      {showWithdrawModal && (
+        <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+           <div className="w-full max-w-md bg-[#121317] border border-white/10 rounded-[2.5rem] p-8 space-y-8 shadow-2xl animate-fade-in-up">
+              <div className="text-center space-y-2">
+                 <div className="w-16 h-16 bg-[#5d3cfe]/10 rounded-2xl flex items-center justify-center mx-auto text-[#5d3cfe]">
+                    <Wallet className="w-8 h-8" />
+                 </div>
+                 <h3 className="text-xl font-black text-white uppercase tracking-tighter italic">Liquidación de Fondos</h3>
+                 <p className="text-[9px] text-[#474556] font-black uppercase tracking-widest">Saldo disponible: ${(wallet.balance || 0).toFixed(2)}</p>
+              </div>
+
+              <div className="space-y-4">
+                 <div className="space-y-2">
+                    <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Monto a Retirar (USD)</label>
+                    <div className="relative">
+                       <span className="absolute left-5 top-1/2 -translate-y-1/2 text-lg font-black text-[#5d3cfe] italic">$</span>
+                       <input
+                         type="number"
+                         value={withdrawAmount}
+                         onChange={(e) => setWithdrawAmount(e.target.value)}
+                         placeholder="0.00"
+                         className="w-full bg-black border border-white/10 rounded-2xl py-4 pl-10 pr-6 text-xl font-black text-white outline-none focus:border-[#5d3cfe] transition-all"
+                       />
+                    </div>
+                 </div>
+
+                 <div className="bg-[#1c1d21] p-5 rounded-2xl border border-white/5 space-y-2">
+                    <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest">
+                       <span className="text-[#474556]">Velocidad de Transferencia</span>
+                       <span className={planInfo.color.split(' ')[0]}>{planInfo.speed}</span>
+                    </div>
+                    <div className="h-px bg-white/5"></div>
+                    <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest">
+                       <span className="text-[#474556]">Comisión Mantech</span>
+                       <span className="text-white">$0.00</span>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                 <button
+                   onClick={() => setShowWithdrawModal(false)}
+                   className="flex-1 py-4 border border-white/10 text-[#474556] hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                 >
+                   Cancelar
+                 </button>
+                 <button
+                   onClick={handleWithdrawRequest}
+                   className="flex-[2] py-4 bg-[#52ffac] text-[#0d0e12] rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#52ffac]/20 hover:brightness-110 active:scale-95 transition-all"
+                 >
+                   Confirmar Retiro ➔
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 }

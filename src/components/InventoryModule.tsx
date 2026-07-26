@@ -121,7 +121,7 @@ export default function InventoryModule({ items, assets, onUpdateQuantity, onAdd
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredItems.map(item => (
+        {filteredItems.length > 0 ? filteredItems.map(item => (
           <div key={item.id} className="modern-card p-6 flex flex-col gap-6 relative group border border-[#2a2b2f] bg-[#121317]">
              <div className="flex justify-between items-start">
                 <div className="p-3 bg-[#c7bfff]/10 rounded-xl text-[#c7bfff] border border-[#c7bfff]/20">
@@ -170,7 +170,18 @@ export default function InventoryModule({ items, assets, onUpdateQuantity, onAdd
                 </button>
              </div>
           </div>
-        ))}
+        )) : (
+          <div className="col-span-full py-24 bg-[#121317] border border-dashed border-white/5 rounded-[3rem] text-center space-y-6">
+             <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto opacity-20">
+                <Package className="w-10 h-10 text-white" />
+             </div>
+             <div className="space-y-2">
+                <h3 className="text-sm font-black text-white uppercase tracking-widest">Almacén Vacío</h3>
+                <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.3em] max-w-xs mx-auto">Registre piezas, lubricantes o consumibles para llevar un control digital del stock.</p>
+             </div>
+             <button onClick={() => setIsAdding(true)} className="px-8 py-3 bg-[#5d3cfe] text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-[#5d3cfe]/20">Añadir Primer Item</button>
+          </div>
+        )}
       </div>
     </div>
   );

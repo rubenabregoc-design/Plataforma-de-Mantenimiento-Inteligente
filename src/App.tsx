@@ -1,6 +1,6 @@
 import { Toaster, toast } from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
-import { PayPalScriptProvider } from "@paypal/react-paypal-js";
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from './context/AuthContext';
 import { useData } from './context/DataContext';
@@ -25,10 +25,13 @@ import ShieldCheck from 'lucide-react/dist/esm/icons/shield-check';
 import BadgeCheck from 'lucide-react/dist/esm/icons/badge-check';
 import Truck from 'lucide-react/dist/esm/icons/truck';
 import MessageSquare from 'lucide-react/dist/esm/icons/message-square';
+import CreditCard from 'lucide-react/dist/esm/icons/credit-card';
+import Download from 'lucide-react/dist/esm/icons/download';
 import Logo from './components/Logo';
 
 import { AssetService } from './services/assetService';
 import { cleanForFirebase } from './utils/firebaseHelpers';
+import { compressImage } from './utils/imageHelpers';
 
 export default function App() {
   const { user, isLoggedIn, subscription, logout, role } = useAuth();
@@ -83,12 +86,22 @@ export default function App() {
 
   const handleUploadAvatar = async (file: File) => {
     if (!user) return;
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      await setDoc(doc(db, "users", user.uid), { profileImage: reader.result as string }, { merge: true });
-      toast.success("Avatar actualizado.");
-    };
-    reader.readAsDataURL(file);
+
+    const loadingToast = toast.loading("Procesando imagen industrial...");
+
+    try {
+      // Punto #1: Compresión en el cliente para evitar el límite de 1MB de Firestore
+      const compressedBase64 = await compressImage(file, 300, 0.6);
+
+      await setDoc(doc(db, "users", user.uid), {
+        profileImage: compressedBase64
+      }, { merge: true });
+
+      toast.success("Avatar optimizado y actualizado.", { id: loadingToast });
+    } catch (err) {
+      console.error("Image Processing Error:", err);
+      toast.error("La imagen es demasiado pesada o no es válida.", { id: loadingToast });
+    }
   };
 
   return (

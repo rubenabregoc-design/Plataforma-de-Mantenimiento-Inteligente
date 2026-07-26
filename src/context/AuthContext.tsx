@@ -89,18 +89,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (data.subscription) {
               setSubscription(data.subscription);
             }
-          } else if (firebaseUser.email === 'admin@mantech.com') {
-            const adminData = {
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              name: 'Administrador Central',
-              role: 'admin',
-              createdAt: serverTimestamp()
-            };
-            await setDoc(userRef, adminData);
-            setRole('admin');
-            setLoggedInName('Administrador Central');
-            setUserData(adminData);
+          } else {
+            // Si el documento no existe, intentamos recuperar o asignar rol cliente
+            if (firebaseUser.email === 'admin@mantech.com') {
+              const adminData = {
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                name: 'Administrador Central',
+                role: 'admin',
+                createdAt: serverTimestamp()
+              };
+              await setDoc(userRef, adminData);
+              setRole('admin');
+              setLoggedInName('Administrador Central');
+              setUserData(adminData);
+            } else {
+              setRole('client');
+              setLoggedInName(firebaseUser.displayName || 'Usuario');
+            }
           }
           setIsLoggedIn(true);
         } catch (err) {

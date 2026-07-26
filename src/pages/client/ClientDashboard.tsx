@@ -97,15 +97,31 @@ export default function ClientDashboard() {
                 {assets.filter(a =>
                   a.name.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
                   a.licensePlate?.toLowerCase().includes(assetSearchQuery.toLowerCase())
-                ).slice((assetCurrentPage - 1) * assetPageSize, assetCurrentPage * assetPageSize).map(a => (
-                  <AssetIntelligentCard
-                    key={a.id}
-                    asset={a}
-                    requests={requests}
-                    onOpenDetails={(asset) => openModal('fuel', { asset })}
-                    onOpenPreTrip={(asset) => openModal('preTrip', { asset })}
-                  />
-                ))}
+                ).length > 0 ? (
+                  assets.filter(a =>
+                    a.name.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
+                    a.licensePlate?.toLowerCase().includes(assetSearchQuery.toLowerCase())
+                  ).slice((assetCurrentPage - 1) * assetPageSize, assetCurrentPage * assetPageSize).map(a => (
+                    <AssetIntelligentCard
+                      key={a.id}
+                      asset={a}
+                      requests={requests}
+                      onOpenDetails={(asset) => openModal('fuel', { asset })}
+                      onOpenPreTrip={(asset) => openModal('preTrip', { asset })}
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full py-24 bg-[#121317] border border-dashed border-white/5 rounded-[3rem] text-center space-y-6">
+                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto opacity-20">
+                       <Package className="w-10 h-10 text-white" />
+                    </div>
+                    <div className="space-y-2">
+                       <h3 className="text-sm font-black text-white uppercase tracking-widest">Sin Equipos Registrados</h3>
+                       <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.3em] max-w-xs mx-auto">Comience registrando su primer activo (Vehículo, A/C, Planta Eléctrica) para iniciar el monitoreo inteligente.</p>
+                    </div>
+                    <button onClick={() => openModal('asset')} className="px-8 py-3 bg-[#5d3cfe] text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-[#5d3cfe]/20">Registrar Ahora</button>
+                  </div>
+                )}
               </div>
 
               {/* Fuel Audit solo se muestra si hay activos relevantes (Car, Moto, Generator) */}
@@ -235,31 +251,44 @@ export default function ClientDashboard() {
         <div className="space-y-10 animate-fade-in">
           <header><h1 className="text-4xl font-black text-white tracking-tighter uppercase">Contratos <span className="text-[#52ffac]">Activos</span></h1></header>
           <div className="space-y-6">
-            {requests.filter(r => r.status !== 'open_bidding').map(req => (
-              <div key={req.id} className="bg-[#121317] border border-white/10 p-10 rounded-[2.5rem] space-y-10 shadow-2xl relative overflow-hidden">
-                <div className="flex justify-between items-center relative z-10">
-                  <h4 className="font-black text-white text-2xl uppercase tracking-tighter">{req.assetName}</h4>
-                  <span className="px-6 py-2 bg-[#1c1d21] border border-white/10 rounded-full text-[10px] font-black text-[#52ffac] uppercase tracking-widest shadow-inner">
-                    {getStatusLabel(req.status)}
-                  </span>
+            {requests.filter(r => r.status !== 'open_bidding').length > 0 ? (
+              requests.filter(r => r.status !== 'open_bidding').map(req => (
+                <div key={req.id} className="bg-[#121317] border border-white/10 p-10 rounded-[2.5rem] space-y-10 shadow-2xl relative overflow-hidden">
+                  <div className="flex justify-between items-center relative z-10">
+                    <h4 className="font-black text-white text-2xl uppercase tracking-tighter">{req.assetName}</h4>
+                    <span className="px-6 py-2 bg-[#1c1d21] border border-white/10 rounded-full text-[10px] font-black text-[#52ffac] uppercase tracking-widest shadow-inner">
+                      {getStatusLabel(req.status)}
+                    </span>
+                  </div>
+                  {req.status === 'quoted' && (
+                    <div className="bg-[#5d3cfe]/10 p-8 rounded-[2.5rem] border border-[#5d3cfe]/30 flex justify-between items-center animate-fade-in">
+                      <p className="text-white font-black text-xl uppercase tracking-tight">Propuesta: ${req.price?.toFixed(2)} USD</p>
+                      <button onClick={() => openModal('payment', { request: req })} className="px-8 py-4 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase shadow-xl shadow-[#52ffac]/20 hover:scale-105 transition-all">Gestionar Pago</button>
+                    </div>
+                  )}
+                  {req.status === 'executing' && (
+                    <div className="bg-[#1c1d21] p-8 rounded-[2.5rem] border border-white/5 space-y-6 shadow-2xl">
+                       <div className="flex items-center gap-3 text-[#52ffac]">
+                          <Activity className="w-6 h-6 animate-pulse" />
+                          <h4 className="text-xl font-black uppercase tracking-tighter">Servicio en Ejecución</h4>
+                       </div>
+                       <button onClick={() => openModal('signature', { requestId: req.id })} className="w-full py-5 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Cerrar Servicio & Liberar Pago</button>
+                    </div>
+                  )}
                 </div>
-                {req.status === 'quoted' && (
-                  <div className="bg-[#5d3cfe]/10 p-8 rounded-[2.5rem] border border-[#5d3cfe]/30 flex justify-between items-center animate-fade-in">
-                    <p className="text-white font-black text-xl uppercase tracking-tight">Propuesta: ${req.price?.toFixed(2)} USD</p>
-                    <button onClick={() => openModal('payment', { request: req })} className="px-8 py-4 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase shadow-xl shadow-[#52ffac]/20 hover:scale-105 transition-all">Gestionar Pago</button>
-                  </div>
-                )}
-                {req.status === 'executing' && (
-                  <div className="bg-[#1c1d21] p-8 rounded-[2.5rem] border border-white/5 space-y-6 shadow-2xl">
-                     <div className="flex items-center gap-3 text-[#52ffac]">
-                        <Activity className="w-6 h-6 animate-pulse" />
-                        <h4 className="text-xl font-black uppercase tracking-tighter">Servicio en Ejecución</h4>
-                     </div>
-                     <button onClick={() => openModal('signature', { requestId: req.id })} className="w-full py-5 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Cerrar Servicio & Liberar Pago</button>
-                  </div>
-                )}
+              ))
+            ) : (
+              <div className="py-32 bg-[#121317] border border-dashed border-white/5 rounded-[4rem] text-center space-y-6">
+                 <FileCheck2 className="w-16 h-16 text-[#474556] mx-auto opacity-20" />
+                 <div className="space-y-2">
+                    <h3 className="text-lg font-black text-white uppercase tracking-widest italic">Sin Contratos</h3>
+                    <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.3em] max-w-sm mx-auto">
+                       Sus servicios activos aparecerán aquí. Solicite una cotización en el Marketplace para iniciar.
+                    </p>
+                 </div>
+                 <button onClick={() => setTab('client', 'marketplace')} className="px-10 py-3.5 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#5d3cfe] transition-all">Ir al Marketplace ➔</button>
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}

@@ -66,26 +66,99 @@ export default function TechDashboard() {
               <button onClick={() => setTab('tech', 'subscriptions')} className="px-6 py-2 bg-white/5 border border-white/10 text-white rounded-xl text-[9px] font-black uppercase hover:bg-[#5d3cfe] transition-all">Mejorar Plan</button>
            </header>
            <div className="grid grid-cols-1 gap-6">
-             {requests.filter(r => r.status !== 'open_bidding').map(req => (
-               <div key={req.id} className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2.5rem] shadow-2xl space-y-6 relative overflow-hidden group hover:border-[#5d3cfe]/30 transition-all">
-                  <div className="flex justify-between items-center relative z-10">
-                    <h4 className="font-black text-white text-lg uppercase tracking-tight">{req.clientName}</h4>
-                    <span className="px-4 py-1.5 bg-[#1c1d21] border border-[#2a2b2f] rounded-full text-[9px] font-black text-[#c7bfff] uppercase tracking-widest shadow-inner">{getStatusLabel(req.status)}</span>
-                  </div>
-                  <div className="p-5 bg-[#0d0e12] rounded-2xl border border-[#2a2b2f] italic text-xs text-[#c8c4d9]">"{req.description}"</div>
-
-                  {req.status === 'pending' && (
-                    <button onClick={() => openModal('payment', { request: req })} className="w-full py-4 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl">Enviar Cotización ➔</button>
-                  )}
-
-                  {req.status === 'executing' && (
-                    <div className="flex gap-3">
-                       <button onClick={() => openModal('material', { request: req })} className="flex-1 py-4 bg-[#1c1d21] border border-[#2a2b2f] text-white rounded-xl text-[10px] font-black uppercase">Cargar Material</button>
-                       <button onClick={() => openModal('unforeseen', { request: req })} className="flex-1 py-4 bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-xl text-[10px] font-black uppercase">Imprevisto</button>
+             {requests.filter(r => r.status !== 'open_bidding' && r.techId === techProfile.id).length > 0 ? (
+               requests.filter(r => r.status !== 'open_bidding' && r.techId === techProfile.id).map(req => (
+                 <div key={req.id} className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2.5rem] shadow-2xl space-y-6 relative overflow-hidden group hover:border-[#5d3cfe]/30 transition-all">
+                    <div className="flex justify-between items-center relative z-10">
+                      <h4 className="font-black text-white text-lg uppercase tracking-tight">{req.clientName}</h4>
+                      <span className="px-4 py-1.5 bg-[#1c1d21] border border-[#2a2b2f] rounded-full text-[9px] font-black text-[#c7bfff] uppercase tracking-widest shadow-inner">{getStatusLabel(req.status)}</span>
                     </div>
-                  )}
+                    <div className="p-5 bg-[#0d0e12] rounded-2xl border border-[#2a2b2f] italic text-xs text-[#c8c4d9]">"{req.description}"</div>
+
+                    {req.status === 'pending' && (
+                      <button onClick={() => openModal('payment', { request: req })} className="w-full py-4 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl">Enviar Cotización ➔</button>
+                    )}
+
+                    {req.status === 'executing' && (
+                      <div className="flex gap-3">
+                         <button onClick={() => openModal('material', { request: req })} className="flex-1 py-4 bg-[#1c1d21] border border-[#2a2b2f] text-white rounded-xl text-[10px] font-black uppercase">Cargar Material</button>
+                         <button onClick={() => openModal('unforeseen', { request: req })} className="flex-1 py-4 bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-xl text-[10px] font-black uppercase">Imprevisto</button>
+                      </div>
+                    )}
+                 </div>
+               ))
+             ) : (
+               <div className="py-20 bg-[#121317] border border-dashed border-white/5 rounded-[3rem] text-center space-y-6">
+                  <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto opacity-20">
+                     <Inbox className="w-10 h-10 text-white" />
+                  </div>
+                  <div className="space-y-2">
+                     <h3 className="text-sm font-black text-white uppercase tracking-widest">Bandeja Vacía</h3>
+                     <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.3em] max-w-xs mx-auto">No has recibido solicitudes directas aún. Activa tu radar para ser visible a los clientes.</p>
+                  </div>
                </div>
-             ))}
+             )}
+           </div>
+        </div>
+      )}
+
+      {techTab === 'bidding_market' && (
+        <div className="space-y-8">
+           <header>
+              <h1 className="text-4xl font-black text-white uppercase tracking-tighter italic">Bolsa de <span className="text-[#52ffac]">Trabajo</span></h1>
+              <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.4em] mt-2">Oportunidades en Subasta Abierta</p>
+           </header>
+
+           <div className="py-32 bg-[#121317] border border-dashed border-[#52ffac]/10 rounded-[4rem] text-center space-y-8 relative overflow-hidden">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-[#52ffac]/5 rounded-full blur-[120px]"></div>
+              <div className="relative z-10 space-y-6">
+                 <div className="w-24 h-24 bg-[#52ffac]/10 rounded-[2.5rem] flex items-center justify-center mx-auto text-[#52ffac] shadow-[0_0_50px_rgba(82,255,172,0.1)]">
+                    <Layers className="w-10 h-10" />
+                 </div>
+                 <div className="space-y-3">
+                    <h3 className="text-xl font-black text-white uppercase tracking-widest italic">Mercado en Calma</h3>
+                    <p className="text-[10px] text-[#c8c4d9] font-medium uppercase tracking-[0.3em] max-w-md mx-auto leading-relaxed">
+                       Actualmente no hay subastas activas en tu zona. MantechPro te notificará vía Sat-Link cuando una nueva unidad requiera asistencia inmediata.
+                    </p>
+                 </div>
+                 <div className="flex justify-center gap-4">
+                    <div className="px-5 py-2 bg-black/40 border border-white/5 rounded-full flex items-center gap-2">
+                       <span className="w-1.5 h-1.5 rounded-full bg-[#52ffac] animate-pulse"></span>
+                       <span className="text-[8px] font-black text-[#52ffac] uppercase tracking-widest">Escaneando Red...</span>
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {techTab === 'agenda' && (
+        <div className="space-y-8">
+           <header>
+              <h1 className="text-4xl font-black text-white uppercase tracking-tighter italic italic">Mi <span className="text-[#c7bfff]">Agenda</span></h1>
+           </header>
+
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-2 space-y-6">
+                 <div className="p-20 bg-[#121317] border border-white/5 rounded-[3rem] text-center space-y-6">
+                    <Calendar className="w-12 h-12 text-[#474556] mx-auto opacity-20" />
+                    <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em]">No hay eventos confirmados para esta semana</p>
+                 </div>
+              </div>
+              <div className="bg-[#1c1d21] border border-white/5 rounded-[2.5rem] p-8 space-y-6">
+                 <h4 className="text-[10px] font-black text-[#c7bfff] uppercase tracking-[0.3em]">Resumen Semanal</h4>
+                 <div className="space-y-4">
+                    <div className="flex justify-between items-center text-xs font-bold text-white/40">
+                       <span>Servicios Pendientes</span>
+                       <span>0</span>
+                    </div>
+                    <div className="h-px bg-white/5"></div>
+                    <div className="flex justify-between items-center text-xs font-bold text-white/40">
+                       <span>Horas Estimadas</span>
+                       <span>0h</span>
+                    </div>
+                 </div>
+              </div>
            </div>
         </div>
       )}
