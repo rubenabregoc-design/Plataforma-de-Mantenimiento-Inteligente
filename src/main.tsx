@@ -5,11 +5,14 @@ import './index.css';
 import './i18n';
 
 import {AuthProvider} from './context/AuthContext';
+import {DataProvider} from './context/DataContext';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
-      <App />
+      <DataProvider>
+        <App />
+      </DataProvider>
     </AuthProvider>
   </StrictMode>,
 );
