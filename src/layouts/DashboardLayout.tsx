@@ -28,7 +28,7 @@ export default function DashboardLayout({
   handleUploadAvatar
 }: DashboardLayoutProps) {
   const { t, i18n } = useTranslation();
-  const { role, loggedInName, profileImage, logout } = useAuth();
+  const { role, loggedInName, profileImage, logout, subscription } = useAuth();
   const { tabs, setTab } = useUI();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
@@ -40,6 +40,11 @@ export default function DashboardLayout({
   const navigateClient = (tab: string) => setTab('client', tab);
   const navigateTech = (tab: string) => setTab('tech', tab);
   const navigateAdmin = (tab: string) => setTab('admin', tab);
+
+  // --- Lógica de Módulos por Plan (SaaS Flow) ---
+  const isFree = subscription.planId === 'plan-free';
+  const isBasic = subscription.planId === 'plan-basic';
+  const isPro = subscription.planId === 'plan-pro' || subscription.planId === 'plan-enterprise';
 
   return (
     <div className="min-h-screen bg-[#0d0e12] flex flex-col font-sans text-[#e3e2e8] overflow-hidden grid-bg">
@@ -106,12 +111,12 @@ export default function DashboardLayout({
 
           <div className="flex items-center gap-4 mb-10 group cursor-pointer" onClick={() => document.getElementById('avatar-input')?.click()}>
              <div className="w-14 h-14 rounded-2xl bg-[#1c1d21] border border-white/10 flex items-center justify-center text-xl font-black text-white shadow-2xl overflow-hidden relative">
-               {profileImage ? <img src={profileImage} className="w-full h-full object-cover" /> : loggedInName?.[0] || 'U'}
+               {profileImage ? <img src={profileImage} className="w-full h-full object-cover" /> : (loggedInName?.[0] || 'U')}
                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Camera className="w-4 h-4 text-white" /></div>
                <input type="file" id="avatar-input" className="hidden" accept="image/*" onChange={e => e.target.files?.[0] && handleUploadAvatar(e.target.files[0])} />
              </div>
              <div className="overflow-hidden">
-               <h4 className="font-black text-white text-xs tracking-tight truncate uppercase leading-tight">{loggedInName}</h4>
+               <h4 className="font-black text-white text-xs tracking-tight truncate uppercase leading-tight">{loggedInName || 'Usuario'}</h4>
                <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest mt-1">
                  {role === 'client' ? 'CLIENTE' : role === 'tech' ? 'TÉCNICO' : 'ADMINISTRADOR'}
                </p>
@@ -119,25 +124,33 @@ export default function DashboardLayout({
           </div>
 
           <nav className="space-y-1.5 flex-1 text-[11px] font-black uppercase tracking-wider">
-            {role === 'client' ? (
+            {role === 'client' && (
               <>
                 <button onClick={() => navigateClient('dashboard')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'dashboard' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><LayoutDashboard className="w-4 h-4" /> {t('my_assets', 'Mis Equipos')}</button>
-                {planLimits?.fleet !== 'none' && (
+
+                {/* Módulos Gated (Solo Emprendedor+) */}
+                {!isFree && (
                   <button onClick={() => navigateClient('fleet')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'fleet' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Globe className="w-5 h-5" /> {t('fleet_b2b', 'Flota B2B')}</button>
                 )}
+
                 <button onClick={() => navigateClient('ai')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'ai' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><BrainCircuit className="w-5 h-5 text-[#52ffac]" /> {t('self_diagnostic', 'Autodiagnóstico')}</button>
                 <button onClick={() => navigateClient('warranties')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'warranties' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><ShieldCheck className="w-5 h-5" /> {t('warranty_vault', 'Bóveda Garantías')}</button>
                 <button onClick={() => navigateClient('marketplace')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'marketplace' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Store className="w-5 h-5" /> {t('find_experts', 'Buscar Expertos')}</button>
                 <button onClick={() => navigateClient('quotes')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'quotes' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileCheck2 className="w-4 h-4" /> {t('contracts', 'Contratos')}</button>
-                {planLimits?.maxAssets > 3 && (
+
+                {/* Módulo Auditoría (Solo Profesional+) */}
+                {isPro && (
                   <button onClick={() => navigateClient('audit')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'audit' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileText className="w-4 h-4" /> {t('audit', 'Auditoría')}</button>
                 )}
+
                 <button onClick={() => navigateClient('inventory')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'inventory' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Package className="w-4 h-4" /> {t('spare_parts', 'Repuestos')}</button>
                 <button onClick={() => navigateClient('subscriptions')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'subscriptions' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Star className="w-4 h-4" /> {t('membership', 'Membresía')}</button>
                 <button onClick={() => navigateClient('chat')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'chat' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><MessageSquare className="w-4 h-4" /> {t('chat', 'Chat')}</button>
                 <button onClick={() => navigateClient('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> {t('settings', 'Configuración')}</button>
               </>
-            ) : role === 'tech' ? (
+            )}
+
+            {role === 'tech' && (
               <>
                 <button onClick={() => navigateTech('received')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'received' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Inbox className="w-4 h-4" /> Bandeja</button>
                 <button onClick={() => navigateTech('bidding_market')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'bidding_market' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Layers className="w-4 h-4" /> Bolsa de Trabajo</button>
@@ -148,7 +161,9 @@ export default function DashboardLayout({
                 <button onClick={() => navigateTech('profile')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'profile' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><User className="w-4 h-4" /> Mi Perfil</button>
                 <button onClick={() => navigateTech('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> Configuración</button>
               </>
-            ) : (
+            )}
+
+            {role === 'admin' && (
               <>
                 <button onClick={() => navigateAdmin('finance')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'finance' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><DollarSign className="w-4 h-4" /> Finanzas</button>
                 <button onClick={() => navigateAdmin('audit')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'audit' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileText className="w-4 h-4" /> Logs Actividad</button>

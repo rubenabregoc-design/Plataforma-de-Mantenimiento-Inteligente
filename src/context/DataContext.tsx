@@ -32,45 +32,63 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    // 1. Técnicos (Público para todos los autenticados)
     const unsubTechs = onSnapshot(collection(db, "technicians"), (snap) =>
       setTechnicians(snap.docs.map(d => ({ id: d.id, ...d.data() })) as TechProfile[]),
       (err) => console.error("Tech Snapshot Error:", err)
     );
 
+    // 2. Solicitudes (Filtradas por Rol)
     const qReq = role === 'admin'
       ? query(collection(db, "requests"), orderBy("createdAt", "desc"))
       : query(collection(db, "requests"), where(role === 'client' ? 'clientId' : 'techUserId', "==", user.uid));
 
     const unsubReqs = onSnapshot(qReq, (snap) => {
       setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })) as JobRequest[]);
-    }, (err) => console.error("Req Snapshot Error:", err));
+    }, (err) => console.warn("Req Snapshot Error (Check Rules):", err));
 
-    const qAssets = role === 'admin'
-      ? collection(db, "assets")
-      : query(collection(db, "assets"), where("clientId", "==", user.uid));
+    // 3. Activos (Solo Clientes y Admin)
+    let unsubAssets = () => {};
+    if (role === 'client' || role === 'admin') {
+      const qAssets = role === 'admin'
+        ? collection(db, "assets")
+        : query(collection(db, "assets"), where("clientId", "==", user.uid));
 
-    const unsubAssets = onSnapshot(qAssets, (snap) => {
-      setAssets(snap.docs.map(d => ({ id: d.id, ...d.data() })) as Asset[]);
+      unsubAssets = onSnapshot(qAssets, (snap) => {
+        setAssets(snap.docs.map(d => ({ id: d.id, ...d.data() })) as Asset[]);
+        setIsDataLoading(false);
+      }, (err) => {
+        console.warn("Asset Snapshot Error:", err);
+        setIsDataLoading(false);
+      });
+    } else {
       setIsDataLoading(false);
-    }, (err) => console.error("Asset Snapshot Error:", err));
+    }
 
+    // 4. Inventario (Público o Admin)
     const unsubInven = onSnapshot(collection(db, "inventory"), (snap) =>
       setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })) as InventoryItem[]),
-      (err) => console.error("Inv Snapshot Error:", err)
+      (err) => console.warn("Inv Snapshot Error:", err)
     );
 
-    const unsubReminders = onSnapshot(collection(db, "reminders"), (snap) =>
-      setReminders(snap.docs.map(d => ({ id: d.id, ...d.data() })) as MaintenanceReminder[]),
-      (err) => console.error("Rem Snapshot Error:", err)
-    );
+    // 5. Recordatorios (Solo Clientes)
+    let unsubReminders = () => {};
+    if (role === 'client') {
+      const qRem = query(collection(db, "reminders"), where("clientId", "==", user.uid));
+      unsubReminders = onSnapshot(qRem, (snap) =>
+        setReminders(snap.docs.map(d => ({ id: d.id, ...d.data() })) as MaintenanceReminder[]),
+        (err) => console.warn("Rem Snapshot Error:", err)
+      );
+    }
 
+    // 6. Agenda (Filtrada)
     const qAgenda = role === 'tech'
       ? query(collection(db, "agenda"), where("techUserId", "==", user.uid))
       : query(collection(db, "agenda"), where("clientId", "==", user.uid));
 
     const unsubAgenda = onSnapshot(qAgenda, (snap) => {
       setAgenda(snap.docs.map(d => ({ id: d.id, ...d.data() })) as AgendaEvent[]);
-    }, (err) => console.error("Agenda Snapshot Error:", err));
+    }, (err) => console.warn("Agenda Snapshot Error:", err));
 
     return () => {
       unsubTechs();
