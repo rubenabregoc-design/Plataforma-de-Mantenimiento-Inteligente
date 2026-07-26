@@ -159,7 +159,7 @@ export default function DiagnosticAIView({ assets, onFindTechnicians, mode = 'ma
               <select
                 value={selectedAssetId}
                 onChange={(e) => { setSelectedAssetId(e.target.value); setSelectedIssueId(null); }}
-                className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-2xl text-xs font-black text-zinc-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer shadow-sm"
+                className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-2xl text-sm font-black text-zinc-950 focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer shadow-sm"
               >
                 <option value="" className="text-zinc-400">-- SELECCIONA UN EQUIPO --</option>
                 {assets.map(a => <option key={a.id} value={a.id} className="text-zinc-900 font-bold">{a.name.toUpperCase()}</option>)}
@@ -192,7 +192,7 @@ export default function DiagnosticAIView({ assets, onFindTechnicians, mode = 'ma
                   ))}
                   <button
                     onClick={() => { setSelectedIssueId(0); setAiResult(null); }}
-                    className={`p-4 rounded-2xl border text-xs font-bold text-center transition-all ${selectedIssueId === 0 ? 'border-indigo-600 bg-indigo-50 shadow-sm' : 'border-zinc-100 text-zinc-400'}`}
+                    className={`p-4 rounded-2xl border text-xs font-bold text-center transition-all ${selectedIssueId === 0 ? 'border-indigo-600 bg-indigo-50 text-indigo-900 shadow-sm' : 'border-zinc-100 text-zinc-400'}`}
                   >
                     Otro problema (Descripción libre)
                   </button>
@@ -214,7 +214,7 @@ export default function DiagnosticAIView({ assets, onFindTechnicians, mode = 'ma
                   value={customNotes}
                   onChange={(e) => setCustomIssue(e.target.value)}
                   placeholder={mode === 'manual' ? "Describe el fallo detalladamente..." : (selectedIssueId === 0 ? "Ej: Mi equipo hace un ruido extraño al encender..." : "Detalles adicionales para el técnico...")}
-                  className="w-full p-4 bg-zinc-50 border border-indigo-100 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner"
+                  className="w-full p-4 bg-zinc-50 border border-indigo-100 rounded-2xl text-sm font-bold text-zinc-950 placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner"
                 />
 
                 {mode === 'auto' && customNotes && (

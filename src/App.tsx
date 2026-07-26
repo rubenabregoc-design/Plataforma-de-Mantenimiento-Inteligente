@@ -60,6 +60,10 @@ import HomeEmergencySOS from './components/HomeEmergencySOS';
 import WarrantyVaultModule from './components/WarrantyVaultModule';
 import AssetEngineeringReportModal from './components/AssetEngineeringReportModal';
 import Logo from './components/Logo';
+import DashboardLayout from './layouts/DashboardLayout';
+import AuthPage from './pages/AuthPage';
+import { useAuth } from './context/AuthContext';
+import { formatFriendlyDate, formatTime12h } from './utils/dateUtils';
 
 // Servicios PROFESIONALES (Clean Architecture)
 import { AssetService } from './services/assetService';
@@ -79,10 +83,7 @@ import {
 // Firebase
 import {
   createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  signOut,
-  updateProfile
+  signInWithEmailAndPassword
 } from "firebase/auth";
 import {
   collection,
@@ -101,22 +102,28 @@ import {
   arrayUnion
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
+import axios from 'axios';
 
 export default function App() {
   const { t, i18n } = useTranslation();
-  // Session state
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAuthResolving, setIsAuthResolving] = useState(true);
+  const {
+    user,
+    userData,
+    role,
+    isLoggedIn,
+    isAuthResolving,
+    subscription,
+    loggedInName,
+    loggedInEmail,
+    profileImage,
+    logout,
+    updateUserSubscription
+  } = useAuth();
+
+  // Local UI/Data State
   const [isDataLoading, setIsDataLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [userData, setUserData] = useState<any>(null);
   const [showNotificationCenter, setShowNotificationCenter] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [role, setRole] = useState<'client' | 'tech' | 'admin'>('client');
-  const [loggedInName, setLoggedInName] = useState('');
-  const [loggedInEmail, setLoggedInEmail] = useState('');
-  const [profileImage, setProfileImage] = useState('');
-  const [selectedTechProfileId, setSelectedTechProfileId] = useState<string | null>(localStorage.getItem('mantech_logged_tech_id'));
 
   // App Data State
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -129,16 +136,10 @@ export default function App() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
-  const [subscription, setSubscription] = useState<UserSubscription>({
-    planId: 'plan-free',
-    status: 'active',
-    startDate: new Date().toISOString(),
-    nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-  });
 
   // UI State
   const [adminTab, setAdminTab] = useState<'finance' | 'users' | 'logistics' | 'alerts' | 'inventory' | 'audit' | 'settings'>('finance');
-  const [clientTab, setClientTab] = useState<'dashboard' | 'fleet' | 'ai' | 'marketplace' | 'quotes' | 'inventory' | 'audit' | 'subscriptions' | 'chat' | 'settings'>('dashboard');
+  const [clientTab, setClientTab] = useState<'dashboard' | 'fleet' | 'ai' | 'warranties' | 'marketplace' | 'quotes' | 'inventory' | 'audit' | 'subscriptions' | 'chat' | 'settings'>('dashboard');
   const [techTab, setTechTab] = useState<'received' | 'bidding_market' | 'agenda' | 'wallet' | 'mantech_id' | 'chat' | 'profile' | 'settings'>('received');
 
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
@@ -148,6 +149,28 @@ export default function App() {
   const [activeChatRequestId, setActiveChatRequestId] = useState<string | null>(null);
   const [isEditingTechProfile, setIsEditingTechProfile] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const [activeRequestForSignature, setActiveRequestForSignature] = useState<string | null>(null);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [selectedRequestForReport, setSelectedRequestForReport] = useState<JobRequest | null>(null);
+  const [showAuthForm, setShowAuthForm] = useState(false);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [isCorporateSupportModalOpen, setIsCorporateSupportModalOpen] = useState(false);
+  const [isFuelModalOpen, setIsFuelModalOpen] = useState(false);
+  const [isPreTripModalOpen, setIsPreTripModalOpen] = useState(false);
+  const [activeAssetForFuel, setActiveAssetForFuel] = useState<Asset | null>(null);
+
+  // Marketplace UI State
+  const [marketViewMode, setMarketViewMode] = useState<'list' | 'radar' | 'bidding'>('list');
+  const [isRouteStartModalOpen, setIsRouteStartModalOpen] = useState(false);
+  const [isCheckpointModalOpen, setIsCheckpointModalOpen] = useState(false);
+  const [assetForRoute, setAssetForRoute] = useState<Asset | null>(null);
+
+  // Asset View State
+  const [assetSearchQuery, setAssetSearchQuery] = useState('');
+  const [assetCurrentPage, setAssetCurrentPage] = useState(1);
+  const [selectedDashboardIds, setSelectedDashboardIds] = useState<string[]>([]);
+  const assetPageSize = 6;
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [activeRequestForSignature, setActiveRequestForSignature] = useState<string | null>(null);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
@@ -418,59 +441,6 @@ export default function App() {
   const [marketFilter, setMarketFilter] = useState<TechCategory | 'all'>('all');
   const [globalSearch, setGlobalSearch] = useState('');
 
-  // Logic: Auth
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        setLoggedInEmail(firebaseUser.email || '');
-
-        try {
-          if (firebaseUser.email === 'admin@mantech.com') {
-            setRole('admin');
-          }
-
-          const userRef = doc(db, "users", firebaseUser.uid);
-          const userSnap = await getDoc(userRef);
-
-          if (userSnap.exists()) {
-            const data = userSnap.data();
-            setUserData(data);
-
-            if (firebaseUser.email === 'admin@mantech.com' && data.role !== 'admin') {
-              await updateDoc(userRef, { role: 'admin' });
-              setRole('admin');
-            } else if (firebaseUser.email !== 'admin@mantech.com') {
-              setRole(data.role || 'client');
-            }
-
-            setLoggedInName(data.name || firebaseUser.displayName || 'Usuario');
-            setProfileImage(data.profileImage || '');
-            if (data.role === 'tech') {
-              const tId = data.techId || `tech-${firebaseUser.uid}`;
-              setSelectedTechProfileId(tId);
-              localStorage.setItem('mantech_logged_tech_id', tId);
-            }
-            if (data.subscription) setSubscription(data.subscription);
-          } else if (firebaseUser.email === 'admin@mantech.com') {
-            await setDoc(userRef, { uid: firebaseUser.uid, email: firebaseUser.email, name: 'Administrador Central', role: 'admin', createdAt: serverTimestamp() });
-            setRole('admin');
-            setLoggedInName('Administrador Central');
-          }
-          setIsLoggedIn(true);
-        } catch (err) {
-          console.error("Auth setup error:", err);
-        }
-      } else {
-        setIsLoggedIn(false);
-        setUser(null);
-        setUserData(null);
-      }
-      setIsAuthResolving(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
   // Listeners
   useEffect(() => {
     if (!isLoggedIn || !user) return;
@@ -532,30 +502,6 @@ export default function App() {
       setChatMessages(msgs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()));
     });
   }, [isLoggedIn, activeChatRequestId]);
-
-  // Guardia de Suscripción: Verifica expiración cada vez que carga la app
-  useEffect(() => {
-    if (!isLoggedIn || !userData || role !== 'client') return;
-
-    const checkExpiration = async () => {
-      const now = new Date();
-      const expiry = new Date(subscription.nextBillingDate);
-
-      if (now > expiry && subscription.planId !== 'plan-free' && subscription.status === 'active') {
-        console.log("⚠️ Suscripción expirada. Retornando a Plan Gratis.");
-        const expiredSub = {
-          ...subscription,
-          status: 'expired',
-          planId: 'plan-free'
-        };
-        await updateDoc(doc(db, "users", user.uid), { subscription: expiredSub });
-        setSubscription(expiredSub as UserSubscription);
-        toast.error("Tu plan MantechPro ha expirado. Has sido retornado al Plan Gratis. Renueva tu membresía.", { duration: 6000 });
-      }
-    };
-
-    checkExpiration();
-  }, [userData, isLoggedIn]);
 
   // Handlers
   const handleLogin = async (e: any) => {
@@ -1552,6 +1498,7 @@ export default function App() {
                   <button onClick={() => setClientTab('fleet')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'fleet' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Globe className="w-5 h-5" /> {t('fleet_b2b', 'Flota B2B')}</button>
                 )}
                 <button onClick={() => setClientTab('ai')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'ai' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><BrainCircuit className="w-5 h-5 text-[#52ffac]" /> {t('self_diagnostic', 'Autodiagnóstico')}</button>
+                <button onClick={() => setClientTab('warranties')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'warranties' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><ShieldCheck className="w-5 h-5" /> {t('warranty_vault', 'Bóveda Garantías')}</button>
                 <button onClick={() => setClientTab('marketplace')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'marketplace' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Store className="w-5 h-5" /> {t('find_experts', 'Buscar Expertos')}</button>
                 <button onClick={() => setClientTab('quotes')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'quotes' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileCheck2 className="w-4 h-4" /> {t('contracts', 'Contratos')}</button>
                 {planLimits.maxAssets > 3 && (
@@ -1812,6 +1759,7 @@ export default function App() {
                     />
                   )}
                   {clientTab === 'ai' && <DiagnosticAIView assets={assets} onFindTechnicians={(c) => { setMarketFilter(c); setClientTab('marketplace'); }} mode={planLimits.diag as any} />}
+                  {clientTab === 'warranties' && <WarrantyVaultModule assets={assets} />}
                   {clientTab === 'marketplace' && (
                     <div className="space-y-10">
                       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
