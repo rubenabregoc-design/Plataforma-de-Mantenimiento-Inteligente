@@ -13,16 +13,14 @@ import TechCredential from '../../components/TechCredential';
 import SupportChatWidget from '../../components/SupportChatWidget';
 import MantechIDModule from '../../components/MantechIDModule';
 import SubscriptionModule from '../../components/SubscriptionModule';
-import { Capacitor } from '@capacitor/core';
-import { Geolocation } from '@capacitor/geolocation';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useUI } from '../../context/UIContext';
 
 export default function TechDashboard() {
   const { t } = useTranslation();
-  const { role, user, loggedInName, subscription, logout } = useAuth();
-  const { requests, agenda, technicians, isDataLoading } = useData();
+  const { user, loggedInName, subscription, logout } = useAuth();
+  const { requests, agenda, technicians } = useData();
   const { tabs, setTab, openModal } = useUI();
 
   const techTab = tabs.tech;
@@ -77,7 +75,7 @@ export default function TechDashboard() {
                   <div className="p-5 bg-[#0d0e12] rounded-2xl border border-[#2a2b2f] italic text-xs text-[#c8c4d9]">"{req.description}"</div>
 
                   {req.status === 'pending' && (
-                    <button onClick={() => { /* Open Bidding Modal */ }} className="w-full py-4 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl">Enviar Cotización ➔</button>
+                    <button onClick={() => openModal('payment', { request: req })} className="w-full py-4 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl">Enviar Cotización ➔</button>
                   )}
 
                   {req.status === 'executing' && (
@@ -88,30 +86,6 @@ export default function TechDashboard() {
                   )}
                </div>
              ))}
-           </div>
-        </div>
-      )}
-
-      {techTab === 'bidding_market' && (
-        <div className="space-y-8 animate-fade-in">
-           <header>
-              <h1 className="text-4xl font-black text-white uppercase tracking-tighter">Bolsa de <span className="text-[#5d3cfe]">Trabajo</span></h1>
-              <p className="text-[10px] text-[#474556] font-black uppercase tracking-widest mt-2">Oportunidades de servicio abiertas a nivel nacional.</p>
-           </header>
-
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {requests.filter(r => r.status === 'open_bidding').map(req => (
-                 <div key={req.id} className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] space-y-6 relative overflow-hidden group hover:border-[#5d3cfe]/30 transition-all">
-                    <div className="flex justify-between items-center relative z-10">
-                       <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-[#5d3cfe]/10 flex items-center justify-center text-[#5d3cfe]"><Layers className="w-5 h-5" /></div>
-                          <h4 className="font-black text-white uppercase tracking-tight">{req.assetName}</h4>
-                       </div>
-                    </div>
-                    <p className="text-xs text-[#c8c4d9] font-medium leading-relaxed italic opacity-60">"{req.description}"</p>
-                    <button onClick={() => {}} className="w-full py-4 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase shadow-xl">Postularme ➔</button>
-                 </div>
-              ))}
            </div>
         </div>
       )}
@@ -127,24 +101,6 @@ export default function TechDashboard() {
 
       {techTab === 'mantech_id' && <TechCredential tech={techProfile} />}
 
-      {techTab === 'agenda' && (
-         <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl space-y-8">
-            <h1 className="text-4xl font-black text-white uppercase tracking-tighter">Agenda Logística</h1>
-            <div className="grid grid-cols-1 gap-4">
-               {agenda.map(e => (
-                  <div key={e.id} className="p-6 bg-[#1c1d21] border border-[#2a2b2f] rounded-3xl flex justify-between items-center">
-                     <div className="flex gap-6 items-center">
-                        <div className="p-4 bg-[#0d0e12] rounded-2xl text-center min-w-[100px] border border-[#2a2b2f]">
-                           <span className="text-xs font-black text-[#5d3cfe]">{e.date}</span>
-                        </div>
-                        <h4 className="text-lg font-black text-white uppercase">{e.title}</h4>
-                     </div>
-                  </div>
-               ))}
-            </div>
-         </div>
-      )}
-
       {techTab === 'profile' && (
         <div className="max-w-2xl mx-auto space-y-10">
           <header className="flex justify-between items-center">
@@ -153,7 +109,7 @@ export default function TechDashboard() {
               <Pencil className="w-4 h-4" /> Editar Perfil
             </button>
           </header>
-          <div className="max-w-[300px] mx-auto">
+          <div className="max-w-[300px] mx-auto scale-95 origin-top">
             <TechCredential tech={techProfile} />
           </div>
         </div>
@@ -161,22 +117,6 @@ export default function TechDashboard() {
 
       {techTab === 'subscriptions' && (
         <SubscriptionModule subscription={subscription} onUpgrade={(planId) => openModal('payment', { plan: planId })} role="tech" />
-      )}
-
-      {techTab === 'settings' && (
-        <div className="max-w-3xl mx-auto space-y-12 pb-20 animate-fade-in text-center">
-           <header className="space-y-4">
-              <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Ajustes <span className="text-[#5d3cfe]">Técnicos</span></h2>
-              <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em]">Validación de Credenciales y Sello Oficial</p>
-           </header>
-           <MantechIDModule
-              mantechId={techProfile.mantechId || { status: 'unverified', idNumber: '' }}
-              onUpload={() => {}}
-              role="tech"
-              plan={techProfile.plan}
-           />
-           <button onClick={logout} className="px-12 py-4 border border-rose-500/30 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-xl">Cerrar Sesión Root</button>
-        </div>
       )}
     </div>
   );

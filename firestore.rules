@@ -1,65 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Función para validar que el usuario está autenticado
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Función para validar que el usuario es dueño del documento
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    // Función para validar roles desde la colección de usuarios
-    function hasRole(role) {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
-    }
-
-    // REGLAS PARA USUARIOS
-    match /users/{userId} {
-      allow read, write: if isOwner(userId) || hasRole('admin');
-    }
-
-    // REGLAS PARA ACTIVOS (ASSETS)
-    match /assets/{assetId} {
-      // Clientes ven solo sus activos. Admins y Técnicos (si están asignados a un ticket) ven los activos.
-      allow read: if isSignedIn() && (isOwner(resource.data.clientId) || hasRole('admin') || hasRole('tech'));
-      allow create: if isSignedIn() && isOwner(request.resource.data.clientId);
-      allow update: if isSignedIn() && (isOwner(resource.data.clientId) || hasRole('admin'));
-      allow delete: if hasRole('admin');
-    }
-
-    // REGLAS PARA SOLICITUDES (REQUESTS)
-    match /requests/{requestId} {
-      allow read: if isSignedIn() && (isOwner(resource.data.clientId) || isOwner(resource.data.techUserId) || hasRole('admin'));
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if hasRole('admin');
-    }
-
-    // REGLAS PARA MENSAJES (CHATS)
-    match /messages/{messageId} {
-      allow read, create: if isSignedIn();
-    }
-
-    // REGLAS PARA NOTIFICACIONES
-    match /notifications/{notificationId} {
-      allow read, update: if isSignedIn() && isOwner(resource.data.userId);
-      allow create: if isSignedIn();
-    }
-
-    // REGLAS PARA TÉCNICOS
-    match /technicians/{techId} {
-      allow read: if isSignedIn();
-      allow write: if hasRole('admin') || (isSignedIn() && resource.data.userId == request.auth.uid);
-    }
-
-    // REGLAS PARA AUDITORÍA (SOLO ADMIN)
-    match /audit_logs/{logId} {
-      allow read: if hasRole('admin');
-      allow create: if isSignedIn(); // Permitir que la App registre logs
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }

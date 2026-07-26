@@ -19,15 +19,15 @@ export default function AppRouter(props: any) {
   }
 
   if (!isLoggedIn) {
-    return <AuthPage {...props} />;
+    return <AuthPage />;
   }
 
   return (
     <DashboardLayout {...props}>
       <Suspense fallback={<div className="p-20 text-center text-[#474556] font-black uppercase tracking-[0.3em] animate-pulse">Iniciando Nodo...</div>}>
-        {role === 'client' && <ClientDashboard {...props} />}
-        {role === 'tech' && <TechDashboard {...props} />}
-        {role === 'admin' && <AdminDashboard {...props} />}
+        {role === 'client' && <ClientDashboard />}
+        {role === 'tech' && <TechDashboard />}
+        {role === 'admin' && <AdminDashboard />}
       </Suspense>
     </DashboardLayout>
   );

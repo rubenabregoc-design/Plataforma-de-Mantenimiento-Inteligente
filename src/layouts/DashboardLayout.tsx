@@ -8,18 +8,13 @@ import {
 } from 'lucide-react';
 import Logo from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
+import { useUI } from '../context/UIContext';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   unreadCount: number;
   onShowNotifications: () => void;
   onShowSupport: () => void;
-  clientTab: string;
-  setClientTab: (tab: any) => void;
-  techTab: string;
-  setTechTab: (tab: any) => void;
-  adminTab: string;
-  setAdminTab: (tab: any) => void;
   planLimits: any;
   handleUploadAvatar: (file: File) => void;
 }
@@ -29,19 +24,22 @@ export default function DashboardLayout({
   unreadCount,
   onShowNotifications,
   onShowSupport,
-  clientTab,
-  setClientTab,
-  techTab,
-  setTechTab,
-  adminTab,
-  setAdminTab,
   planLimits,
   handleUploadAvatar
 }: DashboardLayoutProps) {
   const { t, i18n } = useTranslation();
-  const { user, role, loggedInName, profileImage, logout } = useAuth();
+  const { role, loggedInName, profileImage, logout } = useAuth();
+  const { tabs, setTab } = useUI();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
+
+  const clientTab = tabs.client;
+  const techTab = tabs.tech;
+  const adminTab = tabs.admin;
+
+  const setClientTab = (tabName: string) => setTab('client', tabName);
+  const setTechTab = (tabName: string) => setTab('tech', tabName);
+  const setAdminTab = (tabName: string) => setTab('admin', tabName);
 
   return (
     <div className="min-h-screen bg-[#0d0e12] flex flex-col font-sans text-[#e3e2e8] overflow-hidden grid-bg">
@@ -124,14 +122,14 @@ export default function DashboardLayout({
             {role === 'client' ? (
               <>
                 <button onClick={() => setClientTab('dashboard')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'dashboard' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><LayoutDashboard className="w-4 h-4" /> {t('my_assets', 'Mis Equipos')}</button>
-                {planLimits.fleet !== 'none' && (
+                {planLimits?.fleet !== 'none' && (
                   <button onClick={() => setClientTab('fleet')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'fleet' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Globe className="w-5 h-5" /> {t('fleet_b2b', 'Flota B2B')}</button>
                 )}
                 <button onClick={() => setClientTab('ai')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'ai' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><BrainCircuit className="w-5 h-5 text-[#52ffac]" /> {t('self_diagnostic', 'Autodiagnóstico')}</button>
                 <button onClick={() => setClientTab('warranties')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'warranties' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><ShieldCheck className="w-5 h-5" /> {t('warranty_vault', 'Bóveda Garantías')}</button>
                 <button onClick={() => setClientTab('marketplace')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'marketplace' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Store className="w-5 h-5" /> {t('find_experts', 'Buscar Expertos')}</button>
                 <button onClick={() => setClientTab('quotes')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'quotes' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileCheck2 className="w-4 h-4" /> {t('contracts', 'Contratos')}</button>
-                {planLimits.maxAssets > 3 && (
+                {planLimits?.maxAssets > 3 && (
                   <button onClick={() => setClientTab('audit')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'audit' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileText className="w-4 h-4" /> {t('audit', 'Auditoría')}</button>
                 )}
                 <button onClick={() => setClientTab('inventory')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${clientTab === 'inventory' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Package className="w-4 h-4" /> {t('spare_parts', 'Repuestos')}</button>

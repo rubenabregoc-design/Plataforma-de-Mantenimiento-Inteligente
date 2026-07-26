@@ -1,49 +1,64 @@
-import React from 'react';
+import React, { useState } from 'react';
 import LandingPage from '../components/LandingPage';
 import Logo from '../components/Logo';
 import { X } from 'lucide-react';
+import { useUI } from '../context/UIContext';
+import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { auth, db } from '../firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { logActivity } from '../services/auditService';
 
-interface AuthPageProps {
-  showAuthForm: boolean;
-  setShowAuthForm: (val: boolean) => void;
-  isDemoModalOpen: boolean;
-  setIsDemoModalOpen: (val: boolean) => void;
-  assets: any[];
-  requests: any[];
-  authMode: 'login' | 'register';
-  setAuthMode: (val: 'login' | 'register') => void;
-  loginName: string;
-  setLoginName: (val: string) => void;
-  loginEmail: string;
-  setLoginEmail: (val: string) => void;
-  loginPassword: string;
-  setLoginPassword: (val: string) => void;
-  authRole: 'client' | 'tech';
-  setAuthRole: (val: 'client' | 'tech') => void;
-  authError: string;
-  handleLogin: (e: any) => void;
-}
+export default function AuthPage() {
+  const { modals, openModal, closeModal } = useUI();
+  const { assets, requests } = useData();
 
-export default function AuthPage(props: AuthPageProps) {
-  const {
-    showAuthForm, setShowAuthForm, isDemoModalOpen, setIsDemoModalOpen,
-    assets, requests, authMode, setAuthMode, loginName, setLoginName,
-    loginEmail, setLoginEmail, loginPassword, setLoginPassword,
-    authRole, setAuthRole, authError, handleLogin
-  } = props;
+  // Local Auth State
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authRole, setAuthRole] = useState<'client' | 'tech'>('client');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginName, setLoginName] = useState('');
+  const [authError, setAuthError] = useState('');
+
+  const handleLogin = async (e: any) => {
+    if (e) e.preventDefault();
+    setAuthError('');
+    try {
+      if (authMode === 'register') {
+        const res = await createUserWithEmailAndPassword(auth, loginEmail, loginPassword);
+        const u = res.user;
+        const tId = authRole === 'tech' ? `tech-${Date.now()}` : null;
+        const defaultSub = {
+          planId: authRole === 'tech' ? 'plan-basic' : 'plan-free',
+          status: 'active',
+          startDate: new Date().toISOString(),
+          nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        };
+        await setDoc(doc(db, "users", u.uid), {
+          uid: u.uid, email: loginEmail, name: loginName, role: authRole,
+          techId: tId, subscription: defaultSub, createdAt: serverTimestamp()
+        });
+      } else {
+        const res = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+        await logActivity(res.user.uid, res.user.email || 'user', 'LOGIN', `Acceso desde AuthPage`);
+      }
+    } catch (err: any) { setAuthError(err.message); }
+  };
 
   return (
     <>
       <LandingPage
-        onStart={() => setShowAuthForm(true)}
-        onWatchDemo={() => setIsDemoModalOpen(true)}
+        onStart={() => openModal('auth')}
+        onWatchDemo={() => openModal('demo')}
         assets={assets}
         requests={requests}
       />
-      {showAuthForm && (
+      {modals.auth && (
         <div className="fixed inset-0 z-[200] bg-[#0d0e12]/90 backdrop-blur-md flex flex-col items-center justify-center p-4 overflow-y-auto custom-scrollbar">
           <div className="max-w-md w-full bg-[#121317] border border-[#2a2b2f] p-8 md:p-10 rounded-[2.5rem] space-y-6 md:space-y-8 shadow-2xl relative animate-fade-in-up my-auto">
-            <button onClick={() => setShowAuthForm(false)} className="absolute -top-4 -right-4 p-4 text-white hover:bg-rose-600 bg-[#1c1d21] border border-white/10 rounded-2xl shadow-2xl z-50 transition-all active:scale-90 group">
+            <button onClick={() => closeModal('auth')} className="absolute -top-4 -right-4 p-4 text-white hover:bg-rose-600 bg-[#1c1d21] border border-white/10 rounded-2xl shadow-2xl z-50 transition-all active:scale-90 group">
               <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
             </button>
             <div className="text-center space-y-3 flex flex-col items-center">

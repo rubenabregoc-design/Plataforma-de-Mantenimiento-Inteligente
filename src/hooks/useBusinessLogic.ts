@@ -1,9 +1,9 @@
-import { collection, addDoc, serverTimestamp, updateDoc, doc, getDoc, getDocs, query, where, arrayUnion, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, updateDoc, doc, getDoc, getDocs, query, where, arrayUnion, deleteDoc, increment } from "firebase/firestore";
 import { db } from "../firebase";
 import { toast } from 'react-hot-toast';
 import { useAuth } from "../context/AuthContext";
 import { useData } from "../context/DataContext";
-import { Asset, TechProfile, JobRequest } from "../types";
+import { Asset, TechProfile, JobRequest, InventoryItem } from "../types";
 import axios from 'axios';
 
 export function useBusinessLogic() {
@@ -173,6 +173,41 @@ export function useBusinessLogic() {
     await updateDoc(doc(db, "requests", requestId), { checklist: newChecklist });
   };
 
+  const handleVerifyTechnician = async (techId: string, isVerified: boolean) => {
+    try {
+      await updateDoc(doc(db, "technicians", techId), { isVerified });
+      toast.success(isVerified ? "Técnico Verificado" : "Verificación Removida");
+    } catch (err) { console.error(err); }
+  };
+
+  const handleUpdateInventoryQuantity = async (id: string, delta: number) => {
+    try {
+      await updateDoc(doc(db, "inventory", id), { quantity: increment(delta) });
+    } catch (err) { console.error(err); }
+  };
+
+  const handleAddInventoryItem = async (item: Omit<InventoryItem, 'id'>) => {
+    try {
+      await addDoc(collection(db, "inventory"), { ...item, createdAt: serverTimestamp() });
+      toast.success("Item añadido al inventario");
+    } catch (err) { console.error(err); }
+  };
+
+  const handleDeleteInventoryItem = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "inventory", id));
+      toast.success("Item eliminado");
+    } catch (err) { console.error(err); }
+  };
+
+  const handleUpdateInventoryItem = async (item: InventoryItem) => {
+    try {
+      const { id, ...data } = item;
+      await updateDoc(doc(db, "inventory", id), { ...data, updatedAt: serverTimestamp() });
+      toast.success("Item actualizado");
+    } catch (err) { console.error(err); }
+  };
+
   return {
     notifyAdmin,
     handlePostOpenMarket,
@@ -182,6 +217,11 @@ export function useBusinessLogic() {
     handleApproveSubscription,
     handleSaveMaterial,
     handleTriggerUnforeseen,
-    handleToggleTask
+    handleToggleTask,
+    handleVerifyTechnician,
+    handleUpdateInventoryQuantity,
+    handleAddInventoryItem,
+    handleDeleteInventoryItem,
+    handleUpdateInventoryItem
   };
 }

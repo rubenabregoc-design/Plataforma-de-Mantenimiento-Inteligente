@@ -249,12 +249,12 @@ export default function ClientDashboard() {
 
       {clientTab === 'inventory' && (
         <InventoryModule
-           items={inventory}
-           assets={assets}
-           onUpdateQuantity={(id, d) => updateDoc(doc(db,"inventory",id), {quantity: d})}
-           onAddItem={(item) => addDoc(collection(db,"inventory"), {...item, createdAt: serverTimestamp()})}
-           onDeleteItem={(id) => deleteDoc(doc(db,"inventory",id))}
-           onUpdateItem={(item) => { const {id, ...data} = item; updateDoc(doc(db,"inventory",id), data); }}
+          items={inventory}
+          assets={assets}
+          onUpdateQuantity={business.handleUpdateInventoryQuantity}
+          onAddItem={business.handleAddInventoryItem}
+          onDeleteItem={business.handleDeleteInventoryItem}
+          onUpdateItem={business.handleUpdateInventoryItem}
         />
       )}
 

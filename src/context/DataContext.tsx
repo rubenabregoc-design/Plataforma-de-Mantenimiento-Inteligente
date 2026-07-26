@@ -57,6 +57,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })) as InventoryItem[])
     );
 
+    const unsubReminders = onSnapshot(collection(db, "reminders"), (snap) =>
+      setReminders(snap.docs.map(d => ({ id: d.id, ...d.data() })) as MaintenanceReminder[])
+    );
+
     const qAgenda = role === 'tech'
       ? query(collection(db, "agenda"), where("techUserId", "==", user.uid))
       : query(collection(db, "agenda"), where("clientId", "==", user.uid));
@@ -70,6 +74,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsubReqs();
       unsubAssets();
       unsubInven();
+      unsubReminders();
       unsubAgenda();
     };
   }, [isLoggedIn, user, role]);

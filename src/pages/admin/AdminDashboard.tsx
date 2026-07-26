@@ -91,7 +91,7 @@ export default function AdminDashboard() {
                 <tr key={t.id} className="group hover:bg-white/[0.02] transition-colors">
                   <td className="py-6 px-6 font-black text-white uppercase">{t.name}</td>
                   <td className="py-6 px-6 text-right">
-                     <button onClick={() => business.handleVerifyTechnician?.(t.id, !t.isVerified)} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${t.isVerified ? 'bg-rose-500 text-white' : 'bg-[#52ffac] text-black shadow-lg shadow-[#52ffac]/20'}`}>{t.isVerified ? 'Suspender' : 'Aprobar Sello'}</button>
+                     <button onClick={() => business.handleVerifyTechnician(t.id, !t.isVerified)} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${t.isVerified ? 'bg-rose-500 text-white' : 'bg-[#52ffac] text-black shadow-lg shadow-[#52ffac]/20'}`}>{t.isVerified ? 'Suspender' : 'Aprobar Sello'}</button>
                   </td>
                 </tr>
               ))}
@@ -100,7 +100,16 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {adminTab === 'inventory' && <InventoryModule items={inventory} assets={assets} onUpdateQuantity={() => {}} onAddItem={() => {}} onDeleteItem={() => {}} onUpdateItem={() => {}} />}
+      {adminTab === 'inventory' && (
+        <InventoryModule
+          items={inventory}
+          assets={assets}
+          onUpdateQuantity={business.handleUpdateInventoryQuantity}
+          onAddItem={business.handleAddInventoryItem}
+          onDeleteItem={business.handleDeleteInventoryItem}
+          onUpdateItem={business.handleUpdateInventoryItem}
+        />
+      )}
 
       {adminTab === 'settings' && (
         <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl text-center">
