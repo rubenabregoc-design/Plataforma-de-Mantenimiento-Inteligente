@@ -2,92 +2,64 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Función para verificar si es Admin
-    function isAdmin() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    // Función para validar que el usuario está autenticado
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    // Reglas para Usuarios
+    // Función para validar que el usuario es dueño del documento
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Función para validar roles desde la colección de usuarios
+    function hasRole(role) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    // REGLAS PARA USUARIOS
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow read, write: if isOwner(userId) || hasRole('admin');
     }
 
-    // Reglas para Activos (Equipos/Flota)
+    // REGLAS PARA ACTIVOS (ASSETS)
     match /assets/{assetId} {
-      allow read: if request.auth != null && (resource == null || resource.data.clientId == request.auth.uid || isAdmin());
-      allow write: if request.auth != null && (resource == null || resource.data.clientId == request.auth.uid || isAdmin());
-      allow create: if request.auth != null;
+      // Clientes ven solo sus activos. Admins y Técnicos (si están asignados a un ticket) ven los activos.
+      allow read: if isSignedIn() && (isOwner(resource.data.clientId) || hasRole('admin') || hasRole('tech'));
+      allow create: if isSignedIn() && isOwner(request.resource.data.clientId);
+      allow update: if isSignedIn() && (isOwner(resource.data.clientId) || hasRole('admin'));
+      allow delete: if hasRole('admin');
     }
 
-    // Reglas para Notificaciones
-    match /notifications/{notifId} {
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow write: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if true; // El sistema o robot crea notificaciones
-    }
-
-    // Reglas para Contratos (Requests)
+    // REGLAS PARA SOLICITUDES (REQUESTS)
     match /requests/{requestId} {
-      allow read: if request.auth != null && (
-        request.auth.uid == resource.data.clientId ||
-        request.auth.uid == resource.data.techUserId ||
-        isAdmin()
-      );
-      allow write: if request.auth != null && (
-        request.auth.uid == resource.data.clientId ||
-        request.auth.uid == resource.data.techUserId ||
-        isAdmin()
-      );
-      allow create: if request.auth != null;
+      allow read: if isSignedIn() && (isOwner(resource.data.clientId) || isOwner(resource.data.techUserId) || hasRole('admin'));
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if hasRole('admin');
     }
 
-    // Reglas para Chat
+    // REGLAS PARA MENSAJES (CHATS)
     match /messages/{messageId} {
-      allow read, write: if request.auth != null;
+      allow read, create: if isSignedIn();
     }
 
-    // Reglas para Técnicos
+    // REGLAS PARA NOTIFICACIONES
+    match /notifications/{notificationId} {
+      allow read, update: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn();
+    }
+
+    // REGLAS PARA TÉCNICOS
     match /technicians/{techId} {
-      allow read: if true; // Lectura pública para el Marketplace
-      allow write: if request.auth != null && (
-        resource == null ||
-        !('userId' in resource.data) ||
-        resource.data.userId == request.auth.uid ||
-        isAdmin()
-      );
+      allow read: if isSignedIn();
+      allow write: if hasRole('admin') || (isSignedIn() && resource.data.userId == request.auth.uid);
     }
 
-    // Reglas para Recordatorios
-    match /reminders/{remId} {
-      allow read: if request.auth != null && (resource == null || resource.data.clientId == request.auth.uid || isAdmin());
-      allow write: if request.auth != null && (resource == null || resource.data.clientId == request.auth.uid || isAdmin());
-      allow create: if request.auth != null;
-    }
-
-    // Reglas para Agenda
-    match /agenda/{eventId} {
-      allow read: if request.auth != null && (request.auth.uid == resource.data.techUserId || request.auth.uid == resource.data.reservedFor || isAdmin());
-      allow write: if request.auth != null && (request.auth.uid == resource.data.techUserId || isAdmin());
-      allow create: if request.auth != null;
-    }
-
-    // Reglas para Inventario
-    match /inventory/{itemId} {
-      allow read: if request.auth != null;
-      allow write: if isAdmin();
-    }
-
-    // Reglas para Logs de Auditoría
+    // REGLAS PARA AUDITORÍA (SOLO ADMIN)
     match /audit_logs/{logId} {
-      allow read: if isAdmin();
-      allow write: if request.auth != null; // El sistema registra logs
-    }
-
-    // Reglas de Configuración (Showcase, CMS, Landing)
-    match /config/{docId} {
-      allow read: if true; // Lectura pública para la configuración de la App y Showcase
-      allow write: if isAdmin();
+      allow read: if hasRole('admin');
+      allow create: if isSignedIn(); // Permitir que la App registre logs
     }
   }
 }
