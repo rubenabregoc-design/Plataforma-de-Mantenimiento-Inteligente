@@ -58,6 +58,8 @@ export default function AuthPage() {
             rating: 5,
             reviewCount: 0,
             completedJobs: 0,
+            verificationLevel: 1, // Punto #4: Nivel Básico inicial
+            hasLiabilityInsurance: false,
             plan: 'basic',
             wallet: { balance: 0, pendingBalance: 0, transactions: [] }
           });

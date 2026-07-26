@@ -8,7 +8,7 @@ import Skeleton from '../../components/Skeleton';
 import {
   Search, ChevronLeft, ChevronRight, LayoutDashboard, Trash2, Check, Download,
   Truck, CheckCircle2, AlertTriangle, Globe, BrainCircuit, ShieldCheck, Layers, Package,
-  Store, FileCheck2, FileText, Star, MessageSquare, ArrowRight, Video, MapPin, Activity
+  Store, FileCheck2, FileText, Star, MessageSquare, ArrowRight, Video, MapPin, Activity, Shield
 } from 'lucide-react';
 import FleetDashboard from '../../components/FleetDashboard';
 import DiagnosticAIView from '../../components/DiagnosticAIView';
@@ -164,7 +164,21 @@ export default function ClientDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                {technicians.filter(t => marketFilter === 'all' || t.category === marketFilter).map(t => (
                  <div key={t.id} className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[3rem] flex flex-col gap-6 relative overflow-hidden group hover:border-[#5d3cfe]/50 transition-all shadow-2xl">
-                    <div className="flex items-center gap-5"><div className="w-16 h-16 rounded-2xl bg-[#1c1d21] border border-[#2a2b2f] flex items-center justify-center text-[#c7bfff] font-black text-2xl shadow-inner">{t.name[0]}</div><div><h4 className="font-black text-white text-base uppercase tracking-tight">{t.name}</h4><p className="text-[10px] font-black text-[#52ffac] uppercase tracking-[0.2em] mt-1">{t.category.replace('_',' ')}</p></div></div>
+                    <div className="flex items-center gap-5">
+                       <div className="w-16 h-16 rounded-2xl bg-[#1c1d21] border border-[#2a2b2f] flex items-center justify-center text-[#c7bfff] font-black text-2xl shadow-inner relative">
+                          {t.name[0]}
+                          {t.verificationLevel === 3 && <div className="absolute -top-2 -right-2 bg-amber-500 p-1.5 rounded-lg shadow-lg border border-white/20 animate-bounce"><Shield className="w-3 h-3 text-black" /></div>}
+                       </div>
+                       <div>
+                          <h4 className="font-black text-white text-base uppercase tracking-tight">{t.name}</h4>
+                          <div className="flex items-center gap-2 mt-1">
+                             <p className="text-[10px] font-black text-[#52ffac] uppercase tracking-[0.2em]">{t.category.replace('_',' ')}</p>
+                             <span className={`px-2 py-0.5 rounded-md text-[7px] font-black uppercase ${t.verificationLevel === 3 ? 'bg-amber-500/20 text-amber-500' : t.verificationLevel === 2 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/40'}`}>
+                                {t.verificationLevel === 3 ? 'Master' : t.verificationLevel === 2 ? 'Senior' : 'Básico'}
+                             </span>
+                          </div>
+                       </div>
+                    </div>
                     <div className="grid grid-cols-3 gap-4 py-4 border-y border-[#2a2b2f]/50 bg-[#0d0e12]/30 px-4 rounded-2xl text-center"><div><div className="text-amber-500 font-black text-sm flex items-center justify-center gap-1"><Star className="w-3 h-3 fill-amber-500" /> {t.rating}</div><span className="text-[8px] text-[#474556] font-bold uppercase">Rating</span></div><div><div className="text-white font-black text-sm">{t.experienceYears}a</div><span className="text-[8px] text-[#474556] font-bold uppercase">Exp.</span></div><div><div className="text-[#52ffac] font-black text-sm">${t.hourlyRate}</div><span className="text-[8px] text-[#474556] font-bold uppercase">Hr.</span></div></div>
                     <button onClick={() => openModal('tech', { tech: t })} className="w-full py-4 bg-[#1c1d21] hover:bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg active:scale-[0.98]">Ver Perfil & Agendar</button>
                  </div>
