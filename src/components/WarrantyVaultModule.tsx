@@ -6,9 +6,10 @@ import { useTranslation } from 'react-i18next';
 
 interface WarrantyVaultModuleProps {
   assets: Asset[];
+  onNavigate?: (tab: string) => void;
 }
 
-export default function WarrantyVaultModule({ assets }: WarrantyVaultModuleProps) {
+export default function WarrantyVaultModule({ assets, onNavigate }: WarrantyVaultModuleProps) {
   const { t } = useTranslation();
 
   const getWarrantyInfo = (asset: Asset) => {
@@ -132,7 +133,12 @@ export default function WarrantyVaultModule({ assets }: WarrantyVaultModuleProps
                <p className="text-[10px] text-[#c8c4d9] font-medium uppercase tracking-widest opacity-60">{t('warranty_ia_desc', 'MantechPro recomienda mantenimientos preventivos 30 días antes del fin de la garantía.')}</p>
             </div>
          </div>
-         <button className="px-8 py-4 bg-white text-black rounded-2xl text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all">{t('view_extensions', 'Ver Planes de Extensión')}</button>
+         <button
+           onClick={() => onNavigate?.('subscriptions')}
+           className="px-8 py-4 bg-white text-black rounded-2xl text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all"
+         >
+           {t('view_extensions', 'Ver Planes de Extensión')}
+         </button>
       </div>
     </div>
   );

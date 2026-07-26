@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from './AuthContext';
-import { Asset, MaintenanceReminder, TechProfile, JobRequest, InventoryItem, ChatMessage, AgendaEvent } from '../types';
+import { Asset, MaintenanceReminder, TechProfile, JobRequest, InventoryItem, AgendaEvent } from '../types';
 
 interface DataContextType {
   assets: Asset[];
@@ -28,26 +28,23 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (!isLoggedIn || !user || !role) {
-      setIsDataLoading(false);
+      if (!isLoggedIn) setIsDataLoading(false);
       return;
     }
 
-    // 1. Técnicos (Público para todos los autenticados)
     const unsubTechs = onSnapshot(collection(db, "technicians"), (snap) =>
       setTechnicians(snap.docs.map(d => ({ id: d.id, ...d.data() })) as TechProfile[]),
       (err) => console.error("Tech Snapshot Error:", err)
     );
 
-    // 2. Solicitudes (Filtradas por Rol)
     const qReq = role === 'admin'
       ? query(collection(db, "requests"), orderBy("createdAt", "desc"))
       : query(collection(db, "requests"), where(role === 'client' ? 'clientId' : 'techUserId', "==", user.uid));
 
     const unsubReqs = onSnapshot(qReq, (snap) => {
       setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })) as JobRequest[]);
-    }, (err) => console.warn("Req Snapshot Error (Check Rules):", err));
+    }, (err) => console.warn("Req Snapshot Error:", err));
 
-    // 3. Activos (Solo Clientes y Admin)
     let unsubAssets = () => {};
     if (role === 'client' || role === 'admin') {
       const qAssets = role === 'admin'
@@ -61,17 +58,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn("Asset Snapshot Error:", err);
         setIsDataLoading(false);
       });
-    } else {
-      setIsDataLoading(false);
     }
 
-    // 4. Inventario (Público o Admin)
     const unsubInven = onSnapshot(collection(db, "inventory"), (snap) =>
       setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })) as InventoryItem[]),
       (err) => console.warn("Inv Snapshot Error:", err)
     );
 
-    // 5. Recordatorios (Solo Clientes)
     let unsubReminders = () => {};
     if (role === 'client') {
       const qRem = query(collection(db, "reminders"), where("clientId", "==", user.uid));
@@ -81,14 +74,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
     }
 
-    // 6. Agenda (Filtrada)
-    const qAgenda = role === 'tech'
-      ? query(collection(db, "agenda"), where("techUserId", "==", user.uid))
-      : query(collection(db, "agenda"), where("clientId", "==", user.uid));
+    // --- AGENDA LISTENER BLINDADO ---
+    let unsubAgenda = () => {};
+    try {
+      const qAgenda = role === 'tech'
+        ? query(collection(db, "agenda"), where("techUserId", "==", user.uid))
+        : query(collection(db, "agenda"), where("clientId", "==", user.uid));
 
-    const unsubAgenda = onSnapshot(qAgenda, (snap) => {
-      setAgenda(snap.docs.map(d => ({ id: d.id, ...d.data() })) as AgendaEvent[]);
-    }, (err) => console.warn("Agenda Snapshot Error:", err));
+      unsubAgenda = onSnapshot(qAgenda, (snap) => {
+        setAgenda(snap.docs.map(d => ({ id: d.id, ...d.data() })) as AgendaEvent[]);
+      }, (err) => {
+        console.warn("Agenda Snapshot Error (Permission Denied):", err);
+      });
+    } catch (e) {
+      console.error("Critical Agenda Error:", e);
+    }
 
     return () => {
       unsubTechs();

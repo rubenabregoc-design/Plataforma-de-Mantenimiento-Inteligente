@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // REGLA MAESTRA TEMPORAL PARA DESARROLLO
-    // Permite lectura y escritura a cualquier usuario autenticado en todas las colecciones
+    // Desbloquea todas las colecciones para usuarios autenticados
     match /{document=**} {
       allow read, write: if request.auth != null;
     }

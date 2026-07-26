@@ -88,7 +88,6 @@ export default function ClientDashboard() {
             <div className="space-y-12">
               {/* Bienvenido Banner Movido Arriba */}
               <VerticalDashboard
-                type="ph"
                 assets={assets}
                 requests={requests}
                 userName={userData?.name || 'Usuario'}
@@ -144,7 +143,7 @@ export default function ClientDashboard() {
 
       {clientTab === 'ai' && <DiagnosticAIView assets={assets} onFindTechnicians={(c) => { setMarketFilter(c); setTab('client', 'marketplace'); }} mode={planLimits.diag as any} />}
 
-      {clientTab === 'warranties' && <WarrantyVaultModule assets={assets} />}
+      {clientTab === 'warranties' && <WarrantyVaultModule assets={assets} onNavigate={(t) => setTab('client', t)} />}
 
       {clientTab === 'marketplace' && (
         <div className="space-y-10">

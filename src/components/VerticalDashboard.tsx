@@ -1,6 +1,6 @@
 import React from 'react';
 import { Asset, JobRequest } from '../types';
-import { Building2, Stethoscope, HardHat, AlertTriangle, TrendingUp, Clock, ShieldCheck, LayoutGrid, Zap } from 'lucide-react';
+import { Building2, Stethoscope, HardHat, AlertTriangle, TrendingUp, Clock, ShieldCheck, LayoutGrid, Sparkles, Zap } from 'lucide-react';
 
 interface VerticalDashboardProps {
   assets: Asset[];
@@ -93,7 +93,7 @@ export default function VerticalDashboard({ assets, requests, userName }: Vertic
             </h1>
             <h2 className="text-xl font-black text-white uppercase tracking-tight mt-2 flex items-center gap-2">
                {config.title}
-               <Zap className="w-4 h-4 text-[#52ffac] fill-[#52ffac]" />
+               <Sparkles className="w-4 h-4 text-[#52ffac] fill-[#52ffac]" />
             </h2>
             <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] mt-2">
               {config.subtitle}
