@@ -1,4 +1,5 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 import fetch from 'node-fetch';
@@ -11,6 +12,17 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+
+// Rate Limiting (Seguridad Senior)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "🚨 Demasiadas solicitudes. Nodo bloqueado temporalmente.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(limiter);
 
 // Configuración de Colores Mantech Pro (Master V4)
 const BRAND_PRIMARY = '#5d3cfe'; // Púrpura Eléctrico
