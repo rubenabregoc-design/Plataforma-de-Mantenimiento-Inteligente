@@ -121,7 +121,8 @@ export default function App() {
       clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID,
       currency: "USD",
       intent: "capture",
-      "disable-funding": "paylater,venmo"
+      "disable-funding": "paylater,venmo",
+      locale: "es_PA"
     }}>
       <Toaster position="top-center" />
 
@@ -180,9 +181,9 @@ export default function App() {
         )}
 
         {modals.payment && (
-          <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
-             <div className="w-full max-w-lg bg-[#121317] border border-[#2a2b2f] rounded-[3rem] p-10 space-y-8 shadow-2xl animate-fade-in-up relative">
-                <button onClick={() => closeModal('payment')} className="absolute top-8 right-8 p-3 bg-white/5 rounded-2xl hover:bg-rose-600/20 text-white transition-all"><X className="w-5 h-5" /></button>
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl overflow-y-auto">
+             <div className="w-full max-w-lg bg-[#121317] border border-[#2a2b2f] rounded-[3rem] p-8 md:p-10 space-y-8 shadow-2xl animate-fade-in-up relative my-auto">
+                <button onClick={() => closeModal('payment')} className="absolute top-6 right-6 p-3 bg-white/5 rounded-2xl hover:bg-rose-600/20 text-white transition-all z-50"><X className="w-5 h-5" /></button>
                 <div className="text-center space-y-3">
                    <div className="w-16 h-16 bg-[#52ffac]/10 rounded-3xl flex items-center justify-center mx-auto text-[#52ffac] border border-[#52ffac]/20 shadow-lg shadow-[#52ffac]/10">
                       <CreditCard className="w-8 h-8" />
@@ -242,6 +243,9 @@ export default function App() {
                             : (activeData.request?.price || '0').toString();
 
                           return actions.order.create({
+                            application_context: {
+                              shipping_preference: "NO_SHIPPING"
+                            },
                             purchase_units: [{
                               description: activeData.plan ? `MantechPro Subscription: ${activeData.plan}` : `MantechPro Service: ${activeData.request?.assetName}`,
                               amount: { currency_code: "USD", value: price }
