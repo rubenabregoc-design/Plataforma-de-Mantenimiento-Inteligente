@@ -10,6 +10,7 @@ import { Geolocation } from '@capacitor/geolocation';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import ConfirmationModal from './ConfirmationModal';
 
 // Fix for Leaflet marker icons in React
 import markerIcon from 'leaflet/dist/images/marker-icon.png';

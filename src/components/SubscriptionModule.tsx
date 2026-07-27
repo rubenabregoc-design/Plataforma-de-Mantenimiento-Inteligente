@@ -30,6 +30,7 @@ export default function SubscriptionModule({ subscription, onUpgrade, onNavigate
       name: 'Emprendedor',
       price: '29',
       features: [
+        'Incluye todo de Gratis +',
         'Hasta 5 activos registrados',
         'Rastreo Satelital Tiempo Real',
         'Panel de Gestión Global de Activos',
@@ -42,13 +43,13 @@ export default function SubscriptionModule({ subscription, onUpgrade, onNavigate
       name: 'Profesional',
       price: '89',
       features: [
+        'Incluye todo de Emprendedor +',
         'Hasta 25 activos registrados',
         'Auditoría de Combustible',
         'Diagnóstico IA Predictivo',
         'Carga masiva por Excel',
         'Sello de Ingeniería Verificada',
-        'Reportes PDF/Excel Full',
-        'Prioridad alta de despacho'
+        'Reportes PDF/Excel Full'
       ],
       icon: Zap,
       highlight: true
@@ -58,8 +59,8 @@ export default function SubscriptionModule({ subscription, onUpgrade, onNavigate
       name: 'Enterprise',
       price: '199',
       features: [
+        'Incluye todo de Profesional +',
         'Unidades ILIMITADAS',
-        'Incluye TODO de Profesional +',
         'Multi-Administrador (Bodegas/PH)',
         'SLA Prioritario < 1 Hora',
         'Seguro Mantech Protection',

@@ -2,12 +2,14 @@ import React from 'react';
 import { TechProfile } from '../types';
 import { ShieldCheck, QrCode, MapPin, Star, User, Building2, BadgeCheck } from 'lucide-react';
 import MantechProLogo from './Logo';
+import { useTranslation } from 'react-i18next';
 
 interface TechCredentialProps {
   tech: TechProfile;
 }
 
 export default function TechCredential({ tech }: TechCredentialProps) {
+  const { t } = useTranslation();
   // Generar un código de validación único - Solo el ID para escaneo rápido
   const validationCode = `MP-${tech.id.substring(0, 8).toUpperCase()}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${tech.id}`;
@@ -59,10 +61,10 @@ export default function TechCredential({ tech }: TechCredentialProps) {
               <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-tight italic">{tech.name}</h3>
               <div className="flex flex-col items-center gap-1">
                 <div className="bg-[#1c1d21] px-4 py-1.5 rounded-lg border border-white/5 inline-block">
-                  <p className="text-[#c8c4d9] text-[10px] font-black uppercase tracking-[0.2em]">{tech.category.replace('_', ' ')}</p>
+                  <p className="text-[#c8c4d9] text-[10px] font-black uppercase tracking-[0.2em]">{t(`cat_${tech.category}`, tech.category.replace('_', ' '))}</p>
                 </div>
                 {tech.cedula && (
-                  <p className="text-[9px] font-black text-[#474556] uppercase tracking-[0.4em] mt-2">Cédula: {tech.cedula}</p>
+                  <p className="text-[9px] font-black text-[#c7bfff] uppercase tracking-[0.4em] mt-2">{t('id_number', 'Cédula')}: {tech.cedula}</p>
                 )}
               </div>
            </div>

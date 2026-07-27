@@ -44,6 +44,32 @@ export default function ClientDashboard() {
   const [marketFilter, setMarketFilter] = useState<TechCategory | 'all'>('all');
   const [marketViewMode, setMarketViewMode] = useState<'list' | 'radar' | 'bidding'>('list');
   const [activeChatRequestId, setActiveChatRequestId] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+
+  const requestsWithChat = requests.filter(r => ['quoted', 'accepted', 'executing', 'completed'].includes(r.status));
+
+  React.useEffect(() => {
+    if (!activeChatRequestId && requestsWithChat.length > 0) {
+      setActiveChatRequestId(requestsWithChat[0].id);
+    }
+  }, [requestsWithChat, activeChatRequestId]);
+
+  React.useEffect(() => {
+    if (!activeChatRequestId) {
+      setChatMessages([]);
+      return;
+    }
+    const q = query(
+      collection(db, "messages"),
+      where("requestId", "==", activeChatRequestId),
+      orderBy("timestamp", "asc")
+    );
+    return onSnapshot(q, (snap) => {
+      setChatMessages(snap.docs.map(d => ({ id: d.id, ...d.data(), timestamp: d.data().timestamp?.toDate?.()?.toISOString() || new Date().toISOString() })) as ChatMessage[]);
+    });
+  }, [activeChatRequestId]);
+
+  const activeRequestForChat = requests.find(r => r.id === activeChatRequestId);
 
   const getStatusLabel = (s: string) => {
     const map: any = { pending: 'SOLICITADO', quoted: 'COTIZADO', accepted: 'PAGADO', executing: 'EN PROCESO', completed: 'FINALIZADO', rated: 'CALIFICADO', rejected: 'DENEGADO', disputed: 'IMPREVISTO', cancelled: 'CANCELADO' };
@@ -309,13 +335,57 @@ export default function ClientDashboard() {
       )}
 
       {clientTab === 'chat' && (
-        <div className="h-[calc(100vh-200px)] animate-fade-in">
-          <SupportChatWidget
-            request={requests.find(r => r.id === activeChatRequestId) || null}
-            role="client"
-            messages={[]}
-            onSendMessage={() => {}}
-          />
+        <div className="h-[600px] flex flex-col md:flex-row gap-6 animate-fade-in-up">
+           {/* Lista de Chats Activos */}
+           <div className="w-full md:w-80 bg-[#121317] border border-white/5 rounded-[2.5rem] flex flex-col overflow-hidden shrink-0 shadow-2xl">
+              <div className="p-6 border-b border-white/5 bg-white/[0.02]">
+                 <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Canales Técnicos</h3>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                 {requestsWithChat.map(r => (
+                    <button
+                      key={r.id}
+                      onClick={() => setActiveChatRequestId(r.id)}
+                      className={`w-full p-5 rounded-[1.5rem] text-left transition-all border group relative overflow-hidden ${activeChatRequestId === r.id ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-xl' : 'bg-white/5 border-white/5 text-[#c8c4d9] hover:bg-white/10 hover:border-white/10'}`}
+                    >
+                       {activeChatRequestId !== r.id && (
+                          <div className="absolute top-0 left-0 w-1 h-full bg-[#5d3cfe] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                       )}
+                       <div className="flex justify-between items-center mb-1">
+                          <p className={`text-[9px] font-black uppercase tracking-widest ${activeChatRequestId === r.id ? 'text-white/70' : 'text-[#5d3cfe]'}`}>{r.assetName}</p>
+                          <ChevronRight className={`w-3 h-3 transition-transform ${activeChatRequestId === r.id ? 'translate-x-1' : 'opacity-20'}`} />
+                       </div>
+                       <p className="text-sm font-black truncate uppercase tracking-tight">{r.techName}</p>
+                    </button>
+                 ))}
+                 {requestsWithChat.length === 0 && (
+                    <div className="py-20 text-center space-y-4 opacity-20">
+                       <MessageSquare className="w-8 h-8 mx-auto" />
+                       <p className="text-[8px] font-black uppercase tracking-[0.3em]">Sin chats activos</p>
+                    </div>
+                 )}
+              </div>
+           </div>
+
+           {/* Ventana de Mensajería */}
+           <div className="flex-1 min-w-0 h-[500px] md:h-full">
+              <SupportChatWidget
+                role="client"
+                request={activeRequestForChat || null}
+                messages={chatMessages}
+                onSendMessage={(txt, img) => {
+                  if (!activeChatRequestId) return;
+                  addDoc(collection(db, "messages"), {
+                    requestId: activeChatRequestId,
+                    sender: 'client',
+                    text: txt,
+                    image: img || null,
+                    timestamp: serverTimestamp()
+                  });
+                }}
+                onStartVideoCall={(room, voice) => openModal('videoCall', { videoRoom: room, isVoiceOnly: voice })}
+              />
+           </div>
         </div>
       )}
 

@@ -42,9 +42,18 @@ export default function DashboardLayout({
   const navigateAdmin = (tab: string) => setTab('admin', tab);
 
   // --- Lógica de Módulos por Plan (SaaS Flow) ---
-  const isFree = subscription.planId === 'plan-free';
-  const isBasic = subscription.planId === 'plan-basic';
-  const isPro = subscription.planId === 'plan-pro' || subscription.planId === 'plan-enterprise';
+  const activePlan = subscription.planId || 'plan-free';
+  const isFree = activePlan === 'plan-free';
+  const isEmprendedor = activePlan === 'plan-basic';
+  const isPro = activePlan === 'plan-pro';
+  const isEnterprise = activePlan === 'plan-enterprise';
+
+  // Flota B2B: Disponible desde Emprendedor ($29) en adelante
+  const canAccessFleet = !isFree;
+  // Auditoría: Disponible desde Profesional ($89) en adelante
+  const canAccessAudit = isPro || isEnterprise;
+  // Repuestos/Inventario: Disponible para todos (Gratis tiene límites de items)
+  const canAccessInventory = true;
 
   return (
     <div className="min-h-screen bg-[#0d0e12] flex flex-col font-sans text-[#e3e2e8] overflow-hidden grid-bg">
@@ -60,7 +69,13 @@ export default function DashboardLayout({
           <Logo size="sm" />
           <div className="relative hidden md:block">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#474556]" />
-            <input type="text" placeholder="Buscar en el ecosistema..." className="bg-[#121317] border border-[#2a2b2f] rounded-full py-2.5 pl-12 pr-6 text-xs text-white w-[300px] lg:w-[450px]" value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} />
+            <input
+              type="text"
+              placeholder={t('search_placeholder', 'Buscar en el ecosistema...')}
+              className="bg-[#121317] border border-[#2a2b2f] rounded-full py-2.5 pl-12 pr-6 text-xs text-white w-[300px] lg:w-[450px]"
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+            />
           </div>
         </div>
         <div className="flex items-center gap-3 md:gap-8">
@@ -113,8 +128,8 @@ export default function DashboardLayout({
               <>
                 <button onClick={() => navigateClient('dashboard')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'dashboard' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><LayoutDashboard className="w-4 h-4" /> {t('my_assets', 'Mis Equipos')}</button>
 
-                {/* Módulos Gated (Solo Emprendedor+) */}
-                {!isFree && (
+                {/* Módulos Gated (SaaS logic) */}
+                {canAccessFleet && (
                   <button onClick={() => navigateClient('fleet')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'fleet' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Globe className="w-5 h-5" /> {t('fleet_b2b', 'Flota B2B')}</button>
                 )}
 
@@ -123,12 +138,13 @@ export default function DashboardLayout({
                 <button onClick={() => navigateClient('marketplace')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'marketplace' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Store className="w-5 h-5" /> {t('find_experts', 'Buscar Expertos')}</button>
                 <button onClick={() => navigateClient('quotes')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'quotes' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileCheck2 className="w-4 h-4" /> {t('contracts', 'Contratos')}</button>
 
-                {/* Módulo Auditoría (Solo Profesional+) */}
-                {isPro && (
+                {canAccessAudit && (
                   <button onClick={() => navigateClient('audit')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'audit' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileText className="w-4 h-4" /> {t('audit', 'Auditoría')}</button>
                 )}
 
-                <button onClick={() => navigateClient('inventory')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'inventory' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Package className="w-4 h-4" /> {t('spare_parts', 'Repuestos')}</button>
+                {canAccessInventory && (
+                  <button onClick={() => navigateClient('inventory')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'inventory' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Package className="w-4 h-4" /> {t('spare_parts', 'Repuestos')}</button>
+                )}
                 <button onClick={() => navigateClient('subscriptions')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'subscriptions' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Star className="w-4 h-4" /> {t('membership', 'Membresía')}</button>
                 <button onClick={() => navigateClient('chat')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'chat' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><MessageSquare className="w-4 h-4" /> {t('chat', 'Chat')}</button>
                 <button onClick={() => navigateClient('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> {t('settings', 'Configuración')}</button>
@@ -141,6 +157,8 @@ export default function DashboardLayout({
                 <button onClick={() => navigateTech('bidding_market')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'bidding_market' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Layers className="w-4 h-4" /> {t('job_market', 'Bolsa de Trabajo')}</button>
                 <button onClick={() => navigateTech('agenda')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'agenda' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><CalendarDays className="w-4 h-4" /> {t('agenda', 'Agenda')}</button>
                 <button onClick={() => navigateTech('wallet')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'wallet' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><PieChart className="w-4 h-4" /> {t('wallet', 'Billetera')}</button>
+                <button onClick={() => navigateTech('loyalty')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'loyalty' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Star className="w-4 h-4 text-amber-500" /> {t('loyalty_club', 'Club Fidelidad')}</button>
+                <button onClick={() => navigateTech('inventory')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'inventory' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Package className="w-4 h-4" /> {t('my_inventory', 'Mi Inventario')}</button>
                 <button onClick={() => navigateTech('mantech_id')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'mantech_id' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><ShieldCheck className="w-4 h-4" /> {t('mantech_id', 'Mantech ID')}</button>
                 <button onClick={() => navigateTech('chat')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'chat' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><MessageSquare className="w-4 h-4" /> {t('chat', 'Chat')}</button>
                 <button onClick={() => navigateTech('profile')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'profile' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><User className="w-4 h-4" /> {t('my_profile', 'Mi Perfil')}</button>

@@ -153,7 +153,7 @@ export default function SupportChatWidget({
           </span>
         </div>
 
-        {messages.map((msg) => {
+        {messages.length > 0 ? messages.map((msg) => {
           const isMe = (role === 'client' && msg.sender === 'client') || (role === 'tech' && msg.sender === 'tech');
           return (
             <div
@@ -188,7 +188,19 @@ export default function SupportChatWidget({
               </div>
             </div>
           );
-        })}
+        }) : (
+           <div className="py-20 text-center space-y-6 opacity-40 animate-pulse">
+              <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto border border-white/10">
+                 <ShieldCheck className="w-8 h-8 text-[#52ffac]" />
+              </div>
+              <div className="space-y-2">
+                 <p className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Conexión Encriptada Segura</p>
+                 <p className="text-[9px] text-[#c8c4d9] max-w-xs mx-auto leading-relaxed">
+                    Este canal está protegido por el Protocolo V4. Inicie la conversación compartiendo el estado del activo o solicitando detalles técnicos.
+                 </p>
+              </div>
+           </div>
+        )}
         <div ref={chatEndRef} />
       </div>
 
