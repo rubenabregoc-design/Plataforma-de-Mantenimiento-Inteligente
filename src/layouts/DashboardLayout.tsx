@@ -64,21 +64,6 @@ export default function DashboardLayout({
           </div>
         </div>
         <div className="flex items-center gap-3 md:gap-8">
-          <div className="flex bg-[#1c1d21] p-1 rounded-xl border border-[#2a2b2f]">
-             <button
-               onClick={() => i18n.changeLanguage('es')}
-               className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${i18n.language.startsWith('es') ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}
-             >
-               ES
-             </button>
-             <button
-               onClick={() => i18n.changeLanguage('en')}
-               className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${i18n.language.startsWith('en') ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}
-             >
-               EN
-             </button>
-          </div>
-
           <button
             onClick={onShowNotifications}
             className="relative p-2.5 rounded-2xl bg-white/5 border border-white/10 hover:bg-[#5d3cfe]/10 hover:border-[#5d3cfe]/30 transition-all group"
@@ -118,7 +103,7 @@ export default function DashboardLayout({
              <div className="overflow-hidden">
                <h4 className="font-black text-white text-xs tracking-tight truncate uppercase leading-tight">{loggedInName || 'Usuario'}</h4>
                <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest mt-1">
-                 {!role ? 'CARGANDO...' : role === 'client' ? 'CLIENTE' : role === 'tech' ? 'TÉCNICO' : 'ADMINISTRADOR'}
+                 {!role ? t('loading', 'CARGANDO...') : role === 'client' ? t('client', 'CLIENTE') : role === 'tech' ? t('tech', 'TÉCNICO') : t('admin', 'ADMINISTRADOR')}
                </p>
              </div>
           </div>

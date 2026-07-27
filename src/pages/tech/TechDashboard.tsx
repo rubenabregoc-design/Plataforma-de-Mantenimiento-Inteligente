@@ -18,7 +18,7 @@ import { useData } from '../../context/DataContext';
 import { useUI } from '../../context/UIContext';
 
 export default function TechDashboard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, loggedInName, subscription, logout } = useAuth();
   const { requests, agenda, technicians } = useData();
   const { tabs, setTab, openModal } = useUI();
@@ -195,9 +195,32 @@ export default function TechDashboard() {
       {techTab === 'settings' && (
         <div className="max-w-3xl mx-auto space-y-12 pb-20 animate-fade-in text-center">
            <header className="space-y-4">
-              <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Ajustes de <span className="text-[#5d3cfe]">Perfil</span></h2>
-              <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em]">Validación de Credenciales y Sello Oficial</p>
+              <h2 className="text-4xl font-black text-white uppercase tracking-tighter">{t('settings_title', 'Ajustes de Perfil')}</h2>
+              <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em]">{t('settings_desc', 'Validación de Credenciales y Sello Oficial')}</p>
            </header>
+
+           {/* Selector de Idioma en Ajustes */}
+           <div className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] flex flex-col items-center gap-6 shadow-2xl">
+              <div className="space-y-2">
+                 <h4 className="text-xs font-black text-white uppercase tracking-widest">{t('language_preference', 'Preferencia de Idioma')}</h4>
+                 <p className="text-[9px] text-[#474556] font-bold uppercase tracking-widest">{t('language_desc', 'Seleccione el idioma de la interfaz del ecosistema.')}</p>
+              </div>
+              <div className="flex bg-[#1c1d21] p-1.5 rounded-2xl border border-[#2a2b2f] w-full max-w-xs">
+                 <button
+                   onClick={() => i18n.changeLanguage('es')}
+                   className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${i18n.language.startsWith('es') ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}
+                 >
+                   Español (PA)
+                 </button>
+                 <button
+                   onClick={() => i18n.changeLanguage('en')}
+                   className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${i18n.language.startsWith('en') ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}
+                 >
+                   English (US)
+                 </button>
+              </div>
+           </div>
+
            <MantechIDModule
               mantechId={techProfile.mantechId || { status: 'unverified', idNumber: '' }}
               onUpload={() => {}}
