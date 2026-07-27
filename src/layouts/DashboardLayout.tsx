@@ -79,7 +79,7 @@ export default function DashboardLayout({
           <button onClick={onShowSupport} className="p-2.5 bg-[#1c1d21] border border-[#2a2b2f] rounded-xl text-[#c8c4d9] hover:text-white transition-all"><HelpCircle className="w-5 h-5" /></button>
           <button onClick={logout} className="flex items-center gap-3 text-[#c8c4d9] hover:text-white font-black text-[10px] uppercase tracking-widest transition-all">
             <LogOut className="w-5 h-5" />
-            <span className="hidden sm:inline">Salir</span>
+            <span className="hidden sm:inline">{t('exit', 'Salir')}</span>
           </button>
         </div>
       </nav>
@@ -137,14 +137,14 @@ export default function DashboardLayout({
 
             {role === 'tech' && (
               <>
-                <button onClick={() => navigateTech('received')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'received' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Inbox className="w-4 h-4" /> Bandeja</button>
-                <button onClick={() => navigateTech('bidding_market')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'bidding_market' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Layers className="w-4 h-4" /> Bolsa de Trabajo</button>
-                <button onClick={() => navigateTech('agenda')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'agenda' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><CalendarDays className="w-4 h-4" /> Agenda</button>
-                <button onClick={() => navigateTech('wallet')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'wallet' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><PieChart className="w-4 h-4" /> Billetera</button>
-                <button onClick={() => navigateTech('mantech_id')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'mantech_id' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><ShieldCheck className="w-4 h-4" /> Mantech ID</button>
-                <button onClick={() => navigateTech('chat')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'chat' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><MessageSquare className="w-4 h-4" /> Chat</button>
-                <button onClick={() => navigateTech('profile')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'profile' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><User className="w-4 h-4" /> Mi Perfil</button>
-                <button onClick={() => navigateTech('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> Configuración</button>
+                <button onClick={() => navigateTech('received')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'received' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Inbox className="w-4 h-4" /> {t('inbox', 'Bandeja')}</button>
+                <button onClick={() => navigateTech('bidding_market')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'bidding_market' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Layers className="w-4 h-4" /> {t('job_market', 'Bolsa de Trabajo')}</button>
+                <button onClick={() => navigateTech('agenda')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'agenda' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><CalendarDays className="w-4 h-4" /> {t('agenda', 'Agenda')}</button>
+                <button onClick={() => navigateTech('wallet')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'wallet' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><PieChart className="w-4 h-4" /> {t('wallet', 'Billetera')}</button>
+                <button onClick={() => navigateTech('mantech_id')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'mantech_id' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><ShieldCheck className="w-4 h-4" /> {t('mantech_id', 'Mantech ID')}</button>
+                <button onClick={() => navigateTech('chat')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'chat' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><MessageSquare className="w-4 h-4" /> {t('chat', 'Chat')}</button>
+                <button onClick={() => navigateTech('profile')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'profile' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><User className="w-4 h-4" /> {t('my_profile', 'Mi Perfil')}</button>
+                <button onClick={() => navigateTech('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> {t('settings', 'Configuración')}</button>
               </>
             )}
 

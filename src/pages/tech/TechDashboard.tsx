@@ -19,7 +19,7 @@ import { useUI } from '../../context/UIContext';
 
 export default function TechDashboard() {
   const { t, i18n } = useTranslation();
-  const { user, loggedInName, subscription, logout } = useAuth();
+  const { user, loggedInName, userData, subscription, logout } = useAuth();
   const { requests, agenda, technicians } = useData();
   const { tabs, setTab, openModal } = useUI();
 
@@ -40,9 +40,9 @@ export default function TechDashboard() {
             {techProfile.isOnline ? <Zap className="w-6 h-6 animate-pulse" /> : <Zap className="w-6 h-6 opacity-20" />}
           </div>
           <div>
-            <h4 className="text-sm font-black text-white uppercase tracking-tight">Estatus de Conexión</h4>
+            <h4 className="text-sm font-black text-white uppercase tracking-tight">{t('connection_status', 'Estatus de Conexión')}</h4>
             <p className={`text-[10px] font-bold uppercase tracking-widest ${techProfile.isOnline ? 'text-[#52ffac]' : 'text-[#474556]'}`}>
-              {techProfile.isOnline ? 'Transmitiendo ubicación en Radar' : 'Modo Invisible (Fuera de línea)'}
+              {techProfile.isOnline ? t('online_radar', 'Transmitiendo ubicación en Radar') : t('invisible_mode', 'Modo Invisible (Fuera de línea)')}
             </p>
           </div>
         </div>
@@ -55,15 +55,15 @@ export default function TechDashboard() {
           }}
           className={`px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${techProfile.isOnline ? 'bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white' : 'bg-[#52ffac] text-black shadow-[#52ffac]/20 hover:brightness-110'}`}
         >
-          {techProfile.isOnline ? 'Desactivar Posición' : 'Iniciar Posición de Servicio'}
+          {techProfile.isOnline ? t('stop_position', 'Desactivar Posición') : t('start_position', 'Iniciar Posición de Servicio')}
         </button>
       </div>
 
       {techTab === 'received' && (
         <div className="space-y-8">
            <header className="flex justify-between items-center">
-              <h1 className="text-4xl font-black text-white uppercase tracking-tighter">Bandeja de <span className="text-[#5d3cfe]">Servicios</span></h1>
-              <button onClick={() => setTab('tech', 'subscriptions')} className="px-6 py-2 bg-white/5 border border-white/10 text-white rounded-xl text-[9px] font-black uppercase hover:bg-[#5d3cfe] transition-all">Mejorar Plan</button>
+              <h1 className="text-4xl font-black text-white uppercase tracking-tighter">{t('service_inbox', 'Bandeja de Servicios').split(' ')[0]} <span className="text-[#5d3cfe]">{t('service_inbox', 'Bandeja de Servicios').split(' ').slice(1).join(' ')}</span></h1>
+              <button onClick={() => setTab('tech', 'subscriptions')} className="px-6 py-2 bg-white/5 border border-white/10 text-white rounded-xl text-[9px] font-black uppercase hover:bg-[#5d3cfe] transition-all">{t('upgrade_plan', 'Mejorar Plan')}</button>
            </header>
            <div className="grid grid-cols-1 gap-6">
              {requests.filter(r => r.status !== 'open_bidding' && r.techId === techProfile.id).length > 0 ? (
@@ -93,8 +93,8 @@ export default function TechDashboard() {
                      <Inbox className="w-10 h-10 text-white" />
                   </div>
                   <div className="space-y-2">
-                     <h3 className="text-sm font-black text-white uppercase tracking-widest">Bandeja Vacía</h3>
-                     <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.3em] max-w-xs mx-auto">No has recibido solicitudes directas aún. Activa tu radar para ser visible a los clientes.</p>
+                     <h3 className="text-sm font-black text-white uppercase tracking-widest">{t('empty_inbox_title', 'Bandeja Vacía')}</h3>
+                     <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.3em] max-w-xs mx-auto">{t('empty_inbox_desc', 'No has recibido solicitudes directas aún. Activa tu radar para ser visible a los clientes.')}</p>
                   </div>
                </div>
              )}
@@ -105,8 +105,8 @@ export default function TechDashboard() {
       {techTab === 'bidding_market' && (
         <div className="space-y-8">
            <header>
-              <h1 className="text-4xl font-black text-white uppercase tracking-tighter italic">Bolsa de <span className="text-[#52ffac]">Trabajo</span></h1>
-              <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.4em] mt-2">Oportunidades en Subasta Abierta</p>
+              <h1 className="text-4xl font-black text-white uppercase tracking-tighter italic">{t('job_market_title', 'Bolsa de Trabajo').split(' ')[0]} <span className="text-[#52ffac]">{t('job_market_title', 'Bolsa de Trabajo').split(' ').slice(1).join(' ')}</span></h1>
+              <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.4em] mt-2">{t('job_market_subtitle', 'Oportunidades en Subasta Abierta')}</p>
            </header>
 
            <div className="py-32 bg-[#121317] border border-dashed border-[#52ffac]/10 rounded-[4rem] text-center space-y-8 relative overflow-hidden">
@@ -116,15 +116,15 @@ export default function TechDashboard() {
                     <Layers className="w-10 h-10" />
                  </div>
                  <div className="space-y-3">
-                    <h3 className="text-xl font-black text-white uppercase tracking-widest italic">Mercado en Calma</h3>
+                    <h3 className="text-xl font-black text-white uppercase tracking-widest italic">{t('market_calm_title', 'Mercado en Calma')}</h3>
                     <p className="text-[10px] text-[#c8c4d9] font-medium uppercase tracking-[0.3em] max-w-md mx-auto leading-relaxed">
-                       Actualmente no hay subastas activas en tu zona. MantechPro te notificará vía Sat-Link cuando una nueva unidad requiera asistencia inmediata.
+                       {t('market_calm_desc', 'Actualmente no hay subastas activas en tu zona. MantechPro te notificará vía Sat-Link cuando una nueva unidad requiera asistencia inmediata.')}
                     </p>
                  </div>
                  <div className="flex justify-center gap-4">
                     <div className="px-5 py-2 bg-black/40 border border-white/5 rounded-full flex items-center gap-2">
                        <span className="w-1.5 h-1.5 rounded-full bg-[#52ffac] animate-pulse"></span>
-                       <span className="text-[8px] font-black text-[#52ffac] uppercase tracking-widest">Escaneando Red...</span>
+                       <span className="text-[8px] font-black text-[#52ffac] uppercase tracking-widest">{t('scanning_network', 'Escaneando Red...')}</span>
                     </div>
                  </div>
               </div>
@@ -135,26 +135,26 @@ export default function TechDashboard() {
       {techTab === 'agenda' && (
         <div className="space-y-8">
            <header>
-              <h1 className="text-4xl font-black text-white uppercase tracking-tighter italic italic">Mi <span className="text-[#c7bfff]">Agenda</span></h1>
+              <h1 className="text-4xl font-black text-white uppercase tracking-tighter italic italic">{t('my_profile', 'Mi Perfil').split(' ')[0]} <span className="text-[#c7bfff]">{t('agenda', 'Agenda')}</span></h1>
            </header>
 
            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-6">
                  <div className="p-20 bg-[#121317] border border-white/5 rounded-[3rem] text-center space-y-6">
                     <Calendar className="w-12 h-12 text-[#474556] mx-auto opacity-20" />
-                    <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em]">No hay eventos confirmados para esta semana</p>
+                    <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em]">{t('no_events', 'No hay eventos confirmados para esta semana')}</p>
                  </div>
               </div>
               <div className="bg-[#1c1d21] border border-white/5 rounded-[2.5rem] p-8 space-y-6">
-                 <h4 className="text-[10px] font-black text-[#c7bfff] uppercase tracking-[0.3em]">Resumen Semanal</h4>
+                 <h4 className="text-[10px] font-black text-[#c7bfff] uppercase tracking-[0.3em]">{t('weekly_summary', 'Resumen Semanal')}</h4>
                  <div className="space-y-4">
                     <div className="flex justify-between items-center text-xs font-bold text-white/40">
-                       <span>Servicios Pendientes</span>
+                       <span>{t('pending_services', 'Servicios Pendientes')}</span>
                        <span>0</span>
                     </div>
                     <div className="h-px bg-white/5"></div>
                     <div className="flex justify-between items-center text-xs font-bold text-white/40">
-                       <span>Horas Estimadas</span>
+                       <span>{t('est_hours', 'Horas Estimadas')}</span>
                        <span>0h</span>
                     </div>
                  </div>
