@@ -117,7 +117,12 @@ export default function App() {
   };
 
   return (
-    <PayPalScriptProvider options={{ clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || "sb", currency: "USD", intent: "capture" }}>
+    <PayPalScriptProvider options={{
+      clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID,
+      currency: "USD",
+      intent: "capture",
+      "disable-funding": "paylater,venmo"
+    }}>
       <Toaster position="top-center" />
 
       <AppRouter
@@ -228,7 +233,7 @@ export default function App() {
 
                    <div className="p-1">
                       <PayPalButtons
-                        style={{ layout: "horizontal", shape: "pill", color: "blue", height: 55 }}
+                        style={{ layout: "vertical", shape: "pill", color: "blue", height: 50 }}
                         createOrder={(data, actions) => {
                           const price = activeData.plan
                             ? (role === 'tech'
