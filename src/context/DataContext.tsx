@@ -3,6 +3,7 @@ import { collection, query, where, onSnapshot, orderBy } from "firebase/firestor
 import { db } from "../firebase";
 import { useAuth } from './AuthContext';
 import { Asset, MaintenanceReminder, TechProfile, JobRequest, InventoryItem, AgendaEvent } from '../types';
+import { initialTechnicians } from '../mockData';
 
 interface DataContextType {
   assets: Asset[];
@@ -32,9 +33,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const unsubTechs = onSnapshot(collection(db, "technicians"), (snap) =>
-      setTechnicians(snap.docs.map(d => ({ id: d.id, ...d.data() })) as TechProfile[]),
-      (err) => console.error("Tech Snapshot Error:", err)
+    const unsubTechs = onSnapshot(collection(db, "technicians"), (snap) => {
+      const techs = snap.docs.map(d => ({ id: d.id, ...d.data() })) as TechProfile[];
+      // Fallback a mock si la base de datos está vacía para pruebas
+      if (techs.length === 0) {
+        setTechnicians(initialTechnicians);
+      } else {
+        setTechnicians(techs);
+      }
+    },
+    (err) => console.error("Tech Snapshot Error:", err)
     );
 
     const qReq = role === 'admin'

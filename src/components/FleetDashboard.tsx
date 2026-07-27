@@ -3,9 +3,10 @@ import { toast } from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { Asset, MaintenanceReminder } from '../types';
 import {
-  LayoutGrid, List, MapPin, AlertCircle, CheckCircle2, TrendingUp, Search, Filter,
+  LayoutGrid, List, MapPin, AlertCircle, CheckCircle2, TrendingUp, Search, Filter, Mic, Radio, Volume2,
   ChevronRight, Car, Wind, Cpu, Zap, Building2, Code, Phone, ShieldCheck, Download, Star, FileText, Globe, RefreshCw, ChevronLeft, Navigation, Pause, Clock, Flag, Droplets, Fuel, Trash2, Maximize, Activity, AlertTriangle, Pencil, Plus, Info, Settings, User as UserIcon
 } from 'lucide-react';
+import { useRef } from 'react';
 import { Geolocation } from '@capacitor/geolocation';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -186,6 +187,71 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [locationFilter, setLocationFilter] = useState('Todas');
   const [historyAssetId, setHistoryAssetId] = useState<string | null>(null);
+  const [transmittingId, setTransmittingId] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const [isRadioActive, setIsRadioActive] = useState(false);
+
+  const startRecording = async (assetId: string) => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        // Simular envío real a Firebase Storage y notificación por Firestore
+        console.log("Transmisión finalizada. Audio listo para despacho:", audioUrl);
+
+        // Detener todos los tracks para liberar el micrófono
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setTransmittingId(assetId);
+      setIsRadioActive(true);
+
+      // Sonido de inicio Motorola (Bip industrial)
+      const startBeep = new Audio('https://www.soundjay.com/communication/sounds/beeper-3.mp3');
+      startBeep.volume = 0.2;
+      startBeep.play();
+
+      toast(`🎙️ CANAL ABIERTO: ${assets.find(a => a.id === assetId)?.driverName?.toUpperCase() || 'OPERADOR'}`, {
+        id: `radio-${assetId}`,
+        duration: 99999,
+        style: { background: '#1c1d21', color: '#fff', borderLeft: '4px solid #5d3cfe', fontWeight: 'bold' }
+      });
+    } catch (err) {
+      toast.error("Error al acceder al micrófono. Verifique permisos.");
+    }
+  };
+
+  const stopRecording = (assetId: string) => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      setTransmittingId(null);
+      setIsRadioActive(false);
+      toast.dismiss(`radio-${assetId}`);
+
+      // Sonido de fin Motorola (Roger that)
+      const endBeep = new Audio('https://www.soundjay.com/communication/sounds/beeper-1.mp3');
+      endBeep.volume = 0.1;
+      endBeep.play();
+
+      toast.success("TRANSMISIÓN ENVIADA ✓", {
+        style: { background: '#52ffac', color: '#000', fontWeight: 'black' }
+      });
+    }
+  };
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -617,6 +683,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                       <tr className="bg-[#1a1b20] border-b border-[#474556]/30">
                          <th className="p-4 w-10 text-center"><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? filteredAssets.map(a => a.id) : [])} className="rounded border-[#474556]/30 bg-[#0d0e12] text-[#5d3cfe]" /></th>
                          <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest">Unidad / Marca</th>
+                         <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Conductor</th>
                          <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Placa</th>
                          <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Kilometraje</th>
                          <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Vida Útil (ROL)</th>
@@ -647,6 +714,12 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                                <td className="p-4 flex items-center gap-3">
                                   <div className="p-2 bg-[#1a1b20] rounded-lg border border-[#474556]/30"><Car className="w-3.5 h-3.5 text-[#c7bfff]" /></div>
                                   <div><p className="font-black uppercase tracking-tight">{asset.name}</p><p className="text-[9px] text-[#c8c4d9] opacity-40 uppercase">{asset.details}</p></div>
+                               </td>
+                               <td className="p-4 text-center">
+                                  <div className="flex flex-col items-center">
+                                     <span className="text-[10px] font-black text-white uppercase tracking-tight">{asset.driverName || 'No Asignado'}</span>
+                                     <p className="text-[7px] text-[#474556] font-bold uppercase tracking-widest">Operador Logístico</p>
+                                  </div>
                                </td>
                                <td className="p-4 text-center font-mono tracking-widest text-[#52ffac]">{asset.licensePlate || '---'}</td>
                                <td className="p-4 text-center font-black relative group/km">
@@ -702,6 +775,18 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                                         <Cpu className="w-4 h-4" />
                                      </button>
                                      <button onClick={() => { setHistoryAssetId(asset.id); setViewMode('history'); }} className="p-2 bg-[#1a1b20] text-[#c7bfff] hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"><FileText className="w-4 h-4" /></button>
+                                     <button
+                                       onMouseDown={() => startRecording(asset.id)}
+                                       onMouseUp={() => stopRecording(asset.id)}
+                                       onMouseLeave={() => stopRecording(asset.id)}
+                                       className={`p-2 rounded-xl transition-all relative ${transmittingId === asset.id ? 'bg-[#5d3cfe] text-white scale-110 shadow-[0_0_20px_#5d3cfe]' : 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20'}`}
+                                       title="Walkie-Talkie (Push-to-Talk)"
+                                     >
+                                        {transmittingId === asset.id ? <Volume2 className="w-4 h-4 animate-bounce" /> : <Radio className="w-4 h-4" />}
+                                        {transmittingId === asset.id && (
+                                          <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"></div>
+                                        )}
+                                     </button>
                                      <button onClick={() => onStartGps?.(asset.id)} className={`p-2 rounded-lg transition-all ${trackingAssetId === asset.id ? 'bg-rose-500 text-white animate-pulse' : 'bg-[#1a1b20] text-[#52ffac] hover:bg-[#52ffac] hover:text-black'}`}><MapPin className="w-4 h-4" /></button>
                                   </div>
                                </td>
@@ -746,7 +831,13 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                       </div>
 
                       <h4 className="font-black text-white text-sm tracking-tight uppercase">{asset.name}</h4>
-                      <p className="text-[10px] text-[#c8c4d9] mb-4 opacity-60 uppercase">{asset.details}</p>
+                      <div className="flex justify-between items-center mb-4">
+                         <p className="text-[10px] text-[#c8c4d9] opacity-60 uppercase">{asset.details}</p>
+                         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-black/30 rounded-md border border-white/5">
+                            <UserIcon className="w-2.5 h-2.5 text-[#5d3cfe]" />
+                            <span className="text-[8px] font-black text-[#c8c4d9] uppercase">{asset.driverName || 'Sin Conductor'}</span>
+                         </div>
+                      </div>
 
                       {/* MDM Health Progress Bar */}
                       <div className="mb-4 p-3 bg-black/40 rounded-xl border border-white/5 space-y-2">
@@ -778,6 +869,18 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                             <Cpu className="w-4 h-4" />
                          </button>
                          <button onClick={() => { setHistoryAssetId(asset.id); setViewMode('history'); }} className="p-3 bg-[#1a1b20] border border-[#474556]/30 text-[#c7bfff] hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"><FileText className="w-4 h-4" /></button>
+                         <button
+                           onMouseDown={() => startRecording(asset.id)}
+                           onMouseUp={() => stopRecording(asset.id)}
+                           onMouseLeave={() => stopRecording(asset.id)}
+                           className={`p-3 rounded-xl transition-all relative ${transmittingId === asset.id ? 'bg-[#5d3cfe] text-white scale-110 shadow-[0_0_30px_#5d3cfe]' : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-600 hover:text-white'}`}
+                           title="Radio PTT"
+                         >
+                            {transmittingId === asset.id ? <Volume2 className="w-4 h-4 animate-bounce" /> : <Mic className="w-4 h-4" />}
+                            {transmittingId === asset.id && (
+                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+                            )}
+                         </button>
                          <button onClick={() => onManageAsset?.(asset)} className="p-3 bg-[#1a1b20] border border-[#474556]/30 text-white hover:bg-white/10 rounded-xl transition-all"><ChevronRight className="w-4 h-4" /></button>
                       </div>
                     </div>

@@ -93,7 +93,6 @@ export default function VerticalDashboard({ assets, requests, userName }: Vertic
             </h1>
             <h2 className="text-xl font-black text-white uppercase tracking-tight mt-2 flex items-center gap-2">
                {config.title}
-               <Sparkles className="w-4 h-4 text-[#52ffac] fill-[#52ffac]" />
             </h2>
             <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] mt-2">
               {config.subtitle}

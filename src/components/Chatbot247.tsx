@@ -103,8 +103,23 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
       let botResponse = "";
 
       if (mode === 'sales') {
-        if (lowerInput.includes('cotizar') || lowerInput.includes('precio') || lowerInput.includes('cuanto')) {
-          botResponse = "Para brindarle una cotización exacta, necesito saber el tipo de activo. 🛠️\n\n¿Es para un **Hogar (PH)**, una **Flota de Vehículos** o **Maquinaria Industrial**? Nuestros precios inician desde los $29/mes.";
+        if (lastQuestion === 'DEMO_CATEGORY' || lastQuestion === 'QUOTE_CATEGORY') {
+          if (lowerInput.includes('ph') || lowerInput.includes('hogar') || lowerInput.includes('edificio')) {
+              botResponse = "Excelente elección. Para **PH y Edificios**, nuestro plan Profesional ($89/mes) es el estándar de la industria. Incluye auditoría de áreas comunes y monitoreo de plantas eléctricas.\n\n¿Desea que le envíe el brochure técnico detallado para presentarlo a su Junta Directiva?";
+              setLastQuestion('SEND_BROCHURE');
+          } else if (lowerInput.includes('flota') || lowerInput.includes('vehiculo') || lowerInput.includes('carro') || lowerInput.includes('camion')) {
+              botResponse = "Perfecto. Para **Gestión de Flotas**, nuestro motor IA reduce costos de combustible hasta un 15% mediante telemetría satelital.\n\n¿Cuántas unidades (camiones/carros) gestiona actualmente? (Ej: 10 unidades)";
+              setLastQuestion('FLEET_SIZE');
+          } else {
+              botResponse = "Comprendo. Manejamos requerimientos de alta ingeniería. 🦾\n\n¿Prefiere que agendemos una llamada de 5 minutos con un consultor senior para su caso específico?";
+              setLastQuestion('SALES_CALL');
+          }
+        } else if (lowerInput.includes('demo')) {
+          botResponse = "¡Excelente elección! 🚀 He registrado su interés por una **Demo Personalizada**.\n\nUn asesor se pondrá en contacto al correo registrado para coordinar una presentación virtual por Microsoft Teams o Zoom. Verá en detalle el Radar Satelital, los sensores IA y el motor financiero Escrow.\n\n¿Desea que prioricemos la demo para una flota de vehículos o para la gestión de un PH?";
+          setLastQuestion('DEMO_CATEGORY');
+        } else if (lowerInput.includes('cotizar') || lowerInput.includes('precio') || lowerInput.includes('cuanto')) {
+          botResponse = "Para brindarle una cotización exacta, necesito saber el tipo de activo. 🛠️\n\n¿Su requerimiento es para un **Hogar (PH)**, una **Flota de Vehículos** o **Maquinaria Industrial**? Nuestros planes inician desde los $29/mes.";
+          setLastQuestion('QUOTE_CATEGORY');
         } else {
           botResponse = "Como su asesor comercial, puedo ayudarle a elegir el mejor plan de mantenimiento. 💼\n\n¿Desea conocer nuestros planes corporativos o prefiere agendar una cita de evaluación gratuita?";
         }

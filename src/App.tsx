@@ -14,6 +14,7 @@ import { doc, updateDoc, setDoc, getDoc, query, collection, where, onSnapshot } 
 import AppRouter from './routes/AppRouter';
 import NotificationCenter from './components/NotificationCenter';
 import SupportModal from './components/SupportModal';
+import Chatbot247 from './components/Chatbot247';
 import AssetRegisterModal from './components/AssetRegisterModal';
 import TechnicianProfileModal from './components/TechnicianProfileModal';
 import SignaturePad from './components/SignaturePad';
@@ -35,7 +36,7 @@ import { compressImage } from './utils/imageHelpers';
 
 export default function App() {
   const { user, isLoggedIn, subscription, logout, role } = useAuth();
-  const { assets } = useData();
+  const { assets, requests } = useData();
   const { modals, activeData, closeModal, openModal } = useUI();
   const business = useBusinessLogic();
   const gps = useGpsTracking();
@@ -326,6 +327,16 @@ export default function App() {
            </div>
         )}
       </AnimatePresence>
+
+      {isLoggedIn && role !== 'admin' && (
+        <Chatbot247
+          assets={assets}
+          requests={requests}
+          onScheduleService={(techId, assetId) => {
+            business.handleRequestQuote(techId, assetId, "Solicitud vía Asistente IA");
+          }}
+        />
+      )}
     </PayPalScriptProvider>
   );
 }

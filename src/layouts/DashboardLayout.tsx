@@ -147,6 +147,11 @@ export default function DashboardLayout({
                 )}
                 <button onClick={() => navigateClient('subscriptions')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'subscriptions' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Star className="w-4 h-4" /> {t('membership', 'Membresía')}</button>
                 <button onClick={() => navigateClient('chat')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'chat' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><MessageSquare className="w-4 h-4" /> {t('chat', 'Chat')}</button>
+
+                {isEnterprise && (
+                  <button onClick={() => navigateClient('team')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'team' ? 'bg-amber-500 text-black shadow-xl shadow-amber-500/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Users className="w-4 h-4" /> Gestión de Equipo</button>
+                )}
+
                 <button onClick={() => navigateClient('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> {t('settings', 'Configuración')}</button>
               </>
             )}

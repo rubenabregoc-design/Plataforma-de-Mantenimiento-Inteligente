@@ -3,7 +3,7 @@ import { Asset, AssetType, AssetCategory, RiskLevel } from '../types';
 import {
   Plus, X, Car, ShieldCheck, Cpu, Sliders, BatteryCharging, Zap, Boxes,
   Home, Edit2, Search, CheckCircle2, Droplets, PlugZap, Building2,
-  Stethoscope, HardHat, LayoutGrid, Bike, AlertCircle, MapPin, User, FileText, Fuel, Fingerprint, Activity, ShieldAlert, Shield, Thermometer, Database, Ruler, Waves, ZapOff
+  Stethoscope, HardHat, LayoutGrid, Bike, AlertCircle, MapPin, User, FileText, Fuel, Fingerprint, Activity, ShieldAlert, Shield, Thermometer, Database, Ruler, Waves, ZapOff, Calendar
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { SECURITY_PROTOCOLS } from '../utils/businessRules';
@@ -34,6 +34,8 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
   const [driverName, setDriverName] = useState('');
   const [serialNumber, setSerialNumber] = useState('');
   const [fuelType, setFuelType] = useState<Asset['fuelType']>('diesel');
+  const [purchaseDate, setPurchaseDate] = useState('');
+  const [warrantyMonths, setWarrantyMonths] = useState<number>(0);
 
   // Specific Specs States
   const [btu, setBtu] = useState('');
@@ -53,10 +55,10 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
 
   // --- Mapeo de Tipos por Capa Operativa ---
   const categoryMapping: Record<AssetCategory, AssetType[]> = {
-    'GENERAL': ['car', 'moto', 'house', 'ac', 'plumbing', 'electrical', 'computer'],
-    'PH': ['ac', 'generator', 'solar_panels', 'plumbing', 'electrical', 'house'],
-    'SALUD': ['ac', 'generator', 'electrical', 'plumbing', 'computer'],
-    'CONSTRUCCION': ['industrial_equip', 'generator', 'car', 'electrical']
+    'GENERAL': ['car', 'moto', 'house', 'ac', 'plumbing', 'electrical', 'computer', 'garden', 'pool', 'security_system'],
+    'PH': ['ac', 'generator', 'solar_panels', 'plumbing', 'electrical', 'house', 'elevator', 'fire_system', 'pool', 'garden', 'security_system'],
+    'SALUD': ['ac', 'generator', 'electrical', 'plumbing', 'computer', 'security_system'],
+    'CONSTRUCCION': ['industrial_equip', 'generator', 'car', 'electrical', 'security_system']
   };
 
   const allAssetTypes: { id: AssetType, label: string, icon: any }[] = [
@@ -69,7 +71,12 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
     { id: 'house', label: 'Inmueble', icon: Home },
     { id: 'plumbing', label: 'Fontanería', icon: Droplets },
     { id: 'electrical', label: 'Electricidad', icon: PlugZap },
-    { id: 'moto', label: 'Moto', icon: Bike }
+    { id: 'moto', label: 'Moto', icon: Bike },
+    { id: 'elevator', label: 'Ascensor', icon: Building2 },
+    { id: 'fire_system', label: 'Sist. Incendio', icon: ShieldAlert },
+    { id: 'pool', label: 'Piscina', icon: Waves },
+    { id: 'garden', label: 'Jardín/Hierba', icon: LayoutGrid },
+    { id: 'security_system', label: 'Cámaras/Seg.', icon: ShieldCheck }
   ];
 
   const filteredTypes = allAssetTypes.filter(at => categoryMapping[category].includes(at.id));
@@ -92,6 +99,8 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       setDriverName(assetToEdit.driverName || '');
       setSerialNumber(assetToEdit.serialNumber || '');
       setFuelType(assetToEdit.fuelType || 'diesel');
+      setPurchaseDate(assetToEdit.purchaseDate || '');
+      setWarrantyMonths(assetToEdit.warrantyMonths || 0);
 
       if (assetToEdit.specs) {
         setBtu(assetToEdit.specs.btu || '');
@@ -121,6 +130,8 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       setNextMaintenance('');
       setObservations('');
       setSerialNumber('');
+      setPurchaseDate('');
+      setWarrantyMonths(0);
     }
   }, [assetToEdit, isOpen, category]);
 
@@ -157,6 +168,8 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       serialNumber: serialNumber || null,
       driverName: (type === 'car' || type === 'moto') ? (driverName || null) : undefined,
       fuelType: (type === 'car' || type === 'moto') ? (fuelType || null) : undefined,
+      purchaseDate: purchaseDate || null,
+      warrantyMonths: warrantyMonths > 0 ? Number(warrantyMonths) : undefined,
       specs: Object.keys(cleanSpecs).length > 0 ? cleanSpecs : undefined
     });
     onClose();
@@ -269,7 +282,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
                    <label className="text-[9px] font-black text-[#474556] uppercase ml-1 flex items-center gap-2"><Activity className="w-3 h-3" /> Importancia Operativa</label>
                    <div className="flex bg-[#0d0e12] p-1.5 rounded-2xl border border-white/5">
                       {(['low', 'medium', 'high', 'critical'] as const).map(c => (
-                        <button key={c} type="button" onClick={() => setCriticality(c)} className={`flex-1 py-3 text-[8px] font-black uppercase rounded-xl transition-all ${criticality === c ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556]'}`}>{c === 'low' ? 'Standard' : c === 'medium' ? 'Vital' : c === 'high' ? 'Crítico' : 'SOS'}</button>
+                        <button key={c} type="button" onClick={() => setCriticality(c)} className={`flex-1 py-3 text-[8px] font-black uppercase rounded-xl transition-all ${criticality === c ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556]'}`}>{c === 'low' ? 'Estándar' : c === 'medium' ? 'Vital' : c === 'high' ? 'Crítico' : 'SOS'}</button>
                       ))}
                    </div>
                 </div>
@@ -360,6 +373,40 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
                  </div>
                )}
             </div>
+          </div>
+
+          {/* NIVEL 5: GARANTÍA Y PROTECCIÓN */}
+          <div className="space-y-6 pt-8 border-t border-white/5">
+             <div className="flex items-center gap-3">
+                <div className="w-1.5 h-6 bg-[#5d3cfe] rounded-full"></div>
+                <label className="text-[11px] font-black text-white uppercase tracking-[0.3em]">5. Bóveda de Garantía</label>
+             </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white/[0.02] rounded-3xl border border-white/5">
+                <div className="space-y-2">
+                   <label className="text-[9px] font-black text-[#474556] uppercase ml-2 flex items-center gap-2">
+                      <Calendar className="w-3 h-3" /> Fecha de Adquisición
+                   </label>
+                   <input
+                     type="date"
+                     value={purchaseDate}
+                     onChange={e => setPurchaseDate(e.target.value)}
+                     className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white focus:border-[#5d3cfe] outline-none [color-scheme:dark]"
+                   />
+                </div>
+                <div className="space-y-2">
+                   <label className="text-[9px] font-black text-[#474556] uppercase ml-2 flex items-center gap-2">
+                      <ShieldCheck className="w-3 h-3" /> Meses de Cobertura
+                   </label>
+                   <input
+                     type="number"
+                     value={warrantyMonths}
+                     onChange={e => setWarrantyMonths(Number(e.target.value))}
+                     placeholder="Ej: 12"
+                     className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-white focus:border-[#5d3cfe] outline-none"
+                   />
+                </div>
+             </div>
+             <p className="text-[8px] text-[#474556] font-bold uppercase italic ml-2">* Estos datos activan el monitoreo en la Bóveda de Garantías.</p>
           </div>
 
           {/* CRONOGRAMA FINAL */}

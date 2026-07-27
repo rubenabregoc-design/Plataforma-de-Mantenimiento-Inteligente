@@ -96,7 +96,23 @@ const resources = {
       "landing_b2b_desc": "The definitive tool for Property Managers. Coordinate maintenance, track budgets, and ensure common areas are always in top condition.",
       "landing_security_title": "Your Peace of Mind, Our Priority",
       "landing_security_subtitle": "CERTIFIED TRUST",
-      "landing_security_desc": "Every technician is verified and every payment is protected. Experience the security of working with the best-rated professionals in Panama."
+      "landing_security_desc": "Every technician is verified and every payment is protected. Experience the security of working with the best-rated professionals in Panama.",
+      "mantech_id_title": "Mantech ID Security",
+      "mantech_id_desc": "Legal Identity Validation for Panama",
+      "identity_verified": "Validated",
+      "identity_pending": "Pending",
+      "identity_rejected": "Integrity Compromised",
+      "identity_registered": "Registered Identity (Immutable)",
+      "id_document": "Identity Document",
+      "id_document_desc": "Valid ID Card or Passport",
+      "upload_document": "Upload Document",
+      "document_registered": "Document Registered",
+      "integrity_record": "Integrity Record",
+      "integrity_record_desc": "MantechPro Internal Audit",
+      "generate_audit": "Generate IA Audit",
+      "view_record_active": "View Active Record ✓",
+      "privacy_protocol": "Privacy Protocol Law 81",
+      "privacy_desc": "Your documents are stored with AES-256 military-grade encryption and are only visible to certified MantechPro auditors."
     }
   },
   es: {
@@ -188,7 +204,23 @@ const resources = {
       "landing_b2b_desc": "La herramienta definitiva para Administradores de PH. Coordine mantenimientos, rastree presupuestos y asegure áreas comunes impecables.",
       "landing_security_title": "Su Tranquilidad, Nuestra Prioridad",
       "landing_security_subtitle": "CONFIANZA CERTIFICADA",
-      "landing_security_desc": "Cada técnico es verificado y cada pago está protegido. Experimente la seguridad de trabajar con los mejores profesionales de Panamá."
+      "landing_security_desc": "Cada técnico es verificado y cada pago está protegido. Experimente la seguridad de trabajar con los mejores profesionales de Panamá.",
+      "mantech_id_title": "Mantech ID Security",
+      "mantech_id_desc": "Validación de Identidad Legal para Panamá",
+      "identity_verified": "Validado",
+      "identity_pending": "Pendiente",
+      "identity_rejected": "Integridad Comprometida",
+      "identity_registered": "Identidad Registrada (Inmutable)",
+      "id_document": "Documento de Identidad",
+      "id_document_desc": "Cédula o Pasaporte vigente",
+      "upload_document": "Subir Documento",
+      "document_registered": "Cédula Registrada",
+      "integrity_record": "Récord de Integridad",
+      "integrity_record_desc": "Auditoría Interna MantechPro",
+      "generate_audit": "Generar Auditoría IA",
+      "view_record_active": "Ver Récord Activo ✓",
+      "privacy_protocol": "Protocolo de Privacidad Ley 81",
+      "privacy_desc": "Sus documentos se almacenan con cifrado militar AES-256 y solo son visibles para auditores certificados de MantechPro."
     }
   }
 };

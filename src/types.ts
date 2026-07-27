@@ -8,7 +8,12 @@ export type AssetType =
   | 'moto' 
   | 'industrial_equip'
   | 'plumbing'
-  | 'electrical';
+  | 'electrical'
+  | 'elevator'
+  | 'fire_system'
+  | 'pool'
+  | 'garden'
+  | 'security_system';
 
 export type FuelType = 'diesel' | 'gas91' | 'gas95';
 
@@ -100,11 +105,30 @@ export interface MaintenanceReminder {
 
 export type TechCategory = 
   | 'mecanico' 
-  | 'electricista' 
-  | 'plomero' 
-  | 'tecnico_ac' 
-  | 'informatico' 
-  | 'especialista_solar';
+  | 'tecnico_ac'
+  | 'electricista'
+  | 'informatico'
+  | 'plomero'
+  | 'especialista_solar'
+  | 'jardineria'
+  | 'fotografo'
+  | 'estilista'
+  | 'limpieza'
+  | 'reparacion_hogar'
+  | 'ascensores'
+  | 'contra_incendio'
+  | 'refrigeracion'
+  | 'plantas_electricas'
+  | 'piscinas'
+  | 'domotica'
+  | 'lavado_muebles'
+  | 'albanileria'
+  | 'entrenador'
+  | 'masajista'
+  | 'chef'
+  | 'mascotas'
+  | 'legal'
+  | 'contabilidad';
 
 export interface TechProfile {
   id: string;

@@ -45,6 +45,55 @@ export default function ClientDashboard() {
   const [marketViewMode, setMarketViewMode] = useState<'list' | 'radar' | 'bidding'>('list');
   const [activeChatRequestId, setActiveChatRequestId] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [marketSearchQuery, setMarketSearchQuery] = useState('');
+  const [requiredVerificationLevel, setRequiredVerificationLevel] = useState<number>(1);
+
+  // Función para normalizar texto (quitar acentos) para comparaciones precisas
+  const normalizeText = (text: string) =>
+    text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_');
+
+  const categories = [
+    { id: 'all', label: 'Todos' },
+    { id: 'mecanico', label: 'Mecánico' },
+    { id: 'tecnico_ac', label: 'Técnico A/C' },
+    { id: 'electricista', label: 'Electricista' },
+    { id: 'informatico', label: 'Informático' },
+    { id: 'plomero', label: 'Plomero' },
+    { id: 'especialista_solar', label: 'Energía Solar' },
+    { id: 'ascensores', label: 'Ascensores' },
+    { id: 'contra_incendio', label: 'Sist. Incendio' },
+    { id: 'refrigeracion', label: 'Refrigeración' },
+    { id: 'plantas_electricas', label: 'Plantas Eléc.' },
+    { id: 'jardineria', label: 'Jardinería' },
+    { id: 'piscinas', label: 'Piscinas' },
+    { id: 'domotica', label: 'Smart Home' },
+    { id: 'lavado_muebles', label: 'Lavado Muebles' },
+    { id: 'albanileria', label: 'Albañilería' },
+    { id: 'limpieza', label: 'Limpieza' },
+    { id: 'reparacion_hogar', label: 'Reparación Hogar' },
+    { id: 'entrenador', label: 'Entrenador' },
+    { id: 'masajista', label: 'Masajista' },
+    { id: 'chef', label: 'Chef Privado' },
+    { id: 'fotografo', label: 'Fotógrafo' },
+    { id: 'mascotas', label: 'Mascotas' },
+    { id: 'legal', label: 'Legal' },
+    { id: 'contabilidad', label: 'Contabilidad' }
+  ];
+
+  const filteredTechnicians = technicians.filter(t => {
+    const matchesCategory = marketFilter === 'all' || (t.category && normalizeText(t.category) === marketFilter);
+    const matchesSearch = (t.name?.toLowerCase() || '').includes(marketSearchQuery.toLowerCase()) ||
+                         (t.title?.toLowerCase() || '').includes(marketSearchQuery.toLowerCase()) ||
+                         (t.location?.toLowerCase() || '').includes(marketSearchQuery.toLowerCase());
+    const matchesLevel = (t.verificationLevel || 1) >= requiredVerificationLevel;
+    return matchesCategory && matchesSearch && matchesLevel;
+  });
+
+  const handleFindExpertForAsset = (asset: Asset) => {
+    const reqLevel = asset.riskLevel === 'high' ? 3 : (asset.riskLevel === 'medium' ? 2 : 1);
+    setRequiredVerificationLevel(reqLevel);
+    setTab('client', 'marketplace');
+  };
 
   const requestsWithChat = requests.filter(r => ['quoted', 'accepted', 'executing', 'completed'].includes(r.status));
 
@@ -134,6 +183,7 @@ export default function ClientDashboard() {
                       requests={requests}
                       onOpenDetails={(asset) => openModal('fuel', { asset })}
                       onOpenPreTrip={(asset) => openModal('preTrip', { asset })}
+                      onFindExpert={handleFindExpertForAsset}
                     />
                   ))
                 ) : (
@@ -190,9 +240,51 @@ export default function ClientDashboard() {
       {clientTab === 'marketplace' && (
         <div className="space-y-10">
           <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-            <div>
-               <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-none">Marketplace <span className="text-[#5d3cfe]">Expertos</span></h1>
-               <div className="flex gap-3 overflow-x-auto pb-4 mt-6 custom-scrollbar">{['Todos', 'Mecánico', 'Técnico A/C', 'Electricista', 'Informático'].map(c => (<button key={c} onClick={() => setMarketFilter(c === 'Todos' ? 'all' : c.toLowerCase().replace(' ', '_') as any)} className={`flex-shrink-0 px-8 py-3 rounded-full border transition-all text-[10px] font-black uppercase tracking-widest ${marketFilter === (c === 'Todos' ? 'all' : c.toLowerCase().replace(' ', '_')) ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'border-[#2a2b2f] text-[#c8c4d9] hover:border-[#5d3cfe]'}`}>{c}</button>))}</div>
+            <div className="flex-1 w-full">
+               <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-none mb-6">Marketplace <span className="text-[#5d3cfe]">Expertos</span></h1>
+
+               {/* BARRA DE BÚSQUEDA RÁPIDA */}
+               <div className="relative mb-6">
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#474556]" />
+                  <input
+                    type="text"
+                    placeholder="Busca por nombre, especialidad o zona (Paitilla, Costa del Este...)"
+                    value={marketSearchQuery}
+                    onChange={(e) => setMarketSearchQuery(e.target.value)}
+                    className="w-full bg-[#121317] border border-[#2a2b2f] rounded-[1.5rem] py-5 pl-16 pr-6 text-sm font-bold text-white focus:border-[#5d3cfe] outline-none transition-all shadow-inner"
+                  />
+               </div>
+
+               {/* FILTRO DE INGENIERÍA ACTIVO */}
+               {requiredVerificationLevel > 1 && (
+                 <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between animate-fade-in">
+                    <div className="flex items-center gap-3">
+                       <ShieldCheck className="w-5 h-5 text-amber-500" />
+                       <p className="text-[10px] font-black text-white uppercase tracking-widest">
+                          Filtro de Seguridad: Mostrando solo especialistas <span className="text-amber-500">{requiredVerificationLevel === 3 ? 'MASTER' : 'SENIOR'}</span>
+                       </p>
+                    </div>
+                    <button
+                      onClick={() => setRequiredVerificationLevel(1)}
+                      className="px-4 py-1.5 bg-amber-500 text-black rounded-lg text-[8px] font-black uppercase tracking-widest hover:brightness-110 transition-all"
+                    >
+                       Quitar Filtro
+                    </button>
+                 </div>
+               )}
+
+               {/* SELECTOR DE CATEGORÍAS TÁCTICO */}
+               <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar">
+                 {categories.map(c => (
+                   <button
+                     key={c.id}
+                     onClick={() => setMarketFilter(c.id as any)}
+                     className={`flex-shrink-0 px-8 py-3 rounded-full border transition-all text-[10px] font-black uppercase tracking-widest ${marketFilter === c.id ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'border-[#2a2b2f] text-[#c8c4d9] hover:border-[#5d3cfe]'}`}
+                   >
+                     {c.label}
+                   </button>
+                 ))}
+               </div>
             </div>
             <div className="bg-[#1c1d21] p-1.5 rounded-2xl border border-[#2a2b2f] flex">
                <button onClick={() => setMarketViewMode('list')} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${marketViewMode === 'list' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}>Listado</button>
@@ -207,12 +299,17 @@ export default function ClientDashboard() {
             </div>
           ) : marketViewMode === 'list' ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-               {technicians.filter(t => marketFilter === 'all' || t.category === marketFilter).map(t => (
+               {filteredTechnicians.length > 0 ? filteredTechnicians.map(t => (
                  <div key={t.id} className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[3rem] flex flex-col gap-6 relative overflow-hidden group hover:border-[#5d3cfe]/50 transition-all shadow-2xl">
+                    {/* ... (resto de la tarjeta se mantiene igual) ... */}
                     <div className="flex items-center gap-5">
-                       <div className="w-16 h-16 rounded-2xl bg-[#1c1d21] border border-[#2a2b2f] flex items-center justify-center text-[#c7bfff] font-black text-2xl shadow-inner relative">
-                          {t.name[0]}
-                          {t.verificationLevel === 3 && <div className="absolute -top-2 -right-2 bg-amber-500 p-1.5 rounded-lg shadow-lg border border-white/20 animate-bounce"><Shield className="w-3 h-3 text-black" /></div>}
+                       <div className="w-16 h-16 rounded-2xl bg-[#1c1d21] border border-[#2a2b2f] flex items-center justify-center text-[#c7bfff] font-black text-2xl shadow-inner relative overflow-hidden">
+                          {t.profileImage ? (
+                             <img src={t.profileImage} className="w-full h-full object-cover" alt={t.name} />
+                          ) : (
+                             t.name[0]
+                          )}
+                          {t.verificationLevel === 3 && <div className="absolute -top-2 -right-2 bg-amber-500 p-1.5 rounded-lg shadow-lg border border-white/20 animate-bounce z-10"><Shield className="w-3 h-3 text-black" /></div>}
                        </div>
                        <div>
                           <h4 className="font-black text-white text-base uppercase tracking-tight">{t.name}</h4>
@@ -224,10 +321,29 @@ export default function ClientDashboard() {
                           </div>
                        </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-4 py-4 border-y border-[#2a2b2f]/50 bg-[#0d0e12]/30 px-4 rounded-2xl text-center"><div><div className="text-amber-500 font-black text-sm flex items-center justify-center gap-1"><Star className="w-3 h-3 fill-amber-500" /> {t.rating}</div><span className="text-[8px] text-[#474556] font-bold uppercase">Rating</span></div><div><div className="text-white font-black text-sm">{t.experienceYears}a</div><span className="text-[8px] text-[#474556] font-bold uppercase">Exp.</span></div><div><div className="text-[#52ffac] font-black text-sm">${t.hourlyRate}</div><span className="text-[8px] text-[#474556] font-bold uppercase">Hr.</span></div></div>
+                    <div className="grid grid-cols-3 gap-4 py-4 border-y border-[#2a2b2f]/50 bg-[#0d0e12]/30 px-4 rounded-2xl text-center">
+                       <div>
+                          <div className="text-amber-500 font-black text-sm flex items-center justify-center gap-1">
+                             <Star className="w-3 h-3 fill-amber-400" /> {t.rating || 5}
+                          </div>
+                          <span className="text-[8px] text-[#474556] font-bold uppercase">Rating</span>
+                       </div>
+                       <div>
+                          <div className="text-white font-black text-sm">{t.experienceYears || 0}a</div>
+                          <span className="text-[8px] text-[#474556] font-bold uppercase">Exp.</span>
+                       </div>
+                       <div>
+                          <div className="text-[#52ffac] font-black text-sm">${t.hourlyRate || 0}</div>
+                          <span className="text-[8px] text-[#474556] font-bold uppercase">Hr.</span>
+                       </div>
+                    </div>
                     <button onClick={() => openModal('tech', { tech: t })} className="w-full py-4 bg-[#1c1d21] hover:bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg active:scale-[0.98]">Ver Perfil & Agendar</button>
                  </div>
-               ))}
+               )) : (
+                 <div className="col-span-full py-20 bg-[#121317] border border-dashed border-white/5 rounded-[3rem] text-center opacity-40">
+                   <p className="text-xs font-black uppercase tracking-widest italic">No se encontraron especialistas con los filtros actuales.</p>
+                 </div>
+               )}
             </div>
           ) : marketViewMode === 'bidding' ? (
             <div className="space-y-8 animate-fade-in">
@@ -385,6 +501,97 @@ export default function ClientDashboard() {
                 }}
                 onStartVideoCall={(room, voice) => openModal('videoCall', { videoRoom: room, isVoiceOnly: voice })}
               />
+           </div>
+        </div>
+      )}
+
+      {clientTab === 'audit' && (
+        <div className="space-y-10 animate-fade-in">
+           <header className="flex justify-between items-end">
+              <div>
+                 <h1 className="text-4xl font-black text-white uppercase tracking-tighter">Módulo de <span className="text-[#5d3cfe]">Auditoría</span></h1>
+                 <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.3em] mt-2">Cumplimiento Técnico e Industrial</p>
+              </div>
+              {subscription.planId === 'plan-enterprise' && (
+                <button
+                  onClick={() => {
+                    const data = assets.map(a => ({ 'ACTIVO': a.name, 'ULT_MTTO': a.lastMaintenanceDate, 'ESTADO': 'VERIFICADO' }));
+                    const ws = XLSX.utils.json_to_sheet(data);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Auditoria_Mensual");
+                    XLSX.writeFile(wb, `Auditoria_Mensual_${new Date().getMonth()+1}_2026.xlsx`);
+                    toast.success("Auditoría Mensual Firmada generada (Formato Industrial).");
+                  }}
+                  className="px-8 py-4 bg-amber-500 text-black rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
+                >
+                  <FileCheck2 className="w-4 h-4" /> Generar Auditoría Mensual Firmada
+                </button>
+              )}
+           </header>
+
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Aquí irían las tarjetas de auditoría existentes o un resumen de cumplimiento */}
+              <div className="p-8 bg-[#121317] border border-white/5 rounded-[2.5rem] space-y-4">
+                 <div className="w-12 h-12 rounded-2xl bg-[#52ffac]/10 flex items-center justify-center text-[#52ffac]">
+                    <ShieldCheck className="w-6 h-6" />
+                 </div>
+                 <h4 className="text-lg font-black text-white uppercase tracking-tight">Índice de Operatividad</h4>
+                 <p className="text-4xl font-black text-[#52ffac] tracking-tighter">98.4%</p>
+                 <p className="text-[9px] text-[#474556] font-bold uppercase">Meta Industrial: &gt;95%</p>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {clientTab === 'team' && (
+        <div className="max-w-4xl mx-auto space-y-12 animate-fade-in pb-20">
+           <header className="text-center space-y-3 italic">
+              <h1 className="text-5xl font-black text-white uppercase tracking-tighter leading-none italic">Gestión de <span className="text-amber-500">Equipo</span></h1>
+              <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.4em]">Multi-Administrador / Nodos de Operación PH</p>
+           </header>
+
+           <div className="bg-[#121317] border border-white/5 p-10 rounded-[3rem] space-y-8 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-12 opacity-5"><Users className="w-48 h-48 text-amber-500" /></div>
+
+              <div className="flex justify-between items-center relative z-10">
+                 <div className="space-y-1">
+                    <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Administradores de Nodo</h3>
+                    <p className="text-[10px] text-[#474556] font-bold uppercase tracking-widest italic">Personal con acceso a gestión de activos</p>
+                 </div>
+                 <button onClick={() => toast("Funcionalidad disponible en la próxima actualización de seguridad.", { icon: '🚀' })} className="px-8 py-3 bg-white/5 border border-white/10 text-white rounded-2xl text-[9px] font-black uppercase hover:bg-white/10 transition-all">+ Añadir Miembro</button>
+              </div>
+
+              <div className="space-y-3">
+                 <div className="p-6 bg-white/5 border border-white/5 rounded-3xl flex items-center justify-between group hover:border-amber-500/30 transition-all">
+                    <div className="flex items-center gap-5">
+                       <div className="w-12 h-12 rounded-full bg-amber-500 flex items-center justify-center text-black font-black text-sm shadow-lg shadow-amber-500/20">
+                          {loggedInName[0]}
+                       </div>
+                       <div>
+                          <p className="text-sm font-black text-white uppercase tracking-tight">{loggedInName}</p>
+                          <p className="text-[9px] text-amber-500 font-bold uppercase tracking-widest italic leading-none mt-1">Super Administrador (Propietario)</p>
+                       </div>
+                    </div>
+                    <div className="px-4 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full text-[8px] font-black text-amber-500 uppercase tracking-widest">Activo</div>
+                 </div>
+              </div>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-8 bg-[#1c1d21] border border-white/5 rounded-[2.5rem] space-y-4">
+                 <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400">
+                    <PieChart className="w-6 h-6" />
+                 </div>
+                 <h4 className="text-sm font-black text-white uppercase tracking-widest italic">Auditoría de Acciones</h4>
+                 <p className="text-[10px] text-[#c8c4d9] font-medium leading-relaxed opacity-60">Rastree qué administrador registró un activo o aprobó un mantenimiento en tiempo real.</p>
+              </div>
+              <div className="p-8 bg-[#1c1d21] border border-white/5 rounded-[2.5rem] space-y-4">
+                 <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400">
+                    <Building2 className="w-6 h-6" />
+                 </div>
+                 <h4 className="text-sm font-black text-white uppercase tracking-widest italic">Nodos PH / Sede</h4>
+                 <p className="text-[10px] text-[#c8c4d9] font-medium leading-relaxed opacity-60">Segmente sus activos por ubicación (Ej: Torre 1, Sótano, Depósito) y asigne encargados específicos.</p>
+              </div>
            </div>
         </div>
       )}

@@ -5,9 +5,10 @@ interface AssetIntelligentCardProps {
   requests: JobRequest[];
   onOpenDetails: (asset: Asset) => void;
   onOpenPreTrip: (asset: Asset) => void;
+  onFindExpert?: (asset: Asset) => void;
 }
 
-export default function AssetIntelligentCard({ asset, requests, onOpenDetails, onOpenPreTrip }: AssetIntelligentCardProps) {
+export default function AssetIntelligentCard({ asset, requests, onOpenDetails, onOpenPreTrip, onFindExpert }: AssetIntelligentCardProps) {
   // Idea 2: Cálculo de Costo Operativo Real
   const assetRequests = requests.filter(r => r.assetId === asset.id && r.status === 'completed');
   const totalSpend = assetRequests.reduce((sum, r) => sum + (r.price || 0), 0);
@@ -107,6 +108,13 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
               Combustible ➔
             </button>
           </div>
+
+          <button
+            onClick={() => onFindExpert?.(asset)}
+            className="w-full py-4 bg-[#5d3cfe] text-white rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] shadow-lg shadow-[#5d3cfe]/20 hover:brightness-110 transition-all flex items-center justify-center gap-2"
+          >
+            <Tool className="w-4 h-4" /> Buscar Especialista {asset.riskLevel === 'high' ? 'MASTER' : asset.riskLevel === 'medium' ? 'SENIOR' : ''}
+          </button>
         </div>
 
         <button

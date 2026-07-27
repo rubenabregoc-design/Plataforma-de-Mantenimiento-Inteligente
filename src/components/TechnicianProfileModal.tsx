@@ -53,8 +53,12 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
         <div className="md:w-[38%] bg-[#1c1d21] p-8 md:p-10 flex flex-col justify-between border-b md:border-b-0 md:border-r border-white/5 overflow-y-auto custom-scrollbar shrink-0">
           <div className="space-y-8">
               <div className="flex justify-between items-start">
-                <div className="w-20 h-20 bg-[#5d3cfe] rounded-[2rem] flex items-center justify-center text-3xl font-black text-white shadow-2xl shadow-[#5d3cfe]/20 border border-white/10 uppercase">
-                  {tech.name.split(' ').map(n => n[0]).join('')}
+                <div className="w-20 h-20 bg-[#5d3cfe] rounded-[2rem] flex items-center justify-center text-3xl font-black text-white shadow-2xl shadow-[#5d3cfe]/20 border border-white/10 uppercase overflow-hidden">
+                  {tech.profileImage ? (
+                    <img src={tech.profileImage} className="w-full h-full object-cover" alt={tech.name} />
+                  ) : (
+                    tech.name ? tech.name.split(' ').map(n => n[0]).join('') : 'U'
+                  )}
                 </div>
                 <div className="flex flex-col items-end gap-3">
                   {tech.isVerified ? (
@@ -150,9 +154,11 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
                    CERTIFICACIONES
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  {tech.certifications.map((cert, i) => (
+                  {tech.certifications ? tech.certifications.map((cert, i) => (
                     <span key={i} className="px-4 py-2 bg-[#121317] border border-white/5 rounded-xl text-[9px] font-black text-white uppercase tracking-widest">{cert}</span>
-                  ))}
+                  )) : (
+                    <span className="text-[8px] font-bold text-[#474556] uppercase tracking-widest italic">Sin certificaciones registradas</span>
+                  )}
                 </div>
               </div>
             </div>

@@ -121,6 +121,11 @@ export default function TechnicianEditProfileModal({ isOpen, onClose, profile, o
                   <option value="informatico">Informático / IT</option>
                   <option value="plomero">Plomero Especialista</option>
                   <option value="especialista_solar">Especialista Solar</option>
+                  <option value="jardineria">Jardinería / Paisajismo</option>
+                  <option value="fotografo">Fotógrafo Profesional</option>
+                  <option value="estilista">Estilista / Barbería</option>
+                  <option value="limpieza">Servicios de Limpieza</option>
+                  <option value="reparacion_hogar">Reparaciones del Hogar</option>
                 </select>
               </div>
               <div className="space-y-2">

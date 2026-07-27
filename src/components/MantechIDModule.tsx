@@ -114,19 +114,19 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-black uppercase tracking-widest text-sm text-white">Mantech ID <span className="text-indigo-400">Security</span></h3>
-            <p className="text-[10px] text-zinc-400 font-medium">Validación de Identidad Legal para Panamá</p>
+            <h3 className="font-black uppercase tracking-widest text-sm text-white">{t('mantech_id_title')}</h3>
+            <p className="text-[10px] text-zinc-400 font-medium">{t('mantech_id_desc')}</p>
           </div>
         </div>
         {status === 'verified' || (role === 'tech' && mantechId?.policeRecordUrl) ? (
           <div className="px-3 py-1 bg-emerald-500 text-[#0d0e12] rounded-full text-[9px] font-black uppercase flex items-center gap-1 shadow-lg shadow-emerald-500/20">
             <CheckCircle2 className="w-3 h-3" />
-            Validado
+            {t('identity_verified')}
           </div>
         ) : (
           <div className="px-3 py-1 bg-amber-500 text-[#0d0e12] rounded-full text-[9px] font-black uppercase flex items-center gap-1 animate-pulse">
             <Clock className="w-3 h-3" />
-            Pendiente
+            {t('identity_pending')}
           </div>
         )}
       </div>
@@ -134,7 +134,7 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
       <div className="p-6 space-y-6">
         <div className="bg-[#0d0e12] p-6 rounded-[2rem] border border-white/5 flex items-center justify-between group">
           <div>
-            <label className="text-[9px] font-black text-[#474556] uppercase tracking-widest ml-1">Identidad Registrada (Inmutable)</label>
+            <label className="text-[9px] font-black text-[#474556] uppercase tracking-widest ml-1">{t('identity_registered')}</label>
             <p className="text-xl font-black text-white ml-1 mt-1 tracking-tighter italic">{cedula || '---'}</p>
           </div>
           <div className="p-3 bg-white/5 rounded-2xl">
@@ -148,8 +148,8 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
               <UserCheck className="w-7 h-7" />
             </div>
             <div>
-              <p className="text-xs font-black text-white uppercase tracking-tight">Documento de Identidad</p>
-              <p className="text-[10px] text-[#474556] font-medium mt-1">Cédula o Pasaporte vigente</p>
+              <p className="text-xs font-black text-white uppercase tracking-tight">{t('id_document')}</p>
+              <p className="text-[10px] text-[#474556] font-medium mt-1">{t('id_document_desc')}</p>
             </div>
             <button
               type="button"
@@ -157,7 +157,7 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
               onClick={() => handleButtonClick('id')}
               className={`w-full py-3 rounded-xl text-[10px] font-black uppercase transition-all ${mantechId?.documentUrl ? 'bg-emerald-500/10 text-emerald-400 cursor-not-allowed' : 'bg-[#5d3cfe] text-white shadow-lg'}`}
             >
-              {mantechId?.documentUrl ? 'Cédula Registrada' : 'Subir Documento'}
+              {mantechId?.documentUrl ? t('document_registered') : t('upload_document')}
             </button>
           </div>
 
@@ -167,8 +167,8 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
                 <ShieldCheck className="w-7 h-7" />
               </div>
               <div>
-                <p className="text-xs font-black text-white uppercase tracking-tight">Récord de Integridad</p>
-                <p className="text-[10px] text-[#474556] font-medium mt-1">Auditoría Interna MantechPro</p>
+                <p className="text-xs font-black text-white uppercase tracking-tight">{t('integrity_record')}</p>
+                <p className="text-[10px] text-[#474556] font-medium mt-1">{t('integrity_record_desc')}</p>
               </div>
               <button
                 type="button"
@@ -179,7 +179,7 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
                 }}
                 className={`w-full py-3 rounded-xl text-[10px] font-black uppercase transition-all ${mantechId?.policeRecordUrl ? 'bg-[#52ffac] text-black shadow-lg shadow-[#52ffac]/20 hover:brightness-110' : 'bg-rose-600 text-white shadow-lg animate-pulse hover:animate-none'}`}
               >
-                {mantechId?.policeRecordUrl ? 'Ver Récord Activo ✓' : 'Generar Auditoría IA'}
+                {mantechId?.policeRecordUrl ? t('view_record_active') : t('generate_audit')}
               </button>
             </div>
           )}
@@ -188,10 +188,10 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
         <div className="pt-6 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
           <div className="space-y-1">
             <p className="text-[10px] text-[#474556] font-black uppercase flex items-center gap-2 justify-center md:justify-start">
-               <ShieldCheck className="w-3 h-3 text-[#52ffac]" /> Protocolo de Privacidad Ley 81
+               <ShieldCheck className="w-3 h-3 text-[#52ffac]" /> {t('privacy_protocol')}
             </p>
             <p className="text-[9px] text-[#474556] max-w-md">
-              Sus documentos se almacenan con cifrado militar AES-256 y solo son visibles para auditores certificados de MantechPro.
+              {t('privacy_desc')}
             </p>
           </div>
         </div>
