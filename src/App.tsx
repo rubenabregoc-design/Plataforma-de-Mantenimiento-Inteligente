@@ -18,6 +18,7 @@ import Chatbot247 from './components/Chatbot247';
 import AssetRegisterModal from './components/AssetRegisterModal';
 import TechnicianProfileModal from './components/TechnicianProfileModal';
 import SignaturePad from './components/SignaturePad';
+import AssetEngineeringReportModal from './components/AssetEngineeringReportModal';
 import Star from 'lucide-react/dist/esm/icons/star';
 import X from 'lucide-react/dist/esm/icons/x';
 import Globe from 'lucide-react/dist/esm/icons/globe';
@@ -54,9 +55,10 @@ export default function App() {
   // --- PLAN LIMITS LOGIC ---
   const getPlanLimits = (planId: string) => {
     switch(planId) {
-      case 'plan-pro': return { maxAssets: 25, fleet: 'lite', diag: 'assisted', history: 50 };
       case 'plan-enterprise': return { maxAssets: 9999, fleet: 'full', diag: 'auto', history: 'unlimited' };
+      case 'plan-pro': return { maxAssets: 25, fleet: 'lite', diag: 'assisted', history: 50 };
       case 'plan-basic': return { maxAssets: 5, fleet: 'none', diag: 'manual', history: 10 };
+      case 'plan-free':
       default: return { maxAssets: 2, fleet: 'none', diag: 'manual', history: 5 };
     }
   };
@@ -325,6 +327,14 @@ export default function App() {
                 <p className="text-white font-black uppercase">Módulo de Auditoría de Combustible - Activo: {activeData.asset.name}</p>
              </div>
            </div>
+        )}
+
+        {modals.engineeringReport && activeData.asset && (
+          <AssetEngineeringReportModal
+            isOpen={modals.engineeringReport}
+            onClose={() => closeModal('engineeringReport')}
+            asset={activeData.asset}
+          />
         )}
       </AnimatePresence>
 

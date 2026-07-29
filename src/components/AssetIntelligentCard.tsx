@@ -1,4 +1,5 @@
 import { QrCode, TrendingDown, TrendingUp, DollarSign, PenTool as Tool, Calendar, FileText, Download, ShieldCheck, Clock, ShieldAlert, BookOpen, BadgeCheck, Bike } from 'lucide-react';
+import { Asset, JobRequest } from '../types';
 
 interface AssetIntelligentCardProps {
   asset: Asset;
@@ -6,6 +7,7 @@ interface AssetIntelligentCardProps {
   onOpenDetails: (asset: Asset) => void;
   onOpenPreTrip: (asset: Asset) => void;
   onFindExpert?: (asset: Asset) => void;
+  key?: any;
 }
 
 export default function AssetIntelligentCard({ asset, requests, onOpenDetails, onOpenPreTrip, onFindExpert }: AssetIntelligentCardProps) {
@@ -130,9 +132,10 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
                   <hr/>
                   <h3>Últimas 5 Inspecciones de Seguridad:</h3>
                   <ul>
-                    ${asset.preTripInspections?.slice(-5).map(ins => `
-                      <li>${new Date(ins.date).toLocaleDateString()} - Resultado: ${ins.result === 'safe' ? 'OK' : 'ALERTA'}</li>
-                    `).join('') || 'Sin registros'}
+                    ${asset.preTripInspections?.slice(-5).map(ins => {
+                      const isSafe = ins.items.every(item => item.status === 'ok');
+                      return `<li>${new Date(ins.date).toLocaleDateString()} - Resultado: ${isSafe ? 'OK' : 'ALERTA'}</li>`;
+                    }).join('') || 'Sin registros'}
                   </ul>
                   <p style="font-size: 10px; color: #888; margin-top: 50px;">Generado por MantechPro Panama - Protocolo Sat-Link V4</p>
                 </body>

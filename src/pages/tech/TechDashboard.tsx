@@ -62,20 +62,10 @@ export default function TechDashboard() {
   const [loyaltyConfirm, setLoyaltyConfirm] = useState<{ name: string; cost: number } | null>(null);
 
   const executeRedeem = async (benefitName: string, cost: number) => {
-    const currentPoints = Number(techProfile.loyaltyPoints || 0);
     setIsLoyaltyProcessing(true);
-    try {
-      const updates: any = { loyaltyPoints: currentPoints - cost };
-      if (benefitName === 'Módulo Inventario Pro') updates.unlockedModules = arrayUnion('inventory_pro');
-      await updateDoc(doc(db, "technicians", techProfile.id), updates);
-      toast.success(`¡Canje Exitoso! "${benefitName}" activado.`);
-    } catch (e) {
-      console.error(e);
-      toast.error("Error al procesar el canje.");
-    } finally {
-      setIsLoyaltyProcessing(false);
-      setLoyaltyConfirm(null);
-    }
+    const success = await business.handleRedeemPoints(techProfile.id!, cost, benefitName);
+    setIsLoyaltyProcessing(false);
+    if (success) setLoyaltyConfirm(null);
   };
 
   const handleRedeemPoints = (benefitName: string, cost: number) => {

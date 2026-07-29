@@ -38,9 +38,38 @@ body {
   background-size: 40px 40px;
 }
 
+/* ============================================================
+   ULTRA-MODERN PURPLE SCROLLBAR SYSTEM
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0d0e12;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #5d3cfe;
+  border-radius: 20px;
+  border: 2px solid #0d0e12;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c7bfff;
+  box-shadow: 0 0 15px #5d3cfe;
+}
+
+/* Scrollbar Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #5d3cfe #0d0e12;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -48,12 +77,13 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #2a2b2f;
+  background: #5d3cfe;
   border-radius: 10px;
+  box-shadow: 0 0 10px rgba(93, 60, 254, 0.4);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #5d3cfe;
+  background: #c7bfff;
 }
 
 .custom-scrollbar-hidden {

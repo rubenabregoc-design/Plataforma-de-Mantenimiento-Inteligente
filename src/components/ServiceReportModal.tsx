@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { JobRequest } from '../types';
-import { X, CheckCircle2, Package, Download, MapPin, BadgeCheck, FileText } from 'lucide-react';
+import { X, CheckCircle2, Package, Download, MapPin, BadgeCheck, FileText, ShieldCheck, Clock } from 'lucide-react';
 
 interface ServiceReportModalProps {
   isOpen: boolean;

@@ -49,6 +49,7 @@ export const initialReminders: MaintenanceReminder[] = [
   {
     id: 'rem-1',
     assetId: 'asset-1',
+    clientId: 'user-client-1',
     title: 'Cambio de Aceite de Motor',
     description: 'Cambio de aceite sintético 5W-30 y filtro de aceite original.',
     dueDate: '2026-06-25', // 5 days from June 20, 2026
@@ -58,6 +59,7 @@ export const initialReminders: MaintenanceReminder[] = [
   {
     id: 'rem-2',
     assetId: 'asset-2',
+    clientId: 'user-client-1',
     title: 'Limpieza Profunda de Filtros y Serpentín',
     description: 'Mantenimiento preventivo completo para evitar goteos y mejorar la eficiencia de soplado.',
     dueDate: '2026-06-27', // 7 days from June 20, 2026
@@ -67,6 +69,7 @@ export const initialReminders: MaintenanceReminder[] = [
   {
     id: 'rem-3',
     assetId: 'asset-4',
+    clientId: 'user-client-1',
     title: 'Limpieza de Polvo e Inspección de UPS',
     description: 'Mantenimiento estructural de hardware, limpieza interna del chasís para evitar sobrecalentamiento.',
     dueDate: '2026-06-20', // Today
@@ -99,6 +102,9 @@ export const initialTechnicians: TechProfile[] = [
     longitude: -79.5167,
     requestsUsedThisMonth: 0,
     isVerified: true,
+    verificationLevel: 3,
+    hasLiabilityInsurance: true,
+    isTaxObligated: true,
     mantechId: {
       status: 'verified',
       idNumber: '8-888-8888',

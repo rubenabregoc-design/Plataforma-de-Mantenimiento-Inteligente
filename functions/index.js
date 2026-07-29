@@ -1,4 +1,5 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
+import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { setGlobalOptions } from "firebase-functions/v2";
 import { info, error as logError } from "firebase-functions/logger";
 import admin from "firebase-admin";
@@ -14,7 +15,6 @@ setGlobalOptions({ maxInstances: 10, region: "us-central1" });
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const SENDER_EMAIL = 'mantechpro@protonmail.com';
 const SENDER_NAME = 'Mantech Pro Global';
-const BASE_URL = 'https://cltech-prod-fix--cltech-project-hub.us-central1.hosted.app';
 
 // --- MOTOR DE NOTIFICACIONES MULTICANAL ---
 
@@ -29,7 +29,6 @@ async function registrarNotificacion(userId, title, body, type, metadata = {}) {
             read: false,
             metadata
         });
-        info(`📌 Registro en historial para usuario: ${userId}`);
     } catch (err) {
         logError("💥 Error registrando en base de datos:", err.message);
     }
@@ -47,42 +46,96 @@ async function enviarPush(userId, title, body, data = {}) {
             });
             info(`📲 Push enviada a: ${userId}`);
         }
-        // Siempre registramos en el panel de la App
         await registrarNotificacion(userId, title, body, data.type || 'system', data);
     } catch (err) { logError("💥 Error Push:", err.message); }
 }
 
-async function enviarCorreoMantech(to, subject, htmlContent) {
-    try {
-        const emailHtml = `
-        <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; background-color: #0d0e12; color: #ffffff; padding: 40px; border-radius: 24px; border: 1px solid #1c1d21;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #ffffff; font-size: 22px; font-weight: 900; text-transform: uppercase; margin: 0; letter-spacing: -1px;">
-              MANTECH<span style="color: #5d3cfe;">PRO</span>
-            </h1>
-          </div>
-          <div style="background-color: #16171d; padding: 30px; border-radius: 20px; border: 1px solid #2a2b2f;">
-            ${htmlContent}
-          </div>
-          <p style="text-align: center; color: #474556; font-size: 10px; margin-top: 30px; text-transform: uppercase;">
-            © 2026 MantechPro Industries Panamá • Sistema Inteligente
-          </p>
-        </div>`;
+// --- TRIGGERS INTELIGENTES ---
 
-        await fetch("https://api.brevo.com/v3/smtp/email", {
-            method: "POST",
-            headers: { "accept": "application/json", "api-key": BREVO_API_KEY, "content-type": "application/json" },
-            body: JSON.stringify({
-                sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-                to: [{ email: to }],
-                subject: subject,
-                htmlContent: emailHtml
-            })
+// 1. Inicialización automática de usuario
+export const onUserCreated = onDocumentCreated("users/{userId}", async (event) => {
+    const userId = event.params.userId;
+    const data = event.data.data();
+
+    // Si no tiene suscripción, asignar Plan Gratis
+    if (!data.subscription) {
+        await db.collection("users").doc(userId).update({
+            subscription: {
+                planId: data.role === 'tech' ? 'plan-basic' : 'plan-free',
+                status: 'active',
+                startDate: admin.firestore.FieldValue.serverTimestamp(),
+                nextBillingDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
+            }
         });
-    } catch (err) { logError("💥 Error Correo:", err.message); }
-}
+        info(`✅ Suscripción inicial configurada para: ${userId}`);
+    }
+});
 
-// --- ROBOT MAESTRO ---
+// 2. Procesamiento Financiero Automático (Liquidación)
+export const onJobCompleted = onDocumentUpdated("requests/{requestId}", async (event) => {
+    const before = event.data.before.data();
+    const after = event.data.after.data();
+
+    // Notificar al Técnico cuando el pago es aceptado (Agendado)
+    if (before.status !== 'accepted' && after.status === 'accepted') {
+        await enviarPush(after.techUserId, "✅ Pago Verificado", `El pago para ${after.assetName} ha sido verificado. Puedes iniciar el servicio según la agenda.`, { type: 'system', requestId: event.params.requestId });
+    }
+
+    // Notificar al Técnico cuando el pago de imprevisto es aceptado
+    if (before.status !== 'unforeseen_paid' && after.status === 'unforeseen_paid') {
+        await enviarPush(after.techUserId, "💰 Imprevisto Pagado", `El cliente ha pagado el imprevisto de ${after.assetName}. Puedes continuar con el trabajo.`, { type: 'system', requestId: event.params.requestId });
+    }
+
+    // Liquidación final al completar el trabajo
+    if (before.status !== 'completed' && after.status === 'completed') {
+        const { techId, price, techUserId, assetName } = after;
+
+        // Regla MantechPro: 15% Comisión (B2C)
+        const commission = price * 0.15;
+        const earnings = price - commission;
+
+        try {
+            const techRef = db.collection("technicians").doc(techId);
+            await techRef.update({
+                "wallet.balance": admin.firestore.FieldValue.increment(earnings),
+                "wallet.transactions": admin.firestore.FieldValue.arrayUnion({
+                    id: `tx-${Date.now()}`,
+                    amount: earnings,
+                    type: 'credit',
+                    description: `Servicio completado: ${assetName}`,
+                    timestamp: new Date().toISOString(),
+                    status: 'completed'
+                })
+            });
+
+            await enviarPush(techUserId, "💰 Fondos Liberados", `Se han acreditado $${earnings.toFixed(2)} a tu billetera.`, { type: 'billing' });
+            info(`⚖️ Liquidación completada para técnico ${techId}.`);
+        } catch (err) {
+            logError("💥 Error en liquidación:", err.message);
+        }
+    }
+});
+
+// 3. Notificación de Mensajes de Chat
+export const onNewMessage = onDocumentCreated("messages/{messageId}", async (event) => {
+    const msg = event.data.data();
+    const { requestId, sender, text } = msg;
+
+    try {
+        const reqDoc = await db.collection("requests").doc(requestId).get();
+        if (!reqDoc.exists) return;
+        const req = reqDoc.data();
+
+        const targetUserId = sender === 'client' ? req.techUserId : req.clientId;
+        const senderName = sender === 'client' ? req.clientName : req.techName;
+
+        await enviarPush(targetUserId, `💬 Nuevo mensaje de ${senderName}`, text, { type: 'chat', requestId });
+    } catch (err) {
+        logError("💥 Error en notificación de chat:", err.message);
+    }
+});
+
+// --- ROBOT MAESTRO (CRON) ---
 export const cronMantechProSmartBot = onSchedule({
     schedule: "0 8 * * *",
     timeZone: "America/Panama",
@@ -91,7 +144,6 @@ export const cronMantechProSmartBot = onSchedule({
     const now = new Date();
     const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
     const hoyPanama = new Date(utc + (3600000 * -5));
-    const diaSemana = getDay(hoyPanama);
 
     try {
         const remindersSnap = await db.collection("reminders").get();
@@ -114,5 +166,11 @@ export const cronMantechProSmartBot = onSchedule({
             }
         }
         info("✅ Patrullaje de historial completado.");
-    } catch (err) { logError("💥 Error:", err.message); }
+    } catch (err) { logError("💥 Error en Cron:", err.message); }
 });
+
+function addDays(date, days) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}

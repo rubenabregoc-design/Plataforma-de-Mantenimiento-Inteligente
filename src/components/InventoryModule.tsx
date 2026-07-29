@@ -94,11 +94,27 @@ export default function InventoryModule({ items, assets, onUpdateQuantity, onAdd
             </div>
             <div className="space-y-2">
               <label className="text-[9px] font-black text-[#474556] uppercase tracking-widest ml-1">Cantidad {editingItem ? 'Actual' : 'Inicial'}</label>
-              <input required type="number" value={newItem.quantity} onChange={e => setNewItem({...newItem, quantity: Number(e.target.value)})} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3 px-4 text-xs font-bold text-white focus:border-[#c7bfff] outline-none" />
+              <input
+                required
+                type="number"
+                step="any"
+                value={newItem.quantity === 0 && !editingItem ? '' : newItem.quantity}
+                onChange={e => setNewItem({...newItem, quantity: e.target.value === '' ? 0 : Number(e.target.value)})}
+                className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3 px-4 text-xs font-bold text-white focus:border-[#c7bfff] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                placeholder="0"
+              />
             </div>
             <div className="space-y-2">
               <label className="text-[9px] font-black text-[#474556] uppercase tracking-widest ml-1">Precio por Unidad (B/.)</label>
-              <input required type="number" step="0.01" value={newItem.pricePerUnit} onChange={e => setNewItem({...newItem, pricePerUnit: Number(e.target.value)})} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3 px-4 text-xs font-bold text-white focus:border-[#c7bfff] outline-none" />
+              <input
+                required
+                type="number"
+                step="any"
+                value={newItem.pricePerUnit === 0 ? '' : newItem.pricePerUnit}
+                onChange={e => setNewItem({...newItem, pricePerUnit: e.target.value === '' ? 0 : Number(e.target.value)})}
+                className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3 px-4 text-xs font-bold text-white focus:border-[#c7bfff] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                placeholder="0.00"
+              />
             </div>
           </div>
           <button type="submit" className="w-full py-4 bg-[#5d3cfe] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#5d3cfe]/20 hover:brightness-110 active:scale-95 transition-all relative z-10">

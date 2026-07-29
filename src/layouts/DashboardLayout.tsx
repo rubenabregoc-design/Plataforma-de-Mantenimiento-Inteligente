@@ -79,6 +79,21 @@ export default function DashboardLayout({
           </div>
         </div>
         <div className="flex items-center gap-3 md:gap-8">
+          {/* PLAQUITA DE PLAN ACTUAL */}
+          <div className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl border transition-all shadow-lg ${
+            isFree ? 'bg-white/5 border-white/10 text-[#474556]' :
+            isEmprendedor ? 'bg-[#52ffac]/10 border-[#52ffac]/20 text-[#52ffac] shadow-[#52ffac]/5' :
+            isPro ? 'bg-[#5d3cfe]/10 border-[#5d3cfe]/20 text-[#c7bfff] shadow-[#5d3cfe]/5' :
+            'bg-amber-500/10 border-amber-500/20 text-amber-500 shadow-amber-500/5'
+          }`}>
+            <Zap className={`w-3 h-3 ${isFree ? 'opacity-20' : 'fill-current'}`} />
+            <span className="text-[9px] font-black uppercase tracking-[0.2em]">
+              {activePlan === 'plan-free' ? 'Plan Gratis' :
+               activePlan === 'plan-basic' ? 'Emprendedor' :
+               activePlan === 'plan-pro' ? 'Profesional' : 'Enterprise'}
+            </span>
+          </div>
+
           <button
             onClick={onShowNotifications}
             className="relative p-2.5 rounded-2xl bg-white/5 border border-white/10 hover:bg-[#5d3cfe]/10 hover:border-[#5d3cfe]/30 transition-all group"
@@ -117,9 +132,19 @@ export default function DashboardLayout({
              </div>
              <div className="overflow-hidden">
                <h4 className="font-black text-white text-xs tracking-tight truncate uppercase leading-tight">{loggedInName || 'Usuario'}</h4>
-               <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest mt-1">
-                 {!role ? t('loading', 'CARGANDO...') : role === 'client' ? t('client', 'CLIENTE') : role === 'tech' ? t('tech', 'TÉCNICO') : t('admin', 'ADMINISTRADOR')}
-               </p>
+               <div className="flex items-center gap-2 mt-1">
+                 <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest">
+                   {!role ? t('loading', 'CARGANDO...') : role === 'client' ? t('client', 'CLIENTE') : role === 'tech' ? t('tech', 'TÉCNICO') : t('admin', 'ADMINISTRADOR')}
+                 </p>
+                 <div className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase border ${
+                   isFree ? 'bg-white/5 border-white/10 text-[#474556]' :
+                   isEmprendedor ? 'bg-[#52ffac]/10 border-[#52ffac]/20 text-[#52ffac]' :
+                   isPro ? 'bg-[#5d3cfe]/10 border-[#5d3cfe]/20 text-[#c7bfff]' :
+                   'bg-amber-500/10 border-amber-500/20 text-amber-500'
+                 }`}>
+                   {activePlan.replace('plan-', '')}
+                 </div>
+               </div>
              </div>
           </div>
 

@@ -6,162 +6,10 @@ import {
   LayoutGrid, List, MapPin, AlertCircle, CheckCircle2, TrendingUp, Search, Filter, Mic, Radio, Volume2,
   ChevronRight, Car, Wind, Cpu, Zap, Building2, Code, Phone, ShieldCheck, Download, Star, FileText, Globe, RefreshCw, ChevronLeft, Navigation, Pause, Clock, Flag, Droplets, Fuel, Trash2, Maximize, Activity, AlertTriangle, Pencil, Plus, Info, Settings, User as UserIcon
 } from 'lucide-react';
-import { useRef } from 'react';
-import { Geolocation } from '@capacitor/geolocation';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import ConfirmationModal from './ConfirmationModal';
-
-// Fix for Leaflet marker icons in React
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
-// Solo redefinir si L.Icon.Default no existe (evita crashes por múltiples renders)
-if (L.Icon.Default) {
-  L.Icon.Default.mergeOptions({
-      iconUrl: markerIcon,
-      shadowUrl: markerShadow,
-  });
-}
-
-// Custom Icons for MantechPro (DISEÑO ANTI-SOLAPAMIENTO)
-const getTruckIcon = (name: string, plate: string, street: string) => L.divIcon({
-  html: `
-    <div class="relative flex flex-col items-center group">
-      <!-- Etiqueta del Camión (SIEMPRE ARRIBA) -->
-      <div class="absolute -top-24 bg-[#0d0e12] border-2 border-[#52ffac] px-3 py-1.5 rounded-xl shadow-[0_15px_40px_rgba(0,0,0,0.8)] whitespace-nowrap z-[7000] border-l-8 border-l-[#52ffac] pointer-events-none transition-transform group-hover:scale-110">
-        <p class="text-[10px] font-black text-[#52ffac] uppercase tracking-tighter leading-none mb-0.5">${name}</p>
-        <p class="text-[7px] font-bold text-white/50 uppercase tracking-widest leading-none mb-1">${plate}</p>
-        <p class="text-[8px] font-black text-white uppercase italic leading-none border-t border-white/10 pt-1">📍 ${street || 'Vía en tránsito'}</p>
-        <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#0d0e12] rotate-45 border-r-2 border-b-2 border-[#52ffac]/40"></div>
-      </div>
-      <!-- Icono del Camión -->
-      <div class="bg-[#52ffac] p-2 rounded-full border-2 border-[#0d0e12] shadow-[0_0_20px_#52ffac] animate-pulse">
-        <svg viewBox="0 0 24 24" width="16" height="14" stroke="black" stroke-width="3" fill="none">
-          <path d="M10 17h4V5H2v12h3m10 0h4v-7h-7m10 7v-3a2 2 0 0 0-2-2h-3"></path>
-          <circle cx="7" cy="17" r="2"></circle>
-          <circle cx="17" cy="17" r="2"></circle>
-        </svg>
-      </div>
-    </div>
-  `,
-  className: '',
-  iconSize: [32, 32],
-  iconAnchor: [16, 16]
-});
-
-const getFlagIcon = (name: string, isSelected: boolean) => L.divIcon({
-  html: `
-    <div class="relative flex flex-col items-center">
-      <!-- Etiqueta de Parada (SIEMPRE ABAJO PARA NO TAPAR AL CAMIÓN) -->
-      <div class="absolute top-10 bg-amber-500 text-[#0d0e12] px-3 py-1.5 rounded-xl shadow-2xl whitespace-nowrap z-[6000] border-2 border-[#0d0e12] font-black uppercase text-[9px] tracking-tight">
-        <p class="leading-none">${name}</p>
-        <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-amber-500 rotate-45 border-l-2 border-t-2 border-[#0d0e12]"></div>
-      </div>
-      <!-- Icono de Banderita -->
-      <div class="bg-amber-500 p-1.5 rounded-lg border-2 border-[#0d0e12] shadow-lg transform ${isSelected ? 'scale-110' : 'scale-90 opacity-80'} transition-all">
-        <svg viewBox="0 0 24 24" width="12" height="12" stroke="black" stroke-width="3" fill="none">
-          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-          <line x1="4" y1="22" x2="4" y2="15"></line>
-        </svg>
-      </div>
-    </div>
-  `,
-  className: '',
-  iconSize: [24, 24],
-  iconAnchor: [12, 12]
-});
-
-const getUserIcon = () => L.divIcon({
-  html: `
-    <div class="relative flex flex-col items-center">
-      <div class="bg-white p-2 rounded-full border-2 border-[#0d0e12] shadow-[0_0_25px_white] animate-pulse">
-        <svg viewBox="0 0 24 24" width="18" height="18" stroke="black" stroke-width="3" fill="none">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-          <circle cx="12" cy="7" r="4"></circle>
-        </svg>
-      </div>
-      <div class="absolute -top-10 bg-white text-black px-2 py-0.5 rounded shadow-xl whitespace-nowrap z-[4000] border border-black font-black text-[7px] uppercase">Tú (Inicio de Guía)</div>
-    </div>
-  `,
-  className: '',
-  iconSize: [36, 36],
-  iconAnchor: [18, 18]
-});
-
-function RecenterMap({ coords }: { coords: [number, number] }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(coords, map.getZoom());
-  }, [coords]);
-  return null;
-}
-
-function FitBounds({ points }: { points: [number, number][] }) {
-  const map = useMap();
-  useEffect(() => {
-    if (points.length > 1) {
-      map.fitBounds(points, { padding: [50, 50] });
-    }
-  }, [points]);
-  return null;
-}
-
-function CustomZoomControl({ showTraffic, onToggleTraffic, onPanic }: { showTraffic: boolean, onToggleTraffic: () => void, onPanic: () => void }) {
-  const map = useMap();
-  const divRef = React.useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (divRef.current) {
-      // 🛡️ BLOQUEO DE PROPAGACIÓN LEAFLET (Evita que el click pase al mapa)
-      L.DomEvent.disableClickPropagation(divRef.current);
-      L.DomEvent.disableScrollPropagation(divRef.current);
-    }
-  }, []);
-
-  return (
-    <div ref={divRef} className="absolute bottom-6 left-6 flex flex-col gap-2 z-[400]">
-      <button
-        onClick={(e) => { e.stopPropagation(); onPanic(); }}
-        className="w-12 h-12 bg-rose-600 text-white rounded-xl shadow-2xl flex items-center justify-center hover:bg-rose-700 active:scale-90 transition-all border-2 border-[#0d0e12] animate-pulse"
-        title="SOS"
-      >
-        <AlertTriangle className="w-5 h-5 fill-white" />
-      </button>
-      <button
-        onClick={(e) => { e.stopPropagation(); onToggleTraffic(); }}
-        className={`w-12 h-12 rounded-xl shadow-2xl flex items-center justify-center transition-all border-2 ${showTraffic ? 'bg-[#52ffac] text-black border-[#52ffac]' : 'bg-white text-[#0d0e12] border-[#0d0e12] hover:bg-gray-100'}`}
-        title="Tráfico"
-      >
-        <Activity className="w-5 h-5" />
-      </button>
-      <div className="flex flex-col gap-px mt-1 bg-white border-2 border-[#0d0e12] rounded-xl overflow-hidden shadow-2xl">
-        <button
-          onClick={(e) => { e.stopPropagation(); map.zoomIn(); }}
-          className="w-12 h-12 bg-white text-[#0d0e12] flex items-center justify-center font-black text-xl hover:bg-[#52ffac] active:scale-90 transition-all border-b border-[#0d0e12]/10"
-        >
-          +
-        </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); map.zoomOut(); }}
-          className="w-12 h-12 bg-white text-[#0d0e12] flex items-center justify-center font-black text-xl hover:bg-[#52ffac] active:scale-90 transition-all"
-        >
-          -
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
-  useMapEvents({
-    click: (e) => {
-      onMapClick(e.latlng.lat, e.latlng.lng);
-    },
-  });
-  return null;
-}
+import { storage, db } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { collection, addDoc, serverTimestamp, query, where, onSnapshot, limit, orderBy } from 'firebase/firestore';
+import { useUI } from '../context/UIContext';
 
 interface FleetDashboardProps {
   assets: Asset[];
@@ -174,15 +22,15 @@ interface FleetDashboardProps {
   onTogglePause?: () => void;
   onAddCheckpoint?: (asset: Asset) => void;
   onContactSupport?: () => void;
-  onOpenEngineeringReport?: (asset: Asset) => void;
   trackingAssetId?: string | null;
   tripStatus?: 'idle' | 'active' | 'paused';
   mode?: 'lite' | 'full';
 }
 
-export default function FleetDashboard({ assets, reminders, onManageAsset, onBulkUpdate, onBulkDelete, onBulkRegister, onStartGps, onTogglePause, onAddCheckpoint, onContactSupport, onOpenEngineeringReport, trackingAssetId, tripStatus = 'idle', mode = 'lite' }: FleetDashboardProps) {
+export default function FleetDashboard({ assets, reminders, onManageAsset, onBulkUpdate, onBulkDelete, onBulkRegister, onStartGps, onTogglePause, onAddCheckpoint, onContactSupport, trackingAssetId, tripStatus = 'idle', mode = 'lite' }: FleetDashboardProps) {
+  const { openModal } = useUI();
   const [viewMode, setViewMode] = useState<'grid' | 'table' | 'history'>(mode === 'full' ? 'table' : 'grid');
-  const [activeSubTab, setActiveSubTab] = useState<'fleet' | 'fuel' | 'api' | 'support'>('fleet');
+  const [activeSubTab, setActiveSubTab] = useState<'fleet' | 'fuel' | 'api' | 'support' | 'radio'>('fleet');
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [locationFilter, setLocationFilter] = useState('Todas');
@@ -191,64 +39,75 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const [isRadioActive, setIsRadioActive] = useState(false);
+  const [receivingFrom, setReceivingFrom] = useState<string | null>(null);
+  const [isScannerActive, setIsScannerActive] = useState(false);
+  const pttStream = useRef<MediaStream | null>(null);
+
+  // --- CONFIGURACIÓN LIVE PTT (MODO ESCÁNER BACKGROUND) ---
+  useEffect(() => {
+    const initLivePTT = async () => {
+      try {
+        pttStream.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (e) { console.warn("Micrófono no disponible"); }
+    };
+    initLivePTT();
+
+    if (!isScannerActive) return;
+
+    // Listener de Señalización Firestore (Funciona en Background si la App no es matada por el OS)
+    const qSignal = query(collection(db, "radio_signals"), orderBy("timestamp", "desc"), limit(1));
+    const unsub = onSnapshot(qSignal, (snap) => {
+      if (snap.empty) return;
+      const data = snap.docs[0].data();
+      const now = Date.now();
+      const msgTime = data.timestamp?.toMillis ? data.timestamp.toMillis() : now;
+
+      if (now - msgTime < 5000 && data.status === 'talking' && data.senderId !== 'admin-control') {
+        setReceivingFrom(data.senderName);
+        // Aquí dispararíamos una notificación local para asegurar que el audio se escuche
+      } else {
+        setReceivingFrom(null);
+      }
+    });
+
+    return () => {
+      unsub();
+      pttStream.current?.getTracks().forEach(t => t.stop());
+    };
+  }, [isScannerActive]);
 
   const startRecording = async (assetId: string) => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
+    // 🚀 LÓGICA LIVE PTT (WebRTC Style - Sin Almacenamiento)
+    setTransmittingId(assetId);
+    setIsRadioActive(true);
 
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
+    const startBeep = new Audio('https://www.soundjay.com/communication/sounds/beeper-3.mp3');
+    startBeep.volume = 0.2;
+    startBeep.play();
 
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-
-        // Simular envío real a Firebase Storage y notificación por Firestore
-        console.log("Transmisión finalizada. Audio listo para despacho:", audioUrl);
-
-        // Detener todos los tracks para liberar el micrófono
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      mediaRecorder.start();
-      setTransmittingId(assetId);
-      setIsRadioActive(true);
-
-      // Sonido de inicio Motorola (Bip industrial)
-      const startBeep = new Audio('https://www.soundjay.com/communication/sounds/beeper-3.mp3');
-      startBeep.volume = 0.2;
-      startBeep.play();
-
-      toast(`🎙️ CANAL ABIERTO: ${assets.find(a => a.id === assetId)?.driverName?.toUpperCase() || 'OPERADOR'}`, {
-        id: `radio-${assetId}`,
-        duration: 99999,
-        style: { background: '#1c1d21', color: '#fff', borderLeft: '4px solid #5d3cfe', fontWeight: 'bold' }
-      });
-    } catch (err) {
-      toast.error("Error al acceder al micrófono. Verifique permisos.");
-    }
+    // Notificar por Firestore que estamos hablando en vivo (Solo señalización)
+    await addDoc(collection(db, "radio_signals"), {
+      senderId: 'admin-control',
+      senderName: 'CONTROL CENTRAL',
+      status: 'talking',
+      timestamp: serverTimestamp()
+    });
   };
 
-  const stopRecording = (assetId: string) => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop();
+  const stopRecording = async (assetId: string) => {
+    if (transmittingId) {
       setTransmittingId(null);
       setIsRadioActive(false);
-      toast.dismiss(`radio-${assetId}`);
 
-      // Sonido de fin Motorola (Roger that)
       const endBeep = new Audio('https://www.soundjay.com/communication/sounds/beeper-1.mp3');
       endBeep.volume = 0.1;
       endBeep.play();
 
-      toast.success("TRANSMISIÓN ENVIADA ✓", {
-        style: { background: '#52ffac', color: '#000', fontWeight: 'black' }
+      // Notificar que se cerró el canal
+      await addDoc(collection(db, "radio_signals"), {
+        senderId: 'admin-control',
+        status: 'idle',
+        timestamp: serverTimestamp()
       });
     }
   };
@@ -463,6 +322,12 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
             className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 ${activeSubTab === 'fuel' ? 'bg-[#5d3cfe] text-white shadow-sm' : 'text-[#c8c4d9] hover:text-white'}`}
           >
             Control Combustible
+          </button>
+          <button
+            onClick={() => setActiveSubTab('radio')}
+            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 ${activeSubTab === 'radio' ? 'bg-[#5d3cfe] text-white shadow-sm' : 'text-[#c8c4d9] hover:text-white'}`}
+          >
+            Walkie-Talkie
           </button>
           <button
             onClick={() => mode === 'full' ? setActiveSubTab('api') : toast.error("⚠️ Plan Corporativo Requerido para acceso a API.")}
@@ -768,7 +633,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                                        </>
                                      )}
                                      <button
-                                       onClick={() => onOpenEngineeringReport?.(asset)}
+                                       onClick={() => openModal('engineeringReport', { asset })}
                                        className="p-2 bg-white/5 text-[#5d3cfe] border border-[#5d3cfe]/20 hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"
                                        title="Reporte NASA MDM-V4"
                                      >
@@ -862,7 +727,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                       <div className="flex gap-2 mt-4">
                          <button onClick={() => onStartGps?.(asset.id)} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[9px] font-black uppercase transition-all border ${trackingAssetId === asset.id ? 'bg-rose-500 border-rose-500 text-white animate-pulse' : 'bg-[#1a1b20] border-[#474556]/30 text-[#52ffac] hover:bg-[#52ffac] hover:text-black'}`}><MapPin className="w-3.5 h-3.5" /> {trackingAssetId === asset.id ? 'Finalizar' : 'Iniciar'}</button>
                          <button
-                           onClick={() => onOpenEngineeringReport?.(asset)}
+                           onClick={() => openModal('engineeringReport', { asset })}
                            className="p-3 bg-white/5 border border-[#5d3cfe]/20 text-[#5d3cfe] hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"
                            title="Reporte NASA MDM-V4"
                          >
@@ -1575,6 +1440,77 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                        </div>
                     );
                  })}
+              </div>
+           </div>
+        </div>
+      )}
+
+      {activeSubTab === 'radio' && (
+        <div className="bg-[#121317] border border-[#2a2b2f] rounded-[3rem] p-12 shadow-2xl space-y-10 animate-fade-in relative overflow-hidden">
+           <div className="absolute top-0 right-0 p-12 opacity-5"><Radio className="w-64 h-64 text-[#5d3cfe]" /></div>
+
+           <header className="text-center space-y-3 relative z-10">
+              <div className="w-20 h-20 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-[2rem] flex items-center justify-center mx-auto text-[#5d3cfe] shadow-2xl">
+                 {receivingFrom ? <Volume2 className="w-10 h-10 animate-bounce text-[#52ffac]" /> : <Mic className="w-10 h-10" />}
+              </div>
+              <h3 className="text-3xl font-black text-white uppercase tracking-tighter italic">
+                {receivingFrom ? `Recibiendo de ${receivingFrom}` : 'Consola de Radio PTT'}
+              </h3>
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.4em]">Push-to-Talk Industrial</p>
+
+                {/* INTERRUPTOR DE ESCÁNER DE FONDO */}
+                <button
+                  onClick={() => setIsScannerActive(!isScannerActive)}
+                  className={`mt-2 flex items-center gap-3 px-4 py-2 rounded-full border transition-all ${isScannerActive ? 'bg-[#52ffac]/10 border-[#52ffac] text-[#52ffac]' : 'bg-white/5 border-white/10 text-[#474556]'}`}
+                >
+                  <div className={`w-2 h-2 rounded-full ${isScannerActive ? 'bg-[#52ffac] animate-pulse' : 'bg-[#474556]'}`}></div>
+                  <span className="text-[9px] font-black uppercase tracking-widest">{isScannerActive ? 'Modo Escáner: ON (Escuchando)' : 'Modo Escáner: OFF'}</span>
+                </button>
+              </div>
+           </header>
+
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
+              {assets.map(asset => (
+                <div key={asset.id} className={`bg-[#1c1d21] border p-8 rounded-[2.5rem] transition-all flex flex-col items-center gap-6 group ${transmittingId === asset.id ? 'border-[#5d3cfe] shadow-[0_0_50px_rgba(93,60,254,0.2)] bg-[#5d3cfe]/5' : 'border-white/5 hover:border-white/10'}`}>
+                   <div className="text-center">
+                      <h4 className="text-lg font-black text-white uppercase tracking-tight leading-none">{asset.name}</h4>
+                      <p className="text-[9px] font-bold text-[#52ffac] uppercase tracking-widest mt-2">{asset.driverName || 'Operador'}</p>
+                   </div>
+
+                   <button
+                     onMouseDown={() => startRecording(asset.id)}
+                     onMouseUp={() => stopRecording(asset.id)}
+                     onMouseLeave={() => stopRecording(asset.id)}
+                     className={`w-24 h-24 rounded-full flex items-center justify-center transition-all border-4 ${
+                       transmittingId === asset.id
+                       ? 'bg-[#5d3cfe] border-white text-white scale-110 shadow-2xl animate-pulse'
+                       : 'bg-[#0d0e12] border-[#2a2b2f] text-[#474556] group-hover:border-[#5d3cfe]/50 group-hover:text-[#5d3cfe]'
+                     }`}
+                   >
+                      {transmittingId === asset.id ? <Volume2 className="w-10 h-10" /> : <Mic className="w-10 h-10" />}
+                   </button>
+
+                   <div className="flex flex-col items-center gap-2">
+                      <span className={`text-[8px] font-black uppercase tracking-widest ${transmittingId === asset.id ? 'text-[#5d3cfe] animate-bounce' : 'text-[#474556]'}`}>
+                        {transmittingId === asset.id ? 'Transmitiendo...' : 'Mantener para Hablar'}
+                      </span>
+                      <div className="flex items-center gap-1.5 px-3 py-1 bg-black/40 rounded-full border border-white/5">
+                         <div className={`w-1.5 h-1.5 rounded-full ${asset.isEmergencyAsset ? 'bg-rose-500 animate-ping' : 'bg-[#52ffac]'}`}></div>
+                         <span className="text-[7px] font-black text-white/40 uppercase">Señal 100%</span>
+                      </div>
+                   </div>
+                </div>
+              ))}
+           </div>
+
+           <div className="pt-8 border-t border-white/5 flex items-center justify-between text-[#474556]">
+              <div className="flex items-center gap-4">
+                 <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                 <p className="text-[9px] font-black uppercase tracking-widest">Canal Encriptado de Grado Militar</p>
+              </div>
+              <div className="px-4 py-2 bg-black/40 rounded-xl border border-white/5 font-mono text-[8px] uppercase">
+                 Sat-Link PA-507-MTPRO
               </div>
            </div>
         </div>

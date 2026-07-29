@@ -12,10 +12,20 @@ export function useBusinessLogic() {
 
   const notifyAdmin = async (title: string, body: string) => {
     try {
+      // 1. Notificación en Tiempo Real (Push)
       await axios.post('http://localhost:3000/api/push-notification', {
         title,
         body,
         token: 'ADMIN_TOKEN_MASTER'
+      });
+      // 2. Registro en Firestore para Historial del Admin (admin-uid es un placeholder)
+      await addDoc(collection(db, "notifications"), {
+        userId: 'admin@mantech.com',
+        title,
+        body,
+        type: 'system',
+        createdAt: serverTimestamp(),
+        read: false
       });
     } catch (err) { console.error("Notification failed", err); }
   };
@@ -25,12 +35,14 @@ export function useBusinessLogic() {
     const asset = assets.find(a => a.id === assetId);
     if (!asset) return;
     try {
-      await addDoc(collection(db, "requests"), {
+      const docRef = await addDoc(collection(db, "requests"), {
         clientId: user.uid, clientName: loggedInName, assetId, assetName: asset.name,
         techId: 'open_market', techName: 'Subasta Abierta',
         description, status: 'open_bidding', createdAt: serverTimestamp(),
         isPublic: true, bids: []
       });
+
+      // Notificar a técnicos relevantes de la categoría (esto lo haría idealmente una Cloud Function)
       toast.success("¡Requerimiento publicado en la Subasta Abierta!");
     } catch (err) { console.error(err); }
   };
@@ -43,7 +55,8 @@ export function useBusinessLogic() {
       if (method === 'yappy') {
         await updateDoc(doc(db, "requests", requestId), { status: 'pending_verification', paidAt: serverTimestamp(), paymentMethod: method });
         await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: `He realizado el pago vía YAPPY por $${req.price}. Quedo a la espera de la verificación oficial.`, timestamp: serverTimestamp() });
-        notifyAdmin("💳 PAGO PENDIENTE", `El cliente ${req.clientName} envió un pago de $${req.price} vía YAPPY.`);
+
+        await notifyAdmin("💳 PAGO PENDIENTE", `El cliente ${req.clientName} envió un pago de $${req.price} vía YAPPY.`);
         toast.success("Pago enviado. Verificación en curso.");
       } else {
         await updateDoc(doc(db, "requests", requestId), { status: 'accepted', paidAt: serverTimestamp(), paymentMethod: method });
@@ -54,6 +67,17 @@ export function useBusinessLogic() {
           duration: `${req.scheduledDuration}h`, travelTime: `${req.scheduledTravelTime} min`,
           status: 'pending', createdAt: serverTimestamp()
         });
+
+        // Notificar al Técnico
+        await addDoc(collection(db, "notifications"), {
+          userId: req.techUserId,
+          title: "✅ Pago Confirmado",
+          body: `El cliente ha pagado el servicio de ${req.assetName}. Tienes una nueva cita agendada.`,
+          type: 'billing',
+          createdAt: serverTimestamp(),
+          read: false
+        });
+
         await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `¡Hola! Recibí tu confirmación vía ${method.toUpperCase()}. Cita confirmada.`, timestamp: serverTimestamp() });
         toast.success("¡Cita confirmada!");
       }
@@ -94,17 +118,68 @@ export function useBusinessLogic() {
 
           const updatedTransactions = [newTransaction, ...(tech.wallet?.transactions || [])];
 
+          // Lógica de Fidelidad: 1 punto por cada $10 facturados
+          const pointsEarned = Math.floor(earnings / 10);
+          const newPoints = (tech.loyaltyPoints || 0) + pointsEarned;
+
           await updateDoc(doc(db, "technicians", tech.id), {
             completedJobs: (tech.completedJobs || 0) + 1,
             reviewCount: tech.reviewCount + 1,
             rating: Number(nRating.toFixed(1)),
             'wallet.balance': newBalance,
-            'wallet.transactions': updatedTransactions
+            'wallet.transactions': updatedTransactions,
+            loyaltyPoints: newPoints
           });
+
+          // Notificar al Técnico sobre los puntos
+          if (pointsEarned > 0) {
+            await addDoc(collection(db, "notifications"), {
+              userId: req.techUserId,
+              title: "🌟 Puntos Mantech Ganados",
+              body: `Has ganado ${pointsEarned} puntos por completar el servicio de ${req.assetName}.`,
+              type: 'system',
+              createdAt: serverTimestamp(),
+              read: false
+            });
+          }
         }
       }
       toast.success("¡Servicio finalizado exitosamente!");
     } catch (err) { console.error(err); }
+  };
+
+  const handleRedeemPoints = async (techId: string, cost: number, rewardLabel: string) => {
+    try {
+      const techRef = doc(db, "technicians", techId);
+      const techSnap = await getDoc(techRef);
+      if (!techSnap.exists()) return;
+      const tech = techSnap.data() as TechProfile;
+
+      if ((tech.loyaltyPoints || 0) < cost) {
+        toast.error("Puntos insuficientes para este canje.");
+        return false;
+      }
+
+      const updates: any = {
+        loyaltyPoints: increment(-cost)
+      };
+
+      // Lógica especial para desbloqueo de módulos
+      if (rewardLabel === 'Módulo Inventario Pro') {
+        updates.unlockedModules = arrayUnion('inventory_pro');
+      } else {
+        updates.unlockedModules = arrayUnion(rewardLabel);
+      }
+
+      await updateDoc(techRef, updates);
+
+      toast.success(`¡Canje Exitoso! Has obtenido: ${rewardLabel}`, { icon: '🎁' });
+      return true;
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al procesar el canje.");
+      return false;
+    }
   };
 
   const handleConfirmPayment = async (requestId: string) => {
@@ -176,6 +251,20 @@ export function useBusinessLogic() {
   const handleVerifyTechnician = async (techId: string, isVerified: boolean) => {
     try {
       await updateDoc(doc(db, "technicians", techId), { isVerified });
+      const techSnap = await getDoc(doc(db, "technicians", techId));
+      if (techSnap.exists()) {
+        const t = techSnap.data();
+        await addDoc(collection(db, "notifications"), {
+          userId: t.userId,
+          title: isVerified ? "✅ Perfil Verificado" : "⚠️ Verificación Suspendida",
+          body: isVerified
+            ? "¡Felicidades! Tu cuenta ha sido validada por el Nodo Central. Ya puedes recibir contratos de alta ingeniería."
+            : "Tu verificación ha sido removida por auditoría administrativa. Contacta a soporte.",
+          type: 'system',
+          createdAt: serverTimestamp(),
+          read: false
+        });
+      }
       toast.success(isVerified ? "Técnico Verificado" : "Verificación Removida");
     } catch (err) { console.error(err); }
   };
@@ -251,6 +340,7 @@ export function useBusinessLogic() {
     handleAddInventoryItem,
     handleDeleteInventoryItem,
     handleUpdateInventoryItem,
-    handleRequestQuote
+    handleRequestQuote,
+    handleRedeemPoints
   };
 }

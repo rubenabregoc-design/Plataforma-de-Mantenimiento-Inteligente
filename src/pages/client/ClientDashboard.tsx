@@ -8,7 +8,8 @@ import Skeleton from '../../components/Skeleton';
 import {
   Search, ChevronLeft, ChevronRight, LayoutDashboard, Trash2, Check, Download,
   Truck, CheckCircle2, AlertTriangle, Globe, BrainCircuit, ShieldCheck, Layers, Package,
-  Store, FileCheck2, FileText, Star, MessageSquare, ArrowRight, Video, MapPin, Activity, Shield
+  Store, FileCheck2, FileText, Star, MessageSquare, ArrowRight, Video, MapPin, Activity, Shield,
+  Users, PieChart, Building2, ShieldAlert
 } from 'lucide-react';
 import FleetDashboard from '../../components/FleetDashboard';
 import DiagnosticAIView from '../../components/DiagnosticAIView';
@@ -17,10 +18,11 @@ import InventoryModule from '../../components/InventoryModule';
 import SubscriptionModule from '../../components/SubscriptionModule';
 import SupportChatWidget from '../../components/SupportChatWidget';
 import MantechIDModule from '../../components/MantechIDModule';
+import TechnicianRadar from '../../components/TechnicianRadar';
 import * as XLSX from 'xlsx';
 import { useTranslation } from 'react-i18next';
 import { PayPalButtons } from "@paypal/react-paypal-js";
-import { doc, deleteDoc, updateDoc, collection, addDoc, serverTimestamp, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, deleteDoc, updateDoc, collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
@@ -47,6 +49,8 @@ export default function ClientDashboard() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [marketSearchQuery, setMarketSearchQuery] = useState('');
   const [requiredVerificationLevel, setRequiredVerificationLevel] = useState<number>(1);
+  const [isHomeSOSOpen, setIsHomeSOSOpen] = useState(false);
+  const [minRatingFilter, setMinRatingFilter] = useState<number>(0);
 
   // Función para normalizar texto (quitar acentos) para comparaciones precisas
   const normalizeText = (text: string) =>
@@ -82,11 +86,18 @@ export default function ClientDashboard() {
 
   const filteredTechnicians = technicians.filter(t => {
     const matchesCategory = marketFilter === 'all' || (t.category && normalizeText(t.category) === marketFilter);
-    const matchesSearch = (t.name?.toLowerCase() || '').includes(marketSearchQuery.toLowerCase()) ||
-                         (t.title?.toLowerCase() || '').includes(marketSearchQuery.toLowerCase()) ||
-                         (t.location?.toLowerCase() || '').includes(marketSearchQuery.toLowerCase());
+
+    // Búsqueda Inteligente: Incluye nombre, título, ubicación y CATEGORÍA
+    const searchTerm = marketSearchQuery.toLowerCase();
+    const matchesSearch =
+      (t.name?.toLowerCase() || '').includes(searchTerm) ||
+      (t.title?.toLowerCase() || '').includes(searchTerm) ||
+      (t.location?.toLowerCase() || '').includes(searchTerm) ||
+      (t.category?.toLowerCase() || '').includes(searchTerm.replace('é','e').replace('á','a'));
+
     const matchesLevel = (t.verificationLevel || 1) >= requiredVerificationLevel;
-    return matchesCategory && matchesSearch && matchesLevel;
+    const matchesRating = (t.rating || 0) >= minRatingFilter;
+    return matchesCategory && matchesSearch && matchesLevel && matchesRating;
   });
 
   const handleFindExpertForAsset = (asset: Asset) => {
@@ -166,6 +177,7 @@ export default function ClientDashboard() {
                 assets={assets}
                 requests={requests}
                 userName={userData?.name || 'Usuario'}
+                onSeeAll={() => setTab('client', 'inventory')}
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -207,7 +219,34 @@ export default function ClientDashboard() {
                     assets={assets.filter(a => ['car', 'moto', 'generator'].includes(a.type))}
                     onSaveLog={() => {}}
                   />
-                  <HomeEmergencySOS />
+                  <HomeEmergencySOS
+                    isOpen={isHomeSOSOpen}
+                    onClose={() => setIsHomeSOSOpen(false)}
+                    assets={assets}
+                    technicians={technicians}
+                    onCallTech={(tech) => {
+                      business.handleRequestQuote(tech.id, assets[0]?.id || 'unknown', "EMERGENCIA SOS 24/7");
+                      setIsHomeSOSOpen(false);
+                    }}
+                  />
+
+                  {/* Tarjeta de Disparo SOS */}
+                  <div
+                    onClick={() => setIsHomeSOSOpen(true)}
+                    className="bg-rose-600/10 border border-rose-600/30 rounded-[3rem] p-10 flex flex-col items-center justify-center gap-6 cursor-pointer hover:bg-rose-600/20 transition-all group relative overflow-hidden"
+                  >
+                     <div className="absolute top-0 right-0 w-32 h-32 bg-rose-600 opacity-5 blur-3xl rounded-full translate-x-10 -translate-y-10 group-hover:scale-150 transition-transform"></div>
+                     <div className="w-20 h-20 bg-rose-600 rounded-full flex items-center justify-center text-white shadow-2xl shadow-rose-600/40 group-hover:scale-110 transition-all animate-pulse">
+                        <ShieldAlert className="w-10 h-10" />
+                     </div>
+                     <div className="text-center space-y-2 relative z-10">
+                        <h4 className="text-2xl font-black text-white uppercase tracking-tighter italic">Botón de Pánico SOS</h4>
+                        <p className="text-[10px] font-bold text-rose-400 uppercase tracking-[0.3em]">Asistencia Técnica Crítica 24/7</p>
+                     </div>
+                     <div className="px-6 py-2 bg-rose-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest group-hover:bg-white group-hover:text-rose-600 transition-colors">
+                        Activar Protocolo
+                     </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -239,23 +278,41 @@ export default function ClientDashboard() {
 
       {clientTab === 'marketplace' && (
         <div className="space-y-10">
-          <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-            <div className="flex-1 w-full">
+          <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6">
+            <div className="flex-1 w-full min-w-0">
                <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-none mb-6">Marketplace <span className="text-[#5d3cfe]">Expertos</span></h1>
 
-               {/* BARRA DE BÚSQUEDA RÁPIDA */}
-               <div className="relative mb-6">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#474556]" />
-                  <input
-                    type="text"
-                    placeholder="Busca por nombre, especialidad o zona (Paitilla, Costa del Este...)"
-                    value={marketSearchQuery}
-                    onChange={(e) => setMarketSearchQuery(e.target.value)}
-                    className="w-full bg-[#121317] border border-[#2a2b2f] rounded-[1.5rem] py-5 pl-16 pr-6 text-sm font-bold text-white focus:border-[#5d3cfe] outline-none transition-all shadow-inner"
-                  />
+               {/* BARRA DE BÚSQUEDA Y FILTRO RATING */}
+               <div className="flex flex-col md:flex-row gap-4 mb-6">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#474556]" />
+                    <input
+                      type="text"
+                      placeholder="Busca por nombre, especialidad o zona..."
+                      value={marketSearchQuery}
+                      onChange={(e) => setMarketSearchQuery(e.target.value)}
+                      className="w-full bg-[#121317] border border-[#2a2b2f] rounded-[1.5rem] py-5 pl-16 pr-6 text-sm font-bold text-white focus:border-[#5d3cfe] outline-none transition-all shadow-inner"
+                    />
+                  </div>
+
+                  <div className="bg-[#121317] border border-[#2a2b2f] rounded-[1.5rem] p-2 flex items-center gap-3 px-6 shadow-inner">
+                     <span className="text-[9px] font-black text-[#474556] uppercase tracking-widest">Rating Mínimo</span>
+                     <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                           <button
+                             key={star}
+                             onClick={() => setMinRatingFilter(minRatingFilter === star ? 0 : star)}
+                             className="transition-transform active:scale-90"
+                           >
+                             <Star
+                               className={`w-5 h-5 ${minRatingFilter >= star ? 'text-amber-500 fill-amber-500' : 'text-[#2a2b2f]'} hover:text-amber-400`}
+                             />
+                           </button>
+                        ))}
+                     </div>
+                  </div>
                </div>
 
-               {/* FILTRO DE INGENIERÍA ACTIVO */}
                {requiredVerificationLevel > 1 && (
                  <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between animate-fade-in">
                     <div className="flex items-center gap-3">
@@ -273,8 +330,7 @@ export default function ClientDashboard() {
                  </div>
                )}
 
-               {/* SELECTOR DE CATEGORÍAS TÁCTICO */}
-               <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar">
+               <div className="flex gap-4 overflow-x-auto pb-6 px-4 -mx-4 custom-scrollbar">
                  {categories.map(c => (
                    <button
                      key={c.id}
@@ -284,12 +340,26 @@ export default function ClientDashboard() {
                      {c.label}
                    </button>
                  ))}
+                 <div className="w-10 shrink-0 h-1"></div>
                </div>
             </div>
-            <div className="bg-[#1c1d21] p-1.5 rounded-2xl border border-[#2a2b2f] flex">
-               <button onClick={() => setMarketViewMode('list')} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${marketViewMode === 'list' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}>Listado</button>
-               <button onClick={() => setMarketViewMode('radar')} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${marketViewMode === 'radar' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}>Radar Satelital</button>
-               <button onClick={() => setMarketViewMode('bidding')} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${marketViewMode === 'bidding' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}>Subasta Pública</button>
+
+            {/* SELECTOR DE VISTA CORREGIDO */}
+            <div className="bg-[#1c1d21] p-2 rounded-[1.5rem] border border-[#2a2b2f] flex gap-1 shrink-0 w-full xl:w-auto overflow-x-auto mb-6 xl:mb-0 custom-scrollbar-hidden">
+               {[
+                 { id: 'list', label: 'Listado', icon: LayoutDashboard },
+                 { id: 'radar', label: 'Radar Satelital', icon: Globe },
+                 { id: 'bidding', label: 'Subasta Pública', icon: Layers }
+               ].map(mode => (
+                 <button
+                   key={mode.id}
+                   onClick={() => setMarketViewMode(mode.id as any)}
+                   className={`flex-1 xl:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${marketViewMode === mode.id ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}
+                 >
+                   <mode.icon className="w-3.5 h-3.5" />
+                   {mode.label}
+                 </button>
+               ))}
             </div>
           </header>
 
@@ -375,16 +445,76 @@ export default function ClientDashboard() {
                           <span className="px-4 py-1.5 bg-indigo-500/10 text-indigo-400 rounded-full text-[8px] font-black uppercase tracking-widest">En Subasta</span>
                        </div>
                        <p className="text-xs text-[#c8c4d9] italic opacity-60">"{req.description}"</p>
-                       <div className="pt-6 border-t border-white/5 flex items-center justify-between">
-                          <span className="text-[9px] font-black text-[#474556] uppercase tracking-widest">{req.bids?.length || 0} Propuestas</span>
-                          <button className="text-[10px] font-black text-[#52ffac] uppercase tracking-[0.2em]">Ver Ofertas ➔</button>
+
+                       {/* DETALLES DE PUJAS REALES */}
+                       <div className="bg-[#0d0e12] p-5 rounded-2xl border border-white/5 space-y-4">
+                          <div className="flex justify-between items-center mb-2">
+                             <h5 className="text-[10px] font-black text-[#474556] uppercase tracking-widest">Propuestas Recibidas</h5>
+                             <span className="px-2 py-0.5 bg-[#52ffac]/10 text-[#52ffac] rounded text-[8px] font-black">{req.bids?.length || 0}</span>
+                          </div>
+
+                          {(req.bids || []).length > 0 ? (
+                            <div className="space-y-3">
+                               {req.bids?.map((bid, bIdx) => (
+                                 <div key={bIdx} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 group/bid">
+                                    <div>
+                                       <p className="text-[11px] font-black text-white uppercase">{bid.techName}</p>
+                                       <p className="text-[8px] text-[#474556] font-bold uppercase mt-0.5">Arribo en {bid.time}</p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                       <span className="text-sm font-black text-[#52ffac]">${bid.price}</span>
+                                       <button
+                                         onClick={() => {
+                                           if(window.confirm(`¿Aceptas la oferta de ${bid.techName} por $${bid.price}?`)) {
+                                             business.handleAcceptBid(req.id, bid);
+                                           }
+                                         }}
+                                         className="p-2 bg-[#5d3cfe] text-white rounded-lg opacity-0 group-hover/bid:opacity-100 transition-all"
+                                       >
+                                          <Check className="w-3 h-3" />
+                                       </button>
+                                    </div>
+                                 </div>
+                               ))}
+                            </div>
+                          ) : (
+                            <div className="py-4 text-center">
+                               <div className="w-6 h-6 border-2 border-[#5d3cfe]/20 border-t-[#5d3cfe] rounded-full animate-spin mx-auto mb-2"></div>
+                               <p className="text-[8px] text-[#474556] font-bold uppercase tracking-widest">Esperando respuesta de especialistas...</p>
+                            </div>
+                          )}
+                       </div>
+
+                       <div className="pt-2 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                             <div className="w-1.5 h-1.5 bg-[#52ffac] rounded-full animate-ping"></div>
+                             <span className="text-[9px] font-black text-[#474556] uppercase tracking-widest">Sincronización Satelital Activa</span>
+                          </div>
+                          <button
+                            onClick={() => { if(window.confirm("¿Cancelar subasta?")) business.handleCancelRequest(req.id); }}
+                            className="text-[9px] font-black text-rose-500 uppercase hover:text-rose-400"
+                          >
+                            Anular Ticket
+                          </button>
                        </div>
                     </div>
                  ))}
+                 {requests.filter(r => r.status === 'open_bidding').length === 0 && (
+                   <div className="col-span-full py-20 bg-[#121317] border border-dashed border-white/5 rounded-[3rem] text-center opacity-30">
+                      <Layers className="w-10 h-10 mx-auto mb-4" />
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em]">No tienes subastas activas en este momento</p>
+                   </div>
+                 )}
               </div>
             </div>
+          ) : marketViewMode === 'radar' ? (
+            <TechnicianRadar
+              technicians={technicians}
+              assets={assets}
+              onSelectTech={(t) => openModal('tech', { tech: t })}
+            />
           ) : (
-             <div className="py-20 text-center opacity-20 uppercase tracking-widest text-[10px] font-black">Escaneando técnicos en el Radar...</div>
+             <div className="py-20 text-center opacity-20 uppercase tracking-widest text-[10px] font-black italic animate-pulse">Iniciando sistema de radar satelital...</div>
           )}
         </div>
       )}

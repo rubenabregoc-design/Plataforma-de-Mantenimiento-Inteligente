@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, X, Sparkles, Zap, PieChart } from 'lucide-react';
+import { MessageSquare, Send, X, Sparkles, Zap, PieChart, Maximize2, Minimize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MantechProLogo from './Logo';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +15,7 @@ interface ChatbotProps {
   isInline?: boolean;
   assets?: any[];
   requests?: any[];
-  onScheduleService?: (category: string) => void;
+  onScheduleService?: (techId: string, assetId: string) => void;
   initialMode?: 'general' | 'sales';
 }
 
@@ -215,58 +215,92 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
         ? "w-full h-full rounded-[2.5rem]"
         : isMaximized
           ? "fixed inset-8 md:inset-20 z-[600] w-auto h-auto rounded-[3.5rem] shadow-[0_0_150px_rgba(93,60,254,0.3)]"
-          : "w-[340px] md:w-[420px] h-[500px] md:h-[600px] max-h-[calc(100vh-140px)] rounded-[3rem] shadow-[0_0_80px_rgba(0,0,0,0.8)] mb-4"
+          : "w-[360px] md:w-[450px] h-[600px] md:h-[750px] max-h-[calc(100vh-140px)] rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.8)] mb-4"
     }`}>
-      <div className="bg-[#1c1d21] p-5 md:p-6 text-white flex items-center justify-between shrink-0 border-b border-white/10">
+      {/* HEADER COMPACTO */}
+      <div className="bg-[#1c1d21]/80 backdrop-blur-xl p-3 md:p-4 text-white flex items-center justify-between shrink-0 border-b border-white/10 z-20 flex-none">
         <div className="flex items-center gap-3">
-          <MantechProLogo size="sm" showText={false} />
+          <MantechProLogo size="sm" showText={false} className="w-8 h-8" />
           <div>
-            <h4 className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] leading-none text-white">Asesor MantechPro</h4>
-            <div className="flex items-center gap-1.5 mt-1.5">
-              <span className="w-1.5 h-1.5 bg-[#52ffac] rounded-full animate-pulse shadow-[0_0_8px_#52ffac]"></span>
-              <span className="text-[9px] font-black text-[#52ffac] uppercase tracking-widest">En línea ahora</span>
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">Asesor MantechPro</h4>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="w-1 h-1 bg-[#52ffac] rounded-full animate-pulse"></span>
+              <span className="text-[7px] font-black text-[#52ffac] uppercase tracking-widest">IA Activa</span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {!isInline && (
             <button
               onClick={() => setIsMaximized(!isMaximized)}
-              className="p-2 hover:bg-white/10 rounded-xl transition-all text-white/40 hover:text-white"
-              title={isMaximized ? "Contraer" : "Expandir conversación"}
+              className="p-2 hover:bg-white/10 rounded-xl transition-all text-white/40"
             >
-              {isMaximized ? <X className="w-4 h-4 rotate-45" /> : <Zap className="w-4 h-4" />}
+              {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             </button>
           )}
           {!isInline && (
-            <button onClick={() => { setIsOpen(false); setIsMaximized(false); }} className="p-2 hover:bg-rose-500/20 hover:text-rose-500 rounded-xl transition-all text-white/40">
-              <X className="w-5 h-5" />
+            <button onClick={() => { setIsOpen(false); setIsMaximized(false); }} className="p-2 hover:bg-rose-500/20 text-white/40">
+              <X className="w-4 h-4" />
             </button>
           )}
         </div>
       </div>
 
-      <div className="px-6 py-4 bg-[#121317] border-b border-white/10 flex gap-3">
-         <button
-           onClick={() => setMode('support')}
-           className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${mode === 'support' ? 'bg-[#5d3cfe] text-white border-[#5d3cfe] shadow-[0_0_20px_rgba(93,60,254,0.3)]' : 'bg-transparent text-white/40 border-white/10 hover:border-white/30'}`}
-         >
-           <Zap className="w-3 h-3 inline mr-2 mb-0.5" /> Soporte
-         </button>
-         <button
-           onClick={() => setMode('sales')}
-           className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${mode === 'sales' ? 'bg-[#52ffac] text-black border-[#52ffac] shadow-[0_0_20px_rgba(82,255,172,0.3)]' : 'bg-transparent text-white/40 border-white/10 hover:border-white/30'}`}
-         >
-           <PieChart className="w-3 h-3 inline mr-2 mb-0.5" /> Ventas
-         </button>
+      {/* SELECTOR DE MODO COMPRIMIDO */}
+      <div className="px-4 py-2 bg-[#121317]/50 border-b border-white/5 flex flex-none">
+         <div className="flex p-0.5 bg-[#0d0e12] rounded-xl border border-white/5 w-full">
+            <button
+              onClick={() => setMode('support')}
+              className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all ${mode === 'support' ? 'bg-[#1c1d21] text-white shadow-lg' : 'bg-transparent text-white/20'}`}
+            >
+              <Zap className={`w-2.5 h-2.5 ${mode === 'support' ? 'text-[#5d3cfe] fill-current' : 'opacity-20'}`} /> Soporte
+            </button>
+            <button
+              onClick={() => setMode('sales')}
+              className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all ${mode === 'sales' ? 'bg-[#52ffac] text-black shadow-lg' : 'bg-transparent text-white/20'}`}
+            >
+              <PieChart className={`w-2.5 h-2.5 ${mode === 'sales' ? 'text-black' : 'opacity-20'}`} /> Ventas
+            </button>
+         </div>
       </div>
 
-      <div className="px-6 py-4 bg-[#0d0e12] border-b border-white/5 space-y-3">
-         <div className="flex items-center justify-between">
-            <p className="text-[9px] font-black text-[#474556] uppercase tracking-widest ml-1">{t('frequent_questions', 'Consultas Frecuentes')}</p>
-            <Sparkles className="w-3 h-3 text-[#5d3cfe] animate-pulse" />
-         </div>
-         <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar-hidden mask-fade-right">
+      {/* CHAT BODY - ESPACIO MAXIMIZADO */}
+      <div className="flex-1 overflow-y-auto relative p-4 space-y-4 custom-scrollbar bg-[#0d0e12] grid-bg min-h-0">
+        {messages.map((msg) => (
+          <div key={msg.id} className={`flex relative z-10 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={`max-w-[88%] p-4 rounded-[1.5rem] text-sm leading-relaxed shadow-2xl transition-all whitespace-pre-line border ${
+                msg.sender === 'user'
+                  ? "bg-[#5d3cfe] text-white rounded-tr-none border-white/20"
+                  : "bg-[#1c1d21]/90 backdrop-blur-md border-white/10 text-white rounded-tl-none"
+              }`}
+            >
+              {formatMessageText(msg.text)}
+              <div className={`text-[6px] mt-2.5 font-black uppercase tracking-[0.2em] opacity-30 ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}>
+                {msg.sender === 'user' ? 'Enviado' : 'MantechPro Core'} • {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+              </div>
+            </motion.div>
+          </div>
+        ))}
+        {isTyping && (
+          <div className="flex justify-start">
+            <div className="bg-[#1c1d21] border border-white/10 p-3 rounded-xl rounded-tl-none">
+              <div className="flex gap-1">
+                <span className="w-1 h-1 bg-[#5d3cfe] rounded-full animate-bounce"></span>
+                <span className="w-1 h-1 bg-[#5d3cfe] rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                <span className="w-1 h-1 bg-[#5d3cfe] rounded-full animate-bounce [animation-delay:0.4s]"></span>
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* SUGERENCIAS Y PANEL DE ENTRADA UNIFICADOS */}
+      <div className="flex-none bg-[#1c1d21] border-t border-white/10 p-4 space-y-4">
+         <div className="flex gap-2 overflow-x-auto no-scrollbar mask-fade-right">
             {currentFaqs.map((faq, i) => (
                <button
                  key={i}
@@ -276,69 +310,30 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
                      setMessages(prev => [...prev, { id: (Date.now()+1).toString(), text: faq.a, sender: 'bot', timestamp: new Date() }]);
                    }, 500);
                  }}
-                 className="px-4 py-2 bg-white/10 border border-white/20 rounded-full text-left hover:bg-[#5d3cfe] hover:border-[#5d3cfe] transition-all group whitespace-nowrap shadow-lg"
+                 className="px-3 py-1.5 bg-[#0d0e12] border border-white/5 rounded-full whitespace-nowrap hover:bg-[#5d3cfe] transition-all"
                >
-                  <p className="text-[9px] font-black text-white uppercase group-hover:text-white transition-colors tracking-tight">{faq.q}</p>
+                  <p className="text-[7px] font-black text-[#c8c4d9] uppercase">{faq.q}</p>
                </button>
             ))}
          </div>
-      </div>
 
-      <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar bg-[#0d0e12]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#5d3cfe05,transparent_70%)] pointer-events-none"></div>
-        {messages.map((msg) => (
-          <div key={msg.id} className={`flex relative z-10 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-5 rounded-[2rem] text-sm leading-relaxed shadow-2xl transition-all whitespace-pre-line ${
-              msg.sender === 'user'
-                ? "bg-[#5d3cfe] text-white rounded-tr-none border border-white/20 shadow-[0_15px_40px_-10px_rgba(93,60,254,0.6)]"
-                : "bg-[#1c1d21] border border-white/10 text-white rounded-tl-none shadow-xl shadow-black/50"
-            }`}>
-              {formatMessageText(msg.text)}
-              <div className={`text-[8px] mt-3 font-black uppercase tracking-widest ${msg.sender === 'user' ? 'text-white/60 text-right' : 'text-[#52ffac] text-left'}`}>
-                {msg.sender === 'user' ? 'Enviado' : 'Asesor MantechPro'} • {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
-              </div>
-            </div>
-          </div>
-        ))}
-        {isTyping && (
-          <div className="flex justify-start">
-            <div className="bg-[#1c1d21] border border-[#2a2b2f] p-3 rounded-2xl rounded-tl-none">
-              <div className="flex gap-1">
-                <span className="w-1 h-1 bg-[#474556] rounded-full animate-bounce"></span>
-                <span className="w-1 h-1 bg-[#474556] rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                <span className="w-1 h-1 bg-[#474556] rounded-full animate-bounce [animation-delay:0.4s]"></span>
-              </div>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      <div className="p-6 bg-[#1c1d21] border-t border-white/5 shrink-0">
-        <div className="flex gap-3 bg-[#0d0e12] p-2 rounded-2xl border border-white/5 focus-within:border-[#5d3cfe] transition-all shadow-inner">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Escribe tu mensaje aquí..."
-            className="flex-1 bg-transparent px-4 py-2 text-xs text-white outline-none placeholder:text-[#474556] font-bold"
-          />
-          <button
-            onClick={handleSend}
-            className="bg-[#5d3cfe] p-3 rounded-xl text-white hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[#5d3cfe]/20"
-          >
-            <Send className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-[8px] text-[#474556] font-black uppercase tracking-[0.2em] flex items-center gap-1">
-            Mantech Pro Support
-          </p>
-          <div className="flex gap-2">
-            <span className="text-[7px] font-black text-white/20 uppercase tracking-widest">Protocolo de Conexión Segura</span>
-          </div>
-        </div>
+         <div className="flex gap-2 bg-[#0d0e12] p-1.5 rounded-xl border border-white/10 focus-within:border-[#5d3cfe]/50 transition-all shadow-inner">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Consultar..."
+              className="flex-1 bg-transparent px-3 py-1 text-xs text-white outline-none placeholder:text-[#474556] font-bold"
+            />
+            <button
+              onClick={handleSend}
+              disabled={!input.trim()}
+              className={`p-2.5 rounded-lg transition-all ${input.trim() ? 'bg-[#5d3cfe] text-white' : 'bg-white/5 text-[#474556]'}`}
+            >
+              <Send className="w-3.5 h-3.5" />
+            </button>
+         </div>
       </div>
     </div>
   );

@@ -7,11 +7,16 @@ import admin from 'firebase-admin';
 import { readFile } from 'fs/promises';
 import { format, addDays, parseISO, differenceInCalendarDays, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+
+// Configuración de IA (Gemini)
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "AI_STUDIO_PLACEHOLDER");
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // Rate Limiting (Seguridad Senior)
 const limiter = rateLimit({
@@ -30,22 +35,40 @@ const BRAND_ACCENT = '#52ffac';  // Neón Mint
 const BRAND_BG = '#0d0e12';      // Negro Nodo
 const BRAND_CARD = '#16171d';    // Gris Carbón
 
-// Inicializar Firebase Admin
-const initFirebaseAdmin = async () => {
+// Inicializar Firebase Admin (Sincrónico para evitar errores de App No Encontrada)
+const initFirebaseAdmin = () => {
   try {
-    const serviceAccount = JSON.parse(
-      await readFile(path.join(process.cwd(), 'service-account.json'), 'utf8')
-    );
+    const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
+
     if (admin.apps.length === 0) {
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-      });
+      // Intentar cargar desde archivo local
+      try {
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccountPath)
+        });
+        console.log("✅ Sistema Operativo Mantech Pro: Firebase Admin Vinculado (Archivo).");
+      } catch (err) {
+        // Fallback: Intentar cargar desde variables de entorno si existen (Modo Cloud)
+        if (process.env.FIREBASE_PROJECT_ID) {
+          admin.initializeApp({
+            credential: admin.credential.applicationDefault(),
+            projectId: process.env.FIREBASE_PROJECT_ID
+          });
+          console.log("✅ Sistema Operativo Mantech Pro: Firebase Admin Vinculado (Default).");
+        } else {
+          console.warn("⚠️ Advertencia: No se encontró 'service-account.json'. Las funciones de servidor que requieren Firestore no funcionarán.");
+          // Inicializar app vacía para evitar crash fatal en arranque
+          admin.initializeApp({
+            projectId: "mantech-pro-placeholder"
+          });
+        }
+      }
     }
-    console.log("✅ Sistema Operativo Mantech Pro: Firebase Admin Vinculado.");
   } catch (error) {
-    console.error("❌ Error en Nodo Maestro (Firebase):", error);
+    console.error("❌ Error Crítico en Nodo Maestro (Firebase):", error);
   }
 };
+
 initFirebaseAdmin();
 
 const db = admin.firestore();
@@ -54,7 +77,7 @@ const db = admin.firestore();
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'mantechpro@protonmail.com';
 const SENDER_NAME = 'Mantech Pro Global';
-const APP_URL = 'https://cltech-prod-fix--cltech-project-hub.us-central1.hosted.app/dashboard/maintenance';
+const APP_URL = process.env.APP_URL || 'http://localhost:3000';
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -64,6 +87,130 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
+});
+
+// --- NUEVAS FUNCIONES NODO-V4 ---
+
+// 1. Diagnóstico de Salud del Servidor
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "online",
+    nodo: "MantechPro-V4",
+    firebase: admin.apps.length > 0 ? "connected" : "standalone",
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 2. Envío de Email de Bienvenida (Prueba)
+app.post("/api/welcome-email", async (req, res) => {
+  const { email, name } = req.body;
+  try {
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": process.env.BREVO_API_KEY || '',
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+        to: [{ email }],
+        subject: "🚀 Bienvenido al Ecosistema MantechPro",
+        htmlContent: `<h1>Hola ${name}</h1><p>Tu cuenta ha sido vinculada al Nodo Central de Panamá.</p>`
+      })
+    });
+    res.json({ success: true, detail: "Email en cola de envío" });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 3. Motor de Diagnóstico IA (Gemini 1.5 Flash)
+app.post("/api/diagnose", async (req, res) => {
+  const { assetName, assetDetails, problemDescription } = req.body;
+
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: "Gemini API Key no configurada." });
+  }
+
+  try {
+    const prompt = `Actúa como un experto en ingeniería industrial y mecánica.
+    Analiza el siguiente fallo en un equipo en Panamá:
+    Equipo: ${assetName}
+    Detalles: ${assetDetails}
+    Descripción del problema: ${problemDescription}
+
+    Responde ÚNICAMENTE en formato JSON con la siguiente estructura:
+    {
+      "cause": "Descripción breve de la causa probable",
+      "prevention": "Cómo evitar que vuelva a suceder",
+      "damage": "Daños potenciales si no se repara",
+      "urgency": "Crítica | Alta | Media",
+      "cost": "Rango de costo estimado en USD (ej: $40 - $100)",
+      "specialist": "mecanico | tecnico_ac | electricista | informatico | plomero"
+    }`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    // Limpiar el texto si Gemini devuelve markdown (```json ... ```)
+    const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
+    res.json(JSON.parse(jsonStr));
+  } catch (error: any) {
+    console.error("IA Diagnose Error:", error);
+    res.status(500).json({ error: "Error en el procesamiento de IA" });
+  }
+});
+
+// 4. Envío de Reporte de Cierre Mensual
+app.post("/api/send-report", async (req, res) => {
+  const { email, reportData } = req.body;
+
+  try {
+    const htmlContent = `
+      <div style="font-family: sans-serif; background: #0d0e12; color: #fff; padding: 40px; border-radius: 20px;">
+        <h1 style="color: ${BRAND_PRIMARY};">Reporte de Cierre: ${reportData.month} ${reportData.year}</h1>
+        <div style="background: #16171d; padding: 20px; border-radius: 10px;">
+          <p><strong>Comisiones Totales:</strong> $${reportData.totalCommissions}</p>
+          <p><strong>Membresías:</strong> $${reportData.totalSubscriptions}</p>
+          <p><strong>Utilidad Neta:</strong> $${reportData.netUtility}</p>
+        </div>
+        <p style="font-size: 10px; color: #474556; margin-top: 20px;">Generado por MantechPro Master Server</p>
+      </div>
+    `;
+
+    await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": process.env.BREVO_API_KEY || '',
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+        to: [{ email }],
+        subject: `📊 Reporte Mensual MantechPro - ${reportData.month}`,
+        htmlContent
+      })
+    });
+
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 5. Simulación de Notificaciones Push (Para Web & Mobile Debug)
+app.post("/api/push-notification", async (req, res) => {
+  const { userId, title, body } = req.body;
+  console.log(`📲 PUSH EMITIDA -> Usuario: ${userId} | ${title}: ${body}`);
+
+  try {
+    res.json({ success: true, status: "simulated" });
+  } catch (e) {
+    res.json({ success: false });
+  }
 });
 
 // --- PLANTILLA EXCLUSIVA: PLATAFORMA DE MANTENIMIENTO INTELIGENTE ---

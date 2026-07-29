@@ -1,7 +1,7 @@
 ﻿import { toast } from 'react-hot-toast';
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage, JobRequest } from '../types';
-import { Send, MapPin, Paperclip, CheckCheck, User, Wrench, Image as ImageIcon, FileText, Maximize2, Minimize2, Video, Phone, QrCode, X, Download } from 'lucide-react';
+import { Send, MapPin, Paperclip, CheckCheck, User, Wrench, Image as ImageIcon, FileText, Maximize2, Minimize2, Video, Phone, QrCode, X, Download, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SupportChatWidgetProps {

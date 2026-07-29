@@ -23,6 +23,7 @@ interface UIContextType {
     material: boolean;
     checkpoint: boolean;
     routeStart: boolean;
+    engineeringReport: boolean;
   };
 
   // Active Data for Modals
@@ -58,7 +59,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     report: false, signature: false, support: false, corpSupport: false,
     scanner: false, videoCall: false, credential: false, auth: false,
     demo: false, payment: false, unforeseen: false, material: false,
-    checkpoint: false, routeStart: false
+    checkpoint: false, routeStart: false, engineeringReport: false
   });
 
   const [activeData, setActiveData] = useState<UIContextType['activeData']>({

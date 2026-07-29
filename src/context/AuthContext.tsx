@@ -88,6 +88,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             if (data.subscription) {
               setSubscription(data.subscription);
+            } else {
+              // Si el usuario existe pero no tiene el campo subscription, lo inicializamos
+              const defaultSub: UserSubscription = {
+                planId: data.role === 'tech' ? 'plan-basic' : 'plan-free',
+                status: 'active',
+                startDate: new Date().toISOString(),
+                nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+              };
+              updateDoc(userRef, { subscription: defaultSub });
+              setSubscription(defaultSub);
             }
           } else {
             // Manejo de usuario nuevo sin documento
@@ -101,8 +111,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               };
               setDoc(userRef, adminData);
             } else {
+              const defaultSub: UserSubscription = {
+                planId: 'plan-free',
+                status: 'active',
+                startDate: new Date().toISOString(),
+                nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+              };
+              const newUserData = {
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                name: firebaseUser.displayName || 'Usuario',
+                role: 'client',
+                subscription: defaultSub,
+                createdAt: serverTimestamp()
+              };
+              setDoc(userRef, newUserData);
               setRole('client');
-              setLoggedInName(firebaseUser.displayName || 'Usuario');
+              setLoggedInName(newUserData.name);
+              setSubscription(defaultSub);
             }
           }
           setIsLoggedIn(true);

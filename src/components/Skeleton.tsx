@@ -3,6 +3,7 @@ import React from 'react';
 interface Props {
   className?: string;
   variant?: 'rect' | 'circle' | 'text';
+  key?: any;
 }
 
 export default function Skeleton({ className = '', variant = 'rect' }: Props) {

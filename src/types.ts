@@ -72,7 +72,7 @@ export interface Asset {
   rentalHourlyRate?: number;
   criticalityLevel?: 'low' | 'medium' | 'high' | 'critical';
   maintenanceContractUrl?: string;
-  routeHistory?: { lat: number; lng: number; timestamp: string; locationName?: string; type?: 'track'; speed?: number }[];
+  routeHistory?: { lat: number; lng: number; timestamp: string; locationName?: string; type?: 'track' | 'checkpoint'; speed?: number }[];
   specs?: {
     btu?: string;
     refrigerant?: string;
@@ -148,13 +148,13 @@ export interface TechProfile {
   certifications: string[];
   portfolioImages: string[];
   plan: 'basic' | 'pro' | 'enterprise';
-  verificationLevel: 1 | 2 | 3; // Punto #4: Niveles de verificación
-  hasLiabilityInsurance: boolean; // Punto #5: Seguro de daños
+  verificationLevel?: 1 | 2 | 3; // Punto #4: Niveles de verificación
+  hasLiabilityInsurance?: boolean; // Punto #5: Seguro de daños
   insurancePolicyUrl?: string;
   adminNotes?: string; // Solo editable por el admin
-  requestsUsedThisMonth: number;
+  requestsUsedThisMonth?: number;
   isVerified: boolean;
-  isTaxObligated: boolean; // Punto ITBMS: Si el técnico debe cobrar 7% al cliente
+  isTaxObligated?: boolean; // Punto ITBMS: Si el técnico debe cobrar 7% al cliente
   loyaltyPoints?: number; // Puntos acumulados del Club Mantech
   unlockedModules?: string[]; // IDs de módulos desbloqueados (fidelidad)
   fiscalInfo?: {
@@ -362,7 +362,7 @@ export interface SubscriptionPlan {
 
 export interface UserSubscription {
   planId: string;
-  status: 'active' | 'expired' | 'canceled';
+  status: 'active' | 'expired' | 'canceled' | 'pending_payment_verification';
   startDate: string;
   nextBillingDate: string;
 }
@@ -452,4 +452,17 @@ export interface ForumReply {
   authorName: string;
   authorRole: string;
   createdAt: string;
+}
+
+export interface AgendaEvent {
+  id: string;
+  title: string;
+  date: string;
+  time?: string;
+  type?: 'service' | 'maintenance' | 'reminder' | 'deadline';
+  requestId?: string;
+  status: 'pending' | 'completed' | 'cancelled';
+  techId?: string;
+  clientName?: string;
+  duration?: string;
 }

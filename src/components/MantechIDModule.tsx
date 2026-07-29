@@ -3,6 +3,7 @@ import { MantechID } from '../types';
 import { ShieldCheck, UserCheck, ShieldAlert, CheckCircle2, Clock } from 'lucide-react';
 import ConfirmationModal from './ConfirmationModal';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 interface MantechIDModuleProps {
   mantechId?: MantechID;
@@ -14,6 +15,7 @@ interface MantechIDModuleProps {
 }
 
 export default function MantechIDModule({ mantechId, userName, cedula, onUpload, role = 'tech' }: MantechIDModuleProps) {
+  const { t } = useTranslation();
   const status = mantechId?.status || 'unverified';
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentType, setCurrentType] = useState<'id' | 'record' | null>(null);

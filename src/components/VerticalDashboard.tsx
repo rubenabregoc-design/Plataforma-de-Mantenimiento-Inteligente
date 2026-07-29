@@ -6,9 +6,10 @@ interface VerticalDashboardProps {
   assets: Asset[];
   requests: JobRequest[];
   userName: string;
+  onSeeAll?: () => void;
 }
 
-export default function VerticalDashboard({ assets, requests, userName }: VerticalDashboardProps) {
+export default function VerticalDashboard({ assets, requests, userName, onSeeAll }: VerticalDashboardProps) {
   // --- Motor de Detección de Dominancia de Activos ---
   const getDominantVertical = () => {
     if (assets.length === 0) return 'general';
@@ -134,7 +135,12 @@ export default function VerticalDashboard({ assets, requests, userName }: Vertic
       <div className="bg-[#121317] border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
         <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
            <h4 className="text-xs font-black text-[#474556] uppercase tracking-[0.2em] leading-none">Inventario Prioritario <span className="text-white">({filteredAssets.length})</span></h4>
-           <button className="px-6 py-2 bg-white/5 border border-white/10 text-white rounded-xl text-[9px] font-black uppercase hover:bg-[#5d3cfe] transition-all">Ver Todo</button>
+           <button
+             onClick={onSeeAll}
+             className="px-6 py-2 bg-white/5 border border-white/10 text-white rounded-xl text-[9px] font-black uppercase hover:bg-[#5d3cfe] transition-all"
+           >
+             Ver Todo
+           </button>
         </div>
         <div className="divide-y divide-white/5">
            {filteredAssets.length > 0 ? filteredAssets.slice(0, 5).map(a => (
