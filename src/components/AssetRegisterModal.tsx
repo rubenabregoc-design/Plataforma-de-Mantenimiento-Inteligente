@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Asset, AssetType, AssetCategory, RiskLevel } from '../types';
 import {
   Plus, X, Car, ShieldCheck, Cpu, Sliders, BatteryCharging, Zap, Boxes,
   Home, Edit2, Search, CheckCircle2, Droplets, PlugZap, Building2,
-  Stethoscope, HardHat, LayoutGrid, Bike, AlertCircle, MapPin, User, FileText, Fuel, Fingerprint, Activity, ShieldAlert, Shield, Thermometer, Database, Ruler, Waves, ZapOff, Calendar
+  Stethoscope, HardHat, LayoutGrid, Bike, AlertCircle, MapPin, User, FileText, Fuel, Fingerprint, Activity, ShieldAlert, Shield, Thermometer, Database, Ruler, Waves, ZapOff, Calendar,
+  Weight, Users, Flame, Eye, HardDrive, Waves as PoolIcon
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { SECURITY_PROTOCOLS } from '../utils/businessRules';
 
 interface AssetRegisterModalProps {
   isOpen: boolean;
@@ -30,28 +30,22 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
   const [lastMaintenance, setLastMaintenance] = useState('');
   const [nextMaintenance, setNextMaintenance] = useState('');
   const [observations, setObservations] = useState('');
-  const [location, setLocation] = useState('Sede Principal');
-  const [driverName, setDriverName] = useState('');
   const [serialNumber, setSerialNumber] = useState('');
   const [fuelType, setFuelType] = useState<Asset['fuelType']>('diesel');
   const [purchaseDate, setPurchaseDate] = useState('');
   const [warrantyMonths, setWarrantyMonths] = useState<number>(0);
+  const [latitude, setLatitude] = useState<string>('');
+  const [longitude, setLongitude] = useState<string>('');
+  const [locationDetails, setLocationDetails] = useState('');
 
-  // Specific Specs States
-  const [btu, setBtu] = useState('');
-  const [refrigerant, setRefrigerant] = useState('R410A');
-  const [acType, setAcType] = useState<'split' | 'central' | 'vrf'>('split');
-  const [processor, setProcessor] = useState('');
-  const [ram, setRam] = useState('');
-  const [os, setOs] = useState('Windows 11');
-  const [sqMeters, setSqMeters] = useState('');
-  const [floors, setFloors] = useState('1');
-  const [pipeMaterial, setPipeMaterial] = useState('PVC');
-  const [voltage, setVoltage] = useState('110V');
-  const [amps, setAmps] = useState('');
-  const [phases, setPhases] = useState('Monofásico');
-  const [panelCount, setPanelCount] = useState('');
-  const [inverterCapacity, setInverterCapacity] = useState('');
+  const [formErrors, setFormErrors] = useState<string[]>([]);
+
+  // --- ESPECIFICACIONES TÉCNICAS DINÁMICAS ---
+  const [specs, setSpecs] = useState<any>({});
+
+  const updateSpec = (key: string, val: any) => {
+    setSpecs(prev => ({ ...prev, [key]: val }));
+  };
 
   // --- Mapeo de Tipos por Capa Operativa ---
   const categoryMapping: Record<AssetCategory, AssetType[]> = {
@@ -81,6 +75,20 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
 
   const filteredTypes = allAssetTypes.filter(at => categoryMapping[category].includes(at.id));
 
+  // --- MOTOR DE RECOMENDACIÓN DINÁMICO ---
+  const recommendation = useMemo(() => {
+    let months = 12;
+    let reason = "Mantenimiento Preventivo General";
+
+    if (type === 'ac') { months = 4; reason = "Protocolo HVAC (Aires)"; }
+    else if (['car', 'moto', 'generator', 'fire_system'].includes(type)) { months = 6; reason = "Mecánica y Sistemas Críticos"; }
+    else if (type === 'garden') { months = 1; reason = "Poda y Control de Maleza"; }
+    else if (['elevator', 'pool'].includes(type)) { months = 1; reason = "Mantenimiento de Alta Frecuencia"; }
+    else if (type === 'house') { months = 12; reason = "Inspección de Ingeniería Civil Anual"; }
+
+    return { months, reason };
+  }, [type]);
+
   useEffect(() => {
     if (assetToEdit) {
       setName(assetToEdit.name);
@@ -95,66 +103,55 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       setLastMaintenance(assetToEdit.lastMaintenanceDate);
       setNextMaintenance(assetToEdit.nextMaintenanceDate);
       setObservations(assetToEdit.observations || '');
-      setLocation(assetToEdit.location || 'Sede Principal');
-      setDriverName(assetToEdit.driverName || '');
       setSerialNumber(assetToEdit.serialNumber || '');
       setFuelType(assetToEdit.fuelType || 'diesel');
       setPurchaseDate(assetToEdit.purchaseDate || '');
       setWarrantyMonths(assetToEdit.warrantyMonths || 0);
-
-      if (assetToEdit.specs) {
-        setBtu(assetToEdit.specs.btu || '');
-        setRefrigerant(assetToEdit.specs.refrigerant || 'R410A');
-        setAcType(assetToEdit.specs.acType || 'split');
-        setProcessor(assetToEdit.specs.processor || '');
-        setRam(assetToEdit.specs.ram || '');
-        setOs(assetToEdit.specs.os || 'Windows 11');
-        setSqMeters(assetToEdit.specs.sqMeters || '');
-        setFloors(assetToEdit.specs.floors || '1');
-        setPipeMaterial(assetToEdit.specs.pipeMaterial || 'PVC');
-        setVoltage(assetToEdit.specs.voltage || '110V');
-        setAmps(assetToEdit.specs.amps || '');
-        setPhases(assetToEdit.specs.phases || 'Monofásico');
-        setPanelCount(assetToEdit.specs.panelCount || '');
-        setInverterCapacity(assetToEdit.specs.inverterCapacity || '');
-      }
+      setLatitude(assetToEdit.latitude?.toString() || '');
+      setLongitude(assetToEdit.longitude?.toString() || '');
+      setLocationDetails(assetToEdit.locationDetails || '');
+      setSpecs(assetToEdit.specs || {});
     } else {
       setName('');
-      const firstValidType = categoryMapping[category][0];
-      setType(firstValidType);
-      setDetails('');
-      setLicensePlate('');
-      setMileage(0);
-      setUsageHours(0);
+      setLatitude('');
+      setLongitude('');
+      setLocationDetails('');
       setLastMaintenance('');
       setNextMaintenance('');
-      setObservations('');
-      setSerialNumber('');
-      setPurchaseDate('');
-      setWarrantyMonths(0);
+      setFormErrors([]);
+      setSpecs({});
     }
-  }, [assetToEdit, isOpen, category]);
+  }, [assetToEdit, isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const errors: string[] = [];
+    if (!name.trim()) errors.push('name');
+    if (!lastMaintenance) errors.push('lastMaintenance');
+    if (!nextMaintenance) errors.push('nextMaintenance');
+    if (type !== 'house' && !serialNumber.trim()) errors.push('serialNumber');
+
+    if (errors.length > 0) {
+      setFormErrors(errors);
+      toast.error("Complete los campos marcados en rojo.");
+      return;
+    }
+
     if (!assetToEdit && currentAssetsCount >= maxAssets) {
       toast.error(`Plan agotado (${maxAssets}). Mejore su membresía.`);
       return;
     }
-    if (!name.trim() || !lastMaintenance || !nextMaintenance || !details.trim()) {
-      toast.error("Faltan campos críticos (*)");
-      return;
-    }
-
-    // --- LIMPIEZA DE DATOS UNDEFINED PARA FIREBASE ---
-    const cleanSpecs: any = {};
-    const specsSource = { btu, refrigerant, acType, processor, ram, os, sqMeters, floors, pipeMaterial, voltage, amps, phases, panelCount, inverterCapacity };
-
-    Object.entries(specsSource).forEach(([key, val]) => {
-      if (val && val !== '') cleanSpecs[key] = val;
-    });
 
     onAdd({
       name, type, category, riskLevel, criticalityLevel: criticality, details,
@@ -164,271 +161,263 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       lastMaintenanceDate: lastMaintenance,
       nextMaintenanceDate: nextMaintenance,
       observations: observations || null,
-      location: location || null,
       serialNumber: serialNumber || null,
-      driverName: (type === 'car' || type === 'moto') ? (driverName || null) : undefined,
       fuelType: (type === 'car' || type === 'moto') ? (fuelType || null) : undefined,
       purchaseDate: purchaseDate || null,
       warrantyMonths: warrantyMonths > 0 ? Number(warrantyMonths) : undefined,
-      specs: Object.keys(cleanSpecs).length > 0 ? cleanSpecs : undefined
+      latitude: latitude ? Number(latitude) : undefined,
+      longitude: longitude ? Number(longitude) : undefined,
+      locationDetails: locationDetails || undefined,
+      specs: Object.keys(specs).length > 0 ? specs : undefined
     });
     onClose();
   };
 
-  const assetTypes: { id: AssetType, label: string, icon: any }[] = [
-    { id: 'car', label: 'Vehículo', icon: Car },
-    { id: 'ac', label: 'Aire Acond.', icon: Sliders },
-    { id: 'generator', label: 'Planta Eléc.', icon: Zap },
-    { id: 'computer', label: 'Cómputo/IT', icon: Cpu },
-    { id: 'industrial_equip', label: 'Maquinaria', icon: Boxes },
-    { id: 'solar_panels', label: 'Sist. Solar', icon: BatteryCharging },
-    { id: 'house', label: 'Inmueble', icon: Home },
-    { id: 'plumbing', label: 'Fontanería', icon: Droplets },
-    { id: 'electrical', label: 'Electricidad', icon: PlugZap },
-    { id: 'moto', label: 'Moto', icon: Bike }
-  ];
-
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#0d0e12]/95 backdrop-blur-2xl overflow-y-auto">
-      <div className="w-full max-w-3xl bg-[#121317] rounded-[3.5rem] border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] animate-fade-in-up my-auto">
-        <header className="px-12 py-10 border-b border-white/5 flex justify-between items-center bg-gradient-to-br from-white/[0.04] to-transparent">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#0d0e12]/95 backdrop-blur-2xl overflow-hidden">
+      <div className="w-full max-w-3xl bg-[#121317] rounded-[3.5rem] border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] animate-fade-in-up">
+        <header className="px-12 py-8 border-b border-white/5 flex justify-between items-center bg-gradient-to-br from-white/[0.04] to-transparent shrink-0">
           <div className="flex items-center gap-5">
-             <div className="w-14 h-14 rounded-[1.5rem] bg-[#5d3cfe] text-white flex items-center justify-center shadow-[0_0_30px_rgba(93,60,254,0.4)]">
-               {assetToEdit ? <Edit2 className="w-7 h-7" /> : <Plus className="w-7 h-7" />}
+             <div className="w-12 h-12 rounded-[1.2rem] bg-[#5d3cfe] text-white flex items-center justify-center shadow-[0_0_30px_rgba(93,60,254,0.4)]">
+               {assetToEdit ? <Edit2 className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
              </div>
              <div>
-                <h2 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">
+                <h2 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">
                   {assetToEdit ? 'Editar Activo' : 'Vincular Activo'}
                 </h2>
-                <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-[0.4em] mt-2">Ingeniería Preventiva V4.0</p>
+                <p className="text-[9px] font-black text-[#5d3cfe] uppercase tracking-[0.4em] mt-1.5">Ingeniería Preventiva V4.0</p>
              </div>
           </div>
-          <button onClick={onClose} className="p-4 bg-white/5 hover:bg-rose-600/20 hover:text-rose-500 text-white/20 rounded-3xl transition-all active:scale-90"><X className="w-8 h-8" /></button>
+          <button onClick={onClose} className="p-3 bg-white/5 hover:bg-rose-600/20 hover:text-rose-500 text-white/20 rounded-2xl transition-all active:scale-90"><X className="w-6 h-6" /></button>
         </header>
 
-        <form onSubmit={handleSubmit} className="p-12 space-y-12 max-h-[65vh] overflow-y-auto custom-scrollbar">
+        <form onSubmit={handleSubmit} className="p-10 space-y-10 max-h-[75vh] overflow-y-auto custom-scrollbar">
 
-          {/* NIVEL 1: CAPA OPERATIVA */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-               <div className="w-1.5 h-6 bg-[#5d3cfe] rounded-full"></div>
-               <label className="text-[11px] font-black text-white uppercase tracking-[0.3em]">1. Capa Operativa</label>
-            </div>
+          {/* 1. CAPA OPERATIVA */}
+          <div className="space-y-4">
+            <label className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] ml-1">1. Capa Operativa</label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {(['GENERAL', 'PH', 'SALUD', 'CONSTRUCCION'] as AssetCategory[]).map(cat => (
                 <button
                   key={cat}
                   type="button"
                   onClick={() => setCategory(cat)}
-                  className={`flex flex-col items-center gap-3 p-5 rounded-[2rem] border-2 transition-all ${category === cat ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-2xl' : 'bg-[#0d0e12] border-white/5 text-white/40 hover:border-white/20'}`}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${category === cat ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-lg' : 'bg-[#0d0e12] border-white/5 text-white/40 hover:border-white/20'}`}
                 >
-                  {cat === 'GENERAL' && <LayoutGrid className="w-6 h-6" />}
-                  {cat === 'PH' && <Building2 className="w-6 h-6" />}
-                  {cat === 'SALUD' && <Stethoscope className="w-6 h-6" />}
-                  {cat === 'CONSTRUCCION' && <HardHat className="w-6 h-6" />}
-                  <span className="text-[10px] font-black uppercase">{cat}</span>
+                  {cat === 'GENERAL' && <LayoutGrid className="w-5 h-5" />}
+                  {cat === 'PH' && <Building2 className="w-5 h-5" />}
+                  {cat === 'SALUD' && <Stethoscope className="w-5 h-5" />}
+                  {cat === 'CONSTRUCCION' && <HardHat className="w-5 h-5" />}
+                  <span className="text-[9px] font-black uppercase">{cat}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* NIVEL 2: NATURALEZA (FILTRADA) */}
-          <div className="space-y-6 animate-fade-in">
-             <div className="flex items-center gap-3">
-                <div className="w-1.5 h-6 bg-[#52ffac] rounded-full"></div>
-                <label className="text-[11px] font-black text-white uppercase tracking-[0.3em]">2. Naturaleza del Equipo</label>
-             </div>
-             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+          {/* 2. NATURALEZA */}
+          <div className="space-y-4">
+             <label className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] ml-1">2. Naturaleza del Equipo</label>
+             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                {filteredTypes.map(at => (
                  <button
                    key={at.id}
                    type="button"
                    onClick={() => setType(at.id)}
-                   className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all ${type === at.id ? 'bg-[#52ffac] border-[#52ffac] text-black shadow-xl scale-105' : 'bg-white/5 border-white/5 text-[#c8c4d9] hover:bg-white/10'}`}
+                   className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${type === at.id ? 'bg-[#52ffac] border-[#52ffac] text-black shadow-md' : 'bg-white/5 border-white/5 text-[#c8c4d9] hover:bg-white/10'}`}
                  >
-                   <at.icon className="w-5 h-5" />
+                   <at.icon className="w-4 h-4" />
                    <span className="text-[8px] font-black uppercase text-center leading-tight">{at.label}</span>
                  </button>
                ))}
              </div>
           </div>
 
-          {/* NIVEL 3: CRITICIDAD Y RIESGO */}
-          <div className="space-y-6">
-             <div className="flex items-center gap-3">
-                <div className="w-1.5 h-6 bg-amber-500 rounded-full"></div>
-                <label className="text-[11px] font-black text-white uppercase tracking-[0.3em]">3. Niveles de Seguridad</label>
-             </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                   <label className="text-[9px] font-black text-[#474556] uppercase ml-1 flex items-center gap-2"><ShieldAlert className="w-3 h-3" /> Nivel de Riesgo</label>
-                   <div className="flex bg-[#0d0e12] p-1.5 rounded-2xl border border-white/5">
-                      {(['low', 'medium', 'high'] as RiskLevel[]).map(r => (
-                        <button key={r} type="button" onClick={() => setRiskLevel(r)} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${riskLevel === r ? 'bg-amber-500 text-black shadow-lg' : 'text-[#474556]'}`}>{r === 'low' ? 'Bajo' : r === 'medium' ? 'Medio' : 'Crítico'}</button>
-                      ))}
-                   </div>
-                   <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-2 mt-2 animate-fade-in">
-                      <div className="flex items-center gap-2">
-                         <Shield className="w-3 h-3 text-amber-500" />
-                         <span className="text-[8px] font-black text-white uppercase tracking-widest">Protocolo: {SECURITY_PROTOCOLS[riskLevel].levelName}</span>
-                      </div>
-                      <p className="text-[7px] text-[#c8c4d9] font-medium leading-relaxed">
-                         {SECURITY_PROTOCOLS[riskLevel].description}
-                         {SECURITY_PROTOCOLS[riskLevel].insuranceRequired && " REQUIERE SEGURO DE RESPONSABILIDAD CIVIL."}
-                      </p>
-                   </div>
-                </div>
-                <div className="space-y-3">
-                   <label className="text-[9px] font-black text-[#474556] uppercase ml-1 flex items-center gap-2"><Activity className="w-3 h-3" /> Importancia Operativa</label>
-                   <div className="flex bg-[#0d0e12] p-1.5 rounded-2xl border border-white/5">
-                      {(['low', 'medium', 'high', 'critical'] as const).map(c => (
-                        <button key={c} type="button" onClick={() => setCriticality(c)} className={`flex-1 py-3 text-[8px] font-black uppercase rounded-xl transition-all ${criticality === c ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556]'}`}>{c === 'low' ? 'Estándar' : c === 'medium' ? 'Vital' : c === 'high' ? 'Crítico' : 'SOS'}</button>
-                      ))}
-                   </div>
-                </div>
-             </div>
-          </div>
-
-          {/* NIVEL 4: FORMULARIO DINÁMICO POR NATURALEZA */}
-          <div className="space-y-8 pt-8 border-t border-white/5">
-            <div className="flex items-center gap-3">
-               <div className="w-1.5 h-6 bg-[#c7bfff] rounded-full"></div>
-               <label className="text-[11px] font-black text-white uppercase tracking-[0.3em]">4. Ficha Técnica Especializada</label>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* 3. DATOS DEL ACTIVO */}
+          <div className="space-y-6 pt-6 border-t border-white/5">
+            <label className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] ml-1">3. Datos de Identificación</label>
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
-                <label className="text-[9px] font-black text-[#474556] uppercase ml-2">Marca / Fabricante *</label>
+                <label className={`text-[9px] font-black uppercase ml-2 ${formErrors.includes('name') ? 'text-rose-500' : 'text-[#474556]'}`}>Alias Personalizado *</label>
                 <div className="relative">
-                  <Fingerprint className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#474556]" />
-                  <input required type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Toyota / Carrier" className="w-full bg-[#0d0e12] border border-white/5 rounded-2xl py-4 pl-14 pr-4 text-sm font-bold text-white focus:border-[#5d3cfe] outline-none" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[9px] font-black text-[#474556] uppercase ml-2">Modelo / Serie *</label>
-                <div className="relative">
-                  <Sliders className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#474556]" />
-                  <input required type="text" value={details} onChange={e => setDetails(e.target.value)} placeholder="Ej: Hilux 2024 / VRF-X" className="w-full bg-[#0d0e12] border border-white/5 rounded-2xl py-4 pl-14 pr-4 text-sm font-bold text-white focus:border-[#5d3cfe] outline-none" />
+                  <Fingerprint className={`absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 ${formErrors.includes('name') ? 'text-rose-500' : 'text-[#52ffac]'}`} />
+                  <input required type="text" value={name} onChange={e => { setName(e.target.value); setFormErrors(prev => prev.filter(err => err !== 'name')); }} placeholder="Ej: Camión 01, A/C Sala, Generador PH" className={`w-full bg-[#0d0e12] border rounded-2xl py-4 pl-14 pr-4 text-sm font-bold text-white outline-none transition-all ${formErrors.includes('name') ? 'border-rose-500 shadow-[0_0_15px_rgba(225,29,72,0.1)]' : 'border-white/5 focus:border-[#5d3cfe]'}`} />
                 </div>
               </div>
             </div>
 
-            {/* CAMPOS DINÁMICOS */}
-            <div className="animate-fade-in-up">
-               {/* VEHICULO / MOTO */}
-               {(type === 'car' || type === 'moto') && (
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-6 bg-white/[0.02] rounded-3xl border border-white/5">
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-[#52ffac] uppercase ml-1">Placa Oficial</label><input type="text" value={licensePlate} onChange={e => setLicensePlate(e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-sm font-black text-white uppercase focus:border-[#52ffac] outline-none" /></div>
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-[#52ffac] uppercase ml-1">Odómetro (KM)</label><input type="number" value={mileage} onChange={e => setMileage(Number(e.target.value))} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-sm font-black text-white focus:border-[#52ffac] outline-none" /></div>
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-[#474556] uppercase ml-1">Combustible</label><select value={fuelType} onChange={e => setFuelType(e.target.value as any)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:border-[#52ffac]"><option value="diesel">DIESEL</option><option value="gas91">GAS 91</option><option value="gas95">GAS 95</option></select></div>
-                 </div>
-               )}
-
-               {/* AIRE ACONDICIONADO */}
-               {type === 'ac' && (
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5 p-6 bg-white/[0.02] rounded-3xl border border-white/5">
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-[#c7bfff] uppercase ml-1 flex items-center gap-2"><Thermometer className="w-3 h-3" /> Capacidad (BTU)</label><input type="text" value={btu} onChange={e => setBtu(e.target.value)} placeholder="Ej: 18,000" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-white focus:border-[#5d3cfe] outline-none" /></div>
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-[#474556] uppercase ml-1">Tipo de Gas</label><select value={refrigerant} onChange={e => setRefrigerant(e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none"><option>R410A</option><option>R22</option><option>R32</option></select></div>
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-[#474556] uppercase ml-1">Tecnología</label><select value={acType} onChange={e => setAcType(e.target.value as any)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none"><option value="split">SPLIT / INVERTER</option><option value="central">CENTRAL / DUCTO</option><option value="vrf">VRF / MULTI</option></select></div>
-                 </div>
-               )}
-
-               {/* COMPUTO / IT */}
-               {type === 'computer' && (
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-6 bg-white/[0.02] rounded-3xl border border-white/5">
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-[#c7bfff] uppercase ml-1 flex items-center gap-2"><Cpu className="w-3 h-3" /> Procesador</label><input type="text" value={processor} onChange={e => setProcessor(e.target.value)} placeholder="Ej: Intel i7 12va Gen" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-white focus:border-[#5d3cfe] outline-none" /></div>
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-[#474556] uppercase ml-1 flex items-center gap-2"><Database className="w-3 h-3" /> Memoria RAM</label><input type="text" value={ram} onChange={e => setRam(e.target.value)} placeholder="Ej: 16GB DDR4" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-white focus:border-[#5d3cfe] outline-none" /></div>
-                 </div>
-               )}
-
-               {/* INMUEBLE / PH */}
-               {type === 'house' && (
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-6 bg-white/[0.02] rounded-3xl border border-white/5">
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-[#c7bfff] uppercase ml-1 flex items-center gap-2"><Ruler className="w-3 h-3" /> Metraje (m²)</label><input type="text" value={sqMeters} onChange={e => setSqMeters(e.target.value)} placeholder="Ej: 120" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-white focus:border-[#5d3cfe] outline-none" /></div>
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-[#474556] uppercase ml-1">Niveles / Pisos</label><input type="number" value={floors} onChange={e => setFloors(e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-white outline-none" /></div>
-                 </div>
-               )}
-
-               {/* FONTANERIA */}
-               {type === 'plumbing' && (
-                 <div className="p-6 bg-white/[0.02] rounded-3xl border border-white/5 space-y-4">
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-[#c7bfff] uppercase ml-1 flex items-center gap-2"><Waves className="w-3 h-3" /> Material de Tubería</label><select value={pipeMaterial} onChange={e => setPipeMaterial(e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none"><option>PVC / CPVC</option><option>COBRE</option><option>GALVANIZADO</option><option>PPR (Termofusión)</option></select></div>
-                 </div>
-               )}
-
-               {/* ELECTRICIDAD / GENERADOR */}
-               {(type === 'electrical' || type === 'generator') && (
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5 p-6 bg-white/[0.02] rounded-3xl border border-white/5">
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-[#5d3cfe] uppercase ml-1 flex items-center gap-2"><ZapOff className="w-3 h-3" /> Voltaje</label><select value={voltage} onChange={e => setVoltage(e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none"><option>110V - 120V</option><option>220V - 240V</option><option>440V - 480V</option></select></div>
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-[#474556] uppercase ml-1">Amperaje Breaker</label><input type="text" value={amps} onChange={e => setAmps(e.target.value)} placeholder="Ej: 100A" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-white outline-none" /></div>
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-[#474556] uppercase ml-1">Fases</label><select value={phases} onChange={e => setPhases(e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none"><option>Monofásico</option><option>Bifásico</option><option>Trifásico</option></select></div>
-                 </div>
-               )}
-
-               {/* SISTEMA SOLAR */}
-               {type === 'solar_panels' && (
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-6 bg-white/[0.02] rounded-3xl border border-white/5">
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-[#c7bfff] uppercase ml-1">Cant. Paneles</label><input type="number" value={panelCount} onChange={e => setPanelCount(e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-white outline-none" /></div>
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-[#474556] uppercase ml-1">Capacidad Inversor</label><input type="text" value={inverterCapacity} onChange={e => setInverterCapacity(e.target.value)} placeholder="Ej: 5kW" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-white outline-none" /></div>
-                 </div>
-               )}
-            </div>
-          </div>
-
-          {/* NIVEL 5: GARANTÍA Y PROTECCIÓN */}
-          <div className="space-y-6 pt-8 border-t border-white/5">
-             <div className="flex items-center gap-3">
-                <div className="w-1.5 h-6 bg-[#5d3cfe] rounded-full"></div>
-                <label className="text-[11px] font-black text-white uppercase tracking-[0.3em]">5. Bóveda de Garantía</label>
-             </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white/[0.02] rounded-3xl border border-white/5">
+            {type !== 'house' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
                 <div className="space-y-2">
-                   <label className="text-[9px] font-black text-[#474556] uppercase ml-2 flex items-center gap-2">
-                      <Calendar className="w-3 h-3" /> Fecha de Adquisición
-                   </label>
+                  <label className={`text-[9px] font-black uppercase ml-2 ${formErrors.includes('serialNumber') ? 'text-rose-500' : 'text-[#474556]'}`}>Marca / Fabricante *</label>
+                  <input required type="text" value={serialNumber} onChange={e => { setSerialNumber(e.target.value); setFormErrors(prev => prev.filter(err => err !== 'serialNumber')); }} placeholder="Ej: Toyota, Samsung, Otis" className={`w-full bg-[#0d0e12] border rounded-2xl py-4 px-6 text-sm font-bold text-white outline-none transition-all ${formErrors.includes('serialNumber') ? 'border-rose-500' : 'border-white/5 focus:border-[#5d3cfe]'}`} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-[#474556] uppercase ml-2">Modelo o Serie</label>
+                  <input type="text" value={details} onChange={e => setDetails(e.target.value)} placeholder="Ej: Hilux 2024, VRF-V4" className="w-full bg-[#0d0e12] border border-white/5 rounded-2xl py-4 px-6 text-sm font-bold text-white outline-none focus:border-[#5d3cfe]" />
+                </div>
+              </div>
+            )}
+
+            {/* UBICACIÓN GEOGRÁFICA */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-[#5d3cfe]/5 rounded-3xl border border-[#5d3cfe]/10 animate-fade-in">
+               <div className="md:col-span-2 flex items-center gap-2 mb-2">
+                  <MapPin className="w-4 h-4 text-[#5d3cfe]" />
+                  <span className="text-[10px] font-black text-white uppercase tracking-widest">Sede y Georreferenciación</span>
+               </div>
+               <div className="space-y-1.5">
+                  <label className="text-[8px] font-black text-[#474556] uppercase ml-1">Latitud GPS</label>
+                  <input type="number" step="any" value={latitude} onChange={e => setLatitude(e.target.value)} placeholder="9.0123" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:border-[#5d3cfe]" />
+               </div>
+               <div className="space-y-1.5">
+                  <label className="text-[8px] font-black text-[#474556] uppercase ml-1">Longitud GPS</label>
+                  <input type="number" step="any" value={longitude} onChange={e => setLongitude(e.target.value)} placeholder="-79.4567" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:border-[#5d3cfe]" />
+               </div>
+               <div className="md:col-span-2 space-y-1.5">
+                  <label className="text-[8px] font-black text-[#474556] uppercase ml-1">Referencia Interna (Sede/Piso)</label>
+                  <input type="text" value={locationDetails} onChange={e => setLocationDetails(e.target.value)} placeholder="Ej: Sede Clayton, Piso 4, Lote A" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:border-[#5d3cfe]" />
+               </div>
+               <button
+                type="button"
+                onClick={() => {
+                  navigator.geolocation.getCurrentPosition((pos) => {
+                    setLatitude(pos.coords.latitude.toString());
+                    setLongitude(pos.coords.longitude.toString());
+                    toast.success("Ubicación capturada con éxito.");
+                  }, () => toast.error("Error al obtener ubicación. Verifique permisos."));
+                }}
+                className="md:col-span-2 py-2 bg-white/5 border border-white/10 rounded-xl text-[8px] font-black text-[#5d3cfe] uppercase hover:bg-white/10 transition-all"
+               >
+                 Usar mi ubicación actual
+               </button>
+            </div>
+          </div>
+
+          {/* 4. ESPECIFICACIONES DINÁMICAS (ADAPTADAS AL ACTIVO) */}
+          <div className="space-y-6 pt-6 border-t border-white/5">
+             <label className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] ml-1">4. Especificaciones de Ingeniería</label>
+
+             {/* VEHÍCULO / MOTO */}
+             {(type === 'car' || type === 'moto') && (
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-white/[0.02] rounded-3xl border border-white/5 animate-fade-in">
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#52ffac] uppercase ml-1">Placa Oficial</label><input type="text" value={licensePlate} onChange={e => setLicensePlate(e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-black text-white uppercase outline-none focus:border-[#52ffac]" /></div>
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#52ffac] uppercase ml-1">Odómetro (KM)</label><input type="number" step="any" value={mileage || ''} onChange={e => setMileage(Number(e.target.value))} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-black text-white outline-none focus:border-[#52ffac]" placeholder="0" /></div>
+                  <div className="space-y-1.5 md:col-span-2"><label className="text-[8px] font-black text-[#474556] uppercase ml-1">Combustible</label><select value={fuelType} onChange={e => setFuelType(e.target.value as any)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-[10px] font-bold text-white outline-none focus:border-[#52ffac]"><option value="diesel">DIESEL</option><option value="gas91">GASOLINERA 91</option><option value="gas95">GASOLINERA 95</option></select></div>
+               </div>
+             )}
+
+             {/* AIRE ACONDICIONADO */}
+             {type === 'ac' && (
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-white/[0.02] rounded-3xl border border-white/5 animate-fade-in">
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#c7bfff] uppercase ml-1 flex items-center gap-1"><Thermometer className="w-3 h-3" /> Capacidad (BTU)</label><input type="text" value={specs.btu || ''} onChange={e => updateSpec('btu', e.target.value)} placeholder="18k, 24k..." className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:border-[#5d3cfe]" /></div>
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#474556] uppercase ml-1">Tipo Gas</label><select value={specs.refrigerant || 'R410A'} onChange={e => updateSpec('refrigerant', e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-[10px] font-bold text-white outline-none"><option>R410A</option><option>R22</option><option>R32</option></select></div>
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#474556] uppercase ml-1">Tecnología</label><select value={specs.acType || 'split'} onChange={e => updateSpec('acType', e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-[10px] font-bold text-white outline-none"><option value="split">Split / Inverter</option><option value="central">Central / Ducto</option></select></div>
+               </div>
+             )}
+
+             {/* ASCENSOR */}
+             {type === 'elevator' && (
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-white/[0.02] rounded-3xl border border-white/5 animate-fade-in">
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#5d3cfe] uppercase ml-1 flex items-center gap-1"><Users className="w-3 h-3" /> Capacidad (Pers.)</label><input type="number" value={specs.capacity || ''} onChange={e => updateSpec('capacity', e.target.value)} placeholder="Ej: 8" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:border-[#5d3cfe]" /></div>
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#474556] uppercase ml-1 flex items-center gap-1"><Layers className="w-3 h-3" /> Pisos Servidos</label><input type="number" value={specs.floorsServiced || ''} onChange={e => updateSpec('floorsServiced', e.target.value)} placeholder="Ej: 20" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:border-[#5d3cfe]" /></div>
+               </div>
+             )}
+
+             {/* SISTEMA CONTRA INCENDIO */}
+             {type === 'fire_system' && (
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-white/[0.02] rounded-3xl border border-white/5 animate-fade-in">
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-rose-500 uppercase ml-1 flex items-center gap-1"><Flame className="w-3 h-3" /> Extintores</label><input type="number" value={specs.extinguishers || ''} onChange={e => updateSpec('extinguishers', e.target.value)} placeholder="Cant. total" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:border-[#5d3cfe]" /></div>
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#474556] uppercase ml-1 flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Panel Central</label><input type="text" value={specs.panelBrand || ''} onChange={e => updateSpec('panelBrand', e.target.value)} placeholder="Marca del panel" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:border-[#5d3cfe]" /></div>
+               </div>
+             )}
+
+             {/* SEGURIDAD / CÁMARAS */}
+             {type === 'security_system' && (
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-white/[0.02] rounded-3xl border border-white/5 animate-fade-in">
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#52ffac] uppercase ml-1 flex items-center gap-1"><Eye className="w-3 h-3" /> Cámaras</label><input type="number" value={specs.cameraCount || ''} onChange={e => updateSpec('cameraCount', e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none" /></div>
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#474556] uppercase ml-1 flex items-center gap-1"><HardDrive className="w-3 h-3" /> Almacenamiento</label><select value={specs.storage || '15 días'} onChange={e => updateSpec('storage', e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-[10px] font-bold text-white outline-none"><option>7 días</option><option>15 días</option><option>30 días</option></select></div>
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#474556] uppercase ml-1">Monitoreo</label><select value={specs.monitoring || 'no'} onChange={e => updateSpec('monitoring', e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-[10px] font-bold text-white outline-none"><option value="yes">Activo 24/7</option><option value="no">Solo Local</option></select></div>
+               </div>
+             )}
+
+             {/* PISCINA */}
+             {type === 'pool' && (
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-white/[0.02] rounded-3xl border border-white/5 animate-fade-in">
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-blue-400 uppercase ml-1 flex items-center gap-1"><PoolIcon className="w-3 h-3" /> Volumen (Gal)</label><input type="text" value={specs.volume || ''} onChange={e => updateSpec('volume', e.target.value)} placeholder="Ej: 15,000" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none" /></div>
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#474556] uppercase ml-1">Motor Bomba (HP)</label><input type="text" value={specs.pumpHp || ''} onChange={e => updateSpec('pumpHp', e.target.value)} placeholder="Ej: 1.5 HP" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none" /></div>
+               </div>
+             )}
+
+             {/* JARDINERÍA */}
+             {type === 'garden' && (
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-white/[0.02] rounded-3xl border border-white/5 animate-fade-in">
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#52ffac] uppercase ml-1 flex items-center gap-1"><Ruler className="w-3 h-3" /> Área (m²)</label><input type="text" value={specs.sqMeters || ''} onChange={e => updateSpec('sqMeters', e.target.value)} placeholder="Ej: 50" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none" /></div>
+                  <div className="flex items-center p-3 bg-white/5 rounded-2xl border border-white/5">
+                     <p className="text-[7px] text-[#c8c4d9] font-black uppercase leading-tight italic">Recomendación de poda mensual activa.</p>
+                  </div>
+               </div>
+             )}
+
+             {/* MAQUINARIA INDUSTRIAL */}
+             {type === 'industrial_equip' && (
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-white/[0.02] rounded-3xl border border-white/5 animate-fade-in">
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-amber-500 uppercase ml-1 flex items-center gap-1"><Zap className="w-3 h-3" /> Potencia (HP/kW)</label><input type="text" value={specs.power || ''} onChange={e => updateSpec('power', e.target.value)} placeholder="Ej: 10 HP" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none" /></div>
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#474556] uppercase ml-1 flex items-center gap-1"><Weight className="w-3 h-3" /> Peso (Ton)</label><input type="text" value={specs.weight || ''} onChange={e => updateSpec('weight', e.target.value)} placeholder="Ej: 2.5" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none" /></div>
+               </div>
+             )}
+
+             {/* ELECTRICIDAD / GENERADOR */}
+             {(type === 'electrical' || type === 'generator') && (
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-white/[0.02] rounded-3xl border border-white/5 animate-fade-in">
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#5d3cfe] uppercase ml-1 flex items-center gap-1"><ZapOff className="w-3 h-3" /> Voltaje</label><select value={specs.voltage || '110V'} onChange={e => updateSpec('voltage', e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-[10px] font-bold text-white outline-none"><option>110V-120V</option><option>220V-240V</option><option>440V-480V</option></select></div>
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#474556] uppercase ml-1">Amperaje</label><input type="text" value={specs.amps || ''} onChange={e => updateSpec('amps', e.target.value)} placeholder="Ej: 100A" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none" /></div>
+                  <div className="space-y-1.5"><label className="text-[8px] font-black text-[#474556] uppercase ml-1">Fases</label><select value={specs.phases || 'Monofásico'} onChange={e => updateSpec('phases', e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-[10px] font-bold text-white outline-none"><option>Monofásico</option><option>Bifásico</option><option>Trifásico</option></select></div>
+               </div>
+             )}
+          </div>
+
+          {/* 5. CRONOGRAMA */}
+          <div className="space-y-6 pt-6 border-t border-white/5">
+             <label className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] ml-1">5. Cronograma de Salud</label>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                   <label className={`text-[9px] font-black uppercase ml-2 flex items-center gap-2 ${formErrors.includes('lastMaintenance') ? 'text-rose-500' : 'text-[#474556]'}`}><CheckCircle2 className="w-3.5 h-3.5" /> Último Mantenimiento *</label>
                    <input
+                     required
                      type="date"
-                     value={purchaseDate}
-                     onChange={e => setPurchaseDate(e.target.value)}
-                     className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-bold text-white focus:border-[#5d3cfe] outline-none [color-scheme:dark]"
+                     value={lastMaintenance}
+                     onChange={e => {
+                        const val = e.target.value;
+                        setLastMaintenance(val);
+                        setFormErrors(prev => prev.filter(err => err !== 'lastMaintenance'));
+                        if (val) {
+                          const date = new Date(val);
+                          date.setMonth(date.getMonth() + recommendation.months);
+                          setNextMaintenance(date.toISOString().split('T')[0]);
+                        }
+                     }}
+                     className={`w-full bg-[#0d0e12] border rounded-2xl py-4 px-6 text-sm font-black text-[#52ffac] outline-none [color-scheme:dark] ${formErrors.includes('lastMaintenance') ? 'border-rose-500' : 'border-white/5 focus:border-[#5d3cfe]'}`}
                    />
                 </div>
                 <div className="space-y-2">
-                   <label className="text-[9px] font-black text-[#474556] uppercase ml-2 flex items-center gap-2">
-                      <ShieldCheck className="w-3 h-3" /> Meses de Cobertura
-                   </label>
-                   <input
-                     type="number"
-                     value={warrantyMonths}
-                     onChange={e => setWarrantyMonths(Number(e.target.value))}
-                     placeholder="Ej: 12"
-                     className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-white focus:border-[#5d3cfe] outline-none"
-                   />
+                   <label className={`text-[9px] font-black uppercase ml-2 flex items-center gap-2 ${formErrors.includes('nextMaintenance') ? 'text-rose-500' : 'text-[#474556]'}`}><ShieldAlert className="w-3.5 h-3.5" /> Próxima Alerta *</label>
+                   <input required type="date" value={nextMaintenance} onChange={e => { setNextMaintenance(e.target.value); setFormErrors(prev => prev.filter(err => err !== 'nextMaintenance')); }} className={`w-full bg-[#0d0e12] border rounded-2xl py-4 px-6 text-sm font-black text-[#5d3cfe] outline-none [color-scheme:dark] ${formErrors.includes('nextMaintenance') ? 'border-rose-500' : 'border-white/5 focus:border-[#5d3cfe]'}`} />
                 </div>
              </div>
-             <p className="text-[8px] text-[#474556] font-bold uppercase italic ml-2">* Estos datos activan el monitoreo en la Bóveda de Garantías.</p>
+
+             {lastMaintenance && (
+               <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center gap-4 animate-fade-in">
+                  <Calendar className="w-5 h-5 text-amber-500" />
+                  <div>
+                     <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Recomendación Sugerida</p>
+                     <p className="text-[10px] font-bold text-white/80">+{recommendation.months} meses para {recommendation.reason}.</p>
+                  </div>
+               </div>
+             )}
           </div>
 
-          {/* CRONOGRAMA FINAL */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-white/5">
-             <div className="space-y-2">
-               <label className="text-[10px] font-black text-[#474556] uppercase ml-2 flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-[#52ffac]" /> Último Mantenimiento *</label>
-               <input required type="date" value={lastMaintenance} onChange={e => setLastMaintenance(e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-2xl py-4 px-6 text-sm font-black text-[#52ffac] outline-none [color-scheme:dark]" />
-             </div>
-             <div className="space-y-2">
-               <label className="text-[10px] font-black text-[#474556] uppercase ml-2 flex items-center gap-2"><ShieldAlert className="w-3.5 h-3.5 text-[#5d3cfe]" /> Próxima Alerta *</label>
-               <input required type="date" value={nextMaintenance} onChange={e => setNextMaintenance(e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-2xl py-4 px-6 text-sm font-black text-[#5d3cfe] outline-none [color-scheme:dark]" />
-             </div>
-          </div>
-
-          <div className="space-y-2">
-             <label className="text-[10px] font-black text-[#474556] uppercase ml-2">Notas Operativas</label>
-             <textarea value={observations} onChange={e => setObservations(e.target.value)} placeholder="Detalle fallas actuales o historial relevante..." className="w-full bg-[#0d0e12] border border-white/5 rounded-[1.5rem] py-4 px-6 text-sm font-medium text-[#c8c4d9] h-24 focus:border-[#5d3cfe] outline-none resize-none" />
-          </div>
-
-          <button type="submit" className="w-full py-6 bg-[#5d3cfe] text-white rounded-[1.5rem] text-[11px] font-black uppercase tracking-[0.4em] shadow-[0_20px_40px_rgba(93,60,254,0.3)] hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-4">
-             <Zap className="w-5 h-5 fill-white" />
-             {assetToEdit ? 'Guardar Cambios de Protocolo' : 'Protocolizar Activo en Sistema'}
+          <button type="submit" className="w-full py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] shadow-xl hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+             <Zap className="w-4 h-4 fill-white" />
+             {assetToEdit ? 'Guardar Cambios' : 'Registrar en Sistema'}
           </button>
         </form>
       </div>

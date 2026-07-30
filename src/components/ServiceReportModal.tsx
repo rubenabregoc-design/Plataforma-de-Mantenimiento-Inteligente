@@ -198,47 +198,32 @@ export default function ServiceReportModal({ isOpen, onClose, request }: Service
           </section>
 
           {/* EVIDENCIA INALTERABLE (Proof of Work) */}
-          {request.proofOfWork && (
-            <section>
-              <div className="flex items-center gap-2 border-b-2 border-zinc-100 pb-2 mb-3">
-                <ShieldCheck className="w-4 h-4 text-[#52ffac]" />
-                <h2 className="text-[11px] font-black uppercase tracking-widest text-zinc-800">Evidencia Inalterable</h2>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="aspect-video rounded-xl overflow-hidden border-2 border-zinc-100 shadow-sm relative">
-                    <img src={request.proofOfWork.oldPartPhoto} className="w-full h-full object-cover grayscale" alt="Vieja" />
-                    <div className="absolute bottom-1.5 left-1.5 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg">
-                      <span className="text-[6px] font-black text-white uppercase tracking-widest">Captured • Old Part</span>
-                    </div>
-                  </div>
+          <section className="grid grid-cols-2 gap-8">
+             <div className="space-y-4">
+                <div className="flex items-center gap-2 border-b-2 border-zinc-100 pb-2">
+                   <ShieldCheck className="w-4 h-4 text-[#52ffac]" />
+                   <h2 className="text-[11px] font-black uppercase tracking-widest text-zinc-800">Evidencia de Trabajo</h2>
                 </div>
-                <div className="space-y-2">
-                  <div className="aspect-video rounded-xl overflow-hidden border-2 border-zinc-100 shadow-sm relative">
-                    <img src={request.proofOfWork.newPartPhoto} className="w-full h-full object-cover" alt="Nueva" />
-                    <div className="absolute bottom-1.5 left-1.5 bg-[#52ffac]/90 backdrop-blur-md px-2 py-1 rounded-lg">
-                      <span className="text-[6px] font-black text-black uppercase tracking-widest">Verified • New Part</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                {request.proofOfWork ? (
+                   <div className="grid grid-cols-2 gap-2">
+                      <img src={request.proofOfWork.oldPartPhoto} className="aspect-video rounded-lg object-cover grayscale border border-zinc-100" />
+                      <img src={request.proofOfWork.newPartPhoto} className="aspect-video rounded-lg object-cover border border-zinc-100" />
+                   </div>
+                ) : <p className="text-[9px] text-zinc-400 italic">No se adjuntó evidencia fotográfica.</p>}
+             </div>
 
-              {/* Marca de Agua de Ubicación */}
-              <div className="mt-3 p-3 bg-zinc-50 rounded-xl border border-zinc-100 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="w-3 h-3 text-[#5d3cfe]" />
-                    <span className="text-[8px] font-bold text-zinc-800">{request.proofOfWork.location.lat.toFixed(4)}, {request.proofOfWork.location.lng.toFixed(4)}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 border-l border-zinc-200 pl-4">
-                    <Clock className="w-3 h-3 text-[#5d3cfe]" />
-                    <span className="text-[8px] font-bold text-zinc-800">{new Date(request.proofOfWork.timestamp).toLocaleString('es-PA')}</span>
-                  </div>
+             <div className="space-y-4">
+                <div className="flex items-center gap-2 border-b-2 border-zinc-100 pb-2">
+                   <AlertTriangle className="w-4 h-4 text-amber-500" />
+                   <h2 className="text-[11px] font-black uppercase tracking-widest text-zinc-800">Alertas e Imprevistos</h2>
                 </div>
-                <p className="text-[7px] font-black text-zinc-300 uppercase italic">Hash: {request.id.substring(0,8)}</p>
-              </div>
-            </section>
-          )}
+                <div className="bg-zinc-50 p-3 rounded-xl space-y-2">
+                   {request.status === 'disputed' && <p className="text-[8px] text-rose-600 font-bold uppercase tracking-tight">• INCIDENCIA REPORTADA EN SITIO</p>}
+                   {request.priceAdjustment && <p className="text-[8px] text-zinc-600 font-medium leading-tight">AJUSTE: B/. ${request.priceAdjustment.newPrice} (${request.priceAdjustment.reason})</p>}
+                   <p className="text-[8px] text-zinc-500 uppercase font-black">Auditado por Protocolo MDM-V4</p>
+                </div>
+             </div>
+          </section>
 
           <section>
              <div className="flex items-center gap-2 border-b-2 border-zinc-100 pb-2 mb-3">
@@ -269,12 +254,22 @@ export default function ServiceReportModal({ isOpen, onClose, request }: Service
                  <p className="text-[7px] text-zinc-400 font-bold uppercase tracking-widest">{request.techCompanyName || 'Técnico Certificado MantechPro'}</p>
               </div>
 
-              <div className="space-y-2 text-center">
+              <div className="space-y-2 text-center relative">
                  <h3 className="text-[8px] font-black text-zinc-400 uppercase tracking-[0.3em] border-b border-zinc-100 pb-1">Validación Cliente</h3>
                  <div className="h-12 flex items-center justify-center bg-zinc-50 rounded-xl relative border border-dashed border-zinc-200 overflow-hidden mx-auto max-w-[150px]">
                     {request.clientSignature && <img src={request.clientSignature} className="max-h-8 object-contain" alt="Firma" />}
                  </div>
                  <p className="text-[9px] font-black uppercase tracking-tighter text-zinc-900">{request.clientName}</p>
+
+                 {/* SELLO PROFESIONAL EN REPORTE */}
+                 <div className="absolute -top-12 -right-4 w-24 h-24 pointer-events-none opacity-80">
+                    <div className="w-full h-full border-4 double border-[#52ffac] rounded-full flex flex-col items-center justify-center rotate-[-15deg] bg-white/50 backdrop-blur-sm">
+                       <span className="text-[8px] font-black text-[#52ffac] uppercase leading-none">VERIFICADO</span>
+                       <span className="text-[5px] font-bold text-[#52ffac] uppercase mt-1">NODO CENTRAL</span>
+                       <div className="w-8 h-0.5 bg-[#52ffac] my-1"></div>
+                       <span className="text-[4px] font-black text-[#52ffac]">${new Date().getTime().toString(16).toUpperCase()}</span>
+                    </div>
+                 </div>
               </div>
            </div>
         </div>

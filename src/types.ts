@@ -201,8 +201,10 @@ export interface JobRequest {
   id: string;
   clientId: string;
   clientName: string;
+  clientProfileImage?: string; // Foto del cliente para el técnico
   assetId: string;
   assetName: string;
+  assetPlate?: string; // Placa para diferenciar equipos iguales
   techId: string;
   techName: string;
   techCompanyName?: string; // Nombre de la empresa del especialista
@@ -214,6 +216,7 @@ export interface JobRequest {
   remotePlatform?: 'anydesk' | 'zoom' | 'meet' | 'teams' | 'whatsapp' | 'other';
   remoteLink?: string;
   createdAt: string;
+  clientRequestedDate?: string; // Fecha original pedida por el cliente
   scheduledDate?: string;
   scheduledEndDate?: string; // Punto #6: Rango de fechas
   scheduledTime?: string; // Hora propuesta por el técnico (HH:MM)

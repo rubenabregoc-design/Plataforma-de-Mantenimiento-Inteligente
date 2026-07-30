@@ -39,51 +39,60 @@ body {
 }
 
 /* ============================================================
-   ULTRA-MODERN PURPLE SCROLLBAR SYSTEM
+   ULTRA-MODERN INDUSTRIAL SCROLLBAR SYSTEM
    ============================================================ */
+/* Global Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #0d0e12;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #5d3cfe;
-  border-radius: 20px;
-  border: 2px solid #0d0e12;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #c7bfff;
-  box-shadow: 0 0 15px #5d3cfe;
-}
-
-/* Scrollbar Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #5d3cfe #0d0e12;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 
+::-webkit-scrollbar-track {
+  background: #0d0e12;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2b2f; /* Color base neutral industrial */
+  border-radius: 10px;
+  border: 1px solid #0d0e12;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5d3cfe; /* Cambia a morado al interactuar */
+  box-shadow: 0 0 15px rgba(93, 60, 254, 0.4);
+}
+
+/* Scrollbar para contenedores específicos con clase .custom-scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.02);
+  margin: 10px 0;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #5d3cfe;
   border-radius: 10px;
-  box-shadow: 0 0 10px rgba(93, 60, 254, 0.4);
+  border: none;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #c7bfff;
+}
+
+/* Firefox Support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2b2f #0d0e12;
+}
+
+/* Modal Open - Prevent Body Scroll */
+.modal-open {
+  overflow: hidden !important;
 }
 
 .custom-scrollbar-hidden {

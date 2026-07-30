@@ -19,6 +19,11 @@ import AssetRegisterModal from './components/AssetRegisterModal';
 import TechnicianProfileModal from './components/TechnicianProfileModal';
 import SignaturePad from './components/SignaturePad';
 import AssetEngineeringReportModal from './components/AssetEngineeringReportModal';
+import FuelAuditModal from './components/FuelAuditModal';
+import PreTripInspectionModal from './components/PreTripInspectionModal';
+import QuoteModal from './components/QuoteModal';
+import MaterialModal from './components/MaterialModal';
+import UnforeseenModal from './components/UnforeseenModal';
 import Star from 'lucide-react/dist/esm/icons/star';
 import X from 'lucide-react/dist/esm/icons/x';
 import Globe from 'lucide-react/dist/esm/icons/globe';
@@ -37,7 +42,7 @@ import { compressImage } from './utils/imageHelpers';
 
 export default function App() {
   const { user, isLoggedIn, subscription, logout, role } = useAuth();
-  const { assets, requests } = useData();
+  const { assets, requests, technicians } = useData();
   const { modals, activeData, closeModal, openModal } = useUI();
   const business = useBusinessLogic();
   const gps = useGpsTracking();
@@ -157,6 +162,7 @@ export default function App() {
             onClose={() => closeModal('tech')}
             tech={activeData.tech}
             assets={assets}
+            initialAssetId={activeData.asset?.id}
             onRequestQuote={business.handleRequestQuote}
             isAdmin={role === 'admin'}
             onVerifyTech={(tid) => business.handleVerifyTechnician(tid, true)}
@@ -321,19 +327,56 @@ export default function App() {
         )}
 
         {modals.fuel && activeData.asset && (
-           <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-             <div className="w-full max-w-2xl bg-[#0d0e12] border border-white/10 rounded-[3rem] p-10 relative shadow-2xl text-center">
-                <button onClick={() => closeModal('fuel')} className="absolute top-8 right-8 p-3 bg-white/5 rounded-2xl"><X className="w-5 h-5 text-white" /></button>
-                <p className="text-white font-black uppercase">Módulo de Auditoría de Combustible - Activo: {activeData.asset.name}</p>
-             </div>
-           </div>
+          <FuelAuditModal
+            isOpen={modals.fuel}
+            onClose={() => closeModal('fuel')}
+            asset={assets.find(a => a.id === activeData.asset?.id) || activeData.asset}
+            onAddLog={business.handleAddFuelLog}
+          />
         )}
 
         {modals.engineeringReport && activeData.asset && (
           <AssetEngineeringReportModal
             isOpen={modals.engineeringReport}
             onClose={() => closeModal('engineeringReport')}
-            asset={activeData.asset}
+            asset={assets.find(a => a.id === activeData.asset?.id) || activeData.asset}
+          />
+        )}
+
+        {modals.preTrip && activeData.asset && (
+          <PreTripInspectionModal
+            isOpen={modals.preTrip}
+            onClose={() => closeModal('preTrip')}
+            assetName={activeData.asset.name}
+            onSave={(insp) => business.handleAddPreTrip(activeData.asset!.id, insp)}
+          />
+        )}
+
+        {modals.quote && activeData.request && (
+          <QuoteModal
+            isOpen={modals.quote}
+            onClose={() => closeModal('quote')}
+            request={activeData.request}
+            onSend={business.handleSendQuote}
+            techPlan={technicians.find(t => t.id === activeData.request?.techId)?.plan || 'basic'}
+          />
+        )}
+
+        {modals.material && activeData.request && (
+          <MaterialModal
+            isOpen={modals.material}
+            onClose={() => closeModal('material')}
+            request={activeData.request}
+            onSave={business.handleSaveMaterial}
+          />
+        )}
+
+        {modals.unforeseen && activeData.request && (
+          <UnforeseenModal
+            isOpen={modals.unforeseen}
+            onClose={() => closeModal('unforeseen')}
+            request={activeData.request}
+            onTrigger={business.handleTriggerUnforeseen}
           />
         )}
       </AnimatePresence>

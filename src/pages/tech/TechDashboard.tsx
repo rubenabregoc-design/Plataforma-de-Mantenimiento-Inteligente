@@ -14,16 +14,19 @@ import SupportChatWidget from '../../components/SupportChatWidget';
 import MantechIDModule from '../../components/MantechIDModule';
 import SubscriptionModule from '../../components/SubscriptionModule';
 import InventoryModule from '../../components/InventoryModule';
+import CommunityModule from '../../components/CommunityModule';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useUI } from '../../context/UIContext';
+import { useBusinessLogic } from '../../hooks/useBusinessLogic';
 
 export default function TechDashboard() {
   const { t, i18n } = useTranslation();
   const { user, loggedInName, userData, subscription, logout } = useAuth();
   const { requests, agenda, technicians, inventory, assets } = useData();
   const { tabs, setTab, openModal, activeData } = useUI();
+  const business = useBusinessLogic();
 
   const techTab = tabs.tech;
   const techProfile = technicians.find(t => t.userId === user?.uid) || { id: 'new', name: loggedInName, category: 'mecanico' } as TechProfile;
@@ -32,7 +35,7 @@ export default function TechDashboard() {
   const [activeChatRequestId, setActiveChatRequestId] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
-  const requestsWithChat = requests.filter(r => r.techId === techProfile.id && ['quoted', 'accepted', 'executing', 'completed'].includes(r.status));
+  const requestsWithChat = requests.filter(r => r.techId === techProfile.id && ['accepted', 'executing', 'completed', 'rated', 'disputed'].includes(r.status));
 
   useEffect(() => {
     if (!activeChatRequestId && requestsWithChat.length > 0) {
@@ -78,7 +81,18 @@ export default function TechDashboard() {
   };
 
   const getStatusLabel = (s: string) => {
-    const map: any = { pending: 'SOLICITADO', quoted: 'COTIZADO', accepted: 'PAGADO', executing: 'EN PROCESO', completed: 'FINALIZADO', rated: 'CALIFICADO', rejected: 'DENEGADO', disputed: 'IMPREVISTO', cancelled: 'CANCELADO' };
+    const map: any = {
+      pending: 'SOLICITADO',
+      quoted: 'COTIZADO',
+      accepted: 'PAGADO',
+      executing: 'EN PROCESO',
+      completed: 'FINALIZADO',
+      rated: 'CALIFICADO',
+      rejected: 'DENEGADO',
+      disputed: 'IMPREVISTO',
+      cancelled: 'CANCELADO',
+      pending_verification: 'VERIFICANDO PAGO'
+    };
     return map[s] || s.toUpperCase();
   };
 
@@ -121,28 +135,669 @@ export default function TechDashboard() {
                requests.filter(r => r.status !== 'open_bidding' && r.techId === techProfile.id).map(req => (
                  <div key={req.id} className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2.5rem] shadow-2xl space-y-6 relative overflow-hidden group hover:border-[#5d3cfe]/30 transition-all">
                     <div className="flex justify-between items-center relative z-10">
-                      <h4 className="font-black text-white text-lg uppercase tracking-tight">{req.clientName}</h4>
+                      <div className="flex items-center gap-4">
+                         <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                            {req.clientProfileImage ? (
+                               <img src={req.clientProfileImage} className="w-full h-full object-cover" alt={req.clientName} />
+                            ) : (
+                               <span className="text-sm font-black text-white/40">{req.clientName[0]}</span>
+                            )}
+                            <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                         <div>
+                            <h4 className="font-black text-white text-lg uppercase tracking-tight">{req.clientName}</h4>
+                            <div className="flex items-center gap-2 mt-1">
+                               <p className="text-[8px] font-bold text-[#5d3cfe] uppercase tracking-widest">{req.assetName}</p>
+                               {req.assetPlate && <span className="text-[7px] text-[#474556] font-black opacity-60 uppercase">{req.assetPlate}</span>}
+                               <span className="text-[7px] text-[#474556] font-mono opacity-40 uppercase">ID: {req.id.slice(-4).toUpperCase()}</span>
+                               <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                            <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                      </div>
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => { setActiveChatRequestId(req.id); setTab('tech', 'chat'); }}
-                          className="p-2 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-xl hover:bg-[#5d3cfe] hover:text-white transition-all"
-                          title="Abrir Chat"
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                        </button>
+                        {['accepted', 'executing', 'completed', 'rated', 'disputed'].includes(req.status) && (
+                          <button
+                            onClick={() => { setActiveChatRequestId(req.id); setTab('tech', 'chat'); }}
+                            className="p-2 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-xl hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            title="Abrir Chat"
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                          </button>
+                        )}
                         <span className="px-4 py-1.5 bg-[#1c1d21] border border-[#2a2b2f] rounded-full text-[9px] font-black text-[#c7bfff] uppercase tracking-widest shadow-inner">{getStatusLabel(req.status)}</span>
                       </div>
                     </div>
                     <div className="p-5 bg-[#0d0e12] rounded-2xl border border-[#2a2b2f] italic text-xs text-[#c8c4d9]">"{req.description}"</div>
 
                     {req.status === 'pending' && (
-                      <button onClick={() => openModal('payment', { request: req })} className="w-full py-4 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl">Enviar Cotización ➔</button>
+                      <div className="flex gap-4">
+                        <button
+                          onClick={() => {
+                            const reason = prompt("Indique el motivo del rechazo:");
+                            if (reason !== null) business.handleRejectQuote(req.id, reason || "No disponible para esta fecha");
+                          }}
+                          className="flex-1 py-4 bg-white/5 border border-white/10 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] hover:bg-rose-600/10 transition-all"
+                        >
+                          Denegar
+                        </button>
+                        <button
+                          onClick={() => openModal('quote', { request: req })}
+                          className="flex-[2] py-4 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.01] active:scale-95 transition-all"
+                        >
+                          Aceptar y Cotizar ➔
+                        </button>
+                      </div>
+                    )}
+
+                    {req.status === 'quoted' && (
+                      <div className="space-y-6 animate-fade-in">
+                        {/* RESUMEN DE LOGÍSTICA COTIZADA */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                           <div className="bg-[#1c1d21] border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center text-center">
+                              <Calendar className="w-4 h-4 text-[#5d3cfe] mb-2" />
+                              <span className="text-[7px] font-black text-[#474556] uppercase">Fecha</span>
+                              <p className="text-[10px] font-black text-white">{req.scheduledDate ? new Date(req.scheduledDate).toLocaleDateString() : 'N/A'}</p>
+                              <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                           <div className="bg-[#1c1d21] border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center text-center">
+                              <Clock className="w-4 h-4 text-[#5d3cfe] mb-2" />
+                              <span className="text-[7px] font-black text-[#474556] uppercase">Arribo</span>
+                              <p className="text-[10px] font-black text-white">
+                                {req.scheduledTime ? (() => {
+                                   const [h, m] = req.scheduledTime.split(':');
+                                   const hh = parseInt(h);
+                                   const suffix = hh >= 12 ? 'PM' : 'AM';
+                                   return `${hh % 12 || 12}:${m} ${suffix}`;
+                                })() : '09:00 AM'}
+                              </p>
+                              <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                           <div className="bg-[#1c1d21] border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center text-center">
+                              <Navigation className="w-4 h-4 text-[#52ffac] mb-2" />
+                              <span className="text-[7px] font-black text-[#474556] uppercase">ETA (Min)</span>
+                              <p className="text-[10px] font-black text-[#52ffac]">{req.scheduledTravelTime || 30}</p>
+                              <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                           <div className="bg-[#1c1d21] border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center text-center">
+                              <DollarSign className="w-4 h-4 text-[#52ffac] mb-2" />
+                              <span className="text-[7px] font-black text-[#474556] uppercase">Total</span>
+                              <p className="text-[10px] font-black text-white">${req.price?.toFixed(2)}</p>
+                              <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                        </div>
+
+                        <div className="bg-[#0d0e12] p-6 rounded-3xl border border-[#2a2b2f] space-y-4">
+                           <div className="flex items-center gap-3">
+                              <div className="p-2 bg-[#5d3cfe]/10 rounded-lg text-[#5d3cfe]">
+                                 <FileText className="w-4 h-4" />
+                                 <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                              <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Tu Propuesta Técnica</h4>
+                              <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                           <p className="text-xs text-[#c8c4d9] italic leading-relaxed">
+                              {req.techNotes || "Sin notas adicionales."}
+                           </p>
+
+                           {/* MATERIALES */}
+                           {req.materials && req.materials.length > 0 && (
+                             <div className="pt-4 border-t border-white/5">
+                                <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em] mb-2">Materiales / Repuestos:</p>
+                                <div className="flex flex-wrap gap-2">
+                                   {req.materials.map((m, mIdx) => (
+                                     <span key={mIdx} className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-[9px] font-bold text-white/80 uppercase">
+                                        {m.name} (x{m.quantity})
+                                     </span>
+                                   ))}
+                                   <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                                <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                           )}
+
+                           {/* TAREAS */}
+                           {req.checklist && req.checklist.length > 0 && (
+                             <div className="pt-4 border-t border-white/5">
+                                <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em] mb-2">Plan de Trabajo:</p>
+                                <div className="space-y-1.5">
+                                   {req.checklist.map((t, tIdx) => (
+                                     <div key={tIdx} className="flex items-center gap-2 text-[9px] text-white/60 font-bold uppercase">
+                                        <CheckCircle2 className="w-3 h-3 text-[#5d3cfe]" />
+                                        <span>{t.description}</span>
+                                        <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                                   ))}
+                                   <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                                <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                           )}
+                        </div>
+
+                        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center gap-3">
+                           <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+                           <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Esperando Confirmación de Pago del Cliente</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {req.status === 'accepted' && (
+                      <div className="space-y-4 animate-fade-in">
+                         <div className="bg-[#52ffac]/5 border border-[#52ffac]/20 p-6 rounded-3xl flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                               <div className="p-3 bg-[#52ffac]/10 rounded-2xl text-[#52ffac]">
+                                  <CheckCircle2 className="w-6 h-6" />
+                                  <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                               <div>
+                                  <h4 className="text-sm font-black text-white uppercase tracking-tight">Servicio Pagado</h4>
+                                  <p className="text-[9px] text-[#52ffac] font-black uppercase tracking-widest">Protocolo de Inicio Activado</p>
+                                   <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                               <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                            <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                         <button
+                           onClick={async () => {
+                             await updateDoc(doc(db, "requests", req.id), { status: 'executing', visitStartedAt: new Date().toISOString() });
+                             toast.success("¡Servicio Iniciado! El cliente ha sido notificado.");
+                           }}
+                           className="w-full py-5 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[#52ffac]/20 hover:scale-[1.01] active:scale-95 transition-all"
+                         >
+                            Iniciar Ruta / Trabajo ➔
+                         </button>
+                      </div>
                     )}
 
                     {req.status === 'executing' && (
-                      <div className="flex gap-3">
-                         <button onClick={() => openModal('material', { request: req })} className="flex-1 py-4 bg-[#1c1d21] border border-[#2a2b2f] text-white rounded-xl text-[10px] font-black uppercase">Cargar Material</button>
-                         <button onClick={() => openModal('unforeseen', { request: req })} className="flex-1 py-4 bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-xl text-[10px] font-black uppercase">Imprevisto</button>
+                      <div className="space-y-8 animate-fade-in">
+                         {/* HERRAMIENTAS DE CAMPO */}
+                         <div className="grid grid-cols-2 gap-3">
+                            <button
+                              onClick={() => openModal('material', { request: req })}
+                              className="p-4 bg-[#1c1d21] border border-[#2a2b2f] text-white rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] transition-all group"
+                            >
+                               <Package className="w-5 h-5 text-[#5d3cfe] group-hover:text-white" />
+                               Cargar Material
+                            </button>
+                            <button
+                              onClick={() => openModal('unforeseen', { request: req })}
+                              className="p-4 bg-amber-500/5 border border-amber-500/20 text-amber-500 rounded-2xl text-[10px] font-black uppercase flex flex-col items-center gap-2 hover:bg-amber-500 hover:text-black transition-all"
+                            >
+                               <AlertTriangle className="w-5 h-5" />
+                               Re-Cotización
+                            </button>
+                            <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+
+                         {/* CHECKLIST TÉCNICO */}
+                         <div className="bg-[#0d0e12] p-6 rounded-3xl border border-[#2a2b2f] space-y-4">
+                            <div className="flex items-center justify-between mb-2">
+                               <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                  <ListChecks className="w-4 h-4 text-[#5d3cfe]" /> Hoja de Ruta Técnica
+                               </h4>
+                               <span className="text-[8px] font-black text-[#474556] uppercase">Autoguardado en Red</span>
+                               <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+
+                            <div className="space-y-3">
+                               {req.checklist?.map((task) => (
+                                 <div
+                                   key={task.id}
+                                   onClick={() => business.handleToggleTask(req.id, task.id)}
+                                   className={`p-4 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${task.isCompleted ? 'bg-[#52ffac]/5 border-[#52ffac]/20' : 'bg-white/5 border-white/5 opacity-60'}`}
+                                 >
+                                    <span className={`text-[10px] font-black uppercase ${task.isCompleted ? 'text-[#52ffac]' : 'text-white'}`}>{task.description}</span>
+                                    {task.isCompleted ? <CheckCircle2 className="w-4 h-4 text-[#52ffac]" /> : <div className="w-4 h-4 rounded-full border border-white/20" />}
+                                    <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                               ))}
+                               {(!req.checklist || req.checklist.length === 0) && (
+                                 <p className="text-center text-[8px] text-[#474556] uppercase italic py-4">Sin plan de trabajo definido en la cotización</p>
+                               )}
+                               <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+                            <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
+
+                         <div className="pt-2 border-t border-white/5">
+                            <p className="text-[7px] text-[#474556] font-black uppercase italic text-center mb-4">Se requiere la firma del cliente tras finalizar las tareas.</p>
+                            <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
                       </div>
                     )}
                  </div>
@@ -252,8 +907,10 @@ export default function TechDashboard() {
       )}
 
       {techTab === 'subscriptions' && (
-        <SubscriptionModule subscription={subscription} onUpgrade={(planId) => openModal('payment', { plan: planId })} role="tech" />
+        <SubscriptionModule subscription={subscription} onUpgrade={(planId) => openModal('payment', { plan: planId })} onNavigate={(t) => setTab('tech', t)} role="tech" />
       )}
+
+      {techTab === 'community' && <CommunityModule />}
 
       {techTab === 'settings' && (
         <div className="max-w-3xl mx-auto space-y-12 pb-20 animate-fade-in text-center">
@@ -286,7 +943,7 @@ export default function TechDashboard() {
 
            <MantechIDModule
               mantechId={techProfile.mantechId || { status: 'unverified', idNumber: '' }}
-              onUpload={() => {}}
+              onUpload={(type, file) => business.handleUploadMantechDocument('tech', type, file)}
               role="tech"
               userName={techProfile.name}
               cedula={userData?.cedula}
@@ -389,11 +1046,49 @@ export default function TechDashboard() {
                        <div className="space-y-4">
                           <div className={`w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center ${b.color} group-hover:scale-110 transition-transform shadow-xl`}>
                              <b.i className="w-6 h-6" />
-                          </div>
+                             <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
                           <div className="flex justify-between items-start">
                              <h4 className="text-sm font-black text-white uppercase tracking-tight">{b.t}</h4>
                              <span className="text-[9px] font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">{b.cost} pts</span>
-                          </div>
+                             <button
+                              onClick={() => {
+                                const newP = prompt("Nuevo monto TOTAL (B/.):");
+                                const reason = prompt("Motivo del ajuste:");
+                                if (newP && reason) business.handleProposePriceAdjustment(req.id, Number(newP), reason);
+                              }}
+                              className="p-4 bg-[#5d3cfe]/5 border border-[#5d3cfe]/20 text-[#c7bfff] rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] hover:text-white transition-all"
+                            >
+                               <DollarSign className="w-5 h-5" />
+                               Ajuste Precio
+                            </button>
+                         </div>
+
+                         {/* NOTIFICACIÓN DE ESTADO DE AJUSTE */}
+                         {req.priceAdjustment?.status === 'pending' && (
+                           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Esperando respuesta del cliente al ajuste de B/. {req.priceAdjustment.newPrice}</p>
+                           </div>
+                         )}
                           <p className="text-[10px] text-[#c8c4d9] font-medium leading-relaxed opacity-60">{b.d}</p>
                        </div>
 

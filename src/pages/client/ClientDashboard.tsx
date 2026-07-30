@@ -9,7 +9,7 @@ import {
   Search, ChevronLeft, ChevronRight, LayoutDashboard, Trash2, Check, Download,
   Truck, CheckCircle2, AlertTriangle, Globe, BrainCircuit, ShieldCheck, Layers, Package,
   Store, FileCheck2, FileText, Star, MessageSquare, ArrowRight, Video, MapPin, Activity, Shield,
-  Users, PieChart, Building2, ShieldAlert
+  Users, PieChart, Building2, ShieldAlert, Fuel, History, Calendar, Clock, Timer
 } from 'lucide-react';
 import FleetDashboard from '../../components/FleetDashboard';
 import DiagnosticAIView from '../../components/DiagnosticAIView';
@@ -132,7 +132,18 @@ export default function ClientDashboard() {
   const activeRequestForChat = requests.find(r => r.id === activeChatRequestId);
 
   const getStatusLabel = (s: string) => {
-    const map: any = { pending: 'SOLICITADO', quoted: 'COTIZADO', accepted: 'PAGADO', executing: 'EN PROCESO', completed: 'FINALIZADO', rated: 'CALIFICADO', rejected: 'DENEGADO', disputed: 'IMPREVISTO', cancelled: 'CANCELADO' };
+    const map: any = {
+      pending: 'SOLICITADO',
+      quoted: 'COTIZADO',
+      accepted: 'PAGADO',
+      executing: 'EN PROCESO',
+      completed: 'FINALIZADO',
+      rated: 'CALIFICADO',
+      rejected: 'DENEGADO',
+      disputed: 'IMPREVISTO',
+      cancelled: 'CANCELADO',
+      pending_verification: 'VERIFICANDO PAGO'
+    };
     return map[s] || s.toUpperCase();
   };
 
@@ -178,9 +189,10 @@ export default function ClientDashboard() {
                 requests={requests}
                 userName={userData?.name || 'Usuario'}
                 onSeeAll={() => setTab('client', 'inventory')}
+                onOpenAssetReport={(asset) => openModal('engineeringReport', { asset })}
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {assets.filter(a =>
                   a.name.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
                   a.licensePlate?.toLowerCase().includes(assetSearchQuery.toLowerCase())
@@ -196,6 +208,8 @@ export default function ClientDashboard() {
                       onOpenDetails={(asset) => openModal('fuel', { asset })}
                       onOpenPreTrip={(asset) => openModal('preTrip', { asset })}
                       onFindExpert={handleFindExpertForAsset}
+                      onEdit={(asset) => openModal('asset', { asset })}
+                      onDelete={business.handleDeleteAsset}
                     />
                   ))
                 ) : (
@@ -217,7 +231,7 @@ export default function ClientDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <FuelAuditModule
                     assets={assets.filter(a => ['car', 'moto', 'generator'].includes(a.type))}
-                    onSaveLog={() => {}}
+                    onSaveLog={business.handleAddFuelLog}
                   />
                   <HomeEmergencySOS
                     isOpen={isHomeSOSOpen}
@@ -296,8 +310,11 @@ export default function ClientDashboard() {
                   </div>
 
                   <div className="bg-[#121317] border border-[#2a2b2f] rounded-[1.5rem] p-2 flex items-center gap-3 px-6 shadow-inner">
-                     <span className="text-[9px] font-black text-[#474556] uppercase tracking-widest">Rating Mínimo</span>
-                     <div className="flex gap-1">
+                     <div className="flex flex-col">
+                        <span className="text-[7px] font-black text-[#5d3cfe] uppercase tracking-widest">Filtrar por</span>
+                        <span className="text-[9px] font-black text-[#474556] uppercase tracking-widest">{minRatingFilter === 0 ? 'Cualquier Calificación' : `Mínimo ${minRatingFilter}.0 Estrellas`}</span>
+                     </div>
+                     <div className="flex gap-1 ml-2">
                         {[1, 2, 3, 4, 5].map((star) => (
                            <button
                              key={star}
@@ -520,47 +537,376 @@ export default function ClientDashboard() {
       )}
 
       {clientTab === 'quotes' && (
-        <div className="space-y-10 animate-fade-in">
-          <header><h1 className="text-4xl font-black text-white tracking-tighter uppercase">Contratos <span className="text-[#52ffac]">Activos</span></h1></header>
-          <div className="space-y-6">
-            {requests.filter(r => r.status !== 'open_bidding').length > 0 ? (
-              requests.filter(r => r.status !== 'open_bidding').map(req => (
-                <div key={req.id} className="bg-[#121317] border border-white/10 p-10 rounded-[2.5rem] space-y-10 shadow-2xl relative overflow-hidden">
-                  <div className="flex justify-between items-center relative z-10">
-                    <h4 className="font-black text-white text-2xl uppercase tracking-tighter">{req.assetName}</h4>
-                    <span className="px-6 py-2 bg-[#1c1d21] border border-white/10 rounded-full text-[10px] font-black text-[#52ffac] uppercase tracking-widest shadow-inner">
-                      {getStatusLabel(req.status)}
-                    </span>
+        <div className="space-y-12 animate-fade-in-up">
+          <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+            <header><h1 className="text-4xl font-black text-white tracking-tighter uppercase">Gestión de <span className="text-[#52ffac]">Contratos</span></h1></header>
+
+            {/* RESUMEN DE GASTOS UNIFICADO */}
+            <div className="flex gap-4">
+               <div className="bg-[#1c1d21] border border-white/5 p-4 rounded-2xl flex flex-col items-end shadow-xl">
+                  <span className="text-[7px] font-black text-[#474556] uppercase tracking-[0.2em]">Inversión Gasolina</span>
+                  <span className="text-lg font-black text-[#52ffac] leading-none mt-1">
+                    ${assets.reduce((sum, a) => sum + (a.fuelLogs || []).reduce((s, l) => s + (l.price || 0), 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </span>
+               </div>
+               <div className="bg-[#1c1d21] border border-white/5 p-4 rounded-2xl flex flex-col items-end shadow-xl">
+                  <span className="text-[7px] font-black text-[#474556] uppercase tracking-[0.2em]">Servicios Técnicos</span>
+                  <span className="text-lg font-black text-[#5d3cfe] leading-none mt-1">
+                    ${requests.filter(r => r.status === 'completed' || r.status === 'rated').reduce((sum, r) => sum + (r.price || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </span>
+               </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* COLUMNA IZQUIERDA: CONTRATOS Y SERVICIOS */}
+            <div className="lg:col-span-2 space-y-6">
+              <h3 className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] ml-2 flex items-center gap-2">
+                 <FileText className="w-3.5 h-3.5" /> Tickets de Servicio
+              </h3>
+              {requests.filter(r => r.status !== 'open_bidding').length > 0 ? (
+                requests.filter(r => r.status !== 'open_bidding').map(req => (
+                  <div key={req.id} className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] space-y-8 shadow-2xl relative overflow-hidden group hover:border-white/10 transition-all">
+                    <div className="flex justify-between items-center relative z-10">
+                      <div>
+                        <div className="flex items-center gap-3">
+                           <h4 className="font-black text-white text-xl uppercase tracking-tighter leading-none">{req.assetName}</h4>
+                           {req.assetPlate && (
+                             <span className="px-2 py-0.5 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded text-[7px] font-black text-[#c7bfff] uppercase tracking-widest">{req.assetPlate}</span>
+                           )}
+                           <span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[7px] font-mono text-[#474556] uppercase">ID: {req.id.slice(-4).toUpperCase()}</span>
+                        </div>
+                        <p className="text-[8px] font-bold text-[#474556] uppercase tracking-widest mt-2">
+                           {req.techName} • SOLICITUD: {(() => {
+                              const d = (req.createdAt as any)?.toDate?.() || new Date(req.createdAt);
+                              return isNaN(d.getTime()) ? '---' : `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+                           })()}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {(req.status === 'pending' || req.status === 'quoted') && (
+                          <button
+                            onClick={() => {
+                              if(window.confirm("¿Deseas cancelar esta solicitud de servicio definitivamente?")) {
+                                business.handleCancelRequest(req.id);
+                              }
+                            }}
+                            className="p-2 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl transition-all group/cancel"
+                            title="Cancelar Solicitud"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <span className="px-4 py-1.5 bg-[#1c1d21] border border-white/5 rounded-full text-[9px] font-black text-[#52ffac] uppercase tracking-widest shadow-inner">
+                          {getStatusLabel(req.status)}
+                        </span>
+                      </div>
+                    </div>
+                    {req.status === 'quoted' && (
+                      <div className="space-y-6 animate-fade-in">
+                        {/* HEADER DE CITA SUGERIDA */}
+                        <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                           <div className={`bg-[#1c1d21] border p-4 rounded-2xl shrink-0 flex items-center gap-3 ${req.scheduledDate !== req.clientRequestedDate ? 'border-amber-500/30' : 'border-white/5'}`}>
+                              <Calendar className={`w-4 h-4 ${req.scheduledDate !== req.clientRequestedDate ? 'text-amber-500' : 'text-[#5d3cfe]'}`} />
+                              <div>
+                                 <p className="text-[7px] font-black text-[#474556] uppercase">Cita Propuesta</p>
+                                 <p className={`text-[10px] font-black uppercase ${req.scheduledDate !== req.clientRequestedDate ? 'text-amber-500' : 'text-white'}`}>
+                                    {req.scheduledDate ? new Date(req.scheduledDate).toLocaleDateString() : 'Por definir'}
+                                 </p>
+                                 {req.scheduledDate !== req.clientRequestedDate && req.clientRequestedDate && (
+                                   <p className="text-[6px] font-bold text-[#474556] line-through uppercase">Original: {new Date(req.clientRequestedDate).toLocaleDateString()}</p>
+                                 )}
+                              </div>
+                           </div>
+                           <div className="bg-[#1c1d21] border border-white/5 p-4 rounded-2xl shrink-0 flex items-center gap-3">
+                              <Clock className="w-4 h-4 text-[#5d3cfe]" />
+                              <div>
+                                 <p className="text-[7px] font-black text-[#474556] uppercase">Hora de Arribo</p>
+                                 <p className="text-[10px] font-black text-white uppercase">{req.scheduledTime || '09:00'} {Number(req.scheduledTime?.split(':')[0] || 0) >= 12 ? 'PM' : 'AM'}</p>
+                              </div>
+                           </div>
+                           <div className="bg-[#1c1d21] border border-white/5 p-4 rounded-2xl shrink-0 flex items-center gap-3">
+                              <Timer className="w-4 h-4 text-[#5d3cfe]" />
+                              <div>
+                                 <p className="text-[7px] font-black text-[#474556] uppercase">Duración Est.</p>
+                                 <p className="text-[10px] font-black text-white uppercase">{req.scheduledDuration || 2} Horas</p>
+                              </div>
+                           </div>
+                           {req.paymentDeadlineAt && (
+                             <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-2xl shrink-0 flex items-center gap-3 animate-pulse">
+                                <AlertTriangle className="w-4 h-4 text-rose-500" />
+                                <div>
+                                   <p className="text-[7px] font-black text-rose-500 uppercase">Límite de Pago</p>
+                                   <p className="text-[10px] font-black text-white uppercase">
+                                      {new Date(req.paymentDeadlineAt).toLocaleString('es-PA', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true })}
+                                   </p>
+                                </div>
+                             </div>
+                           )}
+                        </div>
+
+                        <div className="bg-[#1c1d21] p-6 rounded-3xl border border-white/5 space-y-4 shadow-inner">
+                           <div className="flex items-center gap-3">
+                              <div className="p-2 bg-[#5d3cfe]/10 rounded-lg text-[#5d3cfe]">
+                                 <BrainCircuit className="w-4 h-4" />
+                              </div>
+                              <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Diagnóstico y Ventajas (Pros)</h4>
+                           </div>
+                           <p className="text-xs text-[#c8c4d9] italic leading-relaxed">
+                              {req.techNotes || "El especialista no ha brindado detalles adicionales. Puede solicitar más información vía chat."}
+                           </p>
+
+                           {/* LISTA DE TAREAS (CHECKLIST) */}
+                           {req.checklist && req.checklist.length > 0 && (
+                             <div className="pt-4 border-t border-white/5 space-y-3">
+                                <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Plan de Trabajo:</p>
+                                <div className="grid grid-cols-1 gap-2">
+                                   {req.checklist.map((t, tIdx) => (
+                                     <div key={tIdx} className="flex items-center gap-2 text-[10px] text-white/80 font-bold uppercase">
+                                        <CheckCircle2 className="w-3 h-3 text-[#52ffac]" />
+                                        <span>{t.description}</span>
+                                     </div>
+                                   ))}
+                                </div>
+                             </div>
+                           )}
+
+                           {req.materials && req.materials.length > 0 && (
+                             <div className="pt-4 border-t border-white/5 space-y-3">
+                                <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em]">Materiales Incluidos:</p>
+                                <div className="grid grid-cols-1 gap-2">
+                                   {req.materials.map((m, mIdx) => (
+                                     <div key={mIdx} className="flex justify-between items-center text-[10px] text-white/80 font-bold uppercase">
+                                        <span>• {m.name} (x{m.quantity})</span>
+                                        <span className="text-[#52ffac]">${(m.price * m.quantity).toFixed(2)}</span>
+                                     </div>
+                                   ))}
+                                </div>
+                             </div>
+                           )}
+                        </div>
+
+                        <div className="bg-[#5d3cfe]/10 p-6 rounded-[2rem] border border-[#5d3cfe]/20 flex flex-col sm:flex-row justify-between items-center gap-6">
+                           <div className="text-center sm:text-left">
+                              <p className="text-[8px] font-black text-[#c7bfff] uppercase tracking-[0.3em] mb-1">Inversión Final Solicitada</p>
+                              <h3 className="text-3xl font-black text-white italic tracking-tighter leading-none">${req.price?.toFixed(2)}</h3>
+                           </div>
+                           <div className="flex gap-3 w-full sm:w-auto">
+                              <button
+                                onClick={() => {
+                                  const reason = prompt("Indique el motivo del rechazo (opcional):");
+                                  if (reason !== null) business.handleRejectQuote(req.id, reason || "No aceptado por el cliente");
+                                }}
+                                className="flex-1 px-6 py-4 bg-white/5 border border-white/10 text-white rounded-2xl text-[9px] font-black uppercase hover:bg-rose-600 transition-all"
+                              >
+                                Rechazar
+                              </button>
+                              <button
+                                onClick={() => openModal('payment', { request: req })}
+                                className="flex-[1.5] px-8 py-4 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2"
+                              >
+                                <Check className="w-4 h-4" /> Aceptar y Pagar
+                              </button>
+                           </div>
+                        </div>
+                      </div>
+                    )}
+                    {req.status === 'rejected' && (
+                      <div className="bg-rose-500/10 border border-rose-500/30 p-6 rounded-3xl space-y-4">
+                         <div className="flex items-center gap-3 text-rose-500">
+                            <X className="w-5 h-5" />
+                            <h4 className="text-sm font-black uppercase tracking-tighter">Solicitud Denegada</h4>
+                         </div>
+                         <p className="text-xs text-[#c8c4d9] font-medium leading-relaxed italic">
+                            Motivo: "{req.rejectionReason || "El técnico no tiene disponibilidad para esta fecha."}"
+                         </p>
+
+                         {/* MOTOR DE CASCADA AUTOMÁTICO */}
+                         <div className="pt-4 border-t border-white/5 space-y-4">
+                            <p className="text-[9px] font-black text-[#52ffac] uppercase tracking-widest flex items-center gap-2">
+                               <Zap className="w-3 h-3 fill-current" /> Alternativas Recomendadas (Alta Calificación)
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                               {business.getRecommendedTechs(assets.find(a => a.id === req.assetId)?.type || 'mecanico', req.techId).map(t => (
+                                 <div key={t.id} className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between group">
+                                    <div>
+                                       <p className="text-[10px] font-black text-white uppercase">{t.name}</p>
+                                       <div className="flex items-center gap-1 mt-0.5 text-amber-500">
+                                          <Star className="w-2.5 h-2.5 fill-current" />
+                                          <span className="text-[8px] font-bold">{t.rating}</span>
+                                       </div>
+                                    </div>
+                                    <button
+                                      onClick={() => business.handleRequestQuote(t.id, req.assetId, req.description)}
+                                      className="p-2 bg-[#5d3cfe] text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                    >
+                                       <Plus className="w-3 h-3" />
+                                    </button>
+                                 </div>
+                               ))}
+                            </div>
+                         </div>
+                      </div>
+                    )}
+
+                    {req.status === 'accepted' && (
+                      <div className="bg-[#1c1d21] p-6 rounded-2xl border border-white/5 space-y-4 shadow-2xl">
+                         <div className="flex items-center gap-3 text-[#52ffac]">
+                            <CheckCircle2 className="w-5 h-5" />
+                            <h4 className="text-sm font-black uppercase tracking-tighter">Servicio Confirmado & Pagado</h4>
+                         </div>
+                         <p className="text-[10px] text-[#c8c4d9] font-medium leading-relaxed">
+                            El especialista debe presentarse en la fecha y hora acordadas. Si surge algún inconveniente, puede reportarlo directamente.
+                         </p>
+                         <button
+                           onClick={() => {
+                             if(window.confirm("¿Seguro que desea reportar que el técnico NO SE PRESENTÓ a la cita? Esta acción iniciará un protocolo de auditoría.")) {
+                               business.handleReportNoShow(req.id);
+                             }
+                           }}
+                           className="w-full py-4 bg-rose-600/10 border border-rose-600/20 text-rose-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all"
+                         >
+                            Reportar Incumplimiento (No llegó)
+                         </button>
+                      </div>
+                    )}
+
+                    {req.status === 'executing' && (
+                      <div className="bg-[#1c1d21] p-6 rounded-2xl border border-white/5 space-y-4 shadow-2xl">
+                         <div className="flex items-center gap-3 text-[#52ffac]">
+                            <Activity className="w-5 h-5 animate-pulse" />
+                            <h4 className="text-sm font-black uppercase tracking-tighter">En ejecución técnica</h4>
+                         </div>
+                         <button onClick={() => openModal('signature', { requestId: req.id })} className="w-full py-4 bg-[#52ffac] text-black rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Finalizar & Liberar Pago</button>
+                      </div>
+                    )}
+
+                    {req.status === 'disputed' && (
+                      <div className="bg-rose-600/10 border border-rose-600/30 p-8 rounded-[2rem] space-y-4 text-center">
+                         <div className="w-16 h-16 bg-rose-600 rounded-2xl flex items-center justify-center text-white mx-auto shadow-2xl shadow-rose-600/20">
+                            <ShieldAlert className="w-8 h-8" />
+                         </div>
+                         <h4 className="text-lg font-black text-white uppercase tracking-tighter italic">Bajo Auditoría de Arbitraje</h4>
+                         <p className="text-[10px] text-rose-200/60 font-bold uppercase leading-relaxed">
+                            Se ha detectado una anomalía o incumplimiento. El Nodo Central está mediando la disputa para proteger sus fondos.
+                         </p>
+                         <div className="px-6 py-2 bg-rose-600 text-white rounded-full text-[8px] font-black uppercase tracking-widest animate-pulse">Estatus: Bloqueado por Seguridad</div>
+                      </div>
+                    )}
+
+                    {req.priceAdjustment?.status === 'pending' && (
+                      <div className="bg-amber-500/10 border border-amber-500/30 p-6 rounded-3xl space-y-6 animate-pulse hover:animate-none">
+                         <div className="flex items-center gap-3">
+                            <AlertTriangle className="w-6 h-6 text-amber-500" />
+                            <div>
+                               <h4 className="text-sm font-black text-white uppercase tracking-tight">Propuesta de Ajuste Presupuestario</h4>
+                               <p className="text-[8px] text-amber-500 font-black uppercase tracking-widest">El técnico requiere un cambio de precio</p>
+                            </div>
+                         </div>
+
+                         <div className="bg-black/40 p-4 rounded-xl space-y-2">
+                            <p className="text-[10px] text-[#c8c4d9] font-bold uppercase tracking-widest">Nuevo Total: <span className="text-white">B/. {req.priceAdjustment.newPrice}</span></p>
+                            <p className="text-xs text-white/60 italic leading-relaxed">"{req.priceAdjustment.reason}"</p>
+                         </div>
+
+                         <div className="flex gap-3">
+                            <button
+                              onClick={() => business.handleRespondToAdjustment(req.id, false)}
+                              className="flex-1 py-4 bg-white/5 border border-white/10 text-white rounded-xl text-[9px] font-black uppercase hover:bg-rose-600"
+                            >
+                              Rechazar
+                            </button>
+                            <button
+                              onClick={() => business.handleRespondToAdjustment(req.id, true)}
+                              className="flex-[1.5] py-4 bg-amber-500 text-black rounded-xl text-[9px] font-black uppercase shadow-xl hover:brightness-110"
+                            >
+                              Aceptar Nuevo Precio
+                            </button>
+                         </div>
+                      </div>
+                    )}
                   </div>
-                  {req.status === 'quoted' && (
-                    <div className="bg-[#5d3cfe]/10 p-8 rounded-[2.5rem] border border-[#5d3cfe]/30 flex justify-between items-center animate-fade-in">
-                      <p className="text-white font-black text-xl uppercase tracking-tight">Propuesta: ${req.price?.toFixed(2)} USD</p>
-                      <button onClick={() => openModal('payment', { request: req })} className="px-8 py-4 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase shadow-xl shadow-[#52ffac]/20 hover:scale-105 transition-all">Gestionar Pago</button>
-                    </div>
-                  )}
-                  {req.status === 'executing' && (
-                    <div className="bg-[#1c1d21] p-8 rounded-[2.5rem] border border-white/5 space-y-6 shadow-2xl">
-                       <div className="flex items-center gap-3 text-[#52ffac]">
-                          <Activity className="w-6 h-6 animate-pulse" />
-                          <h4 className="text-xl font-black uppercase tracking-tighter">Servicio en Ejecución</h4>
-                       </div>
-                       <button onClick={() => openModal('signature', { requestId: req.id })} className="w-full py-5 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Cerrar Servicio & Liberar Pago</button>
-                    </div>
-                  )}
+                ))
+              ) : (
+                <div className="py-20 bg-[#121317] border border-dashed border-white/5 rounded-[3rem] text-center opacity-40">
+                   <p className="text-[10px] font-black uppercase tracking-widest italic">No hay servicios registrados en el nodo.</p>
                 </div>
-              ))
-            ) : (
-              <div className="py-32 bg-[#121317] border border-dashed border-white/5 rounded-[4rem] text-center space-y-6">
-                 <FileCheck2 className="w-16 h-16 text-[#474556] mx-auto opacity-20" />
-                 <div className="space-y-2">
-                    <h3 className="text-lg font-black text-white uppercase tracking-widest italic">Sin Contratos</h3>
-                    <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.3em] max-w-sm mx-auto">
-                       Sus servicios activos aparecerán aquí. Solicite una cotización en el Marketplace para iniciar.
-                    </p>
-                 </div>
-                 <button onClick={() => setTab('client', 'marketplace')} className="px-10 py-3.5 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#5d3cfe] transition-all">Ir al Marketplace ➔</button>
+              )}
+
+              {/* NUEVA SECCIÓN: ALERTAS DE SEGURIDAD PRE-VIAJE */}
+              <h3 className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] ml-2 pt-6 flex items-center gap-2">
+                 <ShieldAlert className="w-3.5 h-3.5 text-rose-500" /> Alertas de Seguridad Pre-Viaje
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 {assets.some(a => (a.preTripInspections || []).some(i => i.result === 'warning')) ? (
+                   assets.flatMap(a => (a.preTripInspections || []).filter(i => i.result === 'warning').map(i => ({ ...i, assetName: a.name }))).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((insp, idx) => (
+                    <div key={idx} className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-[2rem] space-y-4 relative overflow-hidden group">
+                       <div className="flex justify-between items-start">
+                          <div>
+                             <h4 className="text-sm font-black text-white uppercase tracking-tight">{insp.assetName}</h4>
+                             <p className="text-[8px] text-rose-500 font-black uppercase mt-1">
+                                {new Date(insp.date).toLocaleDateString()} • {new Date(insp.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()} • FALLO DETECTADO
+                             </p>
+                          </div>
+                          <AlertTriangle className="w-5 h-5 text-rose-500 animate-pulse" />
+                       </div>
+
+                       <div className="space-y-2">
+                          <p className="text-[7px] font-black text-[#474556] uppercase tracking-widest">Puntos Críticos con Fallo:</p>
+                          <div className="flex flex-wrap gap-2">
+                             {insp.items.filter((i: any) => i.status === 'fail').map((item: any, iIdx: number) => (
+                                <span key={iIdx} className="px-2 py-1 bg-rose-500 text-white text-[7px] font-black rounded-md uppercase">
+                                   {item.label}
+                                </span>
+                             ))}
+                          </div>
+                       </div>
+
+                       <div className="pt-2 border-t border-white/5">
+                          <p className="text-[9px] text-white/40 font-black uppercase tracking-widest mb-1">Comentarios:</p>
+                          <p className="text-[10px] text-white/60 italic">"{insp.observations || 'Sin comentarios técnicos adicionales'}"</p>
+                       </div>
+                    </div>
+                   ))
+                 ) : (
+                    <div className="col-span-full py-12 bg-[#121317] border border-dashed border-white/5 rounded-[2.5rem] text-center opacity-30">
+                       <ShieldCheck className="w-8 h-8 mx-auto mb-3 text-[#52ffac]" />
+                       <p className="text-[9px] font-black uppercase tracking-widest">No hay alertas de seguridad pendientes.</p>
+                    </div>
+                 )}
               </div>
-            )}
+            </div>
+
+            {/* COLUMNA DERECHA: HISTORIAL UNIFICADO DE COMBUSTIBLE */}
+            <div className="space-y-6">
+               <h3 className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em] ml-2 flex items-center gap-2">
+                  <Fuel className="w-3.5 h-3.5" /> Auditoría de Combustible
+               </h3>
+               <div className="bg-[#121317] border border-white/5 rounded-[2.5rem] p-6 space-y-4 shadow-2xl min-h-[450px]">
+                  {assets.some(a => (a.fuelLogs || []).length > 0) ? (
+                    assets.flatMap(a => (a.fuelLogs || []).map(l => ({ ...l, assetName: a.name }))).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10).map((log, idx) => (
+                      <div key={idx} className="bg-[#0d0e12] p-4 rounded-2xl border border-white/5 flex items-center justify-between group hover:border-[#52ffac]/30 transition-all shadow-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 bg-white/5 rounded-xl flex items-center justify-center text-[#52ffac]/40 shadow-inner"><Fuel className="w-4 h-4" /></div>
+                          <div>
+                            <p className="text-[10px] font-black text-white uppercase leading-none">{log.assetName}</p>
+                            <p className="text-[7px] text-[#474556] font-bold uppercase mt-1">{new Date(log.date).toLocaleDateString()} • {log.gallons.toFixed(2)} Gal.</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-black text-[#52ffac]">${log.price.toFixed(2)}</p>
+                          <p className="text-[6px] text-[#474556] font-black uppercase tracking-widest">Validado</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-center p-10 space-y-4 opacity-20">
+                       <History className="w-8 h-8 text-[#474556]" />
+                       <p className="text-[9px] font-black text-[#474556] uppercase tracking-widest leading-relaxed">Sin movimientos de carga detectados.</p>
+                    </div>
+                  )}
+               </div>
+            </div>
           </div>
         </div>
       )}
@@ -757,7 +1103,7 @@ export default function ClientDashboard() {
 
            <MantechIDModule
               mantechId={{ status: userData?.recordStatus || 'unverified', idNumber: '' }}
-              onUpload={() => {}}
+              onUpload={(type, file) => business.handleUploadMantechDocument('client', type, file)}
               role="client"
               cedula={userData?.cedula}
               plan={subscription.planId}

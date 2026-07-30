@@ -307,14 +307,17 @@ export function useBusinessLogic() {
       await addDoc(collection(db, "requests"), {
         clientId: user.uid,
         clientName: loggedInName,
+        clientProfileImage: userData?.profileImage || null,
         assetId,
         assetName: asset.name,
+        assetPlate: asset.licensePlate || asset.serialNumber || null,
         techId,
         techName: tech.name,
         techUserId: tech.userId,
         description,
         status: 'pending',
         createdAt: serverTimestamp(),
+        clientRequestedDate: suggestedDate || null,
         scheduledDate: suggestedDate || null,
         scheduledTime: suggestedTime || null
       });
@@ -323,6 +326,290 @@ export function useBusinessLogic() {
       console.error(err);
       toast.error("Error al enviar la solicitud.");
     }
+  };
+
+  const handleDeleteAsset = async (id: string) => {
+    if (!window.confirm("¿Estás seguro de eliminar este activo? Esta acción no se puede deshacer de forma sencilla.")) return;
+    try {
+      const assetRef = doc(db, "assets", id);
+      await updateDoc(assetRef, {
+        status: 'deleted',
+        deletedAt: serverTimestamp()
+      });
+      toast.success("Activo eliminado correctamente.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al eliminar el activo.");
+    }
+  };
+
+  const handleUpdateAsset = async (id: string, data: Partial<Asset>) => {
+    try {
+      await updateDoc(doc(db, "assets", id), data);
+      toast.success("Activo actualizado correctamente.");
+    } catch (err) { console.error(err); }
+  };
+
+  const handleAddFuelLog = async (assetId: string, log: any) => {
+    try {
+      const assetRef = doc(db, "assets", assetId);
+      await updateDoc(assetRef, {
+        fuelLogs: arrayUnion(log),
+        mileage: log.mileage // Actualizar odómetro automáticamente
+      });
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  };
+
+  const handleAddPreTrip = async (assetId: string, inspection: any) => {
+    try {
+      const assetRef = doc(db, "assets", assetId);
+      await updateDoc(assetRef, {
+        preTripInspections: arrayUnion(inspection)
+      });
+      toast.success("Inspección Pre-Viaje registrada en el Nodo Central.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al registrar la inspección.");
+    }
+  };
+
+  const handleUploadMantechDocument = async (role: 'client' | 'tech', type: 'id' | 'record', file: File) => {
+    if (!user) return;
+    const loading = toast.loading(`Subiendo ${type === 'id' ? 'Identidad' : 'Récord Policivo'}...`);
+
+    try {
+      // Simulación de URL de almacenamiento (En producción usaría Firebase Storage)
+      const mockUrl = `https://storage.mantechpro.pa/${user.uid}/${type}_${Date.now()}.pdf`;
+
+      if (role === 'tech') {
+        const userSnap = await getDoc(doc(db, "users", user.uid));
+        const techId = userSnap.data()?.techId;
+        if (!techId) throw new Error("ID Técnico no localizado.");
+
+        const updateKey = type === 'id' ? 'mantechId.documentUrl' : 'mantechId.policeRecordUrl';
+        await updateDoc(doc(db, "technicians", techId), {
+          [updateKey]: mockUrl,
+          'mantechId.status': 'pending'
+        });
+      } else {
+        const updateKey = type === 'id' ? 'mantechId.documentUrl' : 'mantechId.policeRecordUrl';
+        await updateDoc(doc(db, "users", user.uid), {
+          [updateKey]: mockUrl,
+          'recordStatus': 'pending'
+        });
+      }
+
+      toast.success("Documento registrado para auditoría.", { id: loading });
+    } catch (err) {
+      console.error(err);
+      toast.error("Fallo en la carga del documento.", { id: loading });
+    }
+  };
+
+  const handleSendQuote = async (requestId: string, price: number, commission: number, notes?: string, materials?: any[], checklist?: any[], schedule?: any) => {
+    try {
+      const techEarnings = price - commission;
+      const updateData: any = {
+        status: 'quoted',
+        price,
+        commission,
+        technicianEarnings: techEarnings,
+        techNotes: notes || null,
+        quotedAt: serverTimestamp()
+      };
+
+      if (materials) updateData.materials = materials;
+      if (checklist) updateData.checklist = checklist;
+      if (schedule) {
+        updateData.scheduledDate = schedule.date;
+        updateData.scheduledTime = schedule.time;
+        updateData.scheduledDuration = schedule.duration;
+        updateData.scheduledTravelTime = schedule.travelTime;
+
+        // LÓGICA DE DEADLINE DE PAGO (48 HORAS ANTES)
+        const schedDate = new Date(`${schedule.date}T${schedule.time || '09:00'}`);
+        const deadline = new Date(schedDate.getTime() - (48 * 60 * 60 * 1000));
+        const now = new Date();
+
+        // Si la cita es muy pronto (menos de 48h), el deadline es en 2 horas o ya mismo
+        updateData.paymentDeadlineAt = deadline < now
+          ? new Date(now.getTime() + (2 * 60 * 60 * 1000)).toISOString()
+          : deadline.toISOString();
+      }
+
+      await updateDoc(doc(db, "requests", requestId), {
+        ...updateData
+      });
+
+      const req = requests.find(r => r.id === requestId);
+      if (req) {
+        const notesPrefix = notes ? `\n\nDIAGNÓSTICO: ${notes}` : '';
+        const matPrefix = materials && materials.length > 0 ? `\n\nMATERIALES: ${materials.length} ítems incluidos.` : '';
+        const timePrefix = schedule ? `\n\nLLEGADA ESTIMADA: ${schedule.travelTime} min.` : '';
+        const deadlinePrefix = updateData.paymentDeadlineAt
+          ? `\n\n⚠️ FECHA LÍMITE DE PAGO: ${new Date(updateData.paymentDeadlineAt).toLocaleString('es-PA', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true })}`
+          : '';
+
+        await addDoc(collection(db, "messages"), {
+          requestId, sender: 'tech',
+          text: `¡Hola! He analizado tu solicitud para ${req.assetName} y el presupuesto oficial es de B/. ${price}.00.${notesPrefix}${matPrefix}${timePrefix}${deadlinePrefix}\n\nQuedo a la espera de tu aprobación para proceder con el servicio.`,
+          timestamp: serverTimestamp()
+        });
+      }
+
+      toast.success("Cotización enviada al cliente.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al enviar la cotización.");
+    }
+  };
+
+  const handleRejectQuote = async (requestId: string, reason: string) => {
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        status: 'rejected',
+        rejectionReason: reason,
+        rejectedAt: serverTimestamp()
+      });
+      await addDoc(collection(db, "messages"), {
+        requestId, sender: 'client',
+        text: `He rechazado la cotización. Motivo: ${reason}`,
+        timestamp: serverTimestamp()
+      });
+      toast.success("Cotización rechazada.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al procesar el rechazo.");
+    }
+  };
+
+  const handleAcceptBid = async (requestId: string, bid: any) => {
+    try {
+      const commission = bid.price * 0.15;
+      await updateDoc(doc(db, "requests", requestId), {
+        techId: bid.techId,
+        techName: bid.techName,
+        price: bid.price,
+        commission,
+        technicianEarnings: bid.price - commission,
+        status: 'quoted',
+        acceptedBidAt: serverTimestamp()
+      });
+      toast.success(`Oferta de ${bid.techName} aceptada.`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al aceptar la oferta.");
+    }
+  };
+
+  const handleCancelRequest = async (requestId: string) => {
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        status: 'cancelled',
+        cancelledAt: serverTimestamp()
+      });
+      toast.success("Solicitud cancelada.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al cancelar la solicitud.");
+    }
+  };
+
+  const handleReportNoShow = async (requestId: string) => {
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        status: 'disputed',
+        issueReportedByClient: true,
+        issueDescription: 'EL TÉCNICO NO SE PRESENTÓ A LA CITA AGENDADA',
+        reportedAt: serverTimestamp()
+      });
+      await addDoc(collection(db, "notifications"), {
+        userId: 'admin@mantech.com',
+        title: "⚠️ ALERTA DE INCUMPLIMIENTO",
+        body: `El cliente reportó que un técnico no llegó a la cita. ID: ${requestId}`,
+        type: 'system',
+        createdAt: serverTimestamp(),
+        read: false
+      });
+      toast.success("Incidente reportado al Nodo Central. Un asesor le contactará.");
+    } catch (err) { console.error(err); }
+  };
+
+  const handleProposePriceAdjustment = async (requestId: string, newPrice: number, reason: string) => {
+    try {
+      await updateDoc(doc(db, "requests", requestId), {
+        priceAdjustment: {
+          newPrice,
+          reason,
+          status: 'pending',
+          timestamp: new Date().toISOString()
+        }
+      });
+      await addDoc(collection(db, "messages"), {
+        requestId, sender: 'tech',
+        text: `💡 PROPUESTA DE AJUSTE: He propuesto un ajuste de presupuesto a B/. ${newPrice} por el siguiente motivo: ${reason}`,
+        timestamp: serverTimestamp()
+      });
+      toast.success("Propuesta de ajuste enviada.");
+    } catch (err) { console.error(err); }
+  };
+
+  const handleRespondToAdjustment = async (requestId: string, accept: boolean) => {
+    try {
+      const req = requests.find(r => r.id === requestId);
+      if (!req?.priceAdjustment) return;
+
+      if (accept) {
+        const commission = req.priceAdjustment.newPrice * 0.15;
+        await updateDoc(doc(db, "requests", requestId), {
+          price: req.priceAdjustment.newPrice,
+          commission,
+          technicianEarnings: req.priceAdjustment.newPrice - commission,
+          'priceAdjustment.status': 'accepted'
+        });
+        toast.success("Presupuesto actualizado.");
+      } else {
+        await updateDoc(doc(db, "requests", requestId), {
+          'priceAdjustment.status': 'rejected'
+        });
+        toast.error("Ajuste rechazado.");
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  // --- MOTOR DE ARBITRAJE (ADMIN) ---
+  const handleArbitrateDispute = async (requestId: string, resolution: 'release_to_tech' | 'refund_to_client') => {
+    try {
+      const req = requests.find(r => r.id === requestId);
+      if (!req) return;
+
+      if (resolution === 'release_to_tech') {
+        await updateDoc(doc(db, "requests", requestId), {
+          status: 'completed',
+          arbitrationResult: 'released',
+          arbitratedAt: serverTimestamp()
+        });
+        toast.success("Pago liberado al técnico por arbitraje.");
+      } else {
+        await updateDoc(doc(db, "requests", requestId), {
+          status: 'cancelled',
+          arbitrationResult: 'refunded',
+          arbitratedAt: serverTimestamp()
+        });
+        toast.success("Reembolso al cliente aprobado por arbitraje.");
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  // --- MOTOR DE RECOMENDACIÓN (CASCADA) ---
+  const getRecommendedTechs = (category: string, excludeId: string) => {
+    return technicians
+      .filter(t => t.category === category && t.id !== excludeId && t.isVerified)
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, 3);
   };
 
   return {
@@ -341,6 +628,20 @@ export function useBusinessLogic() {
     handleDeleteInventoryItem,
     handleUpdateInventoryItem,
     handleRequestQuote,
-    handleRedeemPoints
+    handleRedeemPoints,
+    handleDeleteAsset,
+    handleUpdateAsset,
+    handleAddFuelLog,
+    handleAddPreTrip,
+    handleUploadMantechDocument,
+    handleSendQuote,
+    handleRejectQuote,
+    handleAcceptBid,
+    handleCancelRequest,
+    handleReportNoShow,
+    handleProposePriceAdjustment,
+    handleRespondToAdjustment,
+    handleArbitrateDispute,
+    getRecommendedTechs
   };
 }

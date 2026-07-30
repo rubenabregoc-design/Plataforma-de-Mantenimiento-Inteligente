@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { TechProfile, Asset } from '../types';
-import { X, Star, MapPin, Award, CheckCircle2, Clock, DollarSign, Send, ShieldPlus, ShieldCheck, Briefcase, Calendar, Search, Car } from 'lucide-react';
+import {
+  X, Star, MapPin, Award, CheckCircle2, Clock, DollarSign, Send,
+  ShieldPlus, ShieldCheck, Briefcase, Calendar, Search, Car,
+  Sliders, Zap, Cpu, Boxes, BatteryCharging, Home, Droplets, PlugZap,
+  Bike, Building2, ShieldAlert, Waves, LayoutGrid
+} from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 interface TechnicianProfileModalProps {
   tech: TechProfile | null;
@@ -11,10 +17,11 @@ interface TechnicianProfileModalProps {
   prefilledDescription?: string;
   onVerifyTech?: (techId: string) => void;
   isAdmin?: boolean;
+  initialAssetId?: string;
 }
 
-export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, onRequestQuote, prefilledDescription, onVerifyTech, isAdmin }: TechnicianProfileModalProps) {
-  const [selectedAssetId, setSelectedAssetId] = useState('');
+export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, onRequestQuote, prefilledDescription, onVerifyTech, isAdmin, initialAssetId }: TechnicianProfileModalProps) {
+  const [selectedAssetId, setSelectedAssetId] = useState(initialAssetId || '');
   const [description, setDescription] = useState(prefilledDescription || '');
   const [suggestedDate, setSuggestedDate] = useState('');
   const [suggestedTime, setSuggestedTime] = useState('');
@@ -22,19 +29,50 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
 
   React.useEffect(() => {
     if (isOpen) {
+      document.body.classList.add('modal-open');
       if (prefilledDescription) setDescription(prefilledDescription);
+      if (initialAssetId) setSelectedAssetId(initialAssetId);
+      // Auto-seleccionar si solo hay uno
+      if (!initialAssetId && assets.length === 1) setSelectedAssetId(assets[0].id);
+
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       setSuggestedDate(tomorrow.toISOString().split('T')[0]);
       setSuggestedTime('09:00');
+    } else {
+      document.body.classList.remove('modal-open');
     }
-  }, [isOpen, prefilledDescription]);
+    return () => document.body.classList.remove('modal-open');
+  }, [isOpen, prefilledDescription, initialAssetId, assets]);
 
   if (!isOpen || !tech) return null;
 
+  const getAssetIcon = (type: string) => {
+    switch (type) {
+      case 'car': return Car;
+      case 'ac': return Sliders;
+      case 'generator': return Zap;
+      case 'computer': return Cpu;
+      case 'industrial_equip': return Boxes;
+      case 'solar_panels': return BatteryCharging;
+      case 'house': return Home;
+      case 'plumbing': return Droplets;
+      case 'electrical': return PlugZap;
+      case 'moto': return Bike;
+      case 'elevator': return Building2;
+      case 'fire_system': return ShieldAlert;
+      case 'pool': return Waves;
+      case 'garden': return LayoutGrid;
+      case 'security_system': return ShieldCheck;
+      default: return Briefcase;
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedAssetId || !description.trim()) return;
+    if (!selectedAssetId) return toast.error("Seleccione un vehículo o equipo para el servicio.");
+    if (!description.trim()) return toast.error("Describa el fallo para que el técnico pueda cotizar.");
+
     onRequestQuote(tech.id, selectedAssetId, description, suggestedDate, suggestedTime);
     setQuoteSent(true);
     setTimeout(() => {
@@ -46,8 +84,8 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
   };
 
   return (
-    <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-[#0d0e12]/95 backdrop-blur-xl overflow-y-auto">
-      <div className="w-full max-w-4xl bg-[#121317] rounded-[3rem] shadow-2xl border border-white/5 flex flex-col md:flex-row animate-fade-in-up my-auto max-h-[95vh] overflow-hidden">
+    <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-[#0d0e12]/95 backdrop-blur-xl overflow-hidden">
+      <div className="w-full max-w-4xl bg-[#121317] rounded-[3rem] shadow-2xl border border-white/5 flex flex-col md:flex-row animate-fade-in-up max-h-[90vh] overflow-hidden">
         
         {/* SIDEBAR TÉCNICO - IZQUIERDA */}
         <div className="md:w-[38%] bg-[#1c1d21] p-8 md:p-10 flex flex-col justify-between border-b md:border-b-0 md:border-r border-white/5 overflow-y-auto custom-scrollbar shrink-0">
@@ -239,7 +277,7 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
                             >
                               <div className="flex items-center gap-5">
                                 <div className={`p-3 rounded-2xl transition-all ${selectedAssetId === x.id ? 'bg-[#5d3cfe] text-white rotate-12' : 'bg-white/5 text-[#474556]'}`}>
-                                  <Car className="w-5 h-5" />
+                                  {React.createElement(getAssetIcon(x.type), { className: "w-5 h-5" })}
                                 </div>
                                 <div>
                                   <p className="text-xs font-black text-white uppercase tracking-tighter">{x.name}</p>
@@ -305,8 +343,7 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
                   </button>
                   <button
                     type="submit"
-                    disabled={assets.length === 0 || !selectedAssetId || !description.trim()}
-                    className="flex-[1.5] py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[#5d3cfe]/20 active:scale-[0.98] transition-all flex items-center justify-center gap-4 group"
+                    className="flex-[1.5] py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[#5d3cfe]/20 active:scale-[0.98] transition-all flex items-center justify-center gap-4 group disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     Enviar Ticket

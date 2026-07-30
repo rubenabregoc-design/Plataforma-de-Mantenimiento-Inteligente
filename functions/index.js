@@ -71,7 +71,7 @@ export const onUserCreated = onDocumentCreated("users/{userId}", async (event) =
     }
 });
 
-// 2. Procesamiento Financiero Automático (Liquidación)
+// 2. Procesamiento Financiero y Triage FIFO
 export const onJobCompleted = onDocumentUpdated("requests/{requestId}", async (event) => {
     const before = event.data.before.data();
     const after = event.data.after.data();
@@ -81,16 +81,33 @@ export const onJobCompleted = onDocumentUpdated("requests/{requestId}", async (e
         await enviarPush(after.techUserId, "✅ Pago Verificado", `El pago para ${after.assetName} ha sido verificado. Puedes iniciar el servicio según la agenda.`, { type: 'system', requestId: event.params.requestId });
     }
 
-    // Notificar al Técnico cuando el pago de imprevisto es aceptado
-    if (before.status !== 'unforeseen_paid' && after.status === 'unforeseen_paid') {
-        await enviarPush(after.techUserId, "💰 Imprevisto Pagado", `El cliente ha pagado el imprevisto de ${after.assetName}. Puedes continuar con el trabajo.`, { type: 'system', requestId: event.params.requestId });
-    }
-
-    // Liquidación final al completar el trabajo
+    // DISPARADOR FIFO: Al terminar un trabajo, buscar si hay clientes en espera para ese técnico
     if (before.status !== 'completed' && after.status === 'completed') {
         const { techId, price, techUserId, assetName } = after;
 
-        // Regla MantechPro: 15% Comisión (B2C)
+        // Búsqueda de clientes "onHold" para este técnico
+        const waitlistSnap = await db.collection("requests")
+            .where("techId", "==", techId)
+            .where("status", "==", "on_hold")
+            .orderBy("waitlistEntryAt", "asc")
+            .limit(1)
+            .get();
+
+        if (!waitlistSnap.empty) {
+            const nextReq = waitlistSnap.docs[0];
+            const nextData = nextReq.data();
+
+            // Notificar al siguiente cliente que hay cupo (Ventana de 3-6h para pagar)
+            const fastDeadline = new Date(Date.now() + (3 * 60 * 60 * 1000)).toISOString();
+            await nextReq.ref.update({
+                status: 'pending', // Pasa de espera a activo para que el técnico cotice
+                notifiedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            await enviarPush(nextData.clientId, "🚛 ¡CUPO LIBERADO!", `El técnico ${after.techName} ya está disponible. Su solicitud para ${nextData.assetName} ha subido al primer lugar.`, { type: 'system' });
+        }
+
+        // Liquidación final al completar el trabajo
         const commission = price * 0.15;
         const earnings = price - commission;
 
@@ -109,10 +126,27 @@ export const onJobCompleted = onDocumentUpdated("requests/{requestId}", async (e
             });
 
             await enviarPush(techUserId, "💰 Fondos Liberados", `Se han acreditado $${earnings.toFixed(2)} a tu billetera.`, { type: 'billing' });
-            info(`⚖️ Liquidación completada para técnico ${techId}.`);
-        } catch (err) {
-            logError("💥 Error en liquidación:", err.message);
-        }
+        } catch (err) { logError("💥 Error en liquidación:", err.message); }
+    }
+});
+
+// 4. MOTOR DE LIMPIEZA DE DEADLINES (CADA HORA)
+export const cleanupExpiredQuotes = onSchedule("every 1 hours", async (event) => {
+    const now = new Date().toISOString();
+    const expiredSnap = await db.collection("requests")
+        .where("status", "==", "quoted")
+        .where("paymentDeadlineAt", "<=", now)
+        .get();
+
+    for (const doc of expiredSnap.docs) {
+        const data = doc.data();
+        await doc.ref.update({
+            status: 'expired_recoverable',
+            expiredAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        await registrarNotificacion(data.clientId, "⚠️ Cita Expirada", `El tiempo de pago para el servicio de ${data.assetName} ha vencido. El cupo ha sido liberado.`, "system");
+        info(`🚫 Ticket ${doc.id} movido a expirado por falta de pago.`);
     }
 });
 

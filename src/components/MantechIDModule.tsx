@@ -68,12 +68,12 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
 
           <div style="margin-top: 40px;">
             <h2 style="font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #000;">Certificado de Confianza Técnica</h2>
-            <p>Por medio del presente documento, el Nodo de Seguridad de <b>MantechPro Industries Panama S.A.</b> certifica que tras la validación biométrica y el cruce de datos en nuestro Ledger de Integridad:</p>
+            <p>Por medio del presente documento, el Nodo de Seguridad de <b>MantechPro Industries Panama S.A.</b> certifica que tras la verificación documental y el cruce de datos en nuestro Ledger de Integridad:</p>
 
             <div class="data-row"><span class="label">Especialista Auditado:</span><br/><b>${userName?.toUpperCase() || 'ESPECIALISTA MANTECHPRO'}</b></div>
             <div class="data-row"><span class="label">Documento de Identidad:</span><br/><b>${cedula || 'NO REGISTRADA'}</b></div>
             <div class="data-row"><span class="label">Estatus de Conducta:</span><br/><b style="color: #059669;">ÓPTIMO - NIVEL DE CONFIANZA ALTO</b></div>
-            <div class="data-row"><span class="label">Validado por:</span><br/><b>NODO CENTRAL MANTECH IA (AUTORIZACIÓN DIGITAL)</b></div>
+            <div class="data-row"><span class="label">Validado por:</span><br/><b>NODO CENTRAL MANTECH (AUTORIZACIÓN DIGITAL)</b></div>
             <div class="data-row"><span class="label">Fecha de Activación:</span><br/>${new Date().toLocaleString('es-PA')}</div>
           </div>
 
@@ -94,7 +94,6 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
       win.document.write(printContent);
       win.document.close();
       setTimeout(() => win.print(), 500);
-      onUpload('record', new File([], "record_interno_verificado.pdf"));
       toast.success("Certificado de Confianza emitido y registrado.");
     } else {
       toast.error("El navegador bloqueó la ventana emergente.");
@@ -203,8 +202,8 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
         isOpen={isIntegrityModalOpen}
         onClose={() => setIsIntegrityModalOpen(false)}
         onConfirm={handleGenerateCertificate}
-        title="Auditoría de Integridad IA"
-        message="¿Autoriza la Auditoría de Integridad IA? Se cruzará su identidad con la base de datos de MantechPro Security para emitir su Certificado de Confianza oficial para PH y Empresas."
+        title="Auditoría de Integridad Oficial"
+        message="¿Autoriza la Auditoría de Integridad? Se cruzará su identidad con la base de datos de MantechPro Security para emitir su Certificado de Confianza oficial para PH y Empresas."
         confirmText="Autorizar Auditoría"
       />
     </div>

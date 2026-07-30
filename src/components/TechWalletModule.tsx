@@ -117,65 +117,80 @@ export default function TechWalletModule({ wallet, techId, onWithdraw, plan = 'b
                        </head>
                        <body>
                          <div class="header">
-                           <div>
-                             <div class="logo">MantechPro Panama</div>
-                             <div style="font-size: 12px; color: #666;">Infraestructura de Ingeniería Operativa</div>
+                           <div style="display: flex; align-items: center; gap: 15px;">
+                             <div style="width: 50px; height: 50px; background: #0d0e12; padding: 10px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                               <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;"><rect width="100" height="100" rx="20" fill="#121317"/><path d="M20 75V35L50 60L80 35V75" stroke="#5d3cfe" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="50" cy="20" r="6" fill="#52ffac"/></svg>
+                             </div>
+                             <div>
+                               <div class="logo">MantechPro Panama</div>
+                               <div style="font-size: 11px; color: #666; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;">Infraestructura de Ingeniería Operativa</div>
+                             </div>
                            </div>
                            <div class="invoice-info">
-                             <div style="font-weight: 900; font-size: 14px;">FACTURA FISCAL DIGITAL</div>
-                             <div style="color: #666; font-size: 11px;">No. MP-${Math.floor(Math.random()*1000000)}</div>
-                             <div style="color: #666; font-size: 11px;">Fecha: ${new Date().toLocaleDateString('es-PA')}</div>
+                             <div style="font-weight: 900; font-size: 14px; color: #0d0e12; letter-spacing: -0.5px;">FACTURA FISCAL DIGITAL</div>
+                             <div style="color: #5d3cfe; font-size: 11px; font-weight: 900; margin-top: 2px;">No. MP-${Math.floor(Math.random()*1000000)}</div>
+                             <div style="color: #666; font-size: 11px; font-weight: 700; margin-top: 2px;">Fecha: ${new Date().toLocaleDateString('es-PA')}</div>
                            </div>
                          </div>
 
-                         <div class="section" style="display: flex; gap: 40px;">
+                         <div class="section" style="display: flex; gap: 60px; background: #fafafa; padding: 25px; border-radius: 20px; border: 1px solid #eee;">
                            <div style="flex: 1;">
-                             <div class="section-title">Emisor (Especialista)</div>
-                             <div style="font-weight: 700;">${bankInfo.ownerName || 'Especialista MantechPro'}</div>
-                             <div style="font-size: 11px; color: #666;">Proveedor de Servicios Técnicos Certificado</div>
+                             <div class="section-title" style="color: #5d3cfe;">Emisor (Especialista)</div>
+                             <div style="font-weight: 900; font-size: 16px; text-transform: uppercase;">${bankInfo.ownerName || 'Especialista MantechPro'}</div>
+                             <div style="font-size: 10px; color: #888; font-weight: 800; text-transform: uppercase; margin-top: 2px;">Proveedor de Servicios Técnicos Certificado</div>
+                             <div style="font-size: 10px; color: #888; font-weight: 800; text-transform: uppercase;">Ciudad de Panamá, PA</div>
                            </div>
                            <div style="flex: 1;">
-                             <div class="section-title">Receptor</div>
-                             <div style="font-weight: 700;">MantechPro Panama S.A.</div>
-                             <div style="font-size: 11px; color: #666;">RUC: 155712124-2-2024 DV 55</div>
+                             <div class="section-title" style="color: #5d3cfe;">Receptor (Pagador)</div>
+                             <div style="font-weight: 900; font-size: 16px; text-transform: uppercase;">MantechPro Panama S.A.</div>
+                             <div style="font-size: 11px; color: #444; font-weight: 800; margin-top: 2px;">RUC: 155712124-2-2024 DV 55</div>
+                             <div style="font-size: 10px; color: #888; font-weight: 800; text-transform: uppercase;">Nodo Central de Operaciones</div>
                            </div>
                          </div>
 
                          <table>
                            <thead>
                              <tr>
-                               <th>Descripción del Servicio / Liquidación</th>
+                               <th style="border-radius: 10px 0 0 0;">Descripción del Servicio / Liquidación</th>
                                <th>Fecha</th>
-                               <th style="text-align: right;">Monto (USD)</th>
+                               <th style="text-align: right; border-radius: 0 10px 0 0;">Monto (USD)</th>
                              </tr>
                            </thead>
                            <tbody>
                              ${(wallet.transactions || []).filter(t => t.type === 'debit').map(t => `
                                <tr>
-                                 <td>${t.description}</td>
-                                 <td>${new Date(t.timestamp).toLocaleDateString()}</td>
-                                 <td style="text-align: right; font-weight: 700;">$${t.amount.toFixed(2)}</td>
+                                 <td style="font-weight: 700; color: #0d0e12; text-transform: uppercase; font-size: 11px;">${t.description}</td>
+                                 <td style="font-weight: 600; color: #666;">${new Date(t.timestamp).toLocaleDateString()}</td>
+                                 <td style="text-align: right; font-weight: 900; color: #0d0e12; font-size: 14px;">$${t.amount.toFixed(2)}</td>
                                </tr>
-                             `).join('') || `<tr><td colspan="3" style="text-align: center; color: #999; padding: 40px;">No hay liquidaciones pendientes para facturar.</td></tr>`}
+                             `).join('') || `<tr><td colspan="3" style="text-align: center; color: #999; padding: 60px; font-style: italic; font-weight: 600;">No hay liquidaciones pendientes para facturar en el Ledger Central.</td></tr>`}
                            </tbody>
                          </table>
 
-                         <div class="total-box">
-                           <div class="total-row">
-                             <span style="font-size: 11px; color: #666;">Subtotal:</span>
-                             <span style="font-weight: 700;">$${(wallet.transactions || []).filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0).toFixed(2)}</span>
+                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                           <div style="margin-top: 40px; position: relative; width: 220px; height: 110px;">
+                              <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 4px double #52ffac; border-radius: 15px; transform: rotate(-8deg); display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(82, 255, 172, 0.05);">
+                                 <div style="font-size: 14px; font-weight: 900; color: #52ffac; text-transform: uppercase; letter-spacing: 2px;">VALIDADO</div>
+                                 <div style="font-size: 8px; font-weight: 800; color: #52ffac; text-transform: uppercase; margin-top: 5px;">Nodo Financiero Mantech</div>
+                                 <div style="font-size: 7px; color: #52ffac; opacity: 0.7; margin-top: 2px;">${new Date().getTime().toString(16).toUpperCase()}</div>
+                              </div>
                            </div>
-                           <div class="total-row">
-                             <span style="font-size: 11px; color: #666;">ITBMS (7%):</span>
-                             <span style="font-weight: 700;">$0.00</span>
-                           </div>
-                           <div class="total-row grand-total" style="margin-top: 10px; padding-top: 10px;">
-                             <span>TOTAL:</span>
-                             <span>$${(wallet.transactions || []).filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0).toFixed(2)}</span>
+
+                           <div class="total-box" style="margin-top: 40px; border: 2px solid #0d0e12; padding: 25px;">
+                             <div class="total-row">
+                               <span style="font-size: 10px; font-weight: 900; color: #888; text-transform: uppercase;">Subtotal:</span>
+                               <span style="font-weight: 800; font-size: 14px;">$${(wallet.transactions || []).filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0).toFixed(2)}</span>
+                             </div>
+                             <div class="total-row" style="margin-top: 5px;">
+                               <span style="font-size: 10px; font-weight: 900; color: #888; text-transform: uppercase;">Impuestos (0%):</span>
+                               <span style="font-weight: 800; font-size: 14px;">$0.00</span>
+                             </div>
+                             <div class="total-row grand-total" style="margin-top: 15px; padding-top: 15px; border-top: 3px solid #5d3cfe;">
+                               <span style="font-size: 12px; font-weight: 900; color: #0d0e12;">TOTAL NETO:</span>
+                               <span style="font-size: 22px; font-weight: 900; color: #5d3cfe; letter-spacing: -1px;">$${(wallet.transactions || []).filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0).toFixed(2)}</span>
+                             </div>
                            </div>
                          </div>
-
-                         <div class="stamp">VALIDADO POR SISTEMA</div>
 
                          <div class="footer">
                            Esta es una factura digital generada automáticamente por el Nodo de Finanzas de MantechPro.<br/>

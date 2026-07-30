@@ -4,7 +4,7 @@ import {
   X, LayoutDashboard, Search, Bell, HelpCircle, LogOut, Camera,
   Globe, BrainCircuit, ShieldCheck, Store, FileCheck2, FileText,
   Package, Star, MessageSquare, Settings, Inbox, Layers, CalendarDays,
-  PieChart, User, DollarSign, Truck, Users, BellRing
+  PieChart, User, DollarSign, Truck, Users, BellRing, Zap
 } from 'lucide-react';
 import Logo from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
@@ -117,7 +117,7 @@ export default function DashboardLayout({
       <div className="flex flex-1 overflow-hidden relative">
         {/* SIDEBAR */}
         <aside className={`
-          fixed md:relative inset-y-0 left-0 z-[90] w-72 bg-[#0d0e12] border-r border-[#2a2b2f] p-8 flex flex-col shrink-0 overflow-y-auto custom-scrollbar transition-transform duration-300 ease-in-out
+          fixed md:relative inset-y-0 left-0 z-[90] w-64 bg-[#0d0e12] border-r border-[#2a2b2f] p-6 flex flex-col shrink-0 overflow-y-auto custom-scrollbar transition-transform duration-300 ease-in-out
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}>
           {isMobileMenuOpen && (
@@ -132,19 +132,9 @@ export default function DashboardLayout({
              </div>
              <div className="overflow-hidden">
                <h4 className="font-black text-white text-xs tracking-tight truncate uppercase leading-tight">{loggedInName || 'Usuario'}</h4>
-               <div className="flex items-center gap-2 mt-1">
-                 <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest">
-                   {!role ? t('loading', 'CARGANDO...') : role === 'client' ? t('client', 'CLIENTE') : role === 'tech' ? t('tech', 'TÉCNICO') : t('admin', 'ADMINISTRADOR')}
-                 </p>
-                 <div className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase border ${
-                   isFree ? 'bg-white/5 border-white/10 text-[#474556]' :
-                   isEmprendedor ? 'bg-[#52ffac]/10 border-[#52ffac]/20 text-[#52ffac]' :
-                   isPro ? 'bg-[#5d3cfe]/10 border-[#5d3cfe]/20 text-[#c7bfff]' :
-                   'bg-amber-500/10 border-amber-500/20 text-amber-500'
-                 }`}>
-                   {activePlan.replace('plan-', '')}
-                 </div>
-               </div>
+               <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest mt-1">
+                 {!role ? t('loading', 'CARGANDO...') : role === 'client' ? t('client', 'CLIENTE') : role === 'tech' ? t('tech', 'TÉCNICO') : t('admin', 'ADMINISTRADOR')}
+               </p>
              </div>
           </div>
 
@@ -190,6 +180,7 @@ export default function DashboardLayout({
                 <button onClick={() => navigateTech('loyalty')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'loyalty' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Star className="w-4 h-4 text-amber-500" /> {t('loyalty_club', 'Club Fidelidad')}</button>
                 <button onClick={() => navigateTech('inventory')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'inventory' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Package className="w-4 h-4" /> {t('my_inventory', 'Mi Inventario')}</button>
                 <button onClick={() => navigateTech('mantech_id')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'mantech_id' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><ShieldCheck className="w-4 h-4" /> {t('mantech_id', 'Mantech ID')}</button>
+                <button onClick={() => navigateTech('community')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'community' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Users className="w-4 h-4" /> Soporte Comunidad</button>
                 <button onClick={() => navigateTech('chat')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'chat' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><MessageSquare className="w-4 h-4" /> {t('chat', 'Chat')}</button>
                 <button onClick={() => navigateTech('profile')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'profile' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><User className="w-4 h-4" /> {t('my_profile', 'Mi Perfil')}</button>
                 <button onClick={() => navigateTech('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> {t('settings', 'Configuración')}</button>
@@ -199,6 +190,7 @@ export default function DashboardLayout({
             {role === 'admin' && (
               <>
                 <button onClick={() => navigateAdmin('finance')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'finance' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><DollarSign className="w-4 h-4" /> Finanzas</button>
+                <button onClick={() => navigateAdmin('validator')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'validator' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><ShieldCheck className="w-4 h-4" /> Validador</button>
                 <button onClick={() => navigateAdmin('audit')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'audit' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileText className="w-4 h-4" /> Logs Actividad</button>
                 <button onClick={() => navigateAdmin('logistics')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'logistics' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Truck className="w-4 h-4" /> Logística</button>
                 <button onClick={() => navigateAdmin('users')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'users' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Users className="w-4 h-4" /> Usuarios</button>
@@ -211,7 +203,7 @@ export default function DashboardLayout({
         </aside>
 
         <main className="flex-1 bg-[#0d0e12] p-6 md:p-10 overflow-y-auto custom-scrollbar relative">
-           <div className="max-w-6xl mx-auto space-y-8 md:space-y-12">
+           <div className="max-w-[1600px] mx-auto space-y-8 md:space-y-12">
               {children}
            </div>
         </main>

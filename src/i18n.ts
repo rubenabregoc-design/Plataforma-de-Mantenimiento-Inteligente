@@ -217,7 +217,7 @@ const resources = {
       "document_registered": "Cédula Registrada",
       "integrity_record": "Récord de Integridad",
       "integrity_record_desc": "Auditoría Interna MantechPro",
-      "generate_audit": "Generar Auditoría IA",
+      "generate_audit": "Generar Auditoría Oficial",
       "view_record_active": "Ver Récord Activo ✓",
       "privacy_protocol": "Protocolo de Privacidad Ley 81",
       "privacy_desc": "Sus documentos se almacenan con cifrado militar AES-256 y solo son visibles para auditores certificados de MantechPro."

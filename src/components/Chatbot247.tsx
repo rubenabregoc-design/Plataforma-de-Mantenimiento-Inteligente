@@ -44,7 +44,7 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
   };
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && messages.length > 1) { // Solo auto-scroll si hay más de un mensaje (el saludo inicial no scrollea al fondo)
       setTimeout(scrollToBottom, 100);
     }
   }, [messages, isTyping, isOpen]);
@@ -222,10 +222,10 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
         <div className="flex items-center gap-3">
           <MantechProLogo size="sm" showText={false} className="w-8 h-8" />
           <div>
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">Asesor MantechPro</h4>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="w-1 h-1 bg-[#52ffac] rounded-full animate-pulse"></span>
-              <span className="text-[7px] font-black text-[#52ffac] uppercase tracking-widest">IA Activa</span>
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] leading-none text-white">Asesor MantechPro</h4>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <span className="w-1.5 h-1.5 bg-[#52ffac] rounded-full animate-pulse shadow-[0_0_8px_#52ffac]"></span>
+              <span className="text-[7px] font-black text-[#52ffac] uppercase tracking-widest">Protocolo Activo</span>
             </div>
           </div>
         </div>
@@ -265,7 +265,9 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
       </div>
 
       {/* CHAT BODY - ESPACIO MAXIMIZADO */}
-      <div className="flex-1 overflow-y-auto relative p-4 space-y-4 custom-scrollbar bg-[#0d0e12] grid-bg min-h-0">
+      <div className="flex-1 overflow-y-auto relative p-6 space-y-6 custom-scrollbar bg-[#0d0e12] grid-bg min-h-0 pt-8">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#5d3cfe]/5 to-transparent pointer-events-none"></div>
+
         {messages.map((msg) => (
           <div key={msg.id} className={`flex relative z-10 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
             <motion.div
