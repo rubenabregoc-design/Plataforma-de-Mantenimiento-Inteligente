@@ -1,0 +1,5 @@
+# Mantech Pro App Hosting Configuration
+runtime: nodejs20
+# Specify the build command if necessary
+# buildConfig:
+#   buildCommand: npm run build
