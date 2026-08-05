@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fetch from 'node-fetch';
 import admin from 'firebase-admin';
+import nodemailer from 'nodemailer';
 import { readFile } from 'fs/promises';
 import { format, addDays, parseISO, differenceInCalendarDays, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -74,17 +75,54 @@ initFirebaseAdmin();
 
 const db = admin.firestore();
 
-// API KEY BREVO (MANTECH PRO)
-const BREVO_API_KEY = process.env.BREVO_API_KEY;
-const SENDER_EMAIL = process.env.SENDER_EMAIL || 'mantechpro@protonmail.com';
+// CONFIGURACIÓN DE SMTP (BREVO MANTECH PRO)
+const SENDER_EMAIL = process.env.SENDER_EMAIL || 'info@mantech-pro.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'info@mantech-pro.com, rubenabregoc@gmail.com';
 const SENDER_NAME = 'Mantech Pro Global';
+const SMTP_FROM = process.env.SMTP_FROM || `"${SENDER_NAME}" <${SENDER_EMAIL}>`;
 const APP_URL = process.env.APP_URL || 'https://mantech-pro.com';
+
+const mailTransporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+  port: Number(process.env.SMTP_PORT) || 587,
+  secure: process.env.SMTP_SECURE === 'true',
+  auth: {
+    user: process.env.SMTP_USER || 'b31b49001@smtp-brevo.com',
+    pass: process.env.SMTP_PASS || process.env.BREVO_API_KEY || ''
+  }
+});
+
+async function sendEmail({ to, subject, html, replyTo }: { to: string; subject: string; html: string; replyTo?: string }) {
+  try {
+    const info = await mailTransporter.sendMail({
+      from: SMTP_FROM,
+      to,
+      subject,
+      html,
+      ...(replyTo ? { replyTo } : {})
+    });
+    console.log(`✅ Email enviado exitosamente a ${to}: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
+  } catch (err: any) {
+    console.error(`❌ Error enviando email por SMTP Brevo a ${to}:`, err.message || err);
+    throw err;
+  }
+}
 
 app.use(express.json({ limit: '10mb' }));
 
-// Servir archivos estáticos del Frontend (React/Vite)
-const distPath = path.join(process.cwd(), 'dist');
-app.use(express.static(distPath));
+// Servir archivos estáticos con resolución de ruta absoluta y MIME-Type fix
+const distPath = path.resolve(process.cwd(), 'dist');
+app.use(express.static(distPath, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    }
+    if (filePath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    }
+  }
+}));
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -110,23 +148,14 @@ app.get("/api/health", (req, res) => {
 app.post("/api/welcome-email", async (req, res) => {
   const { email, name } = req.body;
   try {
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "accept": "application/json",
-        "api-key": process.env.BREVO_API_KEY || '',
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-        to: [{ email }],
-        subject: "🚀 Bienvenido al Ecosistema MantechPro",
-        htmlContent: `<h1>Hola ${name}</h1><p>Tu cuenta ha sido vinculada a MantechPro Panamá.</p>`
-      })
+    await sendEmail({
+      to: email,
+      subject: "🚀 Bienvenido al Ecosistema MantechPro",
+      html: `<h1>Hola ${name}</h1><p>Tu cuenta ha sido vinculada a MantechPro Panamá.</p>`
     });
-    res.json({ success: true, detail: "Email en cola de envío" });
+    res.json({ success: true, detail: "Email enviado correctamente" });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -134,49 +163,36 @@ app.post("/api/welcome-email", async (req, res) => {
 app.post("/api/contact", async (req, res) => {
   const { name, email, subject, message, type } = req.body;
 
-  // Determinamos el destino basado en el tipo de consulta
   let destination = 'info@mantech-pro.com';
   if (type === 'support') destination = 'soporte@mantech-pro.com';
   if (type === 'jobs') destination = 'admin@mantech-pro.com';
 
+  const targetEmail = ADMIN_EMAIL || destination;
+
   try {
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "accept": "application/json",
-        "api-key": process.env.BREVO_API_KEY || '',
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        sender: { name: `Portal Web: ${name}`, email: SENDER_EMAIL },
-        to: [{ email: destination }],
-        replyTo: { email: email, name: name },
-        subject: `[WEB CONTACT] ${subject}`,
-        htmlContent: `
-          <div style="font-family: sans-serif; background: #0d0e12; color: #fff; padding: 40px; border-radius: 20px;">
-            <h2 style="color: #5d3cfe;">Nueva Consulta desde mantech-pro.com</h2>
-            <div style="background: #16171d; padding: 20px; border-radius: 10px; margin-top: 20px;">
-              <p><strong>Remitente:</strong> ${name} (${email})</p>
-              <p><strong>Tipo:</strong> ${type}</p>
-              <p><strong>Asunto:</strong> ${subject}</p>
-              <hr style="border: 0; border-top: 1px solid #2a2b2f; margin: 20px 0;">
-              <p style="white-space: pre-wrap;">${message}</p>
-            </div>
-            <p style="font-size: 10px; color: #474556; margin-top: 20px;">MantechPro Node V4.6 - Email Routing Engine</p>
+    await sendEmail({
+      to: targetEmail,
+      replyTo: `${name} <${email}>`,
+      subject: `[WEB CONTACT] ${subject}`,
+      html: `
+        <div style="font-family: sans-serif; background: #0d0e12; color: #fff; padding: 40px; border-radius: 20px;">
+          <h2 style="color: #5d3cfe;">Nueva Consulta desde mantech-pro.com</h2>
+          <div style="background: #16171d; padding: 20px; border-radius: 10px; margin-top: 20px;">
+            <p><strong>Remitente:</strong> ${name} (${email})</p>
+            <p><strong>Tipo:</strong> ${type}</p>
+            <p><strong>Asunto:</strong> ${subject}</p>
+            <hr style="border: 0; border-top: 1px solid #2a2b2f; margin: 20px 0;">
+            <p style="white-space: pre-wrap;">${message}</p>
           </div>
-        `
-      })
+          <p style="font-size: 10px; color: #474556; margin-top: 20px;">MantechPro Node V4.6 - Email Routing Engine</p>
+        </div>
+      `
     });
-
-    const result = await response.json();
-    console.log("Brevo API Response:", result);
-
-    if (!response.ok) throw new Error(JSON.stringify(result));
 
     res.json({ success: true });
   } catch (error: any) {
     console.error("Contact Form Error:", error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -220,7 +236,8 @@ app.post("/api/diagnose", async (req, res) => {
 
 // 4. Envío de Reporte de Cierre Mensual
 app.post("/api/send-report", async (req, res) => {
-  const { email, reportData } = req.body;
+  const { email, to, reportData } = req.body;
+  const recipient = to || email || ADMIN_EMAIL;
 
   try {
     const htmlContent = `
@@ -235,24 +252,15 @@ app.post("/api/send-report", async (req, res) => {
       </div>
     `;
 
-    await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "accept": "application/json",
-        "api-key": process.env.BREVO_API_KEY || '',
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-        to: [{ email }],
-        subject: `📊 Reporte Mensual MantechPro - ${reportData.month}`,
-        htmlContent
-      })
+    await sendEmail({
+      to: recipient,
+      subject: `📊 Reporte Mensual MantechPro - ${reportData.month}`,
+      html: htmlContent
     });
 
     res.json({ success: true });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -363,22 +371,17 @@ app.get("/api/cron/maintenance-alerts", async (req, res) => {
           engineer: assetData.driverName || "Operador Élite"
         });
 
-        await fetch("https://api.brevo.com/v3/smtp/email", {
-          method: "POST",
-          headers: { "accept": "application/json", "api-key": BREVO_API_KEY, "content-type": "application/json" },
-          body: JSON.stringify({
-            sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-            to: [{ email: clientEmail }],
-            subject: `🚨 ALERTA MANTECH PRO: Protocolo ${assetData.name || 'Mantenimiento'}`,
-            htmlContent: html
-          })
+        await sendEmail({
+          to: clientEmail,
+          subject: `🚨 ALERTA MANTECH PRO: Protocolo ${assetData.name || 'Mantenimiento'}`,
+          html
         });
         sentCount++;
       }
     }
     res.json({ success: true, alertsSent: sentCount });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
