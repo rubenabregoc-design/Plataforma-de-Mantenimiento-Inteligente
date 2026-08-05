@@ -144,7 +144,7 @@ export default function TechWalletModule({ wallet, techId, onWithdraw, plan = 'b
                              <div class="section-title" style="color: #5d3cfe;">Receptor (Pagador)</div>
                              <div style="font-weight: 900; font-size: 16px; text-transform: uppercase;">MantechPro Panama S.A.</div>
                              <div style="font-size: 11px; color: #444; font-weight: 800; margin-top: 2px;">RUC: 155712124-2-2024 DV 55</div>
-                             <div style="font-size: 10px; color: #888; font-weight: 800; text-transform: uppercase;">Nodo Central de Operaciones</div>
+                             <div style="font-size: 10px; color: #888; font-weight: 800; text-transform: uppercase;">Sistema de Operaciones</div>
                            </div>
                          </div>
 

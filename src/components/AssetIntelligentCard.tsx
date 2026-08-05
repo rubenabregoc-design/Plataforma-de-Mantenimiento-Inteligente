@@ -288,7 +288,7 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
                                <td style="padding: 8px;">${l.mileage.toLocaleString()} KM</td>
                                <td style="padding: 8px; font-weight: 800;">B/. ${l.price.toFixed(2)}</td>
                             </tr>
-                          `).join('') || '<tr><td colspan="4" style="padding: 15px; color: #888; text-align: center; font-style: italic;">No se detectaron registros de carga en el nodo central.</td></tr>'}
+                          `).join('') || '<tr><td colspan="4" style="padding: 15px; color: #888; text-align: center; font-style: italic;">No se detectaron registros de carga en el sistema.</td></tr>'}}
                        </table>
                     </div>
 

@@ -154,7 +154,7 @@ export default function QRScannerModal({ isOpen, onClose, onScanSuccess, technic
 
         <footer className="px-8 py-4 bg-[#1c1d21]/50 border-t border-white/5 text-center flex items-center justify-center gap-2">
            <Zap className="w-3 h-3 text-amber-500 fill-current" />
-           <p className="text-[8px] text-[#474556] font-black uppercase tracking-[0.2em]">Cifrado de Punto a Punto con el Nodo Central</p>
+           <p className="text-[8px] text-[#474556] font-black uppercase tracking-[0.2em]">Cifrado de Punto a Punto con el Sistema MantechPro</p>
         </footer>
 
         <style>{`

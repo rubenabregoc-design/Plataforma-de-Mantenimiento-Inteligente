@@ -105,7 +105,7 @@ export default function MaterialModal({ isOpen, onClose, request, onSave }: Mate
 
         {/* FOOTER - PROTECTOR */}
         <footer className="p-4 bg-black/20 border-t border-white/5 text-center shrink-0">
-           <p className="text-[7px] text-[#474556] font-black uppercase tracking-widest">Sincronización en Tiempo Real con Nodo Central</p>
+           <p className="text-[7px] text-[#474556] font-black uppercase tracking-widest">Sincronización en Tiempo Real con MantechPro</p>
         </footer>
       </div>
     </div>

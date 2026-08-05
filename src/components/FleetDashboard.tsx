@@ -156,7 +156,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
             const base64Audio = reader.result as string;
 
             try {
-              // TRANSMISIÓN EFÍMERA AL NODO CENTRAL (DATO PURO EN MEMORIA)
+              // TRANSMISIÓN EFÍMERA AL SISTEMA CLOUD (DATO PURO EN MEMORIA)
               await addDoc(collection(db, "radio_signals"), {
                 senderId: 'admin-control',
                 senderName: 'CONTROL CENTRAL',
