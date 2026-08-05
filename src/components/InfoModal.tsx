@@ -322,11 +322,11 @@ export default function InfoModal({ isOpen, onClose, slug }: Props) {
         {/* CONTENT */}
         <div className="p-6 sm:p-10 space-y-10 overflow-y-auto custom-scrollbar flex-1">
            <div className="space-y-6">
-              <p className="text-[#c8c4d9] text-base sm:text-xl font-medium leading-relaxed italic border-l-4 pl-6" style={{ borderColor: content.color }}>
+              <p className="text-[#c8c4d9] text-base sm:text-xl font-medium leading-relaxed italic border-l-4 pl-6 text-justify" style={{ borderColor: content.color }}>
                  "{content.description}"
               </p>
               <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 sm:p-8">
-                <p className="text-[#8a879d] text-sm sm:text-base leading-relaxed font-medium">
+                <p className="text-[#8a879d] text-sm sm:text-base leading-relaxed font-medium text-justify">
                   {content.longDesc}
                 </p>
               </div>
