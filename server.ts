@@ -120,7 +120,7 @@ app.post("/api/welcome-email", async (req, res) => {
         sender: { name: SENDER_NAME, email: SENDER_EMAIL },
         to: [{ email }],
         subject: "🚀 Bienvenido al Ecosistema MantechPro",
-        htmlContent: `<h1>Hola ${name}</h1><p>Tu cuenta ha sido vinculada al Nodo Central de Panamá.</p>`
+        htmlContent: `<h1>Hola ${name}</h1><p>Tu cuenta ha sido vinculada a MantechPro Panamá.</p>`
       })
     });
     res.json({ success: true, detail: "Email en cola de envío" });

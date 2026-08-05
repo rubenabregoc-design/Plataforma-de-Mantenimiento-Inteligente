@@ -332,7 +332,7 @@ export default function InfoModal({ isOpen, onClose, slug }: Props) {
         })
       });
       if (res.ok) {
-        toast.success("Mensaje enviado al Nodo Central. Recibirá una respuesta en su correo.");
+        toast.success("Mensaje enviado con éxito. Recibirá una respuesta en su correo.");
         setShowForm(false);
         setForm({ name: '', email: '', message: '' });
       } else {

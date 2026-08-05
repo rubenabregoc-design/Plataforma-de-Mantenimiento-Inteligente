@@ -61,7 +61,7 @@ export default function Footer() {
                 <h2 className="text-3xl md:text-5xl font-black tracking-tighter leading-none italic uppercase">Novedades <span className="text-white/20">MantechPro.</span></h2>
              </div>
              <p className="max-w-xs text-[10px] text-[#474556] font-bold uppercase tracking-widest leading-relaxed">
-                Contenido dinámico actualizado en tiempo real desde el Nodo Central de Ingeniería.
+                Contenido dinámico actualizado en tiempo real.
              </p>
           </div>
 

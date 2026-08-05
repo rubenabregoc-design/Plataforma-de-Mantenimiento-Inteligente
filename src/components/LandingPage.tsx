@@ -104,7 +104,7 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
   const footerContentData: Record<string, any> = {
     "Quiénes Somos": {
       title: "Identidad MantechPro",
-      desc: "MantechPro nace en Panamá como la primera infraestructura digital de ingeniería operativa. No somos solo una plataforma, somos el nodo central que conecta la demanda técnica con especialistas certificados, asegurando que cada activo en el país opere al 100% de su capacidad.",
+      desc: "MantechPro nace en Panamá como la primera infraestructura digital de ingeniería operativa. No somos solo una plataforma, somos el ecosistema que conecta la demanda técnica con especialistas certificados, asegurando que cada activo en el país opere al 100% de su capacidad.",
       points: ["Ingeniería de Grado Industrial", "Talento Panameño Certificado", "Tecnología Satelital"],
       icon: Users
     },

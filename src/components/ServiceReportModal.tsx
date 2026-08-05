@@ -265,7 +265,7 @@ export default function ServiceReportModal({ isOpen, onClose, request }: Service
                  <div className="absolute -top-12 -right-4 w-24 h-24 pointer-events-none opacity-80">
                     <div className="w-full h-full border-4 double border-[#52ffac] rounded-full flex flex-col items-center justify-center rotate-[-15deg] bg-white/50 backdrop-blur-sm">
                        <span className="text-[8px] font-black text-[#52ffac] uppercase leading-none">VERIFICADO</span>
-                       <span className="text-[5px] font-bold text-[#52ffac] uppercase mt-1">NODO CENTRAL</span>
+                       <span className="text-[5px] font-bold text-[#52ffac] uppercase mt-1">MANTECHPRO</span>
                        <div className="w-8 h-0.5 bg-[#52ffac] my-1"></div>
                        <span className="text-[4px] font-black text-[#52ffac]">${new Date().getTime().toString(16).toUpperCase()}</span>
                     </div>
