@@ -503,6 +503,10 @@ app.get("/api/cron/maintenance-alerts", async (req, res) => {
 
 // Ruta Catch-all: Para que el Frontend maneje el enrutamiento (SPA)
 app.get('*', (req, res) => {
+  // Protocolo Anti-Caché para el index.html (Evita errores de MIME type en actualizaciones)
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
