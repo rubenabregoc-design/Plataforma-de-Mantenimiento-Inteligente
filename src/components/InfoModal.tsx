@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, ShieldCheck, Globe, Zap, Users, Building2, FileText, Layout, Store, PieChart, BadgeCheck, Heart, Leaf, Rocket, Clock, CheckCircle2, BarChart3, Lock, Send, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
@@ -300,6 +300,16 @@ export default function InfoModal({ isOpen, onClose, slug }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // RESET SCROLL TO TOP ON OPEN OR VIEW CHANGE
+  useEffect(() => {
+    if (isOpen || showForm) {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = 0;
+      }
+    }
+  }, [isOpen, showForm, slug]);
 
   if (!isOpen) return null;
 
@@ -367,7 +377,10 @@ export default function InfoModal({ isOpen, onClose, slug }: Props) {
         </div>
 
         {/* CONTENT */}
-        <div className="p-6 sm:p-10 space-y-10 overflow-y-auto custom-scrollbar flex-1">
+        <div
+          ref={scrollRef}
+          className="p-6 sm:p-10 space-y-10 overflow-y-auto custom-scrollbar flex-1 scroll-smooth"
+        >
            <AnimatePresence mode="wait">
              {!showForm ? (
                <motion.div
