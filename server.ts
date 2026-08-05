@@ -81,6 +81,10 @@ const APP_URL = process.env.APP_URL || 'http://localhost:3000';
 
 app.use(express.json({ limit: '10mb' }));
 
+// Servir archivos estáticos del Frontend (React/Vite)
+const distPath = path.join(process.cwd(), 'dist');
+app.use(express.static(distPath));
+
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -325,6 +329,11 @@ app.get("/api/cron/maintenance-alerts", async (req, res) => {
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
+});
+
+// Ruta Catch-all: Para que el Frontend maneje el enrutamiento (SPA)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'dist', 'index.html'));
 });
 
 app.listen(PORT, () => {
