@@ -263,7 +263,7 @@ app.post("/api/contact", async (req, res) => {
 
 // 2.6 Admin Ticket Reply Handler (Premium Template)
 app.post("/api/admin/reply-ticket", async (req, res) => {
-  const { name, email, subject, message } = req.body;
+  const { name, email, subject, message, originalMessage } = req.body;
 
   try {
     await sendEmail({
@@ -281,9 +281,17 @@ app.post("/api/admin/reply-ticket", async (req, res) => {
 
             <div style="padding: 50px; color: #ffffff;">
                <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 25px; color: #5d3cfe;">RE: ${subject}</h2>
-               <p style="color: #c8c4d9; font-size: 16px; line-height: 1.8; margin-bottom: 30px; white-space: pre-wrap;">
+               <p style="color: #ffffff; font-size: 16px; line-height: 1.8; margin-bottom: 40px; white-space: pre-wrap;">
                  ${message}
                </p>
+
+               <!-- Hilo de Conversación Original -->
+               <div style="background-color: #0d0e12; border-radius: 16px; padding: 25px; border: 1px solid #1c1d21; margin-top: 20px;">
+                  <p style="font-size: 10px; color: #474556; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;">Tu consulta original:</p>
+                  <p style="color: #8a879d; font-size: 14px; line-height: 1.6; font-style: italic; margin: 0;">
+                    "${originalMessage}"
+                  </p>
+               </div>
 
                <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #2a2b2f;">
                   <p style="color: #ffffff; font-size: 14px; font-weight: 700; margin: 0;">Departamento de Soporte Estratégico</p>

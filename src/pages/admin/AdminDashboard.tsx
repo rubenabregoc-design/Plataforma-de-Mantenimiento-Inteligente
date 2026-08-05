@@ -56,7 +56,8 @@ export default function AdminDashboard() {
           name: selectedTicket.userName,
           email: selectedTicket.userEmail,
           subject: selectedTicket.subject,
-          message: replyText
+          message: replyText,
+          originalMessage: selectedTicket.message
         })
       });
 
