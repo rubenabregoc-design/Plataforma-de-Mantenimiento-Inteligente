@@ -278,12 +278,12 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
       </nav>
 
       {/* 2. HERO SECTION */}
-      <section className="relative pt-32 sm:pt-48 pb-16 sm:pb-24 px-6 sm:px-8 overflow-hidden">
+      <section className="relative pt-20 sm:pt-28 pb-16 sm:pb-24 px-6 sm:px-8 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none">
            <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-[#5d3cfe]/10 rounded-full blur-[120px] animate-pulse"></div>
         </div>
 
-        <div className="max-w-6xl mx-auto relative z-10 text-center space-y-8 sm:space-y-10">
+        <div className="max-w-6xl mx-auto relative z-10 text-center space-y-4 sm:space-y-6">
           <div className="inline-flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-full backdrop-blur-md">
              <div className="w-2 h-2 rounded-full bg-[#52ffac] animate-pulse"></div>
              <span className="text-[8px] sm:text-[9px] font-black text-white uppercase tracking-widest">Red de Mantenimiento #1 de Panamá</span>
