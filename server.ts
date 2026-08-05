@@ -111,18 +111,10 @@ async function sendEmail({ to, subject, html, replyTo }: { to: string; subject: 
 
 app.use(express.json({ limit: '10mb' }));
 
-// Servir archivos estáticos con resolución de ruta absoluta y MIME-Type fix
-const distPath = path.resolve(process.cwd(), 'dist');
-app.use(express.static(distPath, {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.js')) {
-      res.setHeader('Content-Type', 'application/javascript');
-    }
-    if (filePath.endsWith('.css')) {
-      res.setHeader('Content-Type', 'text/css');
-    }
-  }
-}));
+// Servir archivos estáticos del Frontend (React/Vite)
+// Usamos __dirname porque en producción el servidor está DENTRO de la carpeta dist
+const staticPath = path.resolve(__dirname);
+app.use(express.static(staticPath));
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -387,7 +379,7 @@ app.get("/api/cron/maintenance-alerts", async (req, res) => {
 
 // Ruta Catch-all: Para que el Frontend maneje el enrutamiento (SPA)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'dist', 'index.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {
