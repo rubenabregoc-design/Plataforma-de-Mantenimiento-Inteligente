@@ -113,7 +113,7 @@ export default function DiagnosticAIView({ assets, onFindTechnicians, mode = 'ma
     if (!selectedAsset || !customNotes) return;
     setIsAiLoading(true);
     try {
-      const res = await fetch('http://localhost:3000/api/diagnose', {
+      const res = await fetch('/api/diagnose', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

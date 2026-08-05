@@ -14,6 +14,10 @@ import { useAuth } from '../../context/AuthContext';
 import { useUI } from '../../context/UIContext';
 import { useBusinessLogic } from '../../hooks/useBusinessLogic';
 import Skeleton from '../../components/Skeleton';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { db } from '../../firebase';
+import { Mail, MessageSquare as MsgIcon, Send } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 export default function AdminDashboard() {
   const { assets, requests, technicians, inventory, isDataLoading, reminders } = useData();
@@ -24,6 +28,54 @@ export default function AdminDashboard() {
   const adminTab = tabs.admin;
   const [verifyId, setVerifyId] = useState('');
   const [verifyResult, setVerifyResult] = useState<any>(null);
+
+  // --- LOGICA DE TICKETS ---
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [replyText, setReplyText] = useState('');
+  const [isReplying, setIsReplying] = useState(false);
+
+  useEffect(() => {
+    if (adminTab === 'tickets') {
+      const q = query(collection(db, "support_tickets"), orderBy("createdAt", "desc"));
+      const unsub = onSnapshot(q, (snap) => {
+        setTickets(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      });
+      return () => unsub();
+    }
+  }, [adminTab]);
+
+  const handleReplyTicket = async () => {
+    if (!replyText.trim() || !selectedTicket) return;
+    setIsReplying(true);
+    try {
+      const res = await fetch("/api/admin/reply-ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: selectedTicket.userName,
+          email: selectedTicket.userEmail,
+          subject: selectedTicket.subject,
+          message: replyText
+        })
+      });
+
+      if (res.ok) {
+        await updateDoc(doc(db, "support_tickets", selectedTicket.id), {
+          status: 'resolved',
+          replySent: true,
+          repliedAt: new Date().toISOString()
+        });
+        toast.success("Respuesta premium enviada con éxito.");
+        setReplyText('');
+        setSelectedTicket(null);
+      }
+    } catch (e) {
+      toast.error("Error al enviar respuesta.");
+    } finally {
+      setIsReplying(false);
+    }
+  };
 
   const handleVerifyId = () => {
     if (!verifyId.trim()) {
@@ -242,6 +294,98 @@ export default function AdminDashboard() {
 
       {adminTab === 'audit' && (
         <AuditLogsModule logs={[]} />
+      )}
+
+      {adminTab === 'tickets' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 h-[70vh]">
+           {/* LISTA DE TICKETS */}
+           <div className="lg:col-span-5 bg-[#121317] border border-white/5 rounded-[3rem] overflow-hidden flex flex-col shadow-2xl">
+              <header className="p-8 border-b border-white/5 bg-[#1c1d21]/50">
+                 <h3 className="text-xl font-black text-white uppercase tracking-tighter">Bandeja de Entrada</h3>
+                 <p className="text-[10px] text-[#474556] font-bold uppercase tracking-widest mt-1">Requerimientos desde mantech-pro.com</p>
+              </header>
+              <div className="flex-1 overflow-y-auto custom-scrollbar">
+                 {tickets.length === 0 && <p className="p-10 text-center text-[#474556] uppercase text-[10px] font-black italic">Sin tickets pendientes</p>}
+                 {tickets.map(t => (
+                   <button
+                     key={t.id}
+                     onClick={() => setSelectedTicket(t)}
+                     className={`w-full p-8 text-left border-b border-white/5 transition-all hover:bg-white/[0.02] flex items-center gap-6 group
+                       ${selectedTicket?.id === t.id ? 'bg-[#5d3cfe]/10 border-r-4 border-r-[#5d3cfe]' : ''}`}
+                   >
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${t.status === 'resolved' ? 'bg-[#52ffac]/10 text-[#52ffac]' : 'bg-[#5d3cfe]/10 text-[#5d3cfe]'}`}>
+                         <Mail className="w-6 h-6" />
+                      </div>
+                      <div className="flex-1 overflow-hidden">
+                         <h4 className="text-sm font-black text-white uppercase truncate">{t.userName}</h4>
+                         <p className="text-[10px] text-[#8a879d] font-bold truncate mt-1">{t.subject}</p>
+                         <p className="text-[8px] text-[#474556] font-black uppercase mt-2">{new Date(t.createdAt?.toDate?.() || t.createdAt).toLocaleDateString()}</p>
+                      </div>
+                   </button>
+                 ))}
+              </div>
+           </div>
+
+           {/* VISTA Y RESPUESTA */}
+           <div className="lg:col-span-7">
+              {selectedTicket ? (
+                <div className="bg-[#121317] border border-white/5 rounded-[3rem] h-full flex flex-col shadow-2xl overflow-hidden animate-fade-in">
+                   <div className="p-10 space-y-8 flex-1 overflow-y-auto custom-scrollbar">
+                      <div className="space-y-4">
+                         <span className="px-4 py-1 bg-white/5 border border-white/10 rounded-full text-[8px] font-black text-[#474556] uppercase">Consulta Original</span>
+                         <h2 className="text-3xl font-black text-white uppercase tracking-tighter leading-none italic">{selectedTicket.subject}</h2>
+                         <div className="flex items-center gap-3">
+                            <p className="text-xs font-bold text-[#c8c4d9]">{selectedTicket.userName}</p>
+                            <span className="text-[#474556]">●</span>
+                            <p className="text-xs font-mono text-[#5d3cfe]">{selectedTicket.userEmail}</p>
+                         </div>
+                      </div>
+
+                      <div className="p-8 bg-[#0d0e12] border border-white/5 rounded-[2.5rem] relative">
+                         <p className="text-[#8a879d] text-base leading-relaxed italic">"{selectedTicket.message}"</p>
+                      </div>
+
+                      {selectedTicket.status === 'resolved' && (
+                        <div className="p-6 bg-[#52ffac]/5 border border-[#52ffac]/20 rounded-2xl flex items-center gap-4">
+                           <Check className="w-5 h-5 text-[#52ffac]" />
+                           <p className="text-[10px] font-black text-[#52ffac] uppercase tracking-widest">Este ticket ya fue respondido por el Nodo Central.</p>
+                        </div>
+                      )}
+                   </div>
+
+                   <div className="p-8 bg-[#1c1d21] border-t border-white/5 space-y-4">
+                      <div className="flex items-center justify-between px-2">
+                        <label className="text-[9px] font-black text-[#474556] uppercase tracking-widest">Respuesta Premium</label>
+                        <MsgIcon className="w-4 h-4 text-[#5d3cfe]" />
+                      </div>
+                      <textarea
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        placeholder="Escriba su respuesta técnica aquí..."
+                        rows={4}
+                        className="w-full bg-[#0d0e12] border border-white/10 rounded-2xl p-6 text-sm text-white outline-none focus:border-[#5d3cfe] transition-all resize-none shadow-inner"
+                      />
+                      <button
+                        onClick={handleReplyTicket}
+                        disabled={isReplying || !replyText.trim()}
+                        className="w-full py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[#5d3cfe]/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                      >
+                         {isReplying ? 'TRANSMITIENDO...' : <><Send className="w-4 h-4" /> Enviar Respuesta Oficial</>}
+                      </button>
+                   </div>
+                </div>
+              ) : (
+                <div className="bg-[#121317]/50 border border-dashed border-white/5 rounded-[3rem] h-full flex items-center justify-center text-center p-20">
+                   <div className="space-y-6">
+                      <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto">
+                        <Mail className="w-10 h-10 text-[#474556]" />
+                      </div>
+                      <p className="text-sm font-black text-[#474556] uppercase tracking-widest leading-relaxed">Seleccione un ticket de la izquierda <br /> para iniciar el protocolo de respuesta.</p>
+                   </div>
+                </div>
+              )}
+           </div>
+        </div>
       )}
 
       {adminTab === 'logistics' && (

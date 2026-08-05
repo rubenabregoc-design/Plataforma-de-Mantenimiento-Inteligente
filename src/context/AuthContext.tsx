@@ -21,6 +21,7 @@ import { UserSubscription } from '../types';
 import { logActivity } from '../services/auditService';
 import { toast } from 'react-hot-toast';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { registerPushToken } from '../services/pushNotifications';
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -79,6 +80,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (firebaseUser) {
         setUser(firebaseUser);
         setLoggedInEmail(firebaseUser.email || '');
+
+        // Registrar token FCM para notificaciones push en celular
+        registerPushToken(firebaseUser.uid).catch(console.error);
 
         const userRef = doc(db, "users", firebaseUser.uid);
 

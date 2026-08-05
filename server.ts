@@ -256,6 +256,49 @@ app.post("/api/contact", async (req, res) => {
   }
 });
 
+// 2.6 Admin Ticket Reply Handler (Premium Template)
+app.post("/api/admin/reply-ticket", async (req, res) => {
+  const { name, email, subject, message } = req.body;
+
+  try {
+    await sendEmail({
+      to: email,
+      subject: `Respuesta Oficial MantechPro: ${subject}`,
+      html: `
+        <div style="background-color: #0a0b0d; padding: 40px 20px; font-family: 'Segoe UI', sans-serif;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #121317; border: 1px solid #2a2b2f; border-radius: 24px; overflow: hidden;">
+            <div style="background-color: #1c1d21; padding: 40px; text-align: center; border-bottom: 2px solid #5d3cfe;">
+               <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px;">
+                MANTECH<span style="color: #5d3cfe;">PRO</span>
+               </h1>
+               <p style="color: #52ffac; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-top: 10px;">Comunicación Industrial Autorizada</p>
+            </div>
+
+            <div style="padding: 50px; color: #ffffff;">
+               <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 25px; color: #5d3cfe;">RE: ${subject}</h2>
+               <p style="color: #c8c4d9; font-size: 16px; line-height: 1.8; margin-bottom: 30px; white-space: pre-wrap;">
+                 ${message}
+               </p>
+
+               <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #2a2b2f;">
+                  <p style="color: #ffffff; font-size: 14px; font-weight: 700; margin: 0;">Departamento de Soporte Estratégico</p>
+                  <p style="color: #474556; font-size: 12px; margin: 5px 0 0 0;">MantechPro Industries Panamá</p>
+               </div>
+            </div>
+
+            <div style="background-color: #0d0e12; padding: 25px; text-align: center;">
+               <a href="https://mantech-pro.com" style="color: #5d3cfe; font-size: 10px; font-weight: 900; text-decoration: none; text-transform: uppercase;">Acceder al Portal Oficial</a>
+            </div>
+          </div>
+        </div>
+      `
+    });
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 3. Motor de Diagnóstico IA (Gemini 1.5 Flash)
 app.post("/api/diagnose", async (req, res) => {
   const { assetName, assetDetails, problemDescription } = req.body;

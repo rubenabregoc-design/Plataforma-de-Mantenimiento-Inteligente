@@ -54,7 +54,7 @@ export function useBusinessLogic() {
   const notifyAdmin = async (title: string, body: string) => {
     try {
       // 1. Notificación en Tiempo Real (Push)
-      await axios.post('http://localhost:3000/api/push-notification', {
+      await axios.post('/api/push-notification', {
         title,
         body,
         token: 'ADMIN_TOKEN_MASTER'

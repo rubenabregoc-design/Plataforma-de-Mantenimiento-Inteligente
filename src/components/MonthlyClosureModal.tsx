@@ -31,7 +31,7 @@ export default function MonthlyClosureModal({ isOpen, onClose, adminEmail, data 
     setIsSendingEmail(true);
     try {
       // Aseguramos que la URL sea la correcta y manejamos el éxito visualmente
-      await axios.post('http://localhost:8080/api/send-report', {
+      await axios.post('/api/send-report', {
         to: adminEmail,
         reportData: data
       });
