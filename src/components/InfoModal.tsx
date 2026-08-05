@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ShieldCheck, Globe, Zap, Users, Building2, FileText, Layout, Store, PieChart, BadgeCheck, Heart, Leaf, Rocket } from 'lucide-react';
+import { X, ShieldCheck, Globe, Zap, Users, Building2, FileText, Layout, Store, PieChart, BadgeCheck, Heart, Leaf, Rocket, Clock, CheckCircle2, BarChart3, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface InfoContent {
@@ -8,6 +8,7 @@ interface InfoContent {
   icon: any;
   color: string;
   description: string;
+  longDesc: string;
   points: { title: string; desc: string; icon: any }[];
 }
 
@@ -18,10 +19,12 @@ const infoRegistry: Record<string, InfoContent> = {
     icon: Building2,
     color: '#5d3cfe',
     description: 'MantechPro nació con una misión clara: profesionalizar el sector de mantenimiento en la región mediante tecnología de punta y protocolos de seguridad industrial.',
+    longDesc: 'Fundada por AbregoTech Solutions en el corazón de Ciudad de Panamá, MantechPro se ha consolidado como el sistema operativo para activos físicos. No somos solo una app, somos el puente entre la ingeniería de precisión y la necesidad diaria de hogares y empresas. Nuestra infraestructura procesa miles de datos mensuales para asegurar que cada tornillo ajustado y cada motor reparado cumpla con estándares de clase mundial.',
     points: [
-      { title: 'Ingeniería Panameña', desc: 'Desarrollado localmente con estándares globales.', icon: Globe },
-      { title: 'Visión 2030', desc: 'Liderar la transformación digital de activos físicos.', icon: Zap },
-      { title: 'Compromiso Ético', desc: 'Transparencia total en cada transacción y servicio.', icon: ShieldCheck }
+      { title: 'Ingeniería Panameña', desc: 'Desarrollado localmente con estándares globales para el mercado regional.', icon: Globe },
+      { title: 'Visión 2030', desc: 'Nuestra meta es digitalizar el 80% de los mantenimientos industriales en Panamá.', icon: Zap },
+      { title: 'Compromiso Ético', desc: 'Transparencia total en precios y trazabilidad de cada servicio ejecutado.', icon: ShieldCheck },
+      { title: 'Cultura Élite', desc: 'Solo el top 15% de los aplicantes técnicos logra la certificación Mantech ID.', icon: Users }
     ]
   },
   'lo_que_ofrecemos': {
@@ -30,10 +33,12 @@ const infoRegistry: Record<string, InfoContent> = {
     icon: Layout,
     color: '#52ffac',
     description: 'Desde soporte residencial hasta gestión de flotas B2B, nuestra plataforma adapta sus herramientas a su necesidad real.',
+    longDesc: 'El ecosistema MantechPro se divide en tres capas de poder: Core, Activo y Portafolio. Ofrecemos una solución modular donde el usuario paga solo por lo que usa. Ya sea que necesite reparar un aire acondicionado en su hogar o gestionar una flota de 100 camiones refrigerados, la interfaz se transforma para darle los controles exactos, eliminando la complejidad innecesaria.',
     points: [
-      { title: 'Diagnóstico IA', desc: 'Motor MDM-V4 para predicción de fallos.', icon: Zap },
-      { title: 'Wallet Blindada', desc: 'Sistema Escrow para seguridad en el pago.', icon: BadgeCheck },
-      { title: 'Red de Expertos', desc: 'Técnicos certificados con Mantech ID.', icon: Users }
+      { title: 'Diagnóstico IA', desc: 'Motor MDM-V4 que analiza historial y previene fallas críticas antes de que ocurran.', icon: Zap },
+      { title: 'Wallet Blindada', desc: 'Sistema de custodia Escrow que protege los fondos de ambas partes.', icon: BadgeCheck },
+      { title: 'Red de Expertos', desc: 'Acceso a especialistas certificados en 12 categorías técnicas diferentes.', icon: Users },
+      { title: 'Auditoría Digital', desc: 'Cada servicio genera un reporte técnico firmado electrónicamente.', icon: FileText }
     ]
   },
   'flotas_b2b': {
@@ -42,10 +47,12 @@ const infoRegistry: Record<string, InfoContent> = {
     icon: Globe,
     color: '#5d3cfe',
     description: 'Optimice el tiempo operativo de su flota con nuestro panel de control centralizado y mantenimiento proyectado.',
+    longDesc: 'Diseñado para gerentes de logística que no pueden permitirse paros técnicos. Nuestra suite B2B integra rastreo GPS satelital con telemetría de mantenimiento. El sistema "aprende" el desgaste de sus unidades basándose en el kilometraje real y las condiciones climáticas de Panamá, enviando alertas automáticas a su equipo de mecánicos.',
     points: [
-      { title: 'Rastreo Satelital', desc: 'Monitoreo en tiempo real de unidades.', icon: Globe },
-      { title: 'Carga Masiva', desc: 'Importación vía Excel para grandes flotas.', icon: FileText },
-      { title: 'Auditoría de Combustible', desc: 'Control de consumo y eficiencia térmica.', icon: Zap }
+      { title: 'Rastreo Satelital', desc: 'Ubicación en tiempo real y detección de desviaciones de ruta no autorizadas.', icon: Globe },
+      { title: 'Carga Masiva', desc: 'Sincronice miles de unidades desde archivos Excel en segundos.', icon: FileText },
+      { title: 'Auditoría Fuel', desc: 'Algoritmos que detectan anomalías en el consumo de combustible por unidad.', icon: Zap },
+      { title: 'SLA Prioritario', desc: 'Atención técnica garantizada en carretera en menos de 90 minutos.', icon: Clock }
     ]
   },
   'seguridad_mantech_id': {
@@ -54,10 +61,12 @@ const infoRegistry: Record<string, InfoContent> = {
     icon: ShieldCheck,
     color: '#e11d48',
     description: 'El protocolo Mantech ID asegura que cada profesional en su propiedad sea quien dice ser, con antecedentes verificados.',
+    longDesc: 'En un mundo de servicios informales, Mantech ID es el estándar de oro. Cada técnico pasa por un proceso de 5 pasos: Validación de Cédula, Récord Policivo actualizado, Prueba de conocimientos técnicos, Entrevista personal y Verificación biométrica. Al llegar a su puerta, usted escanea un código QR único que le confirma el estatus legal y la foto real del especialista.',
     points: [
-      { title: 'Verificación de Cédula', desc: 'Cruce de datos biométricos en tiempo real.', icon: BadgeCheck },
-      { title: 'Récord Policivo', desc: 'Validación de antecedentes de seguridad.', icon: ShieldCheck },
-      { title: 'Carnet Digital QR', desc: 'Acceso inmediato al expediente del técnico.', icon: Zap }
+      { title: 'Biometría Facial', desc: 'Reconocimiento facial obligatorio para que el técnico inicie su jornada.', icon: BadgeCheck },
+      { title: 'Antecedentes', desc: 'Monitoreo constante de antecedentes legales y récord policivo.', icon: ShieldCheck },
+      { title: 'Sello Digital', desc: 'Firma inmutable en cada reporte generado por el técnico.', icon: FileText },
+      { title: 'Cero Efectivo', desc: 'Transacciones 100% digitales para evitar riesgos de seguridad física.', icon: Lock }
     ]
   },
   'sostenibilidad': {
@@ -66,10 +75,12 @@ const infoRegistry: Record<string, InfoContent> = {
     icon: Leaf,
     color: '#52ffac',
     description: 'Creemos en alargar la vida útil de los activos para reducir el impacto ambiental y mejorar el ROI de nuestros clientes.',
+    longDesc: 'La sostenibilidad en MantechPro se traduce en eficiencia. Un equipo bien mantenido consume hasta un 30% menos energía. Nuestra plataforma promueve la economía circular priorizando la reparación sobre el descarte, y eliminamos por completo el uso de papel en facturación y reportes técnicos, ahorrando toneladas de desperdicio anualmente en Panamá.',
     points: [
-      { title: 'Cero Papel', desc: 'Gestión 100% digital de facturas y reportes.', icon: FileText },
-      { title: 'Eficiencia Energética', desc: 'Optimización de equipos para menor consumo.', icon: Zap },
-      { title: 'Economía Circular', desc: 'Promovemos la reparación profesional vs descarte.', icon: Heart }
+      { title: 'Cero Papel', desc: 'Gestión 100% digital desde la cotización hasta el cierre del servicio.', icon: FileText },
+      { title: 'Eco-Eficiencia', desc: 'Optimización de rutas para técnicos, reduciendo la huella de carbono vial.', icon: Globe },
+      { title: 'Vida Útil', desc: 'Protocolos que extienden la vida de los equipos hasta un 50%.', icon: Zap },
+      { title: 'Energía Limpia', desc: 'Reportes específicos sobre el consumo energético de sus activos.', icon: Leaf }
     ]
   },
   'ecosistema_panama': {
@@ -78,10 +89,12 @@ const infoRegistry: Record<string, InfoContent> = {
     icon: Rocket,
     color: '#5d3cfe',
     description: 'MantechPro impulsa a la pequeña y mediana empresa técnica panameña, dándoles herramientas digitales de nivel corporativo.',
+    longDesc: 'Panamá es nuestro centro de operaciones y el motor de nuestra innovación. Estamos comprometidos con la formalización del talento local, convirtiendo a técnicos independientes en empresarios tecnológicos. Al usar MantechPro, usted apoya directamente el crecimiento de talleres panameños que ahora compiten con herramientas de estándar global.',
     points: [
-      { title: 'Impulso PYME', desc: 'Formalización de talleres y técnicos.', icon: Building2 },
-      { title: 'Talento Local', desc: 'Inversión en capacitación continua.', icon: Users },
-      { title: 'Hub Tecnológico', desc: 'Posicionando a Panamá como líder en PropTech.', icon: Globe }
+      { title: 'Impulso PYME', desc: 'Herramientas de gestión gratuitas para pequeños talleres locales.', icon: Building2 },
+      { title: 'Capacitación', desc: 'Programas de actualización técnica en nuevas tecnologías industriales.', icon: Users },
+      { title: 'Hub Regional', desc: 'Exportando tecnología "Made in Panamá" al resto de Latinoamérica.', icon: Globe },
+      { title: 'Empleo Formal', desc: 'Facilitamos la bancarización y formalidad de cientos de especialistas.', icon: Zap }
     ]
   },
   'centro_ayuda': {
@@ -90,10 +103,12 @@ const infoRegistry: Record<string, InfoContent> = {
     icon: Users,
     color: '#5d3cfe',
     description: 'Nuestro equipo de soporte estratégico y nuestro asistente IA están listos para resolver cualquier incidencia.',
+    longDesc: 'El soporte en MantechPro no es solo contestar preguntas; es resolver problemas técnicos. Contamos con una estructura híbrida de atención: un Asistente IA disponible 24/7 para diagnósticos rápidos y un equipo de Concierges Técnicos humanos para casos complejos y cuentas Enterprise.',
     points: [
-      { title: 'Chat 24/7', desc: 'Asistencia técnica inmediata vía App.', icon: Zap },
-      { title: 'SLA Prioritario', desc: 'Respuesta en menos de 1h para Enterprise.', icon: BadgeCheck },
-      { title: 'Guías de Usuario', desc: 'Tutoriales paso a paso del ecosistema.', icon: FileText }
+      { title: 'Chat 24/7', desc: 'Asistencia inmediata integrada directamente en el Dashboard.', icon: Zap },
+      { title: 'Gerente Dedicado', desc: 'Acompañamiento VIP para cuentas corporativas y flotas.', icon: BadgeCheck },
+      { title: 'Guías de Usuario', desc: 'Biblioteca interactiva de tutoriales para dominar la plataforma.', icon: FileText },
+      { title: 'SLA < 1 Hora', desc: 'Tiempo de respuesta garantizado para incidentes críticos.', icon: Clock }
     ]
   },
   'boveda_garantias': {
@@ -102,10 +117,12 @@ const infoRegistry: Record<string, InfoContent> = {
     icon: ShieldCheck,
     color: '#f59e0b',
     description: 'Nunca pierda una garantía de nuevo. Almacenamos digitalmente facturas y certificados con alertas de vencimiento.',
+    longDesc: '¿Cuántas veces ha buscado una factura vieja para reclamar una garantía y no la encuentra? La Bóveda de Garantías digitaliza este proceso. Al registrar un activo, usted sube el documento y nuestro sistema extrae la fecha de vencimiento, enviándole recordatorios proactivos 30 días antes de que expire la protección de fábrica.',
     points: [
-      { title: 'Alertas de Expiración', desc: 'Notificaciones antes de que venza el plazo.', icon: Zap },
-      { title: 'Hash de Integridad', desc: 'Documentos inmutables en la nube.', icon: FileText },
-      { title: 'Acceso QR', desc: 'Escanee su activo y vea su garantía.', icon: BadgeCheck }
+      { title: 'Alertas Expiry', desc: 'Notificaciones automáticas antes de que venza el plazo legal.', icon: Zap },
+      { title: 'Hash Inmutable', desc: 'Documentos protegidos con tecnología blockchain para evitar alteraciones.', icon: Lock },
+      { title: 'Acceso QR', desc: 'Escanee el equipo y visualice su certificado de garantía al instante.', icon: BadgeCheck },
+      { title: 'Historial', desc: 'Trazabilidad de cada reclamo realizado ante el fabricante.', icon: FileText }
     ]
   },
   'sala_prensa': {
@@ -113,11 +130,13 @@ const infoRegistry: Record<string, InfoContent> = {
     subtitle: 'Comunicación Corporativa Oficial',
     icon: FileText,
     color: '#5d3cfe',
-    description: 'Manténgase al día con los hitos de MantechPro, desde lanzamientos tecnológicos hasta alianzas estratégicas en la región.',
+    description: 'Manténgase al día con los hitos de MantechPro, desde lanzamientos tecnológicos hasta alianzas estratégicas.',
+    longDesc: 'Nuestra sala de prensa es el canal oficial para periodistas y aliados estratégicos. Aquí compartimos el crecimiento de nuestra red en Panamá, nuevas rondas de inversión y lanzamientos de módulos experimentales como el Diagnóstico por Sonido IA. Mantenemos una comunicación abierta sobre el impacto de la tecnología en la infraestructura nacional.',
     points: [
-      { title: 'Notas de Prensa', desc: 'Comunicados oficiales del Nodo Central.', icon: Globe },
-      { title: 'Media Kit', desc: 'Recursos gráficos para prensa y aliados.', icon: Layout },
-      { title: 'Eventos Tech', desc: 'Nuestra participación en cumbres de industria.', icon: Zap }
+      { title: 'Notas Oficiales', desc: 'Comunicados sobre hitos operativos y alianzas gremiales.', icon: Globe },
+      { title: 'Media Kit', desc: 'Recursos visuales de alta resolución para prensa y partners.', icon: Layout },
+      { title: 'Tech Summits', desc: 'Resúmenes de nuestra participación en eventos de tecnología mundial.', icon: Zap },
+      { title: 'Reportes', desc: 'Estudios trimestrales sobre el estado del mantenimiento en Panamá.', icon: BarChart3 }
     ]
   },
   'blog': {
@@ -125,11 +144,13 @@ const infoRegistry: Record<string, InfoContent> = {
     subtitle: 'Cultura Técnica Panameña',
     icon: Globe,
     color: '#52ffac',
-    description: 'Descubra artículos sobre mantenimiento predictivo, optimización de equipos y el futuro del PropTech en Panamá.',
+    description: 'Descubra artículos sobre mantenimiento predictivo, optimización de equipos y el futuro del PropTech.',
+    longDesc: 'El Blog de MantechPro es una fuente de conocimiento para el usuario moderno. Publicamos semanalmente contenido escrito por ingenieros reales sobre cómo cuidar sus activos, trucos de ahorro energético y comparativas de equipos. Es el lugar donde la teoría de la ingeniería se encuentra con la práctica del día a día.',
     points: [
-      { title: 'Consejos Pro', desc: 'Guías para alargar la vida útil de equipos.', icon: Zap },
-      { title: 'Casos de Éxito', desc: 'Resultados reales en empresas panameñas.', icon: BadgeCheck },
-      { title: 'Tech Trends', desc: 'Lo último en IA aplicada a la industria.', icon: Rocket }
+      { title: 'Consejos Pro', desc: 'Guías prácticas para extender la vida útil de su línea blanca y maquinaria.', icon: Zap },
+      { title: 'Casos Éxito', desc: 'Historias reales de empresas que optimizaron su ROI con nosotros.', icon: BadgeCheck },
+      { title: 'Tech Trends', desc: 'Exploración de tendencias como Smart Cities y Gemelos Digitales.', icon: Rocket },
+      { title: 'Opinión', desc: 'Visiones de expertos sobre el futuro del trabajo técnico en la región.', icon: Users }
     ]
   },
   'oportunidades_laborales': {
@@ -137,11 +158,13 @@ const infoRegistry: Record<string, InfoContent> = {
     subtitle: 'Únete a la Revolución Técnica',
     icon: Users,
     color: '#5d3cfe',
-    description: 'Buscamos ingenieros, desarrolladores y especialistas en logística apasionados por transformar la industria del servicio técnico.',
+    description: 'Buscamos ingenieros, desarrolladores y especialistas en logística apasionados por transformar la industria.',
+    longDesc: 'En MantechPro, no contratamos empleados, reclutamos visionarios. Somos una empresa impulsada por la tecnología donde el talento panameño tiene voz global. Ofrecemos un entorno de alto rendimiento, aprendizaje continuo y el orgullo de construir la infraestructura digital de un país. Si le apasiona la eficiencia y la ingeniería, este es su lugar.',
     points: [
-      { title: 'Cultura Élite', desc: 'Ambiente de alto rendimiento y colaboración.', icon: ShieldCheck },
-      { title: 'Crecimiento', desc: 'Planes de carrera en gestión industrial.', icon: Rocket },
-      { title: 'Innovación', desc: 'Trabaje con las herramientas más avanzadas.', icon: Zap }
+      { title: 'Cultura Tech', desc: 'Trabajamos con el stack tecnológico más avanzado de la industria.', icon: Zap },
+      { title: 'Flexibilidad', desc: 'Modelos de trabajo híbridos diseñados para la productividad real.', icon: Globe },
+      { title: 'Crecimiento', desc: 'Planes de carrera acelerados en gestión de productos y operaciones.', icon: Rocket },
+      { title: 'Impacto Real', desc: 'Vea el resultado de su trabajo en la seguridad de miles de hogares.', icon: Heart }
     ]
   },
   'soporte_residencial': {
@@ -149,11 +172,13 @@ const infoRegistry: Record<string, InfoContent> = {
     subtitle: 'Tu Hogar Bajo Protocolo Master',
     icon: Building2,
     color: '#52ffac',
-    description: 'Mantenimiento preventivo y correctivo para aires acondicionados, plomería, electricidad y más, con la seguridad que tu familia merece.',
+    description: 'Mantenimiento preventivo y correctivo para aires acondicionados, plomería, y electricidad con seguridad garantizada.',
+    longDesc: 'Dormir tranquilo sabiendo que sus equipos están en manos expertas es invaluable. El Soporte Residencial de MantechPro elimina la incertidumbre de contratar extraños. Cada visita está agendada, cada técnico está monitoreado por GPS y cada pago está protegido. Es el mantenimiento de su hogar, profesionalizado.',
     points: [
-      { title: 'Técnicos Verificados', desc: 'Identidad validada ante cada visita.', icon: ShieldCheck },
-      { title: 'Visita Programada', desc: 'Usted elige el día y la hora exacta.', icon: Layout },
-      { title: 'Pago Garantizado', desc: 'Escrow que protege su dinero hasta el OK.', icon: BadgeCheck }
+      { title: 'Verificación', desc: 'Protocolo Mantech ID para total seguridad de su familia.', icon: ShieldCheck },
+      { title: 'Agendamiento', desc: 'Usted controla el tiempo; el técnico llega en el bloque exacto elegido.', icon: Layout },
+      { title: 'Garantía OK', desc: 'Si el trabajo no queda bien, el Escrow no se libera hasta que se corrija.', icon: BadgeCheck },
+      { title: 'Precios Justos', desc: 'Tarifas estandarizadas por categoría para evitar cobros abusivos.', icon: PieChart }
     ]
   },
   'mantenimiento_industrial': {
@@ -161,11 +186,13 @@ const infoRegistry: Record<string, InfoContent> = {
     subtitle: 'Operatividad Crítica Sin Interrupciones',
     icon: Zap,
     color: '#e11d48',
-    description: 'Servicios especializados para maquinaria pesada, cuartos fríos, ascensores y sistemas eléctricos de alto voltaje.',
+    description: 'Servicios especializados para maquinaria pesada, cuartos fríos y sistemas eléctricos de alto voltaje.',
+    longDesc: 'La industria no se detiene, y MantechPro es su garantía de continuidad. Ofrecemos planes de mantenimiento preventivo de grado militar para activos de alta demanda. Nuestra ingeniería MDM-V4 permite monitorear el estado de salud de compresores, generadores y sistemas de elevación, prediciendo fallos antes de que ocurra un paro de producción costoso.',
     points: [
-      { title: 'Ingeniería MDM-V4', desc: 'Monitoreo de desgaste en tiempo real.', icon: Rocket },
-      { title: 'SLA de Emergencia', desc: 'Atención prioritaria para paros técnicos.', icon: Zap },
-      { title: 'Reportes NASA', desc: 'Documentación técnica con sello de integridad.', icon: FileText }
+      { title: 'Predicción IA', desc: 'Análisis de telemetría para detectar patrones de desgaste inusuales.', icon: Rocket },
+      { title: 'Intervención', desc: 'Equipos de respuesta rápida para reparaciones de emergencia 24/7.', icon: Zap },
+      { title: 'Certificación', desc: 'Emisión de reportes técnicos válidos para auditorías ISO y seguros.', icon: FileText },
+      { title: 'Asset History', desc: 'Expediente digital inmutable de cada intervención realizada al activo.', icon: ShieldCheck }
     ]
   },
   'sos_hogar_247': {
@@ -174,10 +201,12 @@ const infoRegistry: Record<string, InfoContent> = {
     icon: Zap,
     color: '#e11d48',
     description: 'Protocolo de respuesta ultra-rápido para urgencias que no pueden esperar (Fugas, cortocircuitos, cerrajería).',
+    longDesc: 'Una tubería rota a las 2 AM es un desastre. Con el botón SOS de MantechPro, se activa una alerta de prioridad nacional en nuestra red. El técnico disponible más cercano es despachado automáticamente, permitiéndole ver su llegada en tiempo real en el mapa, igual que una app de transporte, pero con un especialista certificado.',
     points: [
-      { title: 'Lanzamiento SOS', desc: 'Botón de pánico técnico en su App.', icon: Zap },
-      { title: 'Rastreo en Vivo', desc: 'Vea al técnico llegar en el mapa.', icon: Globe },
-      { title: 'Disponibilidad', desc: 'Operativos 365 días del año.', icon: ShieldCheck }
+      { title: 'Despacho Veloz', desc: 'Algoritmo de cercanía que reduce el tiempo de espera a minutos.', icon: Zap },
+      { title: 'Rastreo Mapa', desc: 'Visualice la ruta del especialista hacia su ubicación exacta.', icon: Globe },
+      { title: 'Disponibilidad', desc: 'Operativos los 365 días del año, incluyendo feriados nacionales.', icon: ShieldCheck },
+      { title: 'Kit de Urgencia', desc: 'Técnicos equipados con materiales base para soluciones inmediatas.', icon: Layout }
     ]
   },
   'marketplace': {
@@ -186,10 +215,12 @@ const infoRegistry: Record<string, InfoContent> = {
     icon: Store,
     color: '#5d3cfe',
     description: 'Publique su necesidad y deje que los mejores talleres de Panamá compitan por su proyecto con precios transparentes.',
+    longDesc: 'El Marketplace de Subasta democratiza el servicio técnico. Al publicar una solicitud, usted recibe múltiples propuestas de especialistas calificados. No solo compiten por precio, sino por reputación y tiempo de entrega. Usted tiene el poder de elegir basándose en datos reales de desempeño, no en promesas vacías.',
     points: [
-      { title: 'Transparencia', desc: 'Compare precios y reseñas verificadas.', icon: Layout },
-      { title: 'Certificación', desc: 'Solo talleres con Mantech ID activo.', icon: BadgeCheck },
-      { title: 'Ahorro Real', desc: 'Optimización de costos por competencia.', icon: PieChart }
+      { title: 'Transparencia', desc: 'Desglose detallado de mano de obra e insumos antes de contratar.', icon: Layout },
+      { title: 'Certificación', desc: 'Solo profesionales con validación de identidad y seguros activos.', icon: BadgeCheck },
+      { title: 'Ahorro Real', desc: 'La competencia sana reduce los costos operativos hasta en un 25%.', icon: PieChart },
+      { title: 'Reseñas', desc: 'Calificaciones reales basadas en servicios completados exitosamente.', icon: Users }
     ]
   },
   'guias_tecnicas': {
@@ -198,10 +229,12 @@ const infoRegistry: Record<string, InfoContent> = {
     icon: FileText,
     color: '#5d3cfe',
     description: 'Manuales interactivos y tutoriales en video para entender mejor el funcionamiento y cuidado de sus activos.',
+    longDesc: 'El conocimiento es poder. Nuestra biblioteca de Guías Técnicas está diseñada para que el usuario aprenda lo básico y lo avanzado sobre sus equipos. Desde cómo limpiar un filtro de aire acondicionado eficientemente hasta cómo interpretar los códigos de error de un panel eléctrico. Todo accesible mediante escaneo de etiquetas QR Mantech.',
     points: [
-      { title: 'Manuales QR', desc: 'Escanee y vea el manual de su equipo.', icon: Zap },
-      { title: 'Video Tutoriales', desc: 'Aprenda a realizar ajustes básicos.', icon: Layout },
-      { title: 'Buenas Prácticas', desc: 'Protocolos de ahorro y eficiencia.', icon: ShieldCheck }
+      { title: 'Manuales QR', desc: 'Acceso instantáneo a la documentación de fábrica de su equipo específico.', icon: Zap },
+      { title: 'Video Tips', desc: 'Micro-tutoriales de 60 segundos para mantenimiento preventivo básico.', icon: Layout },
+      { title: 'Safe Check', desc: 'Listas de verificación de seguridad para antes de operar maquinaria.', icon: ShieldCheck },
+      { title: 'Updates', desc: 'Actualización constante de guías según nuevos modelos en el mercado.', icon: Globe }
     ]
   },
   'roi_dashboard': {
@@ -209,11 +242,13 @@ const infoRegistry: Record<string, InfoContent> = {
     subtitle: 'Analítica Financiera de Activos',
     icon: PieChart,
     color: '#52ffac',
-    description: 'Visualice cuánto está ahorrando gracias al mantenimiento preventivo y analice el retorno de inversión de cada unidad.',
+    description: 'Visualice cuánto está ahorrando gracias al mantenimiento preventivo y analice el retorno de inversión.',
+    longDesc: 'Un activo es una inversión, no un gasto. El ROI Dashboard de MantechPro le muestra el panorama financiero completo. Comparamos el costo de mantenimiento preventivo contra el costo evitado de reparaciones mayores, dándole una cifra real de ahorro. Es la herramienta definitiva para la toma de decisiones de recambio de equipos.',
     points: [
-      { title: 'Ahorro Proyectado', desc: 'Cálculo de fallos evitados por MTTO.', icon: Zap },
-      { title: 'Costos de Vida', desc: 'Rastreo histórico de gasto por equipo.', icon: FileText },
-      { title: 'Optimización', desc: 'Sugerencias de recambio de activos.', icon: PieChart }
+      { title: 'Ahorro Pro', desc: 'Cálculo matemático de fallos evitados mediante telemetría predictiva.', icon: Zap },
+      { title: 'History Cost', desc: 'Gráficas detalladas de gasto acumulado por unidad operativa.', icon: BarChart3 },
+      { title: 'Optimización', desc: 'Sugerencias basadas en datos sobre cuándo es más rentable cambiar un equipo.', icon: PieChart },
+      { title: 'Exportación', desc: 'Reportes listos para presentar en juntas directivas o contabilidad.', icon: FileText }
     ]
   }
 };
@@ -248,14 +283,14 @@ interface Props {
 export default function InfoModal({ isOpen, onClose, slug }: Props) {
   if (!isOpen) return null;
 
-  // Si no hay slug mapeado, usar uno por defecto o el que venga
   const actualSlug = slugMap[slug] || slug;
   const content = infoRegistry[actualSlug] || {
     title: slug,
     subtitle: 'MantechPro Information Node',
     icon: Building2,
     color: '#5d3cfe',
-    description: 'Estamos trabajando para brindarle el mejor contenido técnico. Muy pronto podrá ver todos los detalles industriales de esta sección.',
+    description: 'Estamos trabajando para brindarle el mejor contenido técnico.',
+    longDesc: 'Muy pronto podrá ver todos los detalles industriales de esta sección. Estamos compilando la información oficial.',
     points: [
       { title: 'Innovación Constante', desc: 'Actualizando protocolos semanalmente.', icon: Zap },
       { title: 'Transparencia', desc: 'Información clara para el usuario.', icon: FileText },
@@ -264,54 +299,64 @@ export default function InfoModal({ isOpen, onClose, slug }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-[#0d0e12]/95 backdrop-blur-xl flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[1000] bg-[#0d0e12]/95 backdrop-blur-xl flex items-center justify-center p-4 sm:p-6">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="w-full max-w-2xl bg-[#121317] border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl relative"
+        className="w-full max-w-3xl bg-[#121317] border border-white/5 rounded-[2rem] sm:rounded-[3rem] overflow-hidden shadow-2xl relative flex flex-col max-h-[90vh]"
       >
         {/* HEADER */}
-        <div className="p-8 border-b border-white/5 flex justify-between items-center bg-[#1c1d21]/50">
-           <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-xl" style={{ backgroundColor: `${content.color}20`, color: content.color }}>
-                 <content.icon className="w-6 h-6" />
+        <div className="p-6 sm:p-8 border-b border-white/5 flex justify-between items-center bg-[#1c1d21]/50 shrink-0">
+           <div className="flex items-center gap-4 sm:gap-5">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shadow-xl shrink-0" style={{ backgroundColor: `${content.color}20`, color: content.color }}>
+                 <content.icon className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
-              <div>
-                 <h2 className="text-2xl font-black text-white uppercase tracking-tighter italic">{content.title}</h2>
-                 <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">{content.subtitle}</p>
+              <div className="overflow-hidden">
+                 <h2 className="text-xl sm:text-3xl font-black text-white uppercase tracking-tighter italic leading-none truncate">{content.title}</h2>
+                 <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-40 mt-1 truncate">{content.subtitle}</p>
               </div>
            </div>
-           <button onClick={onClose} className="p-3 bg-white/5 hover:bg-rose-600/20 text-white rounded-xl transition-all"><X className="w-5 h-5" /></button>
+           <button onClick={onClose} className="p-3 bg-white/5 hover:bg-rose-600/20 text-white rounded-xl transition-all active:scale-95 shrink-0"><X className="w-5 h-5 sm:w-6 sm:h-6" /></button>
         </div>
 
         {/* CONTENT */}
-        <div className="p-10 space-y-10 overflow-y-auto max-h-[70vh] custom-scrollbar">
-           <p className="text-[#c8c4d9] text-lg font-medium leading-relaxed italic border-l-4 pl-6" style={{ borderColor: content.color }}>
-              "{content.description}"
-           </p>
-
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {content.points.map((p, i) => (
-                <div key={i} className="p-6 bg-[#0d0e12] rounded-3xl border border-white/5 space-y-4 group hover:border-white/10 transition-all">
-                   <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#5d3cfe] group-hover:scale-110 transition-transform duration-500">
-                      <p.icon className="w-5 h-5" style={{ color: content.color }} />
-                   </div>
-                   <div className="space-y-1">
-                      <h4 className="text-[10px] font-black text-white uppercase tracking-widest">{p.title}</h4>
-                      <p className="text-[9px] text-[#474556] font-bold leading-relaxed">{p.desc}</p>
-                   </div>
-                </div>
-              ))}
+        <div className="p-6 sm:p-10 space-y-10 overflow-y-auto custom-scrollbar flex-1">
+           <div className="space-y-6">
+              <p className="text-[#c8c4d9] text-base sm:text-xl font-medium leading-relaxed italic border-l-4 pl-6" style={{ borderColor: content.color }}>
+                 "{content.description}"
+              </p>
+              <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 sm:p-8">
+                <p className="text-[#8a879d] text-sm sm:text-base leading-relaxed font-medium">
+                  {content.longDesc}
+                </p>
+              </div>
            </div>
 
-           <div className="pt-8 border-t border-white/5 flex justify-between items-center">
-              <div className="flex items-center gap-3">
+           <div className="space-y-6">
+              <h3 className="text-[10px] font-black text-[#474556] uppercase tracking-[0.4em] ml-1">Puntos de Protocolo</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                 {content.points.map((p, i) => (
+                   <div key={i} className="p-6 bg-[#0d0e12] rounded-3xl border border-white/5 space-y-4 group hover:border-white/10 transition-all">
+                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#5d3cfe] group-hover:scale-110 transition-transform duration-500">
+                         <p.icon className="w-5 h-5" style={{ color: content.color }} />
+                      </div>
+                      <div className="space-y-1">
+                         <h4 className="text-[11px] font-black text-white uppercase tracking-widest">{p.title}</h4>
+                         <p className="text-[10px] text-[#474556] font-bold leading-relaxed">{p.desc}</p>
+                      </div>
+                   </div>
+                 ))}
+              </div>
+           </div>
+
+           <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-6">
+              <div className="flex items-center gap-3 order-2 sm:order-1">
                  <div className="w-2 h-2 rounded-full bg-[#52ffac] animate-pulse"></div>
-                 <span className="text-[8px] font-black text-[#474556] uppercase tracking-widest italic">Actualizado Panamá 2026</span>
+                 <span className="text-[9px] font-black text-[#474556] uppercase tracking-widest italic">Protocolo Actualizado v4.7 PA • 2026</span>
               </div>
               <button
                 onClick={onClose}
-                className="px-8 py-3 bg-white/5 border border-white/10 text-white rounded-xl text-[9px] font-black uppercase hover:bg-white/10 transition-all"
+                className="w-full sm:w-fit px-10 py-4 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all order-1 sm:order-2 active:scale-95 shadow-xl"
               >
                 Volver al Portal
               </button>
