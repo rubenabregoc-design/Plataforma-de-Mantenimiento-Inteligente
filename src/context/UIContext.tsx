@@ -28,6 +28,7 @@ interface UIContextType {
     priceAdjustment: boolean;
     reason: boolean;
     confirmation: boolean;
+    info: boolean;
   };
 
   // Active Data for Modals
@@ -46,6 +47,7 @@ interface UIContextType {
     confMessage: string;
     onConfConfirm: () => void;
     confType: 'danger' | 'info' | 'success';
+    infoSlug: string;
   };
 
   // Actions
@@ -70,14 +72,15 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     report: false, signature: false, support: false, corpSupport: false,
     scanner: false, videoCall: false, credential: false, auth: false,
     demo: false, payment: false, unforeseen: false, material: false,
-    checkpoint: false, routeStart: false, engineeringReport: false, quote: false, priceAdjustment: false, reason: false, confirmation: false
+    checkpoint: false, routeStart: false, engineeringReport: false, quote: false, priceAdjustment: false, reason: false, confirmation: false, info: false
   });
 
   const [activeData, setActiveData] = useState<UIContextType['activeData']>({
     asset: null, tech: null, request: null, requestId: null,
     videoRoom: '', isVoiceOnly: false, plan: null,
     reasonTitle: '', reasonPlaceholder: '', onReasonConfirm: () => {},
-    confTitle: '', confMessage: '', onConfConfirm: () => {}, confType: 'info'
+    confTitle: '', confMessage: '', onConfConfirm: () => {}, confType: 'info',
+    infoSlug: ''
   });
 
   const [tabs, setTabs] = useState<UIContextType['tabs']>({

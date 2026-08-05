@@ -28,6 +28,7 @@ import UnforeseenModal from './components/UnforeseenModal';
 import PriceAdjustmentModal from './components/PriceAdjustmentModal';
 import ReasonModal from './components/ReasonModal';
 import ConfirmationModal from './components/ConfirmationModal';
+import InfoModal from './components/InfoModal';
 import Star from 'lucide-react/dist/esm/icons/star';
 import X from 'lucide-react/dist/esm/icons/x';
 import Globe from 'lucide-react/dist/esm/icons/globe';
@@ -521,6 +522,14 @@ export default function App() {
             title={activeData.confTitle}
             message={activeData.confMessage}
             type={activeData.confType}
+          />
+        )}
+
+        {modals.info && (
+          <InfoModal
+            isOpen={modals.info}
+            onClose={() => closeModal('info')}
+            slug={activeData.infoSlug}
           />
         )}
       </AnimatePresence>

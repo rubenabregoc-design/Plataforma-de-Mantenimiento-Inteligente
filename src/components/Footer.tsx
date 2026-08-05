@@ -2,9 +2,11 @@ import React from 'react';
 import { Globe, Instagram, Youtube, Linkedin, Twitter, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import MantechProLogo from './Logo';
+import { useUI } from '../context/UIContext';
 
 export default function Footer() {
   const { t, i18n } = useTranslation();
+  const { openModal } = useUI();
 
   const sections = [
     {
@@ -76,7 +78,12 @@ export default function Footer() {
                 <ul className="space-y-3">
                   {section.links.map((link, lIdx) => (
                     <li key={lIdx}>
-                      <a href="#" className="text-[#c8c4d9] hover:text-white text-sm transition-colors opacity-70 hover:opacity-100">{link}</a>
+                      <button
+                        onClick={() => openModal('info', { infoSlug: link })}
+                        className="text-[#c8c4d9] hover:text-white text-sm transition-colors opacity-70 hover:opacity-100 text-left cursor-pointer"
+                      >
+                        {link}
+                      </button>
                     </li>
                   ))}
                 </ul>
