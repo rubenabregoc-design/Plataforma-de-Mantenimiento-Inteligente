@@ -75,7 +75,7 @@ const db = admin.firestore();
 
 // API KEY BREVO (MANTECH PRO)
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
-const SENDER_EMAIL = process.env.SENDER_EMAIL || 'b31b49001@smtp-brevo.com';
+const SENDER_EMAIL = process.env.SENDER_EMAIL || 'mantechpro@protonmail.com';
 const SENDER_NAME = 'Mantech Pro Global';
 const APP_URL = process.env.APP_URL || 'https://mantech-pro.com';
 
