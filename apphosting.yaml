@@ -6,13 +6,5 @@ runConfig:
   cpu: 1
   memoryMiB: 512
 
-env:
-  - variable: BREVO_API_KEY
-    availability: [RUNTIME, BUILD]
-  - variable: SENDER_EMAIL
-    availability: [RUNTIME, BUILD]
-
-# Explicit build command for Vite 6 + React 19
-# This ensures that App Hosting runs the same build process as local
-# buildConfig:
-#   buildCommand: npm run build
+# Las variables de entorno BREVO_API_KEY y SENDER_EMAIL 
+# se gestionan directamente desde la Consola de Firebase (Sección Entorno)
