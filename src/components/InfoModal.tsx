@@ -250,6 +250,20 @@ const infoRegistry: Record<string, InfoContent> = {
       { title: 'Optimización', desc: 'Sugerencias basadas en datos sobre cuándo es más rentable cambiar un equipo.', icon: PieChart },
       { title: 'Exportación', desc: 'Reportes listos para presentar en juntas directivas o contabilidad.', icon: FileText }
     ]
+  },
+  'relaciones_inversionistas': {
+    title: 'Relaciones con Inversionistas',
+    subtitle: 'Transparencia y Crecimiento',
+    icon: BarChart3,
+    color: '#5d3cfe',
+    description: 'Información estratégica sobre el desempeño financiero, planes de expansión regional y gobernanza corporativa de MantechPro.',
+    longDesc: 'MantechPro es una empresa de alto crecimiento (Scale-up) enfocada en la digitalización de la infraestructura técnica de Panamá. Mantenemos una política de puertas abiertas para nuestros inversionistas y socios estratégicos, proporcionando reportes trimestrales de tracción, rentabilidad y impacto social en la red de técnicos local.',
+    points: [
+      { title: 'Reportes Q1-Q4', desc: 'Acceso a los estados financieros auditados y métricas de crecimiento.', icon: FileText },
+      { title: 'Expansión 2026', desc: 'Plan detallado de apertura en mercados secundarios de Centroamérica.', icon: Globe },
+      { title: 'Sostenibilidad', desc: 'Métricas de impacto ambiental (reducción de CO2) y social en el talento local.', icon: Leaf },
+      { title: 'Gobernanza', desc: 'Cumplimiento estricto con las regulaciones comerciales de la República de Panamá.', icon: ShieldCheck }
+    ]
   }
 };
 
@@ -259,6 +273,7 @@ const slugMap: Record<string, string> = {
   'Lo que ofrecemos': 'lo_que_ofrecemos',
   'Sala de prensa': 'sala_prensa',
   'Blog': 'blog',
+  'Relaciones con inversionistas': 'relaciones_inversionistas',
   'Oportunidades laborales': 'oportunidades_laborales',
   'Flotas B2B': 'flotas_b2b',
   'Soporte Residencial': 'soporte_residencial',

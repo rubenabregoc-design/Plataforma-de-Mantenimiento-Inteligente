@@ -40,30 +40,45 @@ export default function Footer() {
                 <Globe className="w-5 h-5 text-[#5d3cfe]" />
                 <h3 className="text-xl font-bold">Sala de prensa</h3>
               </div>
-              <p className="text-[#c8c4d9] text-sm leading-relaxed opacity-70">
+              <p className="text-[#c8c4d9] text-sm leading-relaxed opacity-70 text-justify">
                 Recibe anuncios sobre asociaciones, actualizaciones de la app, iniciativas y más cerca de ti y en todo el mundo.
               </p>
-              <a href="#" className="inline-block border-b border-white/20 pb-1 text-sm font-bold hover:border-white transition-all">Ingresa a la sala de prensa</a>
+              <button
+                onClick={() => openModal('info', { infoSlug: 'Sala de prensa' })}
+                className="inline-block border-b border-white/20 pb-1 text-sm font-bold hover:border-white transition-all cursor-pointer"
+              >
+                Ingresa a la sala de prensa
+              </button>
             </div>
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <Youtube className="w-5 h-5 text-[#5d3cfe]" />
                 <h3 className="text-xl font-bold">Blog</h3>
               </div>
-              <p className="text-[#c8c4d9] text-sm leading-relaxed opacity-70">
+              <p className="text-[#c8c4d9] text-sm leading-relaxed opacity-70 text-justify">
                 Encuentra nuevas soluciones para optimizar tus activos, conoce los productos de MantechPro y nuestras alianzas técnicas.
               </p>
-              <a href="#" className="inline-block border-b border-white/20 pb-1 text-sm font-bold hover:border-white transition-all">Lee nuestras publicaciones</a>
+              <button
+                onClick={() => openModal('info', { infoSlug: 'Blog' })}
+                className="inline-block border-b border-white/20 pb-1 text-sm font-bold hover:border-white transition-all cursor-pointer"
+              >
+                Lee nuestras publicaciones
+              </button>
             </div>
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <Linkedin className="w-5 h-5 text-[#5d3cfe]" />
                 <h3 className="text-xl font-bold">Relaciones con inversionistas</h3>
               </div>
-              <p className="text-[#c8c4d9] text-sm leading-relaxed opacity-70">
+              <p className="text-[#c8c4d9] text-sm leading-relaxed opacity-70 text-justify">
                 Descarga reportes financieros, consulta planes de expansión y conoce nuestras iniciativas de responsabilidad corporativa.
               </p>
-              <a href="#" className="inline-block border-b border-white/20 pb-1 text-sm font-bold hover:border-white transition-all">Obtén más información</a>
+              <button
+                onClick={() => openModal('info', { infoSlug: 'Relaciones con inversionistas' })}
+                className="inline-block border-b border-white/20 pb-1 text-sm font-bold hover:border-white transition-all cursor-pointer"
+              >
+                Obtén más información
+              </button>
             </div>
           </div>
         </section>
