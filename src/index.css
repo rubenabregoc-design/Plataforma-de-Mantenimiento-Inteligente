@@ -123,3 +123,15 @@ body {
   animation-play-state: paused;
 }
 
+/* --- TOAST SYSTEM OVERRIDE (KILL WHITE BACKGROUNDS) --- */
+.go3958317564 {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.go2072408551 {
+  border-radius: 2rem !important;
+}
+
+

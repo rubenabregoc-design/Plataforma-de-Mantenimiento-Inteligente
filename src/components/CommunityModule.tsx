@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { ForumTopic, ForumReply } from '../types';
-import { MessageSquare, Users, Search, Plus, ChevronRight, MessageCircle, Eye, Clock, User, ArrowLeft, Send } from 'lucide-react';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, increment, doc, updateDoc } from 'firebase/firestore';
+import { MessageSquare, Users, Search, Plus, ChevronRight, MessageCircle, Eye, Clock, User, ArrowLeft, Send, Trash2, Edit2 } from 'lucide-react';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, increment, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
+import { useUI } from '../context/UIContext';
 import { toast } from 'react-hot-toast';
 
 export default function CommunityModule() {
   const { user, loggedInName, role } = useAuth();
+  const { openModal } = useUI();
   const [topics, setTopics] = useState<ForumTopic[]>([]);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [replies, setReplies] = useState<ForumReply[]>([]);
@@ -17,6 +19,9 @@ export default function CommunityModule() {
   const [newReplyText, setNewReplyText] = useState('');
   const [isCreatingTopic, setIsCreatingTopic] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
 
   const categories = ['Mecánica', 'Electricidad', 'A/C', 'Industrial', 'PH / Elevadores', 'Sistemas de Incendio', 'General'];
 
@@ -96,6 +101,46 @@ export default function CommunityModule() {
     }
   };
 
+  const handleDeleteTopic = async (id: string) => {
+    openModal('confirmation', {
+      confTitle: "Eliminar Tema",
+      confMessage: "¿Seguro que deseas eliminar este tema del foro técnico definitivamente?",
+      confType: 'danger',
+      onConfConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, "forum_topics", id));
+          setSelectedTopicId(null);
+          toast.success("Tema eliminado.");
+        } catch (err) { console.error(err); }
+      }
+    });
+  };
+
+  const handleDeleteReply = async (id: string, topicId: string) => {
+    openModal('confirmation', {
+      confTitle: "Eliminar Respuesta",
+      confMessage: "¿Seguro que deseas eliminar esta respuesta? Esta acción no se puede deshacer.",
+      confType: 'danger',
+      onConfConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, "forum_replies", id));
+          await updateDoc(doc(db, "forum_topics", topicId), { repliesCount: increment(-1) });
+          toast.success("Respuesta eliminada.");
+        } catch (err) { console.error(err); }
+      }
+    });
+  };
+
+  const handleUpdateReply = async (id: string) => {
+    if (!editValue.trim()) return;
+    try {
+      await updateDoc(doc(db, "forum_replies", id), { text: editValue });
+      setEditingReplyId(null);
+      setEditValue('');
+      toast.success("Respuesta actualizada.");
+    } catch (err) { console.error(err); }
+  };
+
   const selectedTopic = topics.find(t => t.id === selectedTopicId);
 
   const filteredTopics = topics.filter(t =>
@@ -110,7 +155,7 @@ export default function CommunityModule() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
             <div>
               <h1 className="text-4xl font-black text-white uppercase tracking-tighter italic">Soporte <span className="text-[#5d3cfe]">Comunidad</span></h1>
-              <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.4em] mt-2">Nodo de Inteligencia Colectiva MantechPro</p>
+              <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.4em] mt-2">Sistema de Inteligencia Colectiva MantechPro</p>
             </div>
             <button
               onClick={() => setIsCreatingTopic(true)}
@@ -182,9 +227,16 @@ export default function CommunityModule() {
            <div className="bg-[#121317] border border-white/5 p-10 rounded-[3.5rem] shadow-2xl space-y-8 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-12 opacity-5 rotate-12"><MessageCircle className="w-64 h-64" /></div>
               <div className="relative z-10 space-y-6">
-                 <div className="flex items-center gap-4">
-                    <span className="px-4 py-1.5 bg-[#5d3cfe] text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg">{selectedTopic?.category}</span>
-                    <span className="text-[9px] font-bold text-[#474556] uppercase tracking-widest italic">{new Date(selectedTopic!.createdAt).toLocaleString()}</span>
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                       <span className="px-4 py-1.5 bg-[#5d3cfe] text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg">{selectedTopic?.category}</span>
+                       <span className="text-[9px] font-bold text-[#474556] uppercase tracking-widest italic">{new Date(selectedTopic!.createdAt).toLocaleString()}</span>
+                    </div>
+                    {(selectedTopic?.authorId === user?.uid || role === 'admin') && (
+                       <button onClick={() => handleDeleteTopic(selectedTopic!.id)} className="p-2 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all">
+                          <Trash2 className="w-4 h-4" />
+                       </button>
+                    )}
                  </div>
                  <h2 className="text-4xl font-black text-white uppercase tracking-tighter italic leading-none">{selectedTopic?.title}</h2>
                  <div className="flex items-center gap-4 border-b border-white/5 pb-6">
@@ -204,15 +256,38 @@ export default function CommunityModule() {
               <h3 className="text-[10px] font-black text-[#474556] uppercase tracking-[0.4em] mb-8">Debate Técnico ({replies.length})</h3>
 
               {replies.map(reply => (
-                <div key={reply.id} className="bg-[#1c1d21]/50 border border-white/5 p-6 rounded-3xl space-y-4 shadow-xl">
+                <div key={reply.id} className="bg-[#1c1d21]/50 border border-white/5 p-6 rounded-3xl space-y-4 shadow-xl relative group">
                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                          <div className="w-8 h-8 rounded-full bg-[#5d3cfe]/20 flex items-center justify-center text-[10px] font-black text-[#5d3cfe]">{reply.authorName[0]}</div>
                          <p className="text-[11px] font-black text-white uppercase">{reply.authorName}</p>
                       </div>
-                      <span className="text-[8px] font-bold text-[#474556] uppercase">{new Date(reply.createdAt).toLocaleTimeString()}</span>
+                      <div className="flex items-center gap-4">
+                         <span className="text-[8px] font-bold text-[#474556] uppercase">{new Date(reply.createdAt).toLocaleTimeString()}</span>
+                         {(reply.authorId === user?.uid || role === 'admin') && (
+                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                               <button onClick={() => { setEditingReplyId(reply.id); setEditValue(reply.text); }} className="text-[#474556] hover:text-[#5d3cfe]"><Edit2 className="w-3.5 h-3.5" /></button>
+                               <button onClick={() => handleDeleteReply(reply.id, selectedTopicId!)} className="text-[#474556] hover:text-rose-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                            </div>
+                         )}
+                      </div>
                    </div>
-                   <p className="text-xs text-[#c8c4d9] font-medium leading-relaxed">{reply.text}</p>
+
+                   {editingReplyId === reply.id ? (
+                      <div className="space-y-3">
+                         <textarea
+                           value={editValue}
+                           onChange={e => setEditValue(e.target.value)}
+                           className="w-full bg-black border border-[#5d3cfe]/30 rounded-xl p-4 text-xs text-white outline-none"
+                         />
+                         <div className="flex justify-end gap-2">
+                            <button onClick={() => setEditingReplyId(null)} className="px-3 py-1 text-[8px] font-black text-[#474556] uppercase">Cancelar</button>
+                            <button onClick={() => handleUpdateReply(reply.id)} className="px-4 py-1 bg-[#5d3cfe] text-white rounded-lg text-[8px] font-black uppercase">Guardar</button>
+                         </div>
+                      </div>
+                   ) : (
+                      <p className="text-xs text-[#c8c4d9] font-medium leading-relaxed">{reply.text}</p>
+                   )}
                 </div>
               ))}
 
@@ -287,7 +362,7 @@ export default function CommunityModule() {
                    type="submit"
                    className="w-full py-5 bg-[#5d3cfe] text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[#5d3cfe]/20 hover:brightness-110 active:scale-95 transition-all"
                  >
-                    Inyectar Tema en el Nodo Global
+                    Publicar Tema en el Sistema Global
                  </button>
               </form>
            </div>

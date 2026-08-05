@@ -14,6 +14,9 @@ interface QuoteModalProps {
 export default function QuoteModal({ isOpen, onClose, request, onSend, techPlan = 'basic' }: QuoteModalProps) {
   const [price, setPrice] = useState('');
   const [techNotes, setTechNotes] = useState('');
+  const [visitFee, setVisitFee] = useState('15');
+  const [isEmergency, setIsEmergency] = useState(false);
+  const [autoThreshold, setAutoThreshold] = useState('0');
 
   // Gestión de Materiales
   const [materials, setMaterials] = useState<{name: string, price: number, quantity: number}[]>([]);
@@ -76,7 +79,10 @@ export default function QuoteModal({ isOpen, onClose, request, onSend, techPlan 
       techNotes,
       materials,
       tasks,
-      { date: schedDate, time: schedTime, duration: Number(schedDuration), travelTime: Number(travelTime) }
+      { date: schedDate, time: schedTime, duration: Number(schedDuration), travelTime: Number(travelTime) },
+      Number(visitFee),
+      Number(autoThreshold),
+      isEmergency
     );
     onClose();
   };
@@ -279,6 +285,54 @@ export default function QuoteModal({ isOpen, onClose, request, onSend, techPlan 
                      <button type="button" onClick={() => setTasks(tasks.filter((_, idx) => idx !== i))} className="text-rose-500"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 ))}
+             </div>
+          </section>
+
+          {/* CARGO DE VISITA */}
+          <section className="space-y-6 pt-6 border-t border-white/5">
+             <div className="flex items-center gap-3">
+                <Clock className="w-4 h-4 text-amber-500" />
+                <h4 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Tarifa de Inspección & Protocolo</h4>
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-amber-500/5 border border-amber-500/20 p-5 rounded-2xl flex items-center justify-between gap-4">
+                   <div className="flex-1 space-y-1">
+                      <p className="text-[10px] text-white font-black uppercase leading-none">Cargo de Visita</p>
+                      <p className="text-[7px] text-[#c8c4d9] leading-tight">Retenido si el técnico se desplaza.</p>
+                   </div>
+                   <div className="relative w-24">
+                      <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-amber-500" />
+                      <input
+                        type="number"
+                        value={visitFee}
+                        onChange={e => setVisitFee(e.target.value)}
+                        className="w-full bg-black border border-white/10 rounded-lg py-2 pl-8 pr-2 text-xs font-black text-white outline-none focus:border-amber-500"
+                      />
+                   </div>
+                </div>
+
+                <div className={`p-5 rounded-2xl border transition-all flex items-center justify-between gap-4 ${isEmergency ? 'bg-rose-500/10 border-rose-500/30' : 'bg-white/5 border-white/5 opacity-60'}`}>
+                   <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                         <p className="text-[10px] text-white font-black uppercase leading-none">Modo Emergencia</p>
+                         <input type="checkbox" checked={isEmergency} onChange={e => setIsEmergency(e.target.checked)} className="w-4 h-4 rounded border-white/10 accent-rose-500" />
+                      </div>
+                      <p className="text-[7px] text-[#c8c4d9] leading-tight mt-1.5">Inspección y ejecución continuas.</p>
+                   </div>
+                   {isEmergency && (
+                     <div className="relative w-24 animate-fade-in">
+                        <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-rose-500" />
+                        <input
+                          type="number"
+                          value={autoThreshold}
+                          onChange={e => setAutoThreshold(e.target.value)}
+                          placeholder="Umbral"
+                          className="w-full bg-black border border-rose-500/20 rounded-lg py-2 pl-8 pr-2 text-xs font-black text-white outline-none focus:border-rose-500"
+                        />
+                     </div>
+                   )}
+                </div>
              </div>
           </section>
 

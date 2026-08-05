@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { MantechID } from '../types';
-import { ShieldCheck, UserCheck, ShieldAlert, CheckCircle2, Clock } from 'lucide-react';
+import { ShieldCheck, UserCheck, ShieldAlert, CheckCircle2, Clock, Camera, Scan, Sparkles, RefreshCw, X, Check } from 'lucide-react';
 import ConfirmationModal from './ConfirmationModal';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { useBusinessLogic } from '../hooks/useBusinessLogic';
 
 interface MantechIDModuleProps {
   mantechId?: MantechID;
@@ -18,6 +19,7 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
   const { t } = useTranslation();
   const status = mantechId?.status || 'unverified';
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [currentType, setCurrentType] = useState<'id' | 'record' | null>(null);
   const [isIntegrityModalOpen, setIsIntegrityModalOpen] = useState(false);
 
@@ -68,12 +70,12 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
 
           <div style="margin-top: 40px;">
             <h2 style="font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #000;">Certificado de Confianza Técnica</h2>
-            <p>Por medio del presente documento, el Nodo de Seguridad de <b>MantechPro Industries Panama S.A.</b> certifica que tras la verificación documental y el cruce de datos en nuestro Ledger de Integridad:</p>
+            <p>Por medio del presente documento, el Centro de Seguridad de <b>MantechPro Industries Panama S.A.</b> certifica que tras la verificación documental y el cruce de datos en nuestro Ledger de Integridad:</p>
 
             <div class="data-row"><span class="label">Especialista Auditado:</span><br/><b>${userName?.toUpperCase() || 'ESPECIALISTA MANTECHPRO'}</b></div>
             <div class="data-row"><span class="label">Documento de Identidad:</span><br/><b>${cedula || 'NO REGISTRADA'}</b></div>
             <div class="data-row"><span class="label">Estatus de Conducta:</span><br/><b style="color: #059669;">ÓPTIMO - NIVEL DE CONFIANZA ALTO</b></div>
-            <div class="data-row"><span class="label">Validado por:</span><br/><b>NODO CENTRAL MANTECH (AUTORIZACIÓN DIGITAL)</b></div>
+            <div class="data-row"><span class="label">Validado por:</span><br/><b>SISTEMA CENTRAL MANTECH (AUTORIZACIÓN DIGITAL)</b></div>
             <div class="data-row"><span class="label">Fecha de Activación:</span><br/>${new Date().toLocaleString('es-PA')}</div>
           </div>
 
@@ -101,7 +103,7 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
   };
 
   return (
-    <div className="bg-[#121317] rounded-3xl border border-white/5 shadow-2xl overflow-hidden">
+    <div className="bg-[#121317] rounded-3xl border border-white/5 shadow-2xl overflow-hidden relative">
       <input
         type="file"
         ref={fileInputRef}

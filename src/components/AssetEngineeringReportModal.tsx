@@ -48,24 +48,24 @@ export default function AssetEngineeringReportModal({ isOpen, onClose, asset }: 
         className="w-full max-w-4xl bg-[#121317] border border-[#2a2b2f] rounded-[3rem] overflow-hidden shadow-2xl shadow-[#5d3cfe]/10"
       >
         {/* HEADER NASA STYLE */}
-        <div className="bg-[#1c1d21] p-8 border-b border-white/5 flex justify-between items-center relative overflow-hidden">
-           <div className="absolute top-0 right-0 p-8 opacity-5"><Cpu className="w-32 h-32 text-[#5d3cfe]" /></div>
-           <div className="flex items-center gap-5 relative z-10">
-              <div className="w-16 h-16 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-2xl flex items-center justify-center text-[#5d3cfe] shadow-2xl">
-                 <Cpu className="w-10 h-10" />
+        <div className="bg-[#1c1d21] p-5 sm:p-8 border-b border-white/5 flex justify-between items-center relative overflow-hidden">
+           <div className="absolute top-0 right-0 p-4 sm:p-8 opacity-5"><Cpu className="w-24 sm:w-32 h-24 sm:h-32 text-[#5d3cfe]" /></div>
+           <div className="flex items-center gap-4 sm:gap-5 relative z-10">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-xl sm:rounded-2xl flex items-center justify-center text-[#5d3cfe] shadow-2xl">
+                 <Cpu className="w-8 h-8 sm:w-10 sm:h-10" />
               </div>
               <div>
-                 <h2 className="text-2xl font-black text-white uppercase tracking-tighter italic">Reporte de Ingeniería <span className="text-[#5d3cfe]">MDM-V4</span></h2>
-                 <div className="flex items-center gap-3 mt-1">
-                    <p className="text-[10px] font-black text-[#52ffac] uppercase tracking-widest bg-[#52ffac]/10 px-2 py-0.5 rounded-full border border-[#52ffac]/20">Core Operativo Activo</p>
-                    <span className="text-[8px] text-[#474556] font-black uppercase">Ref: {asset.id.substring(0,8)}</span>
+                 <h2 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tighter italic">Ingeniería <span className="text-[#5d3cfe]">MDM-V4</span></h2>
+                 <div className="flex items-center gap-2 sm:gap-3 mt-0.5 sm:mt-1">
+                    <p className="text-[7px] sm:text-[10px] font-black text-[#52ffac] uppercase tracking-widest bg-[#52ffac]/10 px-2 py-0.5 rounded-full border border-[#52ffac]/20">Core Operativo Activo</p>
+                    <span className="text-[7px] sm:text-[8px] text-[#474556] font-black uppercase hidden xs:inline">Ref: {asset.id.substring(0,8)}</span>
                  </div>
               </div>
            </div>
-           <button onClick={onClose} className="p-4 bg-white/5 hover:bg-rose-600/20 text-white rounded-2xl transition-all relative z-10"><X className="w-6 h-6" /></button>
+           <button onClick={onClose} className="p-3 sm:p-4 bg-white/5 hover:bg-rose-600/20 text-white rounded-xl sm:rounded-2xl transition-all relative z-10"><X className="w-5 h-5 sm:w-6 sm:h-6" /></button>
         </div>
 
-        <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-y-auto max-h-[70vh] custom-scrollbar">
+        <div className="p-5 sm:p-8 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-y-auto max-h-[75vh] custom-scrollbar">
 
            {/* COLUMNA 1: TELEMETRÍA DE SALUD */}
            <div className="space-y-6">
@@ -173,10 +173,10 @@ export default function AssetEngineeringReportModal({ isOpen, onClose, asset }: 
            </div>
         </div>
 
-        <div className="p-8 bg-[#1a1b20] border-t border-white/5 flex justify-between items-center">
-           <div className="flex items-center gap-3">
+        <div className="p-5 sm:p-8 bg-[#1a1b20] border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
+           <div className="flex items-center gap-3 order-2 sm:order-1">
               <div className="w-2 h-2 rounded-full bg-[#52ffac] animate-ping"></div>
-              <span className="text-[10px] font-black text-[#474556] uppercase tracking-widest italic">Sincronizado vía Sat-Link v4.2 PA</span>
+              <span className="text-[9px] sm:text-[10px] font-black text-[#474556] uppercase tracking-widest italic">Sincronizado vía Sat-Link v4.2 PA</span>
            </div>
            <button
              onClick={() => {
@@ -273,7 +273,7 @@ export default function AssetEngineeringReportModal({ isOpen, onClose, asset }: 
                             <div class="metric-label">Hash de Seguridad</div>
                             <div style="font-family: monospace; font-size: 9px; color: #5d3cfe;">UUID: ${asset.id.toUpperCase()}<br>SIG: ${btoa(asset.id).substring(0, 10).toUpperCase()}</div>
                           </div>
-                          <div class="seal">Auditado por Nodo Central<br><span style="font-size: 7px">Security Protocol V4.2</span></div>
+                          <div class="seal">Auditado por Sistema Central<br><span style="font-size: 7px">Security Protocol V4.2</span></div>
                         </div>
                       </div>
                     </body>

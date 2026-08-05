@@ -73,7 +73,7 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
           </div>
           <div>
             <h2 className="text-lg font-black text-white tracking-tighter uppercase">Centro de Alertas</h2>
-            <p className="text-[10px] font-bold text-white/40 tracking-widest uppercase">Historial del Nodo</p>
+            <p className="text-[10px] font-bold text-white/40 tracking-widest uppercase">Historial de Alertas</p>
           </div>
         </div>
         <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-lg transition-colors">
@@ -125,7 +125,7 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center px-10">
             <Inbox className="w-12 h-12 text-white/5 mb-4" />
-            <h3 className="text-sm font-bold text-white/40 uppercase tracking-wider">Nodo en Silencio</h3>
+            <h3 className="text-sm font-bold text-white/40 uppercase tracking-wider">Centro en Silencio</h3>
             <p className="text-xs text-white/20 mt-2">No tienes alertas pendientes en este momento.</p>
           </div>
         )}

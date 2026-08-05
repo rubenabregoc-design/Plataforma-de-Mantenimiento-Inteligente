@@ -90,17 +90,17 @@ export default function AuthPage() {
       />
       {modals.auth && (
         <div className="fixed inset-0 z-[200] bg-[#0d0e12]/95 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="max-w-md w-full max-h-[90vh] bg-[#121317] border border-[#2a2b2f] p-6 md:p-8 rounded-[2rem] space-y-4 md:space-y-6 shadow-2xl relative animate-fade-in-up overflow-y-auto custom-scrollbar">
-            <button onClick={() => closeModal('auth')} className="absolute top-4 right-4 p-3 text-white hover:bg-rose-600 bg-[#1c1d21] border border-white/10 rounded-xl shadow-2xl z-50 transition-all active:scale-90 group">
-              <X className="w-4 h-4 group-hover:rotate-90 transition-transform" />
+          <div className="w-full max-w-[95%] sm:max-w-md max-h-[90vh] bg-[#121317] border border-[#2a2b2f] p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] space-y-4 sm:space-y-6 shadow-2xl relative animate-fade-in-up overflow-y-auto custom-scrollbar">
+            <button onClick={() => closeModal('auth')} className="absolute top-4 right-4 p-2.5 text-white hover:bg-rose-600 bg-[#1c1d21] border border-white/10 rounded-xl shadow-2xl z-50 transition-all active:scale-90 group">
+              <X className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform" />
             </button>
-            <div className="text-center space-y-2 flex flex-col items-center">
+            <div className="text-center space-y-2 flex flex-col items-center pt-2">
               <Logo size="sm" />
               <p className="text-[#c8c4d9] text-[8px] font-black uppercase tracking-[0.3em]">Central Logística Panamá</p>
             </div>
             <div className="flex bg-[#1c1d21] p-1 rounded-xl border border-[#2a2b2f]">
-               <button onClick={() => setAuthMode('login')} className={`flex-1 py-2 text-[9px] font-black uppercase rounded-lg transition-all ${authMode === 'login' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556]'}`}>Ingresar</button>
-               <button onClick={() => setAuthMode('register')} className={`flex-1 py-2 text-[9px] font-black uppercase rounded-lg transition-all ${authMode === 'register' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556]'}`}>Registrarse</button>
+               <button onClick={() => setAuthMode('login')} className={`flex-1 py-2.5 text-[9px] font-black uppercase rounded-lg transition-all ${authMode === 'login' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556]'}`}>Ingresar</button>
+               <button onClick={() => setAuthMode('register')} className={`flex-1 py-2.5 text-[9px] font-black uppercase rounded-lg transition-all ${authMode === 'register' ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556]'}`}>Registrarse</button>
             </div>
             <form onSubmit={handleLogin} className="space-y-4">
               {authMode === 'register' && (

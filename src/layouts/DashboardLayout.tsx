@@ -202,8 +202,8 @@ export default function DashboardLayout({
           </nav>
         </aside>
 
-        <main className="flex-1 bg-[#0d0e12] p-6 md:p-10 overflow-y-auto custom-scrollbar relative">
-           <div className="max-w-[1600px] mx-auto space-y-8 md:space-y-12">
+        <main className="flex-1 bg-[#0d0e12] p-4 sm:p-6 md:p-10 overflow-y-auto custom-scrollbar relative">
+           <div className="max-w-[1600px] mx-auto space-y-6 sm:space-y-8 md:space-y-12">
               {children}
            </div>
         </main>

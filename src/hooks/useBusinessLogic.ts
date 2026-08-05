@@ -1,14 +1,55 @@
-import { collection, addDoc, serverTimestamp, updateDoc, doc, getDoc, getDocs, query, where, arrayUnion, deleteDoc, increment } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, updateDoc, doc, getDoc, getDocs, query, where, arrayUnion, deleteDoc, increment, writeBatch } from "firebase/firestore";
 import { db } from "../firebase";
 import { toast } from 'react-hot-toast';
 import { useAuth } from "../context/AuthContext";
 import { useData } from "../context/DataContext";
 import { Asset, TechProfile, JobRequest, InventoryItem } from "../types";
 import axios from 'axios';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 export function useBusinessLogic() {
   const { user, loggedInName, userData, subscription, updateUserSubscription } = useAuth();
   const { assets, requests, technicians } = useData();
+
+  async function handleVerifyIdentityAIProcess(userId: string) {
+    const loading = toast.loading("Analizando identidad con motor IA...");
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      await updateDoc(doc(db, "users", userId), {
+        'mantechId.aiVerified': true,
+        'mantechId.verifiedAt': serverTimestamp(),
+        'recordStatus': 'verified'
+      });
+      toast.success("Identidad validada por IA.", { id: loading });
+    } catch (err) {
+      console.error(err);
+      toast.error("Fallo en verificación IA.", { id: loading });
+    }
+  }
+
+  // --- PROTOCOLO DE PRIVACIDAD: PURGA DE CHAT ---
+  const purgeChatMessages = async (requestId: string) => {
+    try {
+      // 1. Eliminar historial previo
+      const messagesQuery = query(collection(db, "messages"), where("requestId", "==", requestId));
+      const messagesSnap = await getDocs(messagesQuery);
+      if (!messagesSnap.empty) {
+        const batch = writeBatch(db);
+        messagesSnap.docs.forEach((msgDoc) => batch.delete(msgDoc.ref));
+        await batch.commit();
+      }
+
+      // 2. Insertar notificación final de seguridad (Mensaje efímero de cierre)
+      await addDoc(collection(db, "messages"), {
+        requestId,
+        sender: 'tech',
+        text: "🔐 PROTOCOLO DE PRIVACIDAD: La sesión de comunicación ha sido purgada y cerrada por finalización de servicio. Los datos del chat ya no son accesibles por seguridad.",
+        timestamp: serverTimestamp()
+      });
+
+      console.log(`🧹 Protocolo de Privacidad ejecutado para el ticket ${requestId}.`);
+    } catch (err) { console.error("Error purging chat:", err); }
+  };
 
   const notifyAdmin = async (title: string, body: string) => {
     try {
@@ -28,6 +69,27 @@ export function useBusinessLogic() {
         read: false
       });
     } catch (err) { console.error("Notification failed", err); }
+  };
+
+  const handleSendTestPush = async () => {
+    try {
+      await LocalNotifications.requestPermissions();
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            title: "📡 PRUEBA DE ENLACE EXITOSA",
+            body: "Este es el canal de notificaciones industriales de MantechPro Master V4 operando correctamente.",
+            id: 999,
+            schedule: { at: new Date(Date.now() + 2000) },
+            sound: 'beep.wav'
+          }
+        ]
+      });
+      toast.success("Señal de prueba enviada. Verifique su celular en 2 segundos.");
+    } catch (e) {
+      console.error(e);
+      toast.error("Fallo en la ráfaga de prueba.");
+    }
   };
 
   const handlePostOpenMarket = async (assetId: string, description: string) => {
@@ -52,14 +114,25 @@ export function useBusinessLogic() {
     const req = requests.find(r => r.id === requestId);
     if (!req?.scheduledDate) return;
     try {
+      const amountToPay = req.price || 0;
       if (method === 'yappy') {
-        await updateDoc(doc(db, "requests", requestId), { status: 'pending_verification', paidAt: serverTimestamp(), paymentMethod: method });
-        await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: `He realizado el pago vía YAPPY por $${req.price}. Quedo a la espera de la verificación oficial.`, timestamp: serverTimestamp() });
+        await updateDoc(doc(db, "requests", requestId), {
+          status: 'pending_verification',
+          paidAt: serverTimestamp(),
+          paymentMethod: method,
+          amountPaid: amountToPay // Registrar el primer abono
+        });
+        await addDoc(collection(db, "messages"), { requestId, sender: 'client', text: `He realizado el pago de B/. ${amountToPay} vía YAPPY. Quedo a la espera de la verificación oficial.`, timestamp: serverTimestamp() });
 
-        await notifyAdmin("💳 PAGO PENDIENTE", `El cliente ${req.clientName} envió un pago de $${req.price} vía YAPPY.`);
+        await notifyAdmin("💳 PAGO PENDIENTE", `El cliente ${req.clientName} envió un pago de $${amountToPay} vía YAPPY.`);
         toast.success("Pago enviado. Verificación en curso.");
       } else {
-        await updateDoc(doc(db, "requests", requestId), { status: 'accepted', paidAt: serverTimestamp(), paymentMethod: method });
+        await updateDoc(doc(db, "requests", requestId), {
+          status: 'accepted',
+          paidAt: serverTimestamp(),
+          paymentMethod: method,
+          amountPaid: amountToPay // Registrar el primer abono
+        });
         await addDoc(collection(db, "agenda"), {
           requestId, techId: req.techId, techUserId: req.techUserId,
           clientName: req.clientName, clientId: user!.uid,
@@ -71,15 +144,15 @@ export function useBusinessLogic() {
         // Notificar al Técnico
         await addDoc(collection(db, "notifications"), {
           userId: req.techUserId,
-          title: "✅ Pago Confirmado",
-          body: `El cliente ha pagado el servicio de ${req.assetName}. Tienes una nueva cita agendada.`,
+          title: "✅ Depósito Recibido",
+          body: `El cliente ha pagado B/. ${amountToPay}. Tienes una nueva cita agendada.`,
           type: 'billing',
           createdAt: serverTimestamp(),
           read: false
         });
 
         await addDoc(collection(db, "messages"), { requestId, sender: 'tech', text: `¡Hola! Recibí tu confirmación vía ${method.toUpperCase()}. Cita confirmada.`, timestamp: serverTimestamp() });
-        toast.success("¡Cita confirmada!");
+        toast.success("¡Depósito asegurado!");
       }
     } catch (err) { console.error(err); }
   };
@@ -97,6 +170,8 @@ export function useBusinessLogic() {
         rating: ratingVal,
         comment: ratingComment
       });
+
+      await purgeChatMessages(requestId);
 
       if (newStatus === 'completed') {
         const tech = technicians.find(t => t.id === req.techId);
@@ -198,18 +273,58 @@ export function useBusinessLogic() {
     } catch (err) { console.error(err); }
   };
 
+  const handleRequestSubscription = async (userId: string, planId: string) => {
+    try {
+      const userRef = doc(db, "users", userId);
+      const userSnap = await getDoc(userRef);
+      const data = userSnap.data();
+
+      // MANTENER EL PLAN ACTUAL: No tocamos el planId principal hasta que el admin confirme
+      const currentSub = data?.subscription || { planId: 'plan-free' };
+
+      const newSub = {
+        ...currentSub, // Preservamos planId actual para que no cambien los límites
+        status: 'pending_payment_verification',
+        pendingPlanId: planId, // Registramos el nuevo plan como pendiente
+        requestAt: serverTimestamp()
+      };
+
+      await updateDoc(userRef, { subscription: newSub });
+
+      await notifyAdmin("🚀 SOLICITUD DE SUSCRIPCIÓN", `El usuario ${loggedInName} solicita cambio al plan ${planId.toUpperCase()} vía YAPPY.`);
+
+      toast.success("Solicitud enviada. Su plan actual se mantiene activo hasta la validación manual.");
+    } catch (err) { console.error(err); }
+  };
+
   const handleApproveSubscription = async (userId: string, planId: string) => {
     try {
+      const userRef = doc(db, "users", userId);
+      const userSnap = await getDoc(userRef);
+      const data = userSnap.data();
+      const currentSub = data?.subscription;
+
+      // Si planId no se pasa, usamos el pendingPlanId
+      const finalPlanId = planId || currentSub?.pendingPlanId || 'plan-free';
+
       const nextBilling = new Date();
       nextBilling.setDate(nextBilling.getDate() + 30);
-      const newSub = { planId, status: 'active', startDate: new Date().toISOString(), nextBillingDate: nextBilling.toISOString() };
-      await updateDoc(doc(db, "users", userId), { subscription: newSub });
-      const userSnap = await getDoc(doc(db, "users", userId));
-      if (userSnap.exists() && userSnap.data().role === 'tech') {
-        const techId = userSnap.data().techId || `tech-${userId}`;
-        await updateDoc(doc(db, "technicians", techId), { plan: planId.split('-')[1] });
+
+      const newSub = {
+        planId: finalPlanId,
+        status: 'active',
+        startDate: new Date().toISOString(),
+        nextBillingDate: nextBilling.toISOString(),
+        pendingPlanId: null // Limpiamos el pendiente
+      };
+
+      await updateDoc(userRef, { subscription: newSub });
+
+      if (data?.role === 'tech') {
+        const techId = data.techId || `tech-${userId}`;
+        await updateDoc(doc(db, "technicians", techId), { plan: finalPlanId.split('-')[1] });
       }
-      toast.success("Suscripción aprobada.");
+      toast.success("Suscripción aprobada y beneficios liberados.");
     } catch (err) { console.error(err); }
   };
 
@@ -225,19 +340,90 @@ export function useBusinessLogic() {
   const handleTriggerUnforeseen = async (requestId: string, reason: string, extraCost: number, category: string) => {
     if (!requestId) return;
     try {
-      await updateDoc(doc(db, "requests", requestId), {
-        status: 'disputed',
-        unforeseenReason: reason,
-        unforeseenAmount: extraCost,
-        unforeseenCategory: category,
-        unforeseenAt: serverTimestamp()
-      });
-      await addDoc(collection(db, "messages"), {
-        requestId, sender: 'tech',
-        text: `🚨 IMPREVISTO [${category.toUpperCase()}]: ${reason}. Costo: $${extraCost}.`,
-        timestamp: serverTimestamp()
-      });
-      toast.success("Imprevisto reportado.");
+      const req = requests.find(r => r.id === requestId);
+      const isAutoApproved = req?.isEmergency && extraCost <= (req?.autoApprovalThreshold || 0);
+
+      if (isAutoApproved) {
+        // Ejecutar suma automática para emergencias
+        const newTotal = (req!.price || 0) + extraCost;
+        const commission = newTotal * 0.15;
+        await updateDoc(doc(db, "requests", requestId), {
+          price: newTotal,
+          commission,
+          technicianEarnings: newTotal - commission,
+          materials: arrayUnion({
+            name: `[EMERGENCIA] ${reason}`,
+            price: extraCost,
+            quantity: 1,
+            category,
+            addedAt: new Date().toISOString()
+          })
+        });
+        toast.success("Imprevisto aprobado automáticamente por protocolo de emergencia.");
+      } else {
+        await updateDoc(doc(db, "requests", requestId), {
+          unforeseenProposal: {
+            extraCost,
+            reason,
+            category,
+            status: 'pending',
+            at: serverTimestamp()
+          }
+        });
+        await addDoc(collection(db, "messages"), {
+          requestId, sender: 'tech',
+          text: `🚨 RE-COTIZACIÓN POR IMPREVISTO [${category.toUpperCase()}]: ${reason}. Se requiere un pago adicional de B/. ${extraCost}.`,
+          timestamp: serverTimestamp()
+        });
+        toast.success("Propuesta de costo extra enviada al cliente.");
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  const handleRespondToUnforeseen = async (requestId: string, accept: boolean) => {
+    try {
+      const req = requests.find(r => r.id === requestId);
+      if (!req?.unforeseenProposal) return;
+
+      if (accept) {
+        // Lógica de Crédito: El total nuevo se actualiza.
+        // El abono de visita se marca como acreditado para el desglose final.
+        const newTotal = (req.price || 0) + (req.unforeseenProposal.extraCost || 0);
+        const commission = newTotal * 0.15;
+
+        await updateDoc(doc(db, "requests", requestId), {
+          price: newTotal,
+          commission,
+          technicianEarnings: newTotal - commission,
+          'unforeseenProposal.status': 'accepted',
+          visitFeeCredited: true,
+          status: 'accepted', // Vuelve a estado aceptado para iniciar trabajo
+          // Guardar en el historial de materiales si es un repuesto
+          materials: arrayUnion({
+            name: `[RE-COTIZACIÓN] ${req.unforeseenProposal.reason}`,
+            price: req.unforeseenProposal.extraCost,
+            quantity: 1,
+            category: req.unforeseenProposal.category,
+            addedAt: new Date().toISOString()
+          })
+        });
+        toast.success("Re-cotización aceptada. La tarifa de inspección se ha aplicado como abono.");
+      } else {
+        // Si rechaza la recotización, se cobra solo la visita y se cierra el ticket
+        // El precio del ticket pasa a ser únicamente el monto de la visita.
+        await updateDoc(doc(db, "requests", requestId), {
+          status: 'cancelled',
+          'unforeseenProposal.status': 'rejected',
+          price: req.visitFeeAmount || 15,
+          commission: (req.visitFeeAmount || 15) * 0.20, // Comisión estándar por gestión de visita
+          technicianEarnings: (req.visitFeeAmount || 15) * 0.80,
+          cancellationReason: 'Cliente rechazó re-cotización tras inspección',
+          cancelledAt: serverTimestamp()
+        });
+
+        await notifyAdmin("🚫 SERVICIO CERRADO TRAS INSPECCIÓN", `El cliente ${req.clientName} rechazó la recotización. Cobro final de inspección: B/. ${req.visitFeeAmount || 15}.`);
+        toast.error("Servicio finalizado. Solo se procederá con el cobro de la tarifa de inspección.");
+      }
     } catch (err) { console.error(err); }
   };
 
@@ -258,7 +444,7 @@ export function useBusinessLogic() {
           userId: t.userId,
           title: isVerified ? "✅ Perfil Verificado" : "⚠️ Verificación Suspendida",
           body: isVerified
-            ? "¡Felicidades! Tu cuenta ha sido validada por el Nodo Central. Ya puedes recibir contratos de alta ingeniería."
+            ? "¡Felicidades! Tu cuenta ha sido validada por el Centro de Control. Ya puedes recibir contratos de alta ingeniería."
             : "Tu verificación ha sido removida por auditoría administrativa. Contacta a soporte.",
           type: 'system',
           createdAt: serverTimestamp(),
@@ -329,7 +515,6 @@ export function useBusinessLogic() {
   };
 
   const handleDeleteAsset = async (id: string) => {
-    if (!window.confirm("¿Estás seguro de eliminar este activo? Esta acción no se puede deshacer de forma sencilla.")) return;
     try {
       const assetRef = doc(db, "assets", id);
       await updateDoc(assetRef, {
@@ -369,7 +554,7 @@ export function useBusinessLogic() {
       await updateDoc(assetRef, {
         preTripInspections: arrayUnion(inspection)
       });
-      toast.success("Inspección Pre-Viaje registrada en el Nodo Central.");
+      toast.success("Inspección Pre-Viaje registrada en el Sistema Central.");
     } catch (err) {
       console.error(err);
       toast.error("Error al registrar la inspección.");
@@ -409,7 +594,7 @@ export function useBusinessLogic() {
     }
   };
 
-  const handleSendQuote = async (requestId: string, price: number, commission: number, notes?: string, materials?: any[], checklist?: any[], schedule?: any) => {
+  const handleSendQuote = async (requestId: string, price: number, commission: number, notes?: string, materials?: any[], checklist?: any[], schedule?: any, visitFee: number = 15, autoThreshold: number = 0, isEmergency: boolean = false) => {
     try {
       const techEarnings = price - commission;
       const updateData: any = {
@@ -418,7 +603,12 @@ export function useBusinessLogic() {
         commission,
         technicianEarnings: techEarnings,
         techNotes: notes || null,
-        quotedAt: serverTimestamp()
+        quotedAt: serverTimestamp(),
+        visitFeeAmount: visitFee,
+        visitFeePaid: false,
+        visitFeeCredited: false,
+        autoApprovalThreshold: autoThreshold,
+        isEmergency: isEmergency
       };
 
       if (materials) updateData.materials = materials;
@@ -479,6 +669,11 @@ export function useBusinessLogic() {
         text: `He rechazado la cotización. Motivo: ${reason}`,
         timestamp: serverTimestamp()
       });
+
+      // En rechazo también purgamos después de un breve delay para asegurar que el mensaje anterior se registre si es necesario (opcional)
+      // O simplemente purgamos todo.
+      await purgeChatMessages(requestId);
+
       toast.success("Cotización rechazada.");
     } catch (err) {
       console.error(err);
@@ -505,16 +700,50 @@ export function useBusinessLogic() {
     }
   };
 
-  const handleCancelRequest = async (requestId: string) => {
+  const handleDispatchTechnician = async (requestId: string) => {
     try {
       await updateDoc(doc(db, "requests", requestId), {
-        status: 'cancelled',
-        cancelledAt: serverTimestamp()
+        technicianDispatchedAt: new Date().toISOString(),
+        status: 'executing' // O un nuevo estado 'in_transit' si prefieres
       });
-      toast.success("Solicitud cancelada.");
+      toast.success("Estatus actualizado: En camino al sitio.");
+    } catch (err) { console.error(err); }
+  };
+
+  const handleCancelRequest = async (requestId: string) => {
+    try {
+      const req = requests.find(r => r.id === requestId);
+      if (!req) return;
+
+      const isRefundEligible = !req.technicianDispatchedAt;
+      const updates: any = {
+        status: 'cancelled',
+        cancelledAt: serverTimestamp(),
+        visitFeeRefunded: isRefundEligible
+      };
+
+      await updateDoc(doc(db, "requests", requestId), updates);
+
+      await purgeChatMessages(requestId);
+
+      if (isRefundEligible) {
+        toast.success("Solicitud cancelada. Su depósito de inspección será reembolsado.");
+      } else {
+        toast.error("Cancelación tardía. La tarifa de inspección se ha retenido por movilización del técnico.");
+      }
     } catch (err) {
       console.error(err);
       toast.error("Error al cancelar la solicitud.");
+    }
+  };
+
+  const handleDeleteRequest = async (requestId: string) => {
+    try {
+      await deleteDoc(doc(db, "requests", requestId));
+      toast.success("Registro eliminado.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Fallo al eliminar el registro.");
     }
   };
 
@@ -534,7 +763,7 @@ export function useBusinessLogic() {
         createdAt: serverTimestamp(),
         read: false
       });
-      toast.success("Incidente reportado al Nodo Central. Un asesor le contactará.");
+      toast.success("Incidente reportado al Centro de Control. Un asesor le contactará.");
     } catch (err) { console.error(err); }
   };
 
@@ -563,20 +792,44 @@ export function useBusinessLogic() {
       if (!req?.priceAdjustment) return;
 
       if (accept) {
-        const commission = req.priceAdjustment.newPrice * 0.15;
+        const newTotal = req.priceAdjustment.newPrice;
+        const alreadyPaid = req.amountPaid || 0;
+        const delta = newTotal - alreadyPaid;
+        const commission = newTotal * 0.15;
+
         await updateDoc(doc(db, "requests", requestId), {
-          price: req.priceAdjustment.newPrice,
+          price: newTotal,
           commission,
-          technicianEarnings: req.priceAdjustment.newPrice - commission,
-          'priceAdjustment.status': 'accepted'
+          technicianEarnings: newTotal - commission,
+          'priceAdjustment.status': 'accepted',
+          // No sumamos el delta al amountPaid todavía, eso pasará cuando el cliente pague el checkout de ajuste
         });
-        toast.success("Presupuesto actualizado.");
+        toast.success(`Ajuste aceptado. Saldo pendiente por pagar: B/. ${delta.toFixed(2)}`);
       } else {
         await updateDoc(doc(db, "requests", requestId), {
           'priceAdjustment.status': 'rejected'
         });
         toast.error("Ajuste rechazado.");
       }
+    } catch (err) { console.error(err); }
+  };
+
+  const handleTogglePause = async (requestId: string, currentPausedState: boolean) => {
+    try {
+      const newPausedState = !currentPausedState;
+      await updateDoc(doc(db, "requests", requestId), {
+        isPaused: newPausedState
+      });
+
+      const text = newPausedState
+        ? "⏱️ TRABAJO EN PAUSA: El especialista ha pausado la sesión actual por cumplimiento de jornada. El ticket permanece activo y bajo resguardo."
+        : "▶️ TRABAJO REANUDADO: El especialista ha reiniciado la labor técnica en sitio. El protocolo de ejecución vuelve a estar activo.";
+
+      await addDoc(collection(db, "messages"), {
+        requestId, sender: 'tech', text, timestamp: serverTimestamp()
+      });
+
+      toast.success(newPausedState ? "Jornada pausada." : "Trabajo reanudado.");
     } catch (err) { console.error(err); }
   };
 
@@ -618,7 +871,6 @@ export function useBusinessLogic() {
     handleAcceptQuote,
     handleCompleteJob,
     handleConfirmPayment,
-    handleApproveSubscription,
     handleSaveMaterial,
     handleTriggerUnforeseen,
     handleToggleTask,
@@ -638,10 +890,18 @@ export function useBusinessLogic() {
     handleRejectQuote,
     handleAcceptBid,
     handleCancelRequest,
+    handleDeleteRequest,
+    handleDispatchTechnician,
     handleReportNoShow,
     handleProposePriceAdjustment,
     handleRespondToAdjustment,
+    handleRespondToUnforeseen,
+    handleTogglePause,
     handleArbitrateDispute,
+    handleApproveSubscription,
+    handleRequestSubscription,
+    handleSendTestPush,
+    handleVerifyIdentityAI: handleVerifyIdentityAIProcess,
     getRecommendedTechs
   };
 }

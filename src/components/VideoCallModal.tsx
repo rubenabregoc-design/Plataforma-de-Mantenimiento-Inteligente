@@ -173,8 +173,8 @@ export default function VideoCallModal({ isOpen, onClose, roomName, userName, is
                    <div className="absolute -top-2 -right-2 bg-rose-600 px-2 py-1 rounded-lg text-[7px] font-black text-white uppercase">Cifrado</div>
                 </div>
                 <div className="text-center space-y-1">
-                   <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white">Sincronizando Nodo</p>
-                   <p className="text-[8px] font-medium uppercase text-[#474556] tracking-widest">Esperando al interlocutor en la sala...</p>
+                   <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white">Conectando con Servidor</p>
+                   <p className="text-[8px] font-medium uppercase text-[#474556] tracking-widest">Estableciendo túnel de video seguro...</p>
                 </div>
              </div>
            )}

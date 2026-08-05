@@ -309,6 +309,26 @@ export interface JobRequest {
   approverEmail?: string;
   approvalLink?: string;
   approvalStatus?: 'pending' | 'approved' | 'rejected';
+
+  // Punto #23: Gestión de Tarifa de Visita e Inspección
+  visitFeeAmount?: number;
+  visitFeePaid?: boolean;
+  visitFeeCredited?: boolean;
+  visitFeeRefunded?: boolean;
+
+  // Punto #24: Protocolo de Despacho y Emergencias
+  technicianDispatchedAt?: string;
+  isEmergency?: boolean;
+  isPaused?: boolean;
+  autoApprovalThreshold?: number;
+
+  unforeseenProposal?: {
+    extraCost: number;
+    reason: string;
+    category: string;
+    status: 'pending' | 'accepted' | 'rejected';
+    at: any;
+  };
 }
 
 export interface ChatMessage {
@@ -368,6 +388,7 @@ export interface UserSubscription {
   status: 'active' | 'expired' | 'canceled' | 'pending_payment_verification';
   startDate: string;
   nextBillingDate: string;
+  pendingPlanId?: string;
 }
 
 export interface WalletTransaction {

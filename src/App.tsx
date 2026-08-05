@@ -1,6 +1,7 @@
 import { Toaster, toast } from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
+import GooglePayButton from '@google-pay/button-react';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from './context/AuthContext';
 import { useData } from './context/DataContext';
@@ -24,6 +25,9 @@ import PreTripInspectionModal from './components/PreTripInspectionModal';
 import QuoteModal from './components/QuoteModal';
 import MaterialModal from './components/MaterialModal';
 import UnforeseenModal from './components/UnforeseenModal';
+import PriceAdjustmentModal from './components/PriceAdjustmentModal';
+import ReasonModal from './components/ReasonModal';
+import ConfirmationModal from './components/ConfirmationModal';
 import Star from 'lucide-react/dist/esm/icons/star';
 import X from 'lucide-react/dist/esm/icons/x';
 import Globe from 'lucide-react/dist/esm/icons/globe';
@@ -64,7 +68,7 @@ export default function App() {
       case 'plan-pro': return { maxAssets: 25, fleet: 'lite', diag: 'assisted', history: 50 };
       case 'plan-basic': return { maxAssets: 5, fleet: 'none', diag: 'manual', history: 10 };
       case 'plan-free':
-      default: return { maxAssets: 2, fleet: 'none', diag: 'manual', history: 5 };
+      default: return { maxAssets: 5, fleet: 'none', diag: 'manual', history: 5 };
     }
   };
 
@@ -73,6 +77,13 @@ export default function App() {
   // --- HANDLERS ---
   const handleAddAsset = async (data: any) => {
     if (!user) return;
+
+    // LÓGICA DE LÍMITES POR PLAN
+    if (assets.length >= planLimits.maxAssets) {
+       toast.error(`Límite excedido. Su plan actual (${subscription.planId.replace('plan-','').toUpperCase()}) solo permite ${planLimits.maxAssets} activos.`);
+       openModal('subscriptions');
+       return;
+    }
 
     // Limpieza profunda de datos para Firebase (Elimina undefined)
     const cleanData = cleanForFirebase(data);
@@ -126,13 +137,52 @@ export default function App() {
 
   return (
     <PayPalScriptProvider options={{
-      clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID,
+      clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || "sb",
       currency: "USD",
       intent: "capture",
+      components: "buttons,googlepay",
       "disable-funding": "paylater,venmo",
       locale: "es_PA"
     }}>
-      <Toaster position="top-center" />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#1c1d21',
+            color: '#fff',
+            borderRadius: '1.2rem',
+            border: '1px solid rgba(255,255,255,0.1)',
+            fontSize: '11px',
+            fontWeight: '900',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            padding: '16px 24px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+            maxWidth: '450px'
+          },
+          success: {
+            iconTheme: {
+              primary: '#52ffac',
+              secondary: '#000',
+            },
+            style: {
+              border: '1px solid rgba(82,255,172,0.2)',
+              boxShadow: '0 0 20px rgba(82,255,172,0.1)'
+            }
+          },
+          error: {
+            iconTheme: {
+              primary: '#f43f5e',
+              secondary: '#fff',
+            },
+            style: {
+              border: '1px solid rgba(244,63,94,0.2)',
+              boxShadow: '0 0 20px rgba(244,63,94,0.1)'
+            }
+          }
+        }}
+      />
 
       <AppRouter
         unreadCount={unreadCount}
@@ -191,36 +241,43 @@ export default function App() {
 
         {modals.payment && (
           <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl overflow-y-auto">
-             <div className="w-full max-w-lg bg-[#121317] border border-[#2a2b2f] rounded-[3rem] p-8 md:p-10 space-y-8 shadow-2xl animate-fade-in-up relative my-auto">
-                <button onClick={() => closeModal('payment')} className="absolute top-6 right-6 p-3 bg-white/5 rounded-2xl hover:bg-rose-600/20 text-white transition-all z-50"><X className="w-5 h-5" /></button>
-                <div className="text-center space-y-3">
-                   <div className="w-16 h-16 bg-[#52ffac]/10 rounded-3xl flex items-center justify-center mx-auto text-[#52ffac] border border-[#52ffac]/20 shadow-lg shadow-[#52ffac]/10">
-                      <CreditCard className="w-8 h-8" />
+             <div className="w-full max-w-[95%] sm:max-w-lg bg-[#121317] border border-[#2a2b2f] rounded-[1.5rem] sm:rounded-[3rem] p-6 sm:p-10 space-y-6 sm:space-y-8 shadow-2xl animate-fade-in-up relative my-auto">
+                <button onClick={() => closeModal('payment')} className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2.5 sm:p-3 bg-white/5 rounded-2xl hover:bg-rose-600/20 text-white transition-all z-50"><X className="w-4 h-4 sm:w-5 sm:h-5" /></button>
+                <div className="text-center space-y-3 pt-4 sm:pt-0">
+                   <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#52ffac]/10 rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto text-[#52ffac] border border-[#52ffac]/20 shadow-lg shadow-[#52ffac]/10">
+                      <CreditCard className="w-6 h-6 sm:w-8 sm:h-8" />
                    </div>
-                   <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">Checkout Seguro</h3>
-                   <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.3em]">Procesamiento Encriptado AES-256</p>
+                   <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tighter italic">Checkout Seguro</h3>
+                   <p className="text-[8px] sm:text-[10px] text-[#474556] font-black uppercase tracking-[0.3em]">Procesamiento Encriptado AES-256</p>
                 </div>
 
-                <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] space-y-4">
+                <div className="bg-white/5 border border-white/10 p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] space-y-4">
                    <div className="flex justify-between items-center">
                       <span className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest">Concepto</span>
                       <span className="text-xs font-black text-white uppercase">
                         {activeData.plan
                           ? `Suscripción ${role === 'tech' ? 'Especialista' : 'Corporativa'}: ${activeData.plan.replace('plan-','').toUpperCase()}`
-                          : `Pago de Servicio: ${activeData.request?.assetName}`}
+                          : (activeData.request?.amountPaid && activeData.request.amountPaid > 0)
+                            ? `Saldo Pendiente: ${activeData.request?.assetName}`
+                            : `Reserva de Inspección: ${activeData.request?.assetName}`}
                       </span>
                    </div>
                    <div className="h-px bg-white/5"></div>
                    <div className="flex justify-between items-end">
-                      <span className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest mb-1">Total a Pagar</span>
+                      <span className="text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest mb-1">Monto a Depositar</span>
                       <p className="text-4xl font-black text-[#52ffac] italic tracking-tighter leading-none">
                         ${(() => {
                           if (activeData.plan) {
                             if (role === 'tech') return activeData.plan === 'plan-pro' ? '45' : '99';
                             return activeData.plan === 'plan-pro' ? '89' : activeData.plan === 'plan-enterprise' ? '199' : '29';
                           }
-                          return activeData.request?.price || '0';
-                        })()}.00
+                          const req = activeData.request;
+                          if (!req) return '0';
+                          if (req.amountPaid && req.amountPaid > 0) {
+                             return (req.price - req.amountPaid).toFixed(2);
+                          }
+                          return (req.visitFeeAmount || 15).toFixed(2);
+                        })()}
                       </p>
                    </div>
                 </div>
@@ -229,17 +286,74 @@ export default function App() {
                    <button
                      onClick={() => {
                         if (activeData.plan) {
-                          business.handleApproveSubscription(user!.uid, activeData.plan);
+                          business.handleRequestSubscription(user!.uid, activeData.plan);
                         } else {
                           business.handleAcceptQuote(activeData.request?.id || '', 'yappy');
                         }
-                        toast.success("Solicitud enviada para verificación manual.");
                         closeModal('payment');
                      }}
                      className="w-full py-5 bg-[#52ffac] text-[#0d0e12] rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[#52ffac]/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3"
                    >
                       <Download className="w-4 h-4" /> Pagar vía YAPPY (Manual)
                    </button>
+
+                   <div className="rounded-2xl overflow-hidden shadow-none hover:brightness-110 active:scale-[0.98] transition-all h-[64px] bg-black border-0">
+                      <GooglePayButton
+                        environment="TEST"
+                        buttonColor="black"
+                        buttonType="pay"
+                        buttonSizeMode="fill"
+                        buttonRadius={16}
+                        style={{ width: '100%', height: '64px', border: 'none', outline: 'none' }}
+                        paymentRequest={{
+                          apiVersion: 2,
+                          apiVersionMinor: 0,
+                          allowedPaymentMethods: [
+                            {
+                              type: 'CARD',
+                              parameters: {
+                                allowedAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS'],
+                                allowedCardNetworks: ['MASTERCARD', 'VISA'],
+                              },
+                              tokenizationSpecification: {
+                                type: 'PAYMENT_GATEWAY',
+                                parameters: {
+                                  gateway: 'example',
+                                  gatewayMerchantId: 'exampleGatewayMerchantId',
+                                },
+                              },
+                            },
+                          ],
+                          merchantInfo: {
+                            merchantId: '12345678901234567890',
+                            merchantName: 'MantechPro PA',
+                          },
+                          transactionInfo: {
+                            totalPriceStatus: 'FINAL',
+                            totalPriceLabel: 'Total',
+                            totalPrice: activeData.plan
+                              ? (role === 'tech'
+                                  ? (activeData.plan === 'plan-pro' ? '45.00' : '99.00')
+                                  : (activeData.plan === 'plan-pro' ? '89.00' : activeData.plan === 'plan-enterprise' ? '199.00' : '29.00'))
+                              : (activeData.request?.price || '0').toString(),
+                            currencyCode: 'USD',
+                            countryCode: 'PA',
+                          },
+                        }}
+                        onLoadPaymentData={paymentRequest => {
+                          const loading = toast.loading("Verificando Token...");
+                          setTimeout(async () => {
+                            if(activeData.plan) {
+                               await business.handleApproveSubscription(user!.uid, activeData.plan);
+                            } else {
+                               await business.handleAcceptQuote(activeData.request?.id || '', 'googlepay');
+                            }
+                            toast.success("Pago verificado vía Google Pay", { id: loading });
+                            closeModal('payment');
+                          }, 1500);
+                        }}
+                      />
+                   </div>
 
                    <div className="p-1">
                       <PayPalButtons
@@ -377,6 +491,36 @@ export default function App() {
             onClose={() => closeModal('unforeseen')}
             request={activeData.request}
             onTrigger={business.handleTriggerUnforeseen}
+          />
+        )}
+
+        {modals.priceAdjustment && activeData.request && (
+          <PriceAdjustmentModal
+            isOpen={modals.priceAdjustment}
+            onClose={() => closeModal('priceAdjustment')}
+            request={activeData.request}
+            onAdjust={business.handleProposePriceAdjustment}
+          />
+        )}
+
+        {modals.reason && (
+          <ReasonModal
+            isOpen={modals.reason}
+            onClose={() => closeModal('reason')}
+            onConfirm={activeData.onReasonConfirm}
+            title={activeData.reasonTitle}
+            placeholder={activeData.reasonPlaceholder}
+          />
+        )}
+
+        {modals.confirmation && (
+          <ConfirmationModal
+            isOpen={modals.confirmation}
+            onClose={() => closeModal('confirmation')}
+            onConfirm={activeData.onConfConfirm}
+            title={activeData.confTitle}
+            message={activeData.confMessage}
+            type={activeData.confType}
           />
         )}
       </AnimatePresence>

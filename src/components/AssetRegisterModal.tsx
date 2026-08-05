@@ -17,7 +17,7 @@ interface AssetRegisterModalProps {
   currentAssetsCount?: number;
 }
 
-export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit, maxAssets = 3, currentAssetsCount = 0 }: AssetRegisterModalProps) {
+export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit, maxAssets = 5, currentAssetsCount = 0 }: AssetRegisterModalProps) {
   const [name, setName] = useState('');
   const [type, setType] = useState<AssetType>('car');
   const [category, setCategory] = useState<AssetCategory>('GENERAL');

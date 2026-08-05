@@ -52,23 +52,30 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
   const isRealEstate = asset.type === 'house' || asset.category === 'PH';
 
   return (
-    <div className="bg-[#121317] border border-white/5 rounded-[2.5rem] overflow-hidden group hover:border-[#5d3cfe]/50 transition-all shadow-2xl">
+    <div className="bg-[#121317] border border-white/5 rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden group hover:border-[#5d3cfe]/50 transition-all shadow-2xl">
       {/* Visual Header */}
-      <div className="h-24 bg-gradient-to-br from-[#1c1d21] to-[#0d0e12] p-5 flex justify-between items-start relative overflow-hidden">
+      <div className="h-20 sm:h-24 bg-gradient-to-br from-[#1c1d21] to-[#0d0e12] p-4 sm:p-5 flex justify-between items-start relative overflow-hidden">
         <div className="relative z-10">
-          <h4 className="text-base font-black text-white uppercase tracking-tight leading-none">{asset.name}</h4>
-          <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-lg mt-2.5">
-             <BadgeCheck className="w-3 h-3 text-[#5d3cfe]" />
-             <span className="text-[9px] font-black text-[#c7bfff] uppercase tracking-widest">
+          <div className="flex items-center gap-2">
+             <h4 className="text-sm sm:text-base font-black text-white uppercase tracking-tight leading-none">{asset.name}</h4>
+             {(assetRequests.length > 0 || totalSpend > 0) && (
+               <div className="p-1 bg-[#52ffac] rounded-md shadow-[0_0_10px_rgba(82,255,172,0.3)]" title="Unidad con Historial Verificado">
+                  <ShieldCheck className="w-3 h-3 text-black" />
+               </div>
+             )}
+          </div>
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 sm:py-1 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-lg mt-1.5 sm:mt-2.5">
+             <BadgeCheck className="w-2.5 h-2.5 sm:w-3 h-3 text-[#5d3cfe]" />
+             <span className="text-[8px] sm:text-[9px] font-black text-[#c7bfff] uppercase tracking-widest">
                 {asset.licensePlate || asset.serialNumber || 'SN: N/A'}
              </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 relative z-10">
-          <button onClick={(e) => { e.stopPropagation(); onEdit?.(asset); }} className="p-2 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-[#5d3cfe] transition-all"><Pencil className="w-3.5 h-3.5" /></button>
-          <button onClick={(e) => { e.stopPropagation(); onDelete?.(asset.id); }} className="p-2 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-rose-600 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
-          <button onClick={(e) => { e.stopPropagation(); window.open(qrUrl, '_blank'); }} className="p-2 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-[#5d3cfe] transition-all group/qr"><QrCode className="w-4 h-4" /></button>
+        <div className="flex items-center gap-1.5 sm:gap-2 relative z-10">
+          <button onClick={(e) => { e.stopPropagation(); onEdit?.(asset); }} className="p-1.5 sm:p-2 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-[#5d3cfe] transition-all"><Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" /></button>
+          <button onClick={(e) => { e.stopPropagation(); onDelete?.(asset.id); }} className="p-1.5 sm:p-2 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-rose-600 transition-all"><Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /></button>
+          <button onClick={(e) => { e.stopPropagation(); window.open(qrUrl, '_blank'); }} className="p-1.5 sm:p-2 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-[#5d3cfe] transition-all group/qr"><QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
         </div>
 
         <div className="absolute -right-2 -bottom-2 opacity-5 group-hover:opacity-10 transition-opacity transform rotate-12">
@@ -295,7 +302,7 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
                       </div>
                       <div class="seal-container">
                         <div class="seal-bg"></div>
-                        <div class="seal">Nodo Central Verificado<br><span style="font-size: 7px">MantechPro Security Layer</span></div>
+                        <div class="seal">Sistema Central Verificado<br><span style="font-size: 7px">MantechPro Security Layer</span></div>
                       </div>
                     </div>
                   </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TechProfile, Asset, TechCategory } from '../types';
 import { MapPin, Search, Navigation, Zap, Star, ShieldCheck, User, Info, Crosshair, ArrowRight, Car, AlertTriangle, Phone } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useUI } from '../context/UIContext';
 
 interface TechnicianRadarProps {
   technicians: TechProfile[];
@@ -10,6 +11,7 @@ interface TechnicianRadarProps {
 }
 
 export default function TechnicianRadar({ technicians, assets, onSelectTech }: TechnicianRadarProps) {
+  const { openModal } = useUI();
   const [selectedAssetId, setSelectedAssetId] = useState<string>(assets[0]?.id || '');
   const [radarZoom, setRadarZoom] = useState(1); // 1 = 5km, 2 = 10km, etc.
 
@@ -75,7 +77,7 @@ export default function TechnicianRadar({ technicians, assets, onSelectTech }: T
            </div>
         </div>
 
-        <div className="bg-[#121317] border border-[#2a2b2f] rounded-[3rem] p-8 shadow-2xl relative overflow-hidden h-[500px] flex items-center justify-center">
+        <div className="bg-[#121317] border border-[#2a2b2f] rounded-[1.5rem] sm:rounded-[3rem] p-4 sm:p-8 shadow-2xl relative overflow-hidden h-[400px] sm:h-[500px] flex items-center justify-center">
            {/* Fondo de Radar */}
            <div className="absolute inset-0 opacity-10">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#5d3cfe_0%,_transparent_70%)]"></div>
@@ -149,7 +151,7 @@ export default function TechnicianRadar({ technicians, assets, onSelectTech }: T
 
       {/* LADO DERECHO: LISTA DE CERCANÍA */}
       <div className="lg:col-span-5 space-y-6">
-        <div className="bg-[#121317] border border-[#2a2b2f] rounded-[3rem] p-8 shadow-2xl flex flex-col h-full">
+        <div className="bg-[#121317] border border-[#2a2b2f] rounded-[1.5rem] sm:rounded-[3rem] p-6 sm:p-8 shadow-2xl flex flex-col h-full">
            <header className="mb-8">
               <h3 className="text-xl font-black text-white uppercase tracking-tighter">Técnicos <span className="text-[#5d3cfe]">Cercanos</span></h3>
               <p className="text-[10px] text-[#474556] font-black uppercase tracking-widest mt-1">Ordenados por proximidad GPS</p>
@@ -206,10 +208,15 @@ export default function TechnicianRadar({ technicians, assets, onSelectTech }: T
                   const closest = relevantTechs.slice(0, 3);
                   const names = closest.map(t => t.name).join(', ');
 
-                  if(window.confirm(`🚨 PROTOCOLO DE SEGURIDAD ACTIVADO: ¿Enviar alerta del ${currentAsset?.name} a los ${closest.length} especialistas más cercanos? (${names})\n\nSe generará un CÓDIGO DE VERIFICACIÓN para tu seguridad.`)) {
-                    const safetyPin = Math.floor(1000 + Math.random() * 9000);
-                    toast.success(`SEÑAL SOS TRANSMITIDA. Tu Código de Seguridad es: ${safetyPin}. NO abras la puerta a nadie que no diga este código.`, { duration: 10000, icon: '🛡️' });
-                  }
+                  openModal('confirmation', {
+                    confTitle: "Activar Protocolo SOS",
+                    confMessage: `¿Enviar alerta crítica del ${currentAsset?.name} a los ${closest.length} especialistas más cercanos? (${names}). Se generará un CÓDIGO DE VERIFICACIÓN único para su seguridad.`,
+                    confType: 'danger',
+                    onConfConfirm: () => {
+                      const safetyPin = Math.floor(1000 + Math.random() * 9000);
+                      toast.success(`SEÑAL SOS TRANSMITIDA. Tu Código de Seguridad es: ${safetyPin}. NO abras la puerta a nadie que no diga este código.`, { duration: 10000, icon: '🛡️' });
+                    }
+                  });
                 }}
                 className="w-full py-4 bg-rose-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-xl shadow-rose-600/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3"
               >

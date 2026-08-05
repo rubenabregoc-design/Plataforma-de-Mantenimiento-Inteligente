@@ -9,7 +9,7 @@ import {
   Search, ChevronLeft, ChevronRight, LayoutDashboard, Trash2, Check, Download,
   Truck, CheckCircle2, AlertTriangle, Globe, BrainCircuit, ShieldCheck, Layers, Package,
   Store, FileCheck2, FileText, Star, MessageSquare, ArrowRight, Video, MapPin, Activity, Shield,
-  Users, PieChart, Building2, ShieldAlert, Fuel, History, Calendar, Clock, Timer
+  Users, PieChart, Building2, ShieldAlert, Fuel, History, Calendar, Clock, Timer, X, Plus, Zap, DollarSign, ListChecks, Pencil
 } from 'lucide-react';
 import FleetDashboard from '../../components/FleetDashboard';
 import DiagnosticAIView from '../../components/DiagnosticAIView';
@@ -32,7 +32,7 @@ import { useBusinessLogic } from '../../hooks/useBusinessLogic';
 
 export default function ClientDashboard() {
   const { t, i18n } = useTranslation();
-  const { userData, subscription, user, loggedInName, logout } = useAuth();
+  const { userData, subscription, user, loggedInName, logout, daysUntilExpiration } = useAuth();
   const { assets, requests, reminders, inventory, technicians, isDataLoading } = useData();
   const { tabs, setTab, openModal } = useUI();
   const business = useBusinessLogic();
@@ -135,26 +135,49 @@ export default function ClientDashboard() {
     const map: any = {
       pending: 'SOLICITADO',
       quoted: 'COTIZADO',
-      accepted: 'PAGADO',
-      executing: 'EN PROCESO',
-      completed: 'FINALIZADO',
-      rated: 'CALIFICADO',
+      accepted: 'FONDO EN CUSTODIA',
+      executing: 'EN EJECUCIÓN',
+      completed: 'POR CALIFICAR',
+      rated: 'FINALIZADO',
       rejected: 'DENEGADO',
-      disputed: 'IMPREVISTO',
-      cancelled: 'CANCELADO',
+      disputed: 'BAJO AUDITORÍA',
+      cancelled: 'ANULADO',
       pending_verification: 'VERIFICANDO PAGO'
     };
     return map[s] || s.toUpperCase();
   };
 
   const planLimits = {
-    maxAssets: subscription.planId === 'plan-enterprise' ? 9999 : (subscription.planId === 'plan-pro' ? 25 : (subscription.planId === 'plan-basic' ? 5 : 2)),
+    maxAssets: subscription.planId === 'plan-enterprise' ? 9999 : (subscription.planId === 'plan-pro' ? 25 : (subscription.planId === 'plan-basic' ? 5 : 5)),
     fleet: subscription.planId === 'plan-enterprise' ? 'full' : (subscription.planId === 'plan-pro' ? 'lite' : 'none'),
     diag: subscription.planId === 'plan-enterprise' ? 'auto' : (subscription.planId === 'plan-pro' ? 'assisted' : 'manual'),
   };
 
   return (
     <div className="space-y-10 animate-fade-in">
+      {/* Alerta de Facturación Próxima */}
+      {daysUntilExpiration !== null && daysUntilExpiration <= 3 && daysUntilExpiration >= 0 && subscription.planId !== 'plan-free' && (
+        <div className="bg-rose-500/10 border border-rose-500/30 p-5 rounded-[2rem] flex items-center justify-between gap-6 shadow-2xl animate-pulse">
+           <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-600/20">
+                 <ShieldAlert className="w-6 h-6" />
+              </div>
+              <div>
+                 <h4 className="text-sm font-black text-white uppercase tracking-tight">Acceso Premium por Expirar</h4>
+                 <p className="text-[9px] text-rose-500 font-black uppercase tracking-widest mt-1">
+                    Su suscripción vence en <span className="text-white underline">{daysUntilExpiration === 0 ? 'menos de 24 horas' : `${daysUntilExpiration} días`}</span>. Evite la suspensión de beneficios.
+                 </p>
+              </div>
+           </div>
+           <button
+             onClick={() => setTab('client', 'subscriptions')}
+             className="px-6 py-3 bg-rose-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-lg"
+           >
+              Renovar Ahora ➔
+           </button>
+        </div>
+      )}
+
       {clientTab === 'dashboard' && (
         <div className="space-y-10">
           <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
@@ -209,7 +232,12 @@ export default function ClientDashboard() {
                       onOpenPreTrip={(asset) => openModal('preTrip', { asset })}
                       onFindExpert={handleFindExpertForAsset}
                       onEdit={(asset) => openModal('asset', { asset })}
-                      onDelete={business.handleDeleteAsset}
+                      onDelete={(id) => openModal('confirmation', {
+                        confTitle: "Eliminar Activo",
+                        confMessage: "¿Estás seguro de eliminar este activo? Esta acción no se puede deshacer de forma sencilla.",
+                        confType: 'danger',
+                        onConfConfirm: () => business.handleDeleteAsset(id)
+                      })}
                     />
                   ))
                 ) : (
@@ -445,9 +473,14 @@ export default function ClientDashboard() {
                     </div>
                 </div>
                 <button onClick={() => {
-                   const assetId = prompt("ID de activo:");
-                   const desc = prompt("Descripción:");
-                   if(assetId && desc) business.handlePostOpenMarket(assetId, desc);
+                   openModal('reason', {
+                     reasonTitle: "Nueva Subasta Pública",
+                     reasonPlaceholder: "Describa el fallo o requerimiento para que los técnicos puedan pujar...",
+                     onReasonConfirm: (desc) => {
+                       const assetId = prompt("Ingrese ID de activo:"); // Simplificado, idealmente un selector
+                       if(assetId) business.handlePostOpenMarket(assetId, desc);
+                     }
+                   });
                 }} className="px-8 py-4 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase shadow-xl">Nueva Subasta +</button>
               </div>
 
@@ -482,9 +515,12 @@ export default function ClientDashboard() {
                                        <span className="text-sm font-black text-[#52ffac]">${bid.price}</span>
                                        <button
                                          onClick={() => {
-                                           if(window.confirm(`¿Aceptas la oferta de ${bid.techName} por $${bid.price}?`)) {
-                                             business.handleAcceptBid(req.id, bid);
-                                           }
+                                           openModal('confirmation', {
+                                             confTitle: "Aceptar Oferta",
+                                             confMessage: `¿Deseas aceptar la oferta de ${bid.techName} por B/. ${bid.price}? Esto generará un depósito en custodia.`,
+                                             confType: 'success',
+                                             onConfConfirm: () => business.handleAcceptBid(req.id, bid)
+                                           });
                                          }}
                                          className="p-2 bg-[#5d3cfe] text-white rounded-lg opacity-0 group-hover/bid:opacity-100 transition-all"
                                        >
@@ -508,7 +544,14 @@ export default function ClientDashboard() {
                              <span className="text-[9px] font-black text-[#474556] uppercase tracking-widest">Sincronización Satelital Activa</span>
                           </div>
                           <button
-                            onClick={() => { if(window.confirm("¿Cancelar subasta?")) business.handleCancelRequest(req.id); }}
+                            onClick={() => {
+                              openModal('confirmation', {
+                                confTitle: "Anular Subasta",
+                                confMessage: "¿Seguro que deseas anular esta subasta pública definitivamente?",
+                                confType: 'danger',
+                                onConfConfirm: () => business.handleCancelRequest(req.id)
+                              });
+                            }}
                             className="text-[9px] font-black text-rose-500 uppercase hover:text-rose-400"
                           >
                             Anular Ticket
@@ -566,11 +609,11 @@ export default function ClientDashboard() {
               </h3>
               {requests.filter(r => r.status !== 'open_bidding').length > 0 ? (
                 requests.filter(r => r.status !== 'open_bidding').map(req => (
-                  <div key={req.id} className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] space-y-8 shadow-2xl relative overflow-hidden group hover:border-white/10 transition-all">
-                    <div className="flex justify-between items-center relative z-10">
+                  <div key={req.id} className="bg-[#121317] border border-white/5 p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] space-y-6 sm:space-y-8 shadow-2xl relative overflow-hidden group hover:border-white/10 transition-all">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10">
                       <div>
                         <div className="flex items-center gap-3">
-                           <h4 className="font-black text-white text-xl uppercase tracking-tighter leading-none">{req.assetName}</h4>
+                           <h4 className="font-black text-white text-lg sm:text-xl uppercase tracking-tighter leading-none">{req.assetName}</h4>
                            {req.assetPlate && (
                              <span className="px-2 py-0.5 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded text-[7px] font-black text-[#c7bfff] uppercase tracking-widest">{req.assetPlate}</span>
                            )}
@@ -583,23 +626,44 @@ export default function ClientDashboard() {
                            })()}
                         </p>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <span className="flex-1 sm:flex-none text-center px-4 py-1.5 bg-[#1c1d21] border border-white/5 rounded-full text-[9px] font-black text-[#52ffac] uppercase tracking-widest shadow-inner">
+                          {getStatusLabel(req.status)}
+                        </span>
                         {(req.status === 'pending' || req.status === 'quoted') && (
                           <button
                             onClick={() => {
-                              if(window.confirm("¿Deseas cancelar esta solicitud de servicio definitivamente?")) {
-                                business.handleCancelRequest(req.id);
-                              }
+                              openModal('confirmation', {
+                                confTitle: "Anular Solicitud",
+                                confMessage: "¿Deseas cancelar esta solicitud de servicio definitivamente? El depósito de inspección podría estar sujeto a políticas de reembolso.",
+                                confType: 'danger',
+                                onConfConfirm: () => business.handleCancelRequest(req.id)
+                              });
                             }}
-                            className="p-2 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl transition-all group/cancel"
+                            className="p-2.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl transition-all group/cancel"
                             title="Cancelar Solicitud"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         )}
-                        <span className="px-4 py-1.5 bg-[#1c1d21] border border-white/5 rounded-full text-[9px] font-black text-[#52ffac] uppercase tracking-widest shadow-inner">
-                          {getStatusLabel(req.status)}
-                        </span>
+                        {(req.status === 'cancelled' || req.status === 'rejected' || ((req.status === 'completed' || req.status === 'rated') && userData?.role === 'admin')) && (
+                          <button
+                            onClick={() => {
+                              openModal('confirmation', {
+                                confTitle: "Eliminar Registro Histórico",
+                                confMessage: userData?.role === 'admin'
+                                  ? "¿Seguro que deseas eliminar este ticket finalizado? Como administrador, esta acción purgará el registro de la base de datos."
+                                  : "¿Seguro que deseas eliminar este registro permanentemente de tu historial?",
+                                confType: 'danger',
+                                onConfConfirm: () => business.handleDeleteRequest(req.id)
+                              });
+                            }}
+                            className="p-2.5 bg-white/5 hover:bg-rose-600 text-[#474556] hover:text-white rounded-xl transition-all"
+                            title="Eliminar Registro"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                     {req.status === 'quoted' && (
@@ -694,8 +758,11 @@ export default function ClientDashboard() {
                            <div className="flex gap-3 w-full sm:w-auto">
                               <button
                                 onClick={() => {
-                                  const reason = prompt("Indique el motivo del rechazo (opcional):");
-                                  if (reason !== null) business.handleRejectQuote(req.id, reason || "No aceptado por el cliente");
+                                  openModal('reason', {
+                                    reasonTitle: "Rechazar Cotización",
+                                    reasonPlaceholder: "Explique al técnico el motivo del rechazo...",
+                                    onReasonConfirm: (reason) => business.handleRejectQuote(req.id, reason)
+                                  });
                                 }}
                                 className="flex-1 px-6 py-4 bg-white/5 border border-white/10 text-white rounded-2xl text-[9px] font-black uppercase hover:bg-rose-600 transition-all"
                               >
@@ -749,78 +816,296 @@ export default function ClientDashboard() {
                       </div>
                     )}
 
-                    {req.status === 'accepted' && (
-                      <div className="bg-[#1c1d21] p-6 rounded-2xl border border-white/5 space-y-4 shadow-2xl">
-                         <div className="flex items-center gap-3 text-[#52ffac]">
-                            <CheckCircle2 className="w-5 h-5" />
-                            <h4 className="text-sm font-black uppercase tracking-tighter">Servicio Confirmado & Pagado</h4>
+                    {['accepted', 'executing', 'completed'].includes(req.status) && (
+                      <div className="space-y-6 animate-fade-in">
+                         {/* BITÁCORA DE PROGRESO TÉCNICO */}
+                         <div className={`rounded-[2rem] border transition-all duration-500 overflow-hidden shadow-inner ${req.isPaused ? 'bg-amber-500/5 border-amber-500/20' : 'bg-[#52ffac]/5 border-[#52ffac]/30 shadow-[0_0_40px_rgba(82,255,172,0.05)]'}`}>
+                            <header className={`px-6 py-4 border-b transition-colors duration-500 flex justify-between items-center ${req.isPaused ? 'bg-amber-500/10 border-amber-500/10' : 'bg-[#52ffac]/10 border-[#52ffac]/10'}`}>
+                               <h5 className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2 ${req.isPaused ? 'text-amber-500' : 'text-[#52ffac]'}`}>
+                                  {req.isPaused ? <Clock className="w-3.5 h-3.5" /> : <ListChecks className="w-3.5 h-3.5" />}
+                                  {req.isPaused ? 'Bitácora en Pausa' : 'Bitácora Activa'}
+                               </h5>
+                               <div className="flex items-center gap-2">
+                                  <div className={`w-2 h-2 rounded-full animate-ping ${req.isPaused ? 'bg-amber-500' : 'bg-[#52ffac]'}`}></div>
+                                  <span className={`text-[8px] font-black uppercase tracking-widest ${req.isPaused ? 'text-amber-500' : 'text-[#52ffac]'}`}>
+                                    {req.isPaused ? 'Standby' : 'En Vivo'}
+                                  </span>
+                               </div>
+                            </header>
+
+                            <div className="p-6 space-y-8">
+                               {/* Línea de Tiempo de Eventos */}
+                               <div className="space-y-4">
+                                  <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em] ml-1">Historial de Operación:</p>
+                                  <div className="space-y-3">
+                                     {/* Evento: Despacho */}
+                                     {req.technicianDispatchedAt && (
+                                       <div className="flex items-start gap-3 animate-fade-in">
+                                          <div className="w-1.5 h-1.5 rounded-full bg-[#5d3cfe] mt-1.5 shadow-[0_0_8px_#5d3cfe]"></div>
+                                          <div>
+                                             <p className="text-[10px] font-black text-white uppercase leading-none">🚀 Especialista en camino</p>
+                                             <p className="text-[7px] text-[#474556] font-bold mt-1">{new Date(req.technicianDispatchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Protocolo de Despacho V4</p>
+                                          </div>
+                                       </div>
+                                     )}
+                                     {/* Eventos desde Mensajes (Pausas, Re-cotizaciones) */}
+                                     {chatMessages.filter(m => m.text.includes('⏱️') || m.text.includes('🚨') || m.text.includes('💡')).map((msg, idx) => (
+                                       <div key={idx} className="flex items-start gap-3 animate-fade-in">
+                                          <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></div>
+                                          <div>
+                                             <p className="text-[10px] font-black text-white uppercase leading-none truncate max-w-[200px]">{msg.text.split(':')[0]}</p>
+                                             <p className="text-[7px] text-[#474556] font-bold mt-1">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Registro en Red</p>
+                                          </div>
+                                       </div>
+                                     ))}
+                                  </div>
+                               </div>
+
+                               {/* Checklist de Tareas */}
+                               <div className="space-y-3 pt-6 border-t border-white/5">
+                                  <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em] ml-1">Progreso Técnico:</p>
+                                  {req.checklist && req.checklist.length > 0 ? req.checklist.map((task) => (
+                                    <div key={task.id} className="flex items-center justify-between group">
+                                       <div className="flex items-center gap-3">
+                                          <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${task.isCompleted ? 'bg-[#52ffac] border-[#52ffac]' : 'bg-white/5 border-white/10'}`}>
+                                             {task.isCompleted && <Check className="w-3 h-3 text-black stroke-[4]" />}
+                                          </div>
+                                          <span className={`text-[10px] font-bold uppercase tracking-tight ${task.isCompleted ? 'text-white' : 'text-[#474556]'}`}>{task.description}</span>
+                                       </div>
+                                       {task.isCompleted && <span className="text-[7px] font-black text-[#52ffac] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Verificado</span>}
+                                    </div>
+                                  )) : (
+                                    <p className="text-[8px] text-[#474556] uppercase italic text-center py-2">Esperando inicio de protocolo...</p>
+                                  )}
+                               </div>
+
+                               {/* Materiales Agregados (Lista Detallada) */}
+                               {req.materials && req.materials.length > 0 && (
+                                 <div className="pt-6 border-t border-white/5 space-y-4">
+                                    <p className="text-[9px] font-black text-[#474556] uppercase tracking-[0.2em] flex items-center gap-2.5">
+                                       <Package className="w-4 h-4 text-[#5d3cfe]" /> Insumos & Repuestos vinculados:
+                                    </p>
+                                    <div className="grid grid-cols-1 gap-2.5">
+                                       {req.materials.map((m, mIdx) => (
+                                         <div key={mIdx} className="flex justify-between items-center p-3 bg-white/[0.02] border border-white/5 rounded-xl">
+                                            <span className="text-[9px] font-black text-white/80 uppercase">{m.name} <span className="text-[#474556]">x{m.quantity}</span></span>
+                                            <span className="text-[9px] font-black text-[#52ffac]">B/. {(m.price * m.quantity).toFixed(2)}</span>
+                                         </div>
+                                       ))}
+                                    </div>
+                                 </div>
+                               )}
+
+                               {/* Resumen de Inversión Final */}
+                               <div className="pt-6 border-t border-white/10 space-y-4">
+                                  <div className="flex justify-between items-center px-2">
+                                     <span className="text-[10px] font-black text-[#474556] uppercase tracking-widest">Base de Servicio (Labor)</span>
+                                     <span className="text-xs font-black text-white">
+                                        B/. {((req.price || 0) - (req.materials?.reduce((sum, m) => sum + (m.price * m.quantity), 0) || 0)).toFixed(2)}
+                                     </span>
+                                  </div>
+
+                                  {req.materials && req.materials.length > 0 && (
+                                    <div className="flex justify-between items-center px-2">
+                                       <span className="text-[10px] font-black text-[#474556] uppercase tracking-widest">Total en Insumos</span>
+                                       <span className="text-xs font-black text-white">
+                                          B/. {req.materials.reduce((sum, m) => sum + (m.price * m.quantity), 0).toFixed(2)}
+                                       </span>
+                                    </div>
+                                  )}
+
+                                  <div className="p-5 bg-[#52ffac] rounded-2xl flex justify-between items-center shadow-xl shadow-[#52ffac]/10 group">
+                                     <div className="flex items-center gap-4">
+                                        <div className="p-2.5 bg-black/20 rounded-xl text-black shadow-inner">
+                                           <DollarSign className="w-6 h-6" />
+                                        </div>
+                                        <span className="text-[12px] font-black text-black uppercase tracking-tighter italic">Inversión Real Acumulada</span>
+                                     </div>
+                                     <span className="text-3xl font-black text-black italic tracking-tighter leading-none">
+                                        B/. {((req.price || 0) + (req.visitFeePaid ? 0 : (req.visitFeeAmount || 0))).toFixed(2)}
+                                     </span>
+                                  </div>
+
+                                  {req.amountPaid > 0 && (
+                                    <div className="flex justify-between items-center px-4 py-2 bg-white/5 rounded-xl border border-white/5">
+                                       <span className="text-[9px] font-black text-[#52ffac] uppercase italic">Saldo ya liquidado:</span>
+                                       <span className="text-[10px] font-black text-white">B/. {req.amountPaid.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                               </div>
+                            </div>
                          </div>
-                         <p className="text-[10px] text-[#c8c4d9] font-medium leading-relaxed">
-                            El especialista debe presentarse en la fecha y hora acordadas. Si surge algún inconveniente, puede reportarlo directamente.
-                         </p>
-                         <button
-                           onClick={() => {
-                             if(window.confirm("¿Seguro que desea reportar que el técnico NO SE PRESENTÓ a la cita? Esta acción iniciará un protocolo de auditoría.")) {
-                               business.handleReportNoShow(req.id);
-                             }
-                           }}
-                           className="w-full py-4 bg-rose-600/10 border border-rose-600/20 text-rose-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all"
-                         >
-                            Reportar Incumplimiento (No llegó)
-                         </button>
+
+                         {/* CONTROLES DE ESTADO */}
+                         {req.status === 'accepted' && (
+                           <div className="bg-[#1c1d21] p-8 rounded-[2.5rem] border border-white/5 space-y-6 shadow-2xl relative overflow-hidden">
+                              <div className="absolute top-0 right-0 p-8 opacity-5"><ShieldCheck className="w-24 h-24 text-[#52ffac]" /></div>
+                              <div className="flex items-center gap-4 relative z-10">
+                                 <div className="w-14 h-14 bg-[#52ffac]/10 border border-[#52ffac]/20 rounded-2xl flex items-center justify-center text-[#52ffac] shadow-lg">
+                                    <ShieldCheck className="w-8 h-8" />
+                                 </div>
+                                 <div>
+                                    <h4 className="text-xl font-black text-white uppercase tracking-tight">Depósito en Custodia</h4>
+                                    <p className="text-[9px] text-[#52ffac] font-black uppercase tracking-widest">Protección Escrow MantechPro Activa</p>
+                                 </div>
+                              </div>
+                              <div className="space-y-4 relative z-10">
+                                 <p className="text-xs text-[#c8c4d9] leading-relaxed">
+                                    Sus fondos (B/. {req.price?.toFixed(2)}) están bloqueados por seguridad. El técnico ya puede ver que el depósito existe, pero **no recibirá el dinero** hasta que usted firme de conformidad al finalizar la labor.
+                                 </p>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                                    <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                       <p className="text-[8px] font-black text-[#474556] uppercase mb-1">Próximo Paso:</p>
+                                       <p className="text-[10px] font-bold text-white uppercase italic">Esperar Arribo del Técnico</p>
+                                    </div>
+                                    <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                       <p className="text-[8px] font-black text-[#474556] uppercase mb-1">Garantía:</p>
+                                       <p className="text-[10px] font-bold text-[#52ffac] uppercase italic">Activada tras firma final</p>
+                                    </div>
+                                 </div>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  openModal('confirmation', {
+                                    confTitle: "Reportar Incumplimiento",
+                                    confMessage: "¿El técnico no se ha presentado a la hora acordada? Esto iniciará un proceso de devolución inmediata de su depósito.",
+                                    confType: 'danger',
+                                    onConfConfirm: () => business.handleReportNoShow(req.id)
+                                  });
+                                }}
+                                className="w-full py-4 bg-rose-600/10 border border-rose-600/20 text-rose-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all relative z-10"
+                              >
+                                 Reportar Incumplimiento (No llegó)
+                              </button>
+                           </div>
+                         )}
+
+                         {req.status === 'executing' && !req.isPaused && (
+                           <div className="bg-[#1c1d21] p-6 rounded-2xl border border-white/5 space-y-4 shadow-2xl">
+                              <div className="flex items-center gap-3 text-[#52ffac]">
+                                 <Activity className="w-5 h-5 animate-pulse" />
+                                 <h4 className="text-sm font-black uppercase tracking-tighter">En ejecución técnica</h4>
+                              </div>
+                              <p className="text-[10px] text-[#c8c4d9] font-medium leading-relaxed">
+                                 El especialista se encuentra trabajando en su unidad. Puede seguir el progreso en la bitácora superior.
+                              </p>
+                           </div>
+                         )}
+
+                         {req.status === 'completed' && (
+                           <div className="bg-[#52ffac]/10 border border-[#52ffac]/30 p-8 rounded-[2.5rem] space-y-6 shadow-2xl animate-fade-in-up relative overflow-hidden">
+                              <div className="absolute top-0 right-0 p-8 opacity-10"><ShieldCheck className="w-24 h-24 text-[#52ffac]" /></div>
+                              <div className="flex items-center gap-4 relative z-10">
+                                 <div className="w-14 h-14 bg-[#52ffac] rounded-2xl flex items-center justify-center text-black shadow-lg shadow-[#52ffac]/20">
+                                    <CheckCircle2 className="w-8 h-8" />
+                                 </div>
+                                 <div>
+                                    <h4 className="text-xl font-black text-white uppercase tracking-tight italic">Protocolo Concluido</h4>
+                                    <p className="text-[9px] text-[#52ffac] font-black uppercase tracking-widest">Validación de Garantía Pendiente</p>
+                                 </div>
+                              </div>
+                              <p className="text-xs text-white/80 leading-relaxed max-w-sm relative z-10">
+                                 El especialista ha certificado la finalización de las labores técnicas. Por favor, realice la inspección final, firme de conformidad para <span className="font-black text-[#52ffac]">activar su cobertura de garantía</span> y liberar el depósito en custodia.
+                              </p>
+                              <button
+                                onClick={() => openModal('signature', { requestId: req.id })}
+                                className="w-full py-5 bg-[#52ffac] text-black rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[#52ffac]/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 relative z-10"
+                              >
+                                 <Pencil className="w-4 h-4" /> Cerrar Ticket & Activar Garantía
+                              </button>
+                           </div>
+                         )}
                       </div>
                     )}
 
-                    {req.status === 'executing' && (
-                      <div className="bg-[#1c1d21] p-6 rounded-2xl border border-white/5 space-y-4 shadow-2xl">
-                         <div className="flex items-center gap-3 text-[#52ffac]">
-                            <Activity className="w-5 h-5 animate-pulse" />
-                            <h4 className="text-sm font-black uppercase tracking-tighter">En ejecución técnica</h4>
+                    {req.unforeseenProposal?.status === 'pending' && (
+                      <div className="bg-rose-500/10 border border-rose-500/30 p-8 rounded-[2.5rem] space-y-6 animate-pulse hover:animate-none relative overflow-hidden">
+                         <div className="absolute top-0 right-0 p-8 opacity-5"><Plus className="w-24 h-24 text-rose-500" /></div>
+                         <div className="flex items-center gap-4 relative z-10">
+                            <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                               <AlertTriangle className="w-6 h-6" />
+                            </div>
+                            <div>
+                               <h4 className="text-xl font-black text-white uppercase tracking-tight italic">Costo Extra Detectado</h4>
+                               <p className="text-[9px] text-rose-500 font-black uppercase tracking-widest">Ajuste por Imprevisto en Sitio</p>
+                            </div>
                          </div>
-                         <button onClick={() => openModal('signature', { requestId: req.id })} className="w-full py-4 bg-[#52ffac] text-black rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Finalizar & Liberar Pago</button>
-                      </div>
-                    )}
 
-                    {req.status === 'disputed' && (
-                      <div className="bg-rose-600/10 border border-rose-600/30 p-8 rounded-[2rem] space-y-4 text-center">
-                         <div className="w-16 h-16 bg-rose-600 rounded-2xl flex items-center justify-center text-white mx-auto shadow-2xl shadow-rose-600/20">
-                            <ShieldAlert className="w-8 h-8" />
+                         <div className="bg-black/60 p-6 rounded-3xl border border-white/5 space-y-4 relative z-10">
+                            <div className="flex justify-between items-center border-b border-white/5 pb-4">
+                               <div className="space-y-1">
+                                  <span className="text-[10px] font-black text-[#474556] uppercase tracking-widest leading-none">Inversión Adicional</span>
+                                  <p className="text-[8px] text-[#52ffac] font-black uppercase tracking-tighter">B/. {(req.amountPaid || 0).toFixed(2)} ya pagados se restarán del total</p>
+                               </div>
+                               <div className="text-right">
+                                  <span className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest block mb-1">Monto a Liquidar</span>
+                                  <p className="text-3xl font-black text-rose-500 italic leading-none">B/. {(req.unforeseenProposal.extraCost).toFixed(2)}</p>
+                               </div>
+                            </div>
+                            <div className="space-y-2 pt-2">
+                               <span className="text-[10px] font-black text-[#474556] uppercase tracking-widest flex items-center gap-2">Análisis Técnico:</span>
+                               <p className="text-xs text-white/80 italic leading-relaxed">"{req.unforeseenProposal.reason}"</p>
+                            </div>
                          </div>
-                         <h4 className="text-lg font-black text-white uppercase tracking-tighter italic">Bajo Auditoría de Arbitraje</h4>
-                         <p className="text-[10px] text-rose-200/60 font-bold uppercase leading-relaxed">
-                            Se ha detectado una anomalía o incumplimiento. El Nodo Central está mediando la disputa para proteger sus fondos.
-                         </p>
-                         <div className="px-6 py-2 bg-rose-600 text-white rounded-full text-[8px] font-black uppercase tracking-widest animate-pulse">Estatus: Bloqueado por Seguridad</div>
+
+                         <div className="bg-[#52ffac]/5 border border-[#52ffac]/20 p-4 rounded-2xl flex items-center justify-between">
+                            <span className="text-[9px] font-black text-[#52ffac] uppercase">Costo Final Acumulado (Total):</span>
+                            <span className="text-sm font-black text-white">B/. {((req.amountPaid || 0) + (req.price || 0) + req.unforeseenProposal.extraCost - (req.amountPaid || 0)).toFixed(2)}</span>
+                         </div>
+
+                         <div className="flex gap-4 relative z-10">
+                            <button
+                              onClick={() => business.handleRespondToUnforeseen(req.id, false)}
+                              className="flex-1 py-4 bg-white/5 border border-white/10 text-white rounded-2xl text-[9px] font-black uppercase hover:bg-rose-600 transition-all"
+                            >
+                              Rechazar (Pagar solo inspección)
+                            </button>
+                            <button
+                              onClick={() => business.handleRespondToUnforeseen(req.id, true)}
+                              className="flex-[1.5] py-4 bg-rose-600 text-white rounded-2xl text-[9px] font-black uppercase shadow-xl shadow-rose-600/20 hover:scale-[1.02] active:scale-95 transition-all"
+                            >
+                              Aceptar & Iniciar Trabajo
+                            </button>
+                         </div>
                       </div>
                     )}
 
                     {req.priceAdjustment?.status === 'pending' && (
-                      <div className="bg-amber-500/10 border border-amber-500/30 p-6 rounded-3xl space-y-6 animate-pulse hover:animate-none">
-                         <div className="flex items-center gap-3">
-                            <AlertTriangle className="w-6 h-6 text-amber-500" />
+                      <div className="bg-amber-500/10 border border-amber-500/30 p-8 rounded-[2.5rem] space-y-6 animate-pulse hover:animate-none relative overflow-hidden">
+                         <div className="absolute top-0 right-0 p-8 opacity-5"><DollarSign className="w-24 h-24 text-amber-500" /></div>
+                         <div className="flex items-center gap-4 relative z-10">
+                            <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-black shadow-lg shadow-amber-500/20">
+                               <AlertTriangle className="w-6 h-6" />
+                            </div>
                             <div>
-                               <h4 className="text-sm font-black text-white uppercase tracking-tight">Propuesta de Ajuste Presupuestario</h4>
-                               <p className="text-[8px] text-amber-500 font-black uppercase tracking-widest">El técnico requiere un cambio de precio</p>
+                               <h4 className="text-xl font-black text-white uppercase tracking-tight italic">Propuesta de Ajuste Técnico</h4>
+                               <p className="text-[9px] text-amber-500 font-black uppercase tracking-widest">Requiere su aprobación para continuar</p>
                             </div>
                          </div>
 
-                         <div className="bg-black/40 p-4 rounded-xl space-y-2">
-                            <p className="text-[10px] text-[#c8c4d9] font-bold uppercase tracking-widest">Nuevo Total: <span className="text-white">B/. {req.priceAdjustment.newPrice}</span></p>
-                            <p className="text-xs text-white/60 italic leading-relaxed">"{req.priceAdjustment.reason}"</p>
+                         <div className="bg-black/60 p-6 rounded-3xl border border-white/5 space-y-4 relative z-10">
+                            <div className="flex justify-between items-end border-b border-white/5 pb-4">
+                               <span className="text-[10px] font-black text-[#474556] uppercase tracking-widest">Nuevo Presupuesto Total</span>
+                               <p className="text-3xl font-black text-[#52ffac] italic leading-none">B/. {req.priceAdjustment.newPrice.toFixed(2)}</p>
+                            </div>
+                            <div className="space-y-2 pt-2">
+                               <span className="text-[10px] font-black text-[#474556] uppercase tracking-widest flex items-center gap-2"><FileText className="w-3.5 h-3.5" /> Justificación del Especialista:</span>
+                               <p className="text-xs text-white/80 italic leading-relaxed">"{req.priceAdjustment.reason}"</p>
+                            </div>
                          </div>
 
-                         <div className="flex gap-3">
+                         <div className="flex gap-4 relative z-10">
                             <button
                               onClick={() => business.handleRespondToAdjustment(req.id, false)}
-                              className="flex-1 py-4 bg-white/5 border border-white/10 text-white rounded-xl text-[9px] font-black uppercase hover:bg-rose-600"
+                              className="flex-1 py-4 bg-white/5 border border-white/10 text-white rounded-2xl text-[9px] font-black uppercase hover:bg-rose-600 transition-all"
                             >
                               Rechazar
                             </button>
                             <button
                               onClick={() => business.handleRespondToAdjustment(req.id, true)}
-                              className="flex-[1.5] py-4 bg-amber-500 text-black rounded-xl text-[9px] font-black uppercase shadow-xl hover:brightness-110"
+                              className="flex-[1.5] py-4 bg-amber-500 text-black rounded-2xl text-[9px] font-black uppercase shadow-xl shadow-amber-500/20 hover:scale-[1.02] active:scale-95 transition-all"
                             >
-                              Aceptar Nuevo Precio
+                              Aceptar Ajuste & Proceder
                             </button>
                          </div>
                       </div>
@@ -829,7 +1114,7 @@ export default function ClientDashboard() {
                 ))
               ) : (
                 <div className="py-20 bg-[#121317] border border-dashed border-white/5 rounded-[3rem] text-center opacity-40">
-                   <p className="text-[10px] font-black uppercase tracking-widest italic">No hay servicios registrados en el nodo.</p>
+                   <p className="text-[10px] font-black uppercase tracking-widest italic">No hay servicios registrados en el sistema.</p>
                 </div>
               )}
 
@@ -923,7 +1208,17 @@ export default function ClientDashboard() {
       )}
 
       {clientTab === 'subscriptions' && (
-        <SubscriptionModule subscription={subscription} onUpgrade={(planId) => openModal('payment', { plan: planId })} role="client" />
+        <SubscriptionModule
+          subscription={subscription}
+          onUpgrade={(planId) => {
+            if (planId === 'plan-free') {
+              business.handleApproveSubscription(user!.uid, planId);
+            } else {
+              openModal('payment', { plan: planId });
+            }
+          }}
+          role="client"
+        />
       )}
 
       {clientTab === 'chat' && (
@@ -1023,7 +1318,7 @@ export default function ClientDashboard() {
         <div className="max-w-4xl mx-auto space-y-12 animate-fade-in pb-20">
            <header className="text-center space-y-3 italic">
               <h1 className="text-5xl font-black text-white uppercase tracking-tighter leading-none italic">Gestión de <span className="text-amber-500">Equipo</span></h1>
-              <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.4em]">Multi-Administrador / Nodos de Operación PH</p>
+              <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.4em]">Multi-Administrador / Sedes de Operación PH</p>
            </header>
 
            <div className="bg-[#121317] border border-white/5 p-10 rounded-[3rem] space-y-8 shadow-2xl relative overflow-hidden">
@@ -1031,7 +1326,7 @@ export default function ClientDashboard() {
 
               <div className="flex justify-between items-center relative z-10">
                  <div className="space-y-1">
-                    <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Administradores de Nodo</h3>
+                    <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Administradores de Sede</h3>
                     <p className="text-[10px] text-[#474556] font-bold uppercase tracking-widest italic">Personal con acceso a gestión de activos</p>
                  </div>
                  <button onClick={() => toast("Funcionalidad disponible en la próxima actualización de seguridad.", { icon: '🚀' })} className="px-8 py-3 bg-white/5 border border-white/10 text-white rounded-2xl text-[9px] font-black uppercase hover:bg-white/10 transition-all">+ Añadir Miembro</button>
@@ -1050,23 +1345,41 @@ export default function ClientDashboard() {
                     </div>
                     <div className="px-4 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full text-[8px] font-black text-amber-500 uppercase tracking-widest">Activo</div>
                  </div>
+
+                 {/* Simulación de Multi-Administrador para Enterprise */}
+                 <div className="p-6 bg-white/[0.02] border border-dashed border-white/10 rounded-3xl flex items-center justify-between opacity-60">
+                    <div className="flex items-center gap-5">
+                       <div className="w-12 h-12 rounded-full bg-[#1c1d21] border border-white/5 flex items-center justify-center text-[#474556] font-black text-sm">
+                          ?
+                       </div>
+                       <div>
+                          <p className="text-sm font-black text-[#474556] uppercase tracking-tight italic italic">Cupo de Administrador Delegado</p>
+                          <p className="text-[8px] text-[#474556] font-bold uppercase tracking-widest leading-none mt-1 italic italic">Permitido en Plan Enterprise</p>
+                       </div>
+                    </div>
+                    <button className="text-[8px] font-black text-[#5d3cfe] uppercase tracking-widest hover:underline">Invitar Gerente</button>
+                 </div>
               </div>
            </div>
 
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-8 bg-[#1c1d21] border border-white/5 rounded-[2.5rem] space-y-4">
-                 <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400">
-                    <PieChart className="w-6 h-6" />
+              <div className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] space-y-4">
+                 <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                    <PieChart className="w-5 h-5" />
                  </div>
                  <h4 className="text-sm font-black text-white uppercase tracking-widest italic">Auditoría de Acciones</h4>
-                 <p className="text-[10px] text-[#c8c4d9] font-medium leading-relaxed opacity-60">Rastree qué administrador registró un activo o aprobó un mantenimiento en tiempo real.</p>
+                 <p className="text-[10px] text-[#c8c4d9] font-medium leading-relaxed uppercase opacity-70">
+                    Rastree qué administrador registró un activo o aprobó un mantenimiento en tiempo real.
+                 </p>
               </div>
-              <div className="p-8 bg-[#1c1d21] border border-white/5 rounded-[2.5rem] space-y-4">
-                 <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400">
-                    <Building2 className="w-6 h-6" />
+              <div className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] space-y-4">
+                 <div className="w-10 h-10 rounded-xl bg-[#52ffac]/10 flex items-center justify-center text-[#52ffac]">
+                    <Building2 className="w-5 h-5" />
                  </div>
-                 <h4 className="text-sm font-black text-white uppercase tracking-widest italic">Nodos PH / Sede</h4>
-                 <p className="text-[10px] text-[#c8c4d9] font-medium leading-relaxed opacity-60">Segmente sus activos por ubicación (Ej: Torre 1, Sótano, Depósito) y asigne encargados específicos.</p>
+                 <h4 className="text-sm font-black text-white uppercase tracking-widest italic">Sedes PH / Ubicación</h4>
+                 <p className="text-[10px] text-[#c8c4d9] font-medium leading-relaxed uppercase opacity-70">
+                    Segmente sus activos por ubicación (Ej: Torre 1, Sótano, Depósito) y asigne encargados específicos.
+                 </p>
               </div>
            </div>
         </div>

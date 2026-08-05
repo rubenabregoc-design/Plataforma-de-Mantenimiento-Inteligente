@@ -87,11 +87,11 @@ export default function AppScreensShowcase({ onExplore }: AppScreensShowcaseProp
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
            <div className="space-y-4">
               <span className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-[0.4em]">Experiencia de Usuario</span>
-              <h2 className="text-5xl md:text-8xl font-black text-white uppercase tracking-tighter leading-none">
+              <h2 className="text-4xl sm:text-5xl md:text-8xl font-black text-white uppercase tracking-tighter leading-none">
                 La App <span className="text-white/20">Master.</span>
               </h2>
            </div>
-           <p className="max-w-md text-[#c8c4d9] font-medium text-lg opacity-60 leading-relaxed">
+           <p className="max-w-md text-[#c8c4d9] font-medium text-sm sm:text-base md:text-lg opacity-60 leading-relaxed">
              Una interfaz diseñada para la velocidad y la seguridad. Explore los módulos que están transformando el soporte técnico en Panamá.
            </p>
         </div>
@@ -131,54 +131,54 @@ export default function AppScreensShowcase({ onExplore }: AppScreensShowcaseProp
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -30 }}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-12 bg-[#121317] border border-white/5 p-10 md:p-16 rounded-[4rem] shadow-3xl"
+                  className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 bg-[#121317] border border-white/5 p-6 sm:p-10 md:p-16 rounded-[2rem] sm:rounded-[4rem] shadow-3xl"
                 >
                    {/* Mockup de Celular */}
-                   <div className="relative mx-auto w-[280px] h-[580px] bg-[#0d0e12] rounded-[3rem] border-[8px] border-[#1c1d21] shadow-2xl overflow-hidden shadow-[#000000]">
+                   <div className="relative mx-auto w-[240px] sm:w-[280px] h-[500px] sm:h-[580px] bg-[#0d0e12] rounded-[3rem] border-[8px] border-[#1c1d21] shadow-2xl overflow-hidden shadow-[#000000] shrink-0">
                       {/* Cámara Frontal */}
-                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-[#1c1d21] rounded-b-2xl z-20"></div>
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 sm:w-32 h-5 sm:h-6 bg-[#1c1d21] rounded-b-2xl z-20"></div>
 
                       {/* Pantalla App */}
                       <div className="w-full h-full relative">
                          <img src={current.image} alt="App Screen" className="w-full h-full object-cover opacity-60 mix-blend-luminosity hover:mix-blend-normal transition-all duration-700" />
                          <div className="absolute inset-0 bg-gradient-to-t from-[#0d0e12] via-transparent to-transparent"></div>
 
-                         <div className="absolute bottom-8 left-6 right-6 space-y-4">
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: current.color }}>
-                               <current.icon className="w-5 h-5 text-black" />
+                         <div className="absolute bottom-6 sm:bottom-8 left-5 sm:left-6 right-5 sm:right-6 space-y-3 sm:space-y-4">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: current.color }}>
+                               <current.icon className="w-4 h-4 sm:w-5 sm:h-5 text-black" />
                             </div>
-                            <h5 className="text-xl font-black text-white uppercase tracking-tighter">{current.title}</h5>
-                            <div className="h-1 w-12 rounded-full" style={{ backgroundColor: current.color }}></div>
+                            <h5 className="text-lg sm:text-xl font-black text-white uppercase tracking-tighter">{current.title}</h5>
+                            <div className="h-1 w-10 sm:w-12 rounded-full" style={{ backgroundColor: current.color }}></div>
                          </div>
                       </div>
                    </div>
 
                    {/* Explicación Técnica */}
-                   <div className="flex flex-col justify-center space-y-8">
-                      <div className="space-y-4">
-                         <h3 className="text-3xl font-black text-white uppercase tracking-tighter italic leading-none">
+                   <div className="flex flex-col justify-center space-y-6 sm:space-y-8">
+                      <div className="space-y-3 sm:space-y-4">
+                         <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tighter italic leading-none text-center md:text-left">
                            Poder en la palma <br />
                            <span style={{ color: current.color }}>de su mano.</span>
                          </h3>
-                         <p className="text-[#c8c4d9] font-medium text-lg leading-relaxed">
+                         <p className="text-[#c8c4d9] font-medium text-base sm:text-lg leading-relaxed text-center md:text-left">
                            {current.desc}
                          </p>
                       </div>
 
-                      <div className="space-y-4">
-                         <div className="flex items-center gap-3">
-                            <CheckCircle2 className="w-5 h-5" style={{ color: current.color }} />
-                            <span className="text-[11px] font-black text-white uppercase tracking-widest">Sincronización Satelital Real</span>
+                      <div className="space-y-3 sm:space-y-4">
+                         <div className="flex items-center gap-3 justify-center md:justify-start">
+                            <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: current.color }} />
+                            <span className="text-[10px] sm:text-[11px] font-black text-white uppercase tracking-widest">Sincronización Satelital Real</span>
                          </div>
-                         <div className="flex items-center gap-3">
-                            <CheckCircle2 className="w-5 h-5" style={{ color: current.color }} />
-                            <span className="text-[11px] font-black text-white uppercase tracking-widest">Respaldo de Grado Bancario</span>
+                         <div className="flex items-center gap-3 justify-center md:justify-start">
+                            <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: current.color }} />
+                            <span className="text-[10px] sm:text-[11px] font-black text-white uppercase tracking-widest">Respaldo de Grado Bancario</span>
                          </div>
                       </div>
 
                       <button
                         onClick={() => onExplore(current.title)}
-                        className="w-fit px-8 py-4 border rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-white hover:text-black cursor-pointer active:scale-95"
+                        className="w-full sm:w-fit px-8 py-4 border rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-white hover:text-black cursor-pointer active:scale-95 mx-auto md:mx-0"
                         style={{ borderColor: `${current.color}40`, color: current.color }}
                       >
                         Explorar Módulo ➔

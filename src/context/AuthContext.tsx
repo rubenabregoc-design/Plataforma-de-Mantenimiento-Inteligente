@@ -12,12 +12,15 @@ import {
   setDoc,
   updateDoc,
   onSnapshot,
-  serverTimestamp
+  serverTimestamp,
+  collection,
+  addDoc
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { UserSubscription } from '../types';
 import { logActivity } from '../services/auditService';
 import { toast } from 'react-hot-toast';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -30,6 +33,7 @@ interface AuthContextType {
   loggedInEmail: string;
   profileImage: string;
   selectedTechProfileId: string | null;
+  daysUntilExpiration: number | null;
   logout: () => Promise<void>;
   updateUserSubscription: (newSub: UserSubscription) => Promise<void>;
 }
@@ -42,10 +46,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [role, setRole] = useState<'client' | 'tech' | 'admin' | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthResolving, setIsAuthResolving] = useState(true);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [loggedInName, setLoggedInName] = useState('');
   const [loggedInEmail, setLoggedInEmail] = useState('');
   const [profileImage, setProfileImage] = useState('');
   const [selectedTechProfileId, setSelectedTechProfileId] = useState<string | null>(localStorage.getItem('mantech_logged_tech_id'));
+  const [daysUntilExpiration, setDaysUntilExpiration] = useState<number | null>(null);
 
   const [subscription, setSubscription] = useState<UserSubscription>({
     planId: 'plan-free',
@@ -55,6 +61,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast.success("Enlace restablecido con la Central.");
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast.error("Señal perdida. Verifique su conexión DNS / Internet.", { duration: 10000 });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
     let unsubscribeDoc: (() => void) | null = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -64,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const userRef = doc(db, "users", firebaseUser.uid);
 
-        // Listener en tiempo real para los datos del usuario
+        // Listener en tiempo real para los datos del usuario con manejo de error de red
         unsubscribeDoc = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
@@ -133,6 +151,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           setIsLoggedIn(true);
           setIsAuthResolving(false);
+        }, (err) => {
+          console.error("Firebase Snapshot Error:", err);
+          if (err.code === 'permission-denied') {
+            toast.error("Sesión expirada o permisos insuficientes.");
+          } else {
+            toast.error("Error de enlace con Firebase. Verifique su DNS.");
+          }
         });
 
       } else {
@@ -148,26 +173,74 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       unsubscribeAuth();
       if (unsubscribeDoc) unsubscribeDoc();
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
-  // Expiration Guard
+  // Expiration Guard: Protocolo de Retorno a Plan Gratis tras impago
   useEffect(() => {
-    if (!isLoggedIn || !userData || role !== 'client') return;
+    if (!isLoggedIn || !userData) return;
 
     const checkExpiration = async () => {
       const now = new Date();
       const expiry = new Date(subscription.nextBillingDate);
 
-      if (now > expiry && subscription.planId !== 'plan-free' && subscription.status === 'active') {
+      // Calcular días restantes
+      const diffTime = expiry.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      setDaysUntilExpiration(diffDays);
+
+      // --- PROTOCOLO DE NOTIFICACIÓN PUSH (24 HORAS ANTES) ---
+      if (diffDays === 1 && subscription.status === 'active' && subscription.planId !== 'plan-free') {
+        try {
+          const hasNotified = localStorage.getItem(`mantech_notif_expiry_${subscription.nextBillingDate}`);
+          if (!hasNotified) {
+            // 1. Notificación Local (Push Nativa en Celular)
+            await LocalNotifications.schedule({
+              notifications: [
+                {
+                  title: "⚠️ ACCESO POR EXPIRAR",
+                  body: "Tu suscripción MantechPro vence en 24 horas. Renueva ahora para mantener tus beneficios premium.",
+                  id: 101,
+                  schedule: { at: new Date(Date.now() + 1000) },
+                  sound: 'beep.wav'
+                }
+              ]
+            });
+
+            // 2. Registro en Firestore para Centro de Notificaciones (UI)
+            await addDoc(collection(db, "notifications"), {
+              userId: user!.uid,
+              title: "🚀 Renovación Urgente",
+              body: "Tu acceso premium expira en 24 horas. Haz clic para renovar vía Yappy.",
+              type: 'billing',
+              createdAt: serverTimestamp(),
+              read: false
+            });
+
+            localStorage.setItem(`mantech_notif_expiry_${subscription.nextBillingDate}`, 'true');
+          }
+        } catch (e) { console.error("Push Error:", e); }
+      }
+
+      // Si la fecha actual superó la de facturación y el plan no es el gratuito
+      if (now > expiry && subscription.planId !== 'plan-free' && subscription.planId !== 'plan-basic' && subscription.status === 'active') {
+        const defaultPlanId = role === 'tech' ? 'plan-basic' : 'plan-free';
+
         const expiredSub = {
           ...subscription,
           status: 'expired',
-          planId: 'plan-free'
+          planId: defaultPlanId
         };
+
         await updateDoc(doc(db, "users", user!.uid), { subscription: expiredSub });
         setSubscription(expiredSub as UserSubscription);
-        toast.error("Tu plan MantechPro ha expirado. Has sido retornado al Plan Gratis.", { duration: 6000 });
+
+        toast.error("Tu suscripción MantechPro ha expirado. Tus beneficios premium han sido suspendidos y has retornado al Plan Base.", {
+          duration: 8000,
+          icon: '⚠️'
+        });
       }
     };
 
@@ -196,6 +269,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loggedInEmail,
       profileImage,
       selectedTechProfileId,
+      daysUntilExpiration,
       logout,
       updateUserSubscription
     }}>

@@ -66,7 +66,7 @@ export default function FuelAuditModal({ isOpen, onClose, asset: initialAsset, o
       setPrice('');
     } catch (err) {
       console.error(err);
-      toast.error("Error en la conexión con el Nodo Central.");
+      toast.error("Error en la conexión con el Sistema Central.");
     } finally {
       setIsSubmitting(false);
     }
@@ -200,7 +200,7 @@ export default function FuelAuditModal({ isOpen, onClose, asset: initialAsset, o
         <footer className="p-8 bg-[#0d0e12] border-t border-white/5 flex items-center justify-between shrink-0">
            <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-[#52ffac] animate-pulse"></div>
-              <p className="text-[8px] font-black text-[#474556] uppercase tracking-widest">Conexión Segura con el Nodo Central Mantech</p>
+              <p className="text-[8px] font-black text-[#474556] uppercase tracking-widest">Conexión Segura con el Centro de Control Mantech</p>
            </div>
            <p className="text-[8px] font-bold text-white/10 uppercase tracking-widest font-mono">ID-TOKEN: {asset.id.toUpperCase()}</p>
         </footer>

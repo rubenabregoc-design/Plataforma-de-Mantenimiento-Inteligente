@@ -37,12 +37,12 @@ export default function Logo({ className = '', showText = true, size = 'md' }: L
       </div>
 
       {showText && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <span className={`${textSizes[size]} font-black tracking-tighter text-white`}>
             Mantech<span className="text-[#5d3cfe]">Pro</span>
           </span>
-          <div className="bg-[#52ffac]/10 border border-[#52ffac]/20 px-3 py-1 rounded-lg shadow-[0_0_10px_rgba(82,255,172,0.1)]">
-            <span className="text-[10px] font-black text-[#52ffac] uppercase tracking-[0.2em]">PANAMÁ</span>
+          <div className="hidden xs:block bg-[#52ffac]/10 border border-[#52ffac]/20 px-2 sm:px-3 py-1 rounded-lg shadow-[0_0_10px_rgba(82,255,172,0.1)]">
+            <span className="text-[8px] sm:text-[10px] font-black text-[#52ffac] uppercase tracking-[0.2em]">PANAMÁ</span>
           </div>
         </div>
       )}

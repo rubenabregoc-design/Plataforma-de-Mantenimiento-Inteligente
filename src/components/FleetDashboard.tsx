@@ -1,11 +1,15 @@
 import * as XLSX from 'xlsx';
 import { toast } from 'react-hot-toast';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Asset, MaintenanceReminder } from '../types';
 import {
   LayoutGrid, List, MapPin, AlertCircle, CheckCircle2, TrendingUp, Search, Filter, Mic, Radio, Volume2,
   ChevronRight, Car, Wind, Cpu, Zap, Building2, Code, Phone, ShieldCheck, Download, Star, FileText, Globe, RefreshCw, ChevronLeft, Navigation, Pause, Clock, Flag, Droplets, Fuel, Trash2, Maximize, Activity, AlertTriangle, Pencil, Plus, Info, Settings, User as UserIcon
 } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { Geolocation } from '@capacitor/geolocation';
 import { storage, db } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot, limit, orderBy } from 'firebase/firestore';
@@ -29,7 +33,7 @@ interface FleetDashboardProps {
 
 export default function FleetDashboard({ assets, reminders, onManageAsset, onBulkUpdate, onBulkDelete, onBulkRegister, onStartGps, onTogglePause, onAddCheckpoint, onContactSupport, trackingAssetId, tripStatus = 'idle', mode = 'lite' }: FleetDashboardProps) {
   const { openModal } = useUI();
-  const [viewMode, setViewMode] = useState<'grid' | 'table' | 'history'>(mode === 'full' ? 'table' : 'grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'table' | 'history' | 'map'>(mode === 'full' ? 'map' : 'grid');
   const [activeSubTab, setActiveSubTab] = useState<'fleet' | 'fuel' | 'api' | 'support' | 'radio'>('fleet');
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -42,6 +46,19 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
   const [receivingFrom, setReceivingFrom] = useState<string | null>(null);
   const [isScannerActive, setIsScannerActive] = useState(false);
   const pttStream = useRef<MediaStream | null>(null);
+  const [onlineStatus, setOnlineStatus] = useState(navigator.onLine);
+
+  // --- MONITOR DE SEÑAL REAL ---
+  useEffect(() => {
+    const handleOnline = () => setOnlineStatus(true);
+    const handleOffline = () => setOnlineStatus(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // --- CONFIGURACIÓN LIVE PTT (MODO ESCÁNER BACKGROUND) ---
   useEffect(() => {
@@ -62,9 +79,16 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
       const now = Date.now();
       const msgTime = data.timestamp?.toMillis ? data.timestamp.toMillis() : now;
 
-      if (now - msgTime < 5000 && data.status === 'talking' && data.senderId !== 'admin-control') {
-        setReceivingFrom(data.senderName);
-        // Aquí dispararíamos una notificación local para asegurar que el audio se escuche
+      if (now - msgTime < 10000 && data.senderId !== 'admin-control') {
+        if (data.status === 'talking') {
+          setReceivingFrom(data.senderName);
+        } else if (data.status === 'broadcast' && data.audioData) {
+          setReceivingFrom(null);
+          // REPRODUCCIÓN DE STREAM VOLÁTIL DESDE MEMORIA
+          const audio = new Audio(data.audioData);
+          audio.volume = 1.0;
+          audio.play().catch(e => console.warn("Modo Escáner: Audio bloqueado por política de silencio del navegador.", e));
+        }
       } else {
         setReceivingFrom(null);
       }
@@ -76,34 +100,103 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
     };
   }, [isScannerActive]);
 
+  // --- GENERADOR DE AUDIO INDUSTRIAL (CERO DEPENDENCIAS) ---
+  const playRadioSignal = (type: 'start' | 'end') => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      if (type === 'start') {
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // Tono alto
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.05);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.15);
+      } else {
+        oscillator.type = 'square';
+        oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // Tono bajo (Roger Beep)
+        gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.2);
+      }
+    } catch (e) { console.warn("Audio Context blocked by browser policy."); }
+  };
+
   const startRecording = async (assetId: string) => {
-    // 🚀 LÓGICA LIVE PTT (WebRTC Style - Sin Almacenamiento)
-    setTransmittingId(assetId);
-    setIsRadioActive(true);
+    try {
+      setTransmittingId(assetId);
+      setIsRadioActive(true);
+      playRadioSignal('start');
 
-    const startBeep = new Audio('https://www.soundjay.com/communication/sounds/beeper-3.mp3');
-    startBeep.volume = 0.2;
-    startBeep.play();
+      if (!pttStream.current) {
+        pttStream.current = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
+      }
 
-    // Notificar por Firestore que estamos hablando en vivo (Solo señalización)
-    await addDoc(collection(db, "radio_signals"), {
-      senderId: 'admin-control',
-      senderName: 'CONTROL CENTRAL',
-      status: 'talking',
-      timestamp: serverTimestamp()
-    });
+      if (pttStream.current && !mediaRecorderRef.current) {
+        mediaRecorderRef.current = new MediaRecorder(pttStream.current);
+        audioChunksRef.current = [];
+
+        mediaRecorderRef.current.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunksRef.current.push(e.data);
+        };
+
+        mediaRecorderRef.current.onstop = async () => {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+
+          // CONVERSIÓN A STREAM VOLÁTIL (BASE64) - SIN ALMACENAR ARCHIVOS EN STORAGE
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = async () => {
+            const base64Audio = reader.result as string;
+
+            try {
+              // TRANSMISIÓN EFÍMERA AL NODO CENTRAL (DATO PURO EN MEMORIA)
+              await addDoc(collection(db, "radio_signals"), {
+                senderId: 'admin-control',
+                senderName: 'CONTROL CENTRAL',
+                status: 'broadcast',
+                audioData: base64Audio,
+                assetId: assetId,
+                timestamp: serverTimestamp()
+              });
+              console.log("🛰️ Sat-Link: Ráfaga de voz transmitida (Stream Volátil).");
+            } catch (err) {
+              console.error("Radio Signal Fail:", err);
+              toast.error("Fallo en ráfaga satelital.");
+            }
+          };
+        };
+
+        mediaRecorderRef.current.start();
+      }
+
+      await addDoc(collection(db, "radio_signals"), {
+        senderId: 'admin-control',
+        senderName: 'CONTROL CENTRAL',
+        status: 'talking',
+        assetId: assetId,
+        timestamp: serverTimestamp()
+      });
+    } catch (e) { console.error("PTT Start Error:", e); }
   };
 
   const stopRecording = async (assetId: string) => {
-    if (transmittingId) {
+    if (transmittingId === assetId) {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.stop();
+        mediaRecorderRef.current = null;
+      }
+
       setTransmittingId(null);
       setIsRadioActive(false);
+      playRadioSignal('end');
 
-      const endBeep = new Audio('https://www.soundjay.com/communication/sounds/beeper-1.mp3');
-      endBeep.volume = 0.1;
-      endBeep.play();
-
-      // Notificar que se cerró el canal
       await addDoc(collection(db, "radio_signals"), {
         senderId: 'admin-control',
         status: 'idle',
@@ -143,6 +236,25 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
   const totalAssets = assets.length;
   const urgentCount = reminders.filter(r => r.status === 'urgent').length;
   const healthScore = totalAssets > 0 ? Math.round(((totalAssets - urgentCount) / totalAssets) * 100) : 100;
+
+  // --- MOTOR DE CÁLCULO REAL (Consumo & Inversión) ---
+  const totalGallonsReal = assets.reduce((sum, a) => {
+    const assetGallons = (a.fuelLogs || []).reduce((s, log) => sum + (log.gallons || 0), 0);
+    return sum + (assetGallons > 0 ? assetGallons : ((a.mileage || 0) / 12)); // Fallback a estimación si no hay logs
+  }, 0);
+
+  const totalInvestmentReal = assets.reduce((sum, a) => {
+    const assetPrice = (a.fuelLogs || []).reduce((s, log) => sum + (log.price || 0), 0);
+    const price = a.fuelType === 'gas91' ? fuelPrices.gas91 : a.fuelType === 'gas95' ? fuelPrices.gas95 : fuelPrices.diesel;
+    return sum + (assetPrice > 0 ? assetPrice : (((a.mileage || 0) / 12) * price));
+  }, 0);
+
+  // Eficiencia: Proporción de equipos sin fallos críticos
+  const fleetEfficiency = healthScore;
+
+  // --- LOCAL MODAL STATES (Para eliminar Toasts con fondo blanco) ---
+  const [manualStopData, setManualStopData] = useState<{lat: number, lng: number} | null>(null);
+  const [panicAsset, setPanicAsset] = useState<Asset | null>(null);
 
   // Sincronización Automática cada 60 segundos
   useEffect(() => {
@@ -429,10 +541,15 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                 <div className="flex items-center gap-2 animate-fade-in">
                   <button
                     onClick={() => {
-                      if(window.confirm(`¿Confirmar mantenimiento masivo para ${selectedIds.length} equipos?`)) {
-                        onBulkUpdate?.(selectedIds, { lastMaintenanceDate: new Date().toISOString().split('T')[0] });
-                        setSelectedIds([]);
-                      }
+                      openModal('confirmation', {
+                        confTitle: "Mantenimiento Masivo",
+                        confMessage: `¿Deseas confirmar el mantenimiento masivo para ${selectedIds.length} equipos? Se actualizará la fecha de último servicio a hoy.`,
+                        confType: 'success',
+                        onConfConfirm: () => {
+                          onBulkUpdate?.(selectedIds, { lastMaintenanceDate: new Date().toISOString().split('T')[0] });
+                          setSelectedIds([]);
+                        }
+                      });
                     }}
                     className="px-4 py-2 bg-[#52ffac] text-black text-[9px] font-black rounded-xl uppercase shadow-lg shadow-[#52ffac]/20"
                   >
@@ -440,10 +557,15 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                   </button>
                   <button
                     onClick={() => {
-                      if(window.confirm(`⚠️ ADVERTENCIA: ¿Seguro que deseas ELIMINAR ${selectedIds.length} unidades permanentemente del sistema? Esta acción no se puede deshacer.`)) {
-                        onBulkDelete?.(selectedIds);
-                        setSelectedIds([]);
-                      }
+                      openModal('confirmation', {
+                        confTitle: "ELIMINACIÓN CRÍTICA",
+                        confMessage: `⚠️ ADVERTENCIA: ¿Seguro que deseas ELIMINAR ${selectedIds.length} unidades permanentemente del sistema? Esta acción no se puede deshacer.`,
+                        confType: 'danger',
+                        onConfConfirm: () => {
+                          onBulkDelete?.(selectedIds);
+                          setSelectedIds([]);
+                        }
+                      });
                     }}
                     className="px-4 py-2 bg-rose-600 text-white text-[9px] font-black rounded-xl uppercase shadow-lg shadow-rose-600/20 flex items-center gap-2 hover:bg-rose-700 transition-all"
                   >
@@ -453,29 +575,33 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
               )}
 
               <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    const templateData = [
-                      { 'MARCA_UNIDAD': 'FREIGHTLINER', 'MODELO_DETALLES': 'M2 106', 'PLACA': 'CP-0000', 'KILOMETRAJE_ACTUAL': 5000, 'SEDE': 'PANAMA CENTRO' }
-                    ];
-                    const ws = XLSX.utils.json_to_sheet(templateData);
-                    const wb = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(wb, ws, "Plantilla");
-                    XLSX.writeFile(wb, "PLANTILLA_CARGA_MASIVA.xlsx");
-                    toast.success("Plantilla descargada.");
-                  }}
-                  className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl text-[8px] font-black uppercase hover:bg-white/10 transition-all flex items-center gap-2"
-                  title="Descargar Plantilla Excel"
-                >
-                  <Download className="w-3 h-3" /> Plantilla
-                </button>
+                {mode === 'full' && (
+                  <>
+                    <button
+                      onClick={() => {
+                        const templateData = [
+                          { 'MARCA_UNIDAD': 'FREIGHTLINER', 'MODELO_DETALLES': 'M2 106', 'PLACA': 'CP-0000', 'KILOMETRAJE_ACTUAL': 5000, 'SEDE': 'PANAMA CENTRO' }
+                        ];
+                        const ws = XLSX.utils.json_to_sheet(templateData);
+                        const wb = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(wb, ws, "Plantilla");
+                        XLSX.writeFile(wb, "PLANTILLA_CARGA_MASIVA.xlsx");
+                        toast.success("Plantilla descargada.");
+                      }}
+                      className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl text-[8px] font-black uppercase hover:bg-white/10 transition-all flex items-center gap-2"
+                      title="Descargar Plantilla Excel"
+                    >
+                      <Download className="w-3 h-3" /> Plantilla
+                    </button>
 
-                <button
-                  onClick={() => document.getElementById('bulk-upload-input')?.click()}
-                  className="px-4 py-2 bg-[#5d3cfe] text-white rounded-xl text-[9px] font-black uppercase flex items-center gap-2 hover:brightness-110 transition-all shadow-lg shadow-[#5d3cfe]/20"
-                >
-                  <Plus className="w-3 h-3" /> Carga Masiva (Excel)
-                </button>
+                    <button
+                      onClick={() => document.getElementById('bulk-upload-input')?.click()}
+                      className="px-4 py-2 bg-[#5d3cfe] text-white rounded-xl text-[9px] font-black uppercase flex items-center gap-2 hover:brightness-110 transition-all shadow-lg shadow-[#5d3cfe]/20"
+                    >
+                      <Plus className="w-3 h-3" /> Carga Masiva (Excel)
+                    </button>
+                  </>
+                )}
                 <input
                   type="file"
                   id="bulk-upload-input"
@@ -519,8 +645,9 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
               </div>
 
               <div className="bg-[#1a1b20] p-1 rounded-xl flex border border-[#474556]/30">
-                <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-[#5d3cfe] text-white' : 'text-[#c8c4d9]'}`}><LayoutGrid className="w-4 h-4" /></button>
-                <button onClick={() => setViewMode('table')} className={`p-2 rounded-lg ${viewMode === 'table' ? 'bg-[#5d3cfe] text-white' : 'text-[#c8c4d9]'}`}><List className="w-4 h-4" /></button>
+                <button onClick={() => setViewMode('map')} className={`p-2 rounded-lg ${viewMode === 'map' ? 'bg-[#5d3cfe] text-white' : 'text-[#c8c4d9]'}`} title="Mapa de Flota en Vivo"><Globe className="w-4 h-4" /></button>
+                <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-[#5d3cfe] text-white' : 'text-[#c8c4d9]'}`} title="Vista Cuadrícula"><LayoutGrid className="w-4 h-4" /></button>
+                <button onClick={() => setViewMode('table')} className={`p-2 rounded-lg ${viewMode === 'table' ? 'bg-[#5d3cfe] text-white' : 'text-[#c8c4d9]'}`} title="Vista Lista"><List className="w-4 h-4" /></button>
               </div>
             </div>
           </div>
@@ -541,9 +668,74 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
           )}
 
           {/* View Mode Logic */}
+          {viewMode === 'map' && (
+            <div className="bg-[#1f1f24] rounded-[1.5rem] border border-[#474556]/30 overflow-hidden shadow-xl animate-fade-in h-[400px] sm:h-[600px] relative">
+               <MapContainer
+                  center={[8.9833, -79.5167]}
+                  zoom={12}
+                  style={{ height: '100%', width: '100%', background: '#0d0e12' }}
+                  zoomControl={false}
+               >
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  {showTraffic && (
+                    <TileLayer url="https://mt1.google.com/vt?lyrs=h@159000000,traffic|seconds_into_week:-1&style=3&x={x}&y={y}&z={z}" opacity={0.8} zIndex={1000} />
+                  )}
+
+                  {filteredAssets.map(asset => {
+                    if (!asset.latitude) return null;
+                    return (
+                      <Marker
+                        key={asset.id}
+                        position={[asset.latitude, asset.longitude || 0]}
+                        icon={getTruckIcon(asset.name, asset.licensePlate || '---', '')}
+                      >
+                         <Popup>
+                            <div className="p-2 min-w-[150px]">
+                               <h4 className="text-xs font-black uppercase text-[#0d0e12] mb-1">{asset.name}</h4>
+                               <p className="text-[10px] text-[#5d3cfe] font-bold uppercase mb-2">{asset.licensePlate}</p>
+                               <div className="space-y-1 pt-2 border-t border-gray-100">
+                                  <p className="text-[8px] font-black text-gray-400 uppercase">Conductor: {asset.driverName || 'N/A'}</p>
+                                  <p className="text-[8px] font-black text-gray-400 uppercase">Sede: {asset.location || 'Sede Principal'}</p>
+                               </div>
+                            </div>
+                         </Popup>
+                      </Marker>
+                    );
+                  })}
+
+                  {/* Auto-Zoom a la sede seleccionada */}
+                  {(() => {
+                    const locations: any = {
+                      'Panamá Centro': [8.9833, -79.5167],
+                      'Colón': [9.35, -79.9],
+                      'Chiriquí': [8.4333, -82.4333],
+                      'Chorrera': [8.8803, -79.7833]
+                    };
+                    const center = locations[locationFilter];
+                    return center ? <RecenterMap coords={center} /> : null;
+                  })()}
+
+                  <CustomZoomControl
+                    showTraffic={showTraffic}
+                    onToggleTraffic={() => setShowTraffic(!showTraffic)}
+                    onPanic={() => toast.error("Señal SOS bloqueada en modo vista global.")}
+                  />
+               </MapContainer>
+
+               <div className="absolute top-4 left-4 z-[400] flex flex-col gap-2">
+                  <div className="bg-black/80 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 shadow-2xl">
+                     <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-[#52ffac] rounded-full animate-pulse"></div>
+                        <span className="text-[9px] font-black text-white uppercase tracking-widest">Monitoreo {locationFilter.toUpperCase()}</span>
+                     </div>
+                  </div>
+               </div>
+            </div>
+          )}
+
           {viewMode === 'table' && (
-             <div className="bg-[#1f1f24] rounded-[1.5rem] border border-[#474556]/30 overflow-hidden shadow-xl animate-fade-in">
-                <table className="w-full text-left border-collapse">
+             <div className="bg-[#1f1f24] rounded-[1.5rem] border border-[#474556]/30 overflow-x-auto shadow-xl animate-fade-in">
+                <table className="w-full text-left border-collapse min-w-[800px]">
                    <thead>
                       <tr className="bg-[#1a1b20] border-b border-[#474556]/30">
                          <th className="p-4 w-10 text-center"><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? filteredAssets.map(a => a.id) : [])} className="rounded border-[#474556]/30 bg-[#0d0e12] text-[#5d3cfe]" /></th>
@@ -901,65 +1093,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                           )}
 
                           <MapClickHandler onMapClick={async (lat, lng) => {
-                            const asset = assets.find(a => a.id === historyAssetId);
-                            if (!asset) return;
-
-                            // 🚀 INTERFAZ DE FIJACIÓN DE PARADA PROFESIONAL (Sin prompts de navegador)
-                            toast((t) => (
-                              <div className="flex flex-col gap-4 p-5 bg-[#121317] border border-white/10 rounded-2xl shadow-2xl min-w-[300px] animate-fade-in-up">
-                                <div className="flex items-center gap-3">
-                                  <div className="p-2.5 bg-amber-500/20 text-amber-500 rounded-xl">
-                                    <MapPin className="w-6 h-6" />
-                                  </div>
-                                  <div>
-                                    <p className="text-xs font-black text-white uppercase tracking-tight">Punto de Entrega Manual</p>
-                                    <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mt-0.5">GPS: {lat.toFixed(5)}, {lng.toFixed(5)}</p>
-                                  </div>
-                                </div>
-                                <div className="space-y-2">
-                                  <label className="text-[9px] font-black text-[#474556] uppercase tracking-[0.2em] ml-1">Nombre del Destino</label>
-                                  <input
-                                    id="manual-stop-name"
-                                    type="text"
-                                    placeholder="Ej: Restaurante Broncos"
-                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-xs font-bold text-white focus:border-[#5d3cfe] outline-none transition-all"
-                                    autoFocus
-                                  />
-                                </div>
-                                <div className="flex gap-2 pt-2">
-                                  <button
-                                    onClick={() => toast.dismiss(t.id)}
-                                    className="flex-1 py-3 bg-white/5 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
-                                  >
-                                    Cancelar
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      const input = document.getElementById('manual-stop-name') as HTMLInputElement;
-                                      const name = input?.value || 'PUNTO MANUAL';
-
-                                      const newPoint = {
-                                        lat,
-                                        lng,
-                                        timestamp: new Date().toISOString(),
-                                        locationName: name.toUpperCase(),
-                                        type: 'checkpoint' as const
-                                      };
-
-                                      onBulkUpdate?.([asset.id], {
-                                        routeHistory: [...(asset.routeHistory || []), newPoint]
-                                      });
-
-                                      toast.dismiss(t.id);
-                                      toast.success(`Parada "${name}" integrada a la hoja de ruta.`, { icon: '✅' });
-                                    }}
-                                    className="flex-[1.5] py-3 bg-[#52ffac] text-black rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-[#52ffac]/20 hover:brightness-110 active:scale-95 transition-all"
-                                  >
-                                    Confirmar Punto
-                                  </button>
-                                </div>
-                              </div>
-                            ), { duration: 20000, position: 'bottom-center' });
+                            setManualStopData({ lat, lng });
                           }} />
 
                           <RecenterMap coords={center} />
@@ -970,62 +1104,120 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                             onToggleTraffic={() => setShowTraffic(!showTraffic)}
                             onPanic={() => {
                               const asset = assets.find(a => a.id === historyAssetId);
-                              toast.custom((t) => (
-                                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-[#121317] shadow-[0_0_50px_rgba(225,29,72,0.4)] rounded-[2rem] pointer-events-auto flex ring-4 ring-rose-600 ring-inset overflow-hidden border-2 border-[#1c1d21]`}>
-                                  <div className="flex-1 w-0 p-8">
-                                    <div className="flex items-start">
-                                      <div className="flex-shrink-0 pt-0.5">
-                                        <div className="bg-rose-600 p-4 rounded-2xl animate-pulse">
-                                          <AlertTriangle className="h-8 w-8 text-white fill-white" />
-                                        </div>
-                                      </div>
-                                      <div className="ml-6 flex-1">
-                                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-[0.3em] mb-1">Critical Security Protocol</p>
-                                        <p className="text-xl font-black text-white uppercase tracking-tighter leading-tight mb-2">
-                                          Protocolo de Desviación: <span className="text-rose-500">{asset?.name || 'UNIDAD'}</span>
-                                        </p>
-                                        <p className="text-[11px] font-bold text-white/50 leading-relaxed uppercase italic">
-                                          Señal SOS enviada a Central MantechPro. Coordenadas bloqueadas para auditoría técnica inmediata.
-                                        </p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="flex border-l border-white/5">
-                                    <button
-                                      onClick={() => toast.dismiss(t.id)}
-                                      className="w-full border border-transparent rounded-none rounded-r-[2rem] p-6 flex items-center justify-center text-xs font-black text-rose-500 hover:text-white uppercase transition-colors px-8"
-                                    >
-                                      Enterado
-                                    </button>
-                                  </div>
-                                </div>
-                              ), { duration: 8000, position: 'top-center' });
+                              if (asset) setPanicAsset(asset);
                             }}
                           />
                         </MapContainer>
 
-                        <div className="absolute bottom-8 right-8 flex flex-col gap-4 z-[400]">
-                           <button
-                             onClick={() => setSelectedPointIndex(-1)}
-                             className="p-5 bg-white text-black rounded-[1.5rem] shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3 font-black text-[11px] uppercase border-4 border-[#0d0e12] min-w-[160px]"
-                           >
-                              <Maximize className="w-5 h-5" /> Ajustar Vista
-                           </button>
-                           {validPoints.length > 0 && (
-                             <button
-                               onClick={() => {
-                                 if(window.confirm("¿Deseas eliminar todo el historial de esta ruta? Esta acción es irreversible.")) {
-                                    onBulkUpdate?.([historyAssetId!], { routeHistory: [] });
-                                    setSelectedPointIndex(null);
-                                    toast.success("Historial purgado.");
-                                 }
-                               }}
-                               className="p-5 bg-rose-600 text-white rounded-[1.5rem] shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3 font-black text-[11px] uppercase border-4 border-rose-900 min-w-[160px]"
-                             >
-                                <Trash2 className="w-5 h-5" /> Limpiar Ruta
-                             </button>
-                           )}
-                        </div>
+                        {/* MODAL DE PANICO (LOCAL) */}
+                        {panicAsset && (
+                          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+                             <div className="max-w-md w-full bg-[#121317] shadow-[0_0_80px_rgba(225,29,72,0.5)] rounded-[2.5rem] flex ring-4 ring-rose-600 ring-inset overflow-hidden border border-white/10 animate-enter">
+                                <div className="flex-1 w-0 p-8">
+                                  <div className="flex items-start">
+                                    <div className="flex-shrink-0 pt-0.5">
+                                      <div className="bg-rose-600 p-4 rounded-2xl animate-pulse">
+                                        <AlertTriangle className="h-8 w-8 text-white fill-white" />
+                                      </div>
+                                    </div>
+                                    <div className="ml-6 flex-1">
+                                      <p className="text-[10px] font-black text-rose-500 uppercase tracking-[0.3em] mb-1">Critical Security Protocol</p>
+                                      <p className="text-xl font-black text-white uppercase tracking-tighter leading-tight mb-2">
+                                        Protocolo de Desviación: <span className="text-rose-500">{panicAsset.name}</span>
+                                      </p>
+                                      <p className="text-[11px] font-bold text-white/50 leading-relaxed uppercase italic">
+                                        Señal SOS enviada a Central MantechPro. Coordenadas bloqueadas para auditoría técnica inmediata.
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex border-l border-white/5">
+                                  <button
+                                    onClick={() => setPanicAsset(null)}
+                                    className="w-full border border-transparent rounded-none rounded-r-[2rem] p-6 flex items-center justify-center text-xs font-black text-rose-500 hover:text-white uppercase transition-colors px-8"
+                                  >
+                                    Enterado
+                                  </button>
+                                </div>
+                             </div>
+                          </div>
+                        )}
+
+                        {/* MODAL DE PARADA MANUAL (LOCAL - CERO FONDO BLANCO) */}
+                        {manualStopData && (
+                          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
+                            <div className="flex flex-col gap-4 p-8 bg-[#121317] border border-white/10 rounded-[3rem] shadow-2xl min-w-[340px] animate-enter">
+                              <div className="flex items-center gap-4">
+                                <div className="p-3 bg-amber-500/20 text-amber-500 rounded-2xl">
+                                  <MapPin className="w-7 h-7" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-black text-white uppercase tracking-tight leading-none">Nueva Parada Logística</p>
+                                  <p className="text-[9px] text-white/40 font-bold uppercase tracking-widest mt-1.5">GPS: {manualStopData.lat.toFixed(5)}, {manualStopData.lng.toFixed(5)}</p>
+                                </div>
+                              </div>
+                              <div className="space-y-2 mt-4">
+                                <label className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em] ml-1">Etiqueta de Destino</label>
+                                <input
+                                  id="manual-stop-name-local"
+                                  type="text"
+                                  placeholder="Ej: Bodega Central, Cliente VIP..."
+                                  className="w-full bg-black border border-white/10 rounded-2xl py-4 px-5 text-xs font-bold text-white focus:border-[#5d3cfe] outline-none transition-all shadow-inner"
+                                  autoFocus
+                                />
+                              </div>
+                              <div className="flex gap-3 mt-6">
+                                <button
+                                  onClick={() => setManualStopData(null)}
+                                  className="flex-1 py-4 bg-white/5 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const input = document.getElementById('manual-stop-name-local') as HTMLInputElement;
+                                    const name = input?.value || 'PUNTO MANUAL';
+                                    const asset = assets.find(a => a.id === historyAssetId);
+                                    if (asset) {
+                                      const newPoint = {
+                                        lat: manualStopData.lat,
+                                        lng: manualStopData.lng,
+                                        timestamp: new Date().toISOString(),
+                                        locationName: name.toUpperCase(),
+                                        type: 'checkpoint' as const
+                                      };
+                                      onBulkUpdate?.([asset.id], {
+                                        routeHistory: [...(asset.routeHistory || []), newPoint]
+                                      });
+                                      toast.success(`Parada "${name}" registrada.`);
+                                    }
+                                    setManualStopData(null);
+                                  }}
+                                  className="flex-[1.5] py-4 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#52ffac]/20 hover:brightness-110 active:scale-95 transition-all"
+                                >
+                                  Confirmar Parada
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <MapActionButtons
+                           onAdjust={() => setSelectedPointIndex(-1)}
+                           onClear={() => {
+                              openModal('confirmation', {
+                                confTitle: "Purgar Historial",
+                                confMessage: "¿Deseas eliminar todo el historial de esta ruta? Esta acción es irreversible y afectará el análisis de ROI de la flota.",
+                                confType: 'danger',
+                                onConfConfirm: () => {
+                                   onBulkUpdate?.([historyAssetId!], { routeHistory: [] });
+                                   setSelectedPointIndex(null);
+                                   toast.success("Historial purgado.");
+                                }
+                              });
+                           }}
+                           hasPoints={validPoints.length > 0}
+                        />
 
                         {isNight && (
                           <div className="absolute top-4 right-4 bg-[#5d3cfe]/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#5d3cfe]/50 flex items-center gap-2 z-[400] shadow-2xl">
@@ -1347,7 +1539,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                  <span className="text-[9px] font-black text-[#474556] uppercase tracking-[0.2em] block mb-4">Auditoría de Consumo (Mes)</span>
                  <div className="flex items-baseline gap-1 mb-4">
                     <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter leading-none">
-                       {assets.reduce((acc, a) => acc + ((a.mileage || 0) / 12), 0).toFixed(0).toLocaleString()}
+                       {totalGallonsReal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </h2>
                     <span className="text-sm font-black text-white/30 uppercase">Gal.</span>
                  </div>
@@ -1363,10 +1555,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                  <div className="flex items-start gap-1 mb-4">
                     <span className="text-xl font-black text-[#52ffac] opacity-30 mt-1">$</span>
                     <h2 className="text-4xl md:text-5xl font-black text-[#52ffac] tracking-tighter leading-none">
-                       {assets.reduce((acc, a) => {
-                         const price = a.fuelType === 'gas91' ? fuelPrices.gas91 : a.fuelType === 'gas95' ? fuelPrices.gas95 : fuelPrices.diesel;
-                         return acc + (((a.mileage || 0) / 12) * price);
-                       }, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                       {totalInvestmentReal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </h2>
                  </div>
                  <div className="text-white/20 text-[7px] font-black uppercase tracking-widest border-t border-white/5 pt-2 flex items-center gap-2">
@@ -1378,12 +1567,20 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
 
               <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group flex flex-col items-center justify-center text-center min-h-[220px]">
                  <span className="text-[9px] font-black text-[#474556] uppercase tracking-[0.2em] block mb-4">Eficiencia de Flota</span>
-                 <h2 className="text-5xl md:text-6xl font-black text-[#5d3cfe] tracking-tighter leading-none mb-4">94.2%</h2>
+                 <h2 className={`text-5xl md:text-6xl font-black tracking-tighter leading-none mb-4 ${fleetEfficiency > 80 ? 'text-[#5d3cfe]' : 'text-rose-500'}`}>
+                    {fleetEfficiency}%
+                 </h2>
                  <div className="flex flex-col items-center gap-2">
                     <div className="flex -space-x-1">
-                       {[1,2,3,4].map(i => <div key={i} className="w-4 h-4 rounded-full border border-[#121317] bg-[#52ffac] flex items-center justify-center text-[6px] font-black text-black shadow-lg">✓</div>)}
+                       {[1,2,3,4].map(i => (
+                         <div key={i} className={`w-4 h-4 rounded-full border border-[#121317] flex items-center justify-center text-[6px] font-black shadow-lg ${i <= (fleetEfficiency / 25) ? 'bg-[#52ffac] text-black' : 'bg-zinc-800 text-zinc-500'}`}>
+                           {i <= (fleetEfficiency / 25) ? '✓' : '!'}
+                         </div>
+                       ))}
                     </div>
-                    <span className="text-[7px] font-black text-white/30 uppercase tracking-widest">Operación Óptima</span>
+                    <span className="text-[7px] font-black text-white/30 uppercase tracking-widest">
+                       {fleetEfficiency > 80 ? 'Operación Óptima' : 'Revisión Necesaria'}
+                    </span>
                  </div>
                  <div className="absolute -bottom-6 -right-6 opacity-[0.03] group-hover:opacity-10 transition-opacity"><TrendingUp className="w-32 h-32" /></div>
               </div>
@@ -1495,9 +1692,11 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                       <span className={`text-[8px] font-black uppercase tracking-widest ${transmittingId === asset.id ? 'text-[#5d3cfe] animate-bounce' : 'text-[#474556]'}`}>
                         {transmittingId === asset.id ? 'Transmitiendo...' : 'Mantener para Hablar'}
                       </span>
-                      <div className="flex items-center gap-1.5 px-3 py-1 bg-black/40 rounded-full border border-white/5">
-                         <div className={`w-1.5 h-1.5 rounded-full ${asset.isEmergencyAsset ? 'bg-rose-500 animate-ping' : 'bg-[#52ffac]'}`}></div>
-                         <span className="text-[7px] font-black text-white/40 uppercase">Señal 100%</span>
+                      <div className={`flex items-center gap-1.5 px-3 py-1 bg-black/40 rounded-full border transition-all ${onlineStatus ? 'border-white/5' : 'border-rose-500/50 shadow-[0_0_10px_rgba(225,29,72,0.2)]'}`}>
+                         <div className={`w-1.5 h-1.5 rounded-full ${!onlineStatus ? 'bg-rose-500 animate-pulse' : (asset.isEmergencyAsset ? 'bg-rose-500 animate-ping' : 'bg-[#52ffac]')}`}></div>
+                         <span className={`text-[7px] font-black uppercase ${!onlineStatus ? 'text-rose-500' : 'text-white/40'}`}>
+                            {onlineStatus ? 'Señal 100%' : 'Sin Señal / Offline'}
+                         </span>
                       </div>
                    </div>
                 </div>
@@ -1615,3 +1814,134 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
     </div>
   );
 }
+
+// --- COMPONENTES AUXILIARES MAPA ---
+function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click: (e) => onMapClick(e.latlng.lat, e.latlng.lng),
+  });
+  return null;
+}
+
+function RecenterMap({ coords }: { coords: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(coords);
+  }, [coords]);
+  return null;
+}
+
+function FitBounds({ points }: { points: [number, number][] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (points.length > 0) {
+      const bounds = L.latLngBounds(points);
+      map.fitBounds(bounds, { padding: [50, 50] });
+    }
+  }, [points]);
+  return null;
+}
+
+function CustomZoomControl({ showTraffic, onToggleTraffic, onPanic }: any) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      L.DomEvent.disableClickPropagation(containerRef.current);
+      L.DomEvent.disableScrollPropagation(containerRef.current);
+    }
+  }, []);
+
+  return (
+    <div ref={containerRef} className="absolute top-1/2 -translate-y-1/2 left-6 z-[1000] flex flex-col gap-3">
+       <button
+         onClick={(e) => {
+           onToggleTraffic();
+         }}
+         className={`p-4 rounded-2xl shadow-2xl border-4 border-[#0d0e12] transition-all ${showTraffic ? 'bg-[#52ffac] text-black' : 'bg-white text-black'}`}
+         title="Tráfico en Tiempo Real"
+       >
+          <Activity className="w-6 h-6" />
+       </button>
+       <button
+         onClick={(e) => {
+           onPanic();
+         }}
+         className="p-4 bg-rose-600 text-white rounded-2xl shadow-2xl border-4 border-[#0d0e12] animate-pulse"
+         title="BOTÓN DE PÁNICO"
+       >
+          <AlertTriangle className="w-6 h-6" />
+       </button>
+    </div>
+  );
+}
+
+function MapActionButtons({ onAdjust, onClear, hasPoints }: any) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      L.DomEvent.disableClickPropagation(containerRef.current);
+    }
+  }, []);
+
+  return (
+    <div ref={containerRef} className="absolute bottom-8 right-8 flex flex-col gap-4 z-[400]">
+       <button
+         onClick={onAdjust}
+         className="p-5 bg-white text-black rounded-[1.5rem] shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3 font-black text-[11px] uppercase border-4 border-[#0d0e12] min-w-[160px]"
+       >
+          <Maximize className="w-5 h-5" /> Ajustar Vista
+       </button>
+       {hasPoints && (
+         <button
+           onClick={onClear}
+           className="p-5 bg-rose-600 text-white rounded-[1.5rem] shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3 font-black text-[11px] uppercase border-4 border-rose-900 min-w-[160px]"
+         >
+            <Trash2 className="w-5 h-5" /> Limpiar Ruta
+         </button>
+       )}
+    </div>
+  );
+}
+
+
+const getFlagIcon = (label: string, isSelected: boolean) => L.divIcon({
+  className: 'custom-div-icon',
+  html: `
+    <div class="relative group">
+      <div class="flex items-center gap-2 px-3 py-1.5 ${isSelected ? 'bg-[#52ffac] text-black scale-110' : 'bg-[#0d0e12] text-white'} rounded-full border-2 border-white shadow-2xl transition-all">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+        <span class="text-[9px] font-black uppercase whitespace-nowrap">${label}</span>
+      </div>
+    </div>
+  `,
+  iconSize: [30, 30],
+  iconAnchor: [15, 30]
+});
+
+const getTruckIcon = (name: string, plate: string, street: string) => L.divIcon({
+  className: 'custom-div-icon',
+  html: `
+    <div class="flex flex-col items-center">
+       <div class="bg-white/90 backdrop-blur-md px-3 py-1 rounded-lg border-2 border-[#5d3cfe] shadow-2xl mb-1 scale-90">
+          <p class="text-[8px] font-black text-black uppercase leading-tight">${name}</p>
+          <p class="text-[6px] font-bold text-[#5d3cfe] uppercase tracking-tighter">${plate}</p>
+       </div>
+       <div class="w-10 h-10 bg-[#5d3cfe] rounded-2xl border-4 border-white shadow-2xl flex items-center justify-center text-white transform rotate-45">
+          <svg class="transform -rotate-45" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17h4V5H2v12h3m10 0h2l3-3v-4h-5v7Z"></path><circle cx="7.5" cy="17.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>
+       </div>
+    </div>
+  `,
+  iconSize: [40, 40],
+  iconAnchor: [20, 40]
+});
+
+const getUserIcon = () => L.divIcon({
+  className: 'custom-div-icon',
+  html: `<div class="w-8 h-8 bg-[#52ffac] rounded-full border-4 border-[#0d0e12] shadow-2xl flex items-center justify-center text-black">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+  </div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16]
+});

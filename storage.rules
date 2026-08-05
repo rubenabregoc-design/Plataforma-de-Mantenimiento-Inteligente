@@ -1,6 +1,18 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // Reglas para Transmisiones de Radio PTT
+    match /radio_transmissions/{allPaths=**} {
+      allow read: if true; // Permitir que cualquier usuario en la red escuche el audio
+      allow write: if request.auth != null; // Solo técnicos/admin autenticados pueden transmitir
+    }
+
+    // Reglas para Documentos de Identidad y Auditoría
+    match /mantech_docs/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Regla general para el resto de archivos
     match /{allPaths=**} {
       allow read, write: if request.auth != null;
     }

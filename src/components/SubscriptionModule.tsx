@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserSubscription } from '../types';
-import { ShieldCheck, Zap, Star, Check, Calendar, CreditCard, Building2, Package, DollarSign, Clock, LayoutDashboard, BrainCircuit, FileText, Users, Globe, ShieldAlert, ListOrdered, Share2, Printer, Sliders, Inbox, Fuel, Pencil, MessageSquare, LifeBuoy, BadgeCheck } from 'lucide-react';
+import { ShieldCheck, Zap, Star, Check, Calendar, CreditCard, Building2, Package, DollarSign, Clock, LayoutDashboard, BrainCircuit, FileText, Users, Globe, ShieldAlert, ListOrdered, Share2, Printer, Sliders, Inbox, Fuel, Pencil, MessageSquare, LifeBuoy, BadgeCheck, Gem } from 'lucide-react';
 
 interface SubscriptionModuleProps {
   subscription: UserSubscription;
@@ -141,6 +141,27 @@ export default function SubscriptionModule({ subscription, onUpgrade, onNavigate
 
   return (
     <div className="space-y-10 animate-fade-in-up">
+      {subscription.status === 'pending_payment_verification' && (
+        <div className="bg-amber-500/10 border border-amber-500/30 p-6 rounded-[2rem] flex items-center justify-between gap-6 shadow-2xl animate-pulse">
+           <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 ${subscription.pendingPlanId === 'plan-enterprise' ? 'bg-[#5d3cfe] text-white shadow-[#5d3cfe]/20' : 'bg-amber-500 text-black shadow-amber-500/20'} rounded-2xl flex items-center justify-center shadow-lg`}>
+                 {subscription.pendingPlanId === 'plan-enterprise' ? <Gem className="w-6 h-6 animate-bounce" /> : <Clock className="w-6 h-6" />}
+              </div>
+              <div>
+                 <h4 className="text-sm font-black text-white uppercase tracking-tight">
+                   {subscription.pendingPlanId === 'plan-enterprise' ? 'Upgrade Élite en Proceso' : 'Verificación de Pago en Curso'}
+                 </h4>
+                 <p className="text-[9px] text-amber-500 font-black uppercase tracking-widest mt-1">
+                   {subscription.pendingPlanId === 'plan-enterprise' ? 'Nuestro equipo está priorizando su solicitud de socio Élite' : 'El administrador está validando su depósito vía Yappy'}
+                 </p>
+              </div>
+           </div>
+           <div className="px-4 py-2 bg-black/40 border border-amber-500/20 rounded-xl text-[8px] font-black text-white uppercase tracking-widest">
+              Plan Solicitado: {plans.find(p => p.id === subscription.pendingPlanId)?.name || '---'}
+           </div>
+        </div>
+      )}
+
       <div className="bg-gradient-to-br from-[#1c1d21] to-[#121317] border border-[#2a2b2f] rounded-[2rem] p-8 md:p-12 flex flex-col md:flex-row items-center gap-10 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#5d3cfe]/5 rounded-full blur-[100px]"></div>
         <div className="w-24 h-24 rounded-[2rem] bg-[#5d3cfe] text-white flex items-center justify-center shadow-xl shadow-[#5d3cfe]/20 border-2 border-white/10 shrink-0">
@@ -216,7 +237,7 @@ export default function SubscriptionModule({ subscription, onUpgrade, onNavigate
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-6">
         {plans.map((plan) => (
-          <div key={plan.id} className={`p-8 flex flex-col transition-all relative group bg-[#121317] rounded-[2rem] border ${
+          <div key={plan.id} className={`p-6 sm:p-8 flex flex-col transition-all relative group bg-[#121317] rounded-[1.5rem] sm:rounded-[2rem] border ${
             activePlanId === plan.id ? 'border-[#5d3cfe] shadow-2xl ring-1 ring-[#5d3cfe]/30' : 'border-[#2a2b2f] hover:border-[#5d3cfe]/30 shadow-lg'
           }`}>
             {activePlanId === plan.id && (
@@ -246,14 +267,20 @@ export default function SubscriptionModule({ subscription, onUpgrade, onNavigate
                   onUpgrade(plan.id);
                 }
               }}
-              disabled={activePlanId === plan.id || subscription.status === 'pending_payment_verification'}
+              disabled={activePlanId === plan.id || (subscription.status === 'pending_payment_verification' && subscription.pendingPlanId === plan.id)}
               className={`w-full py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                 activePlanId === plan.id
                   ? 'bg-[#1c1d21] text-[#52ffac] border border-[#52ffac]/40 cursor-default shadow-inner'
-                  : 'bg-[#5d3cfe] text-white hover:brightness-110 shadow-lg'
+                  : subscription.pendingPlanId === plan.id && subscription.status === 'pending_payment_verification'
+                    ? 'bg-amber-500/10 text-amber-500 border border-amber-500/40 cursor-wait'
+                    : 'bg-[#5d3cfe] text-white hover:brightness-110 shadow-lg'
               }`}
             >
-              {activePlanId === plan.id ? '✓ Plan Actual (Activo)' : 'Mejorar Ahora'}
+              {activePlanId === plan.id
+                ? '✓ Plan Actual (Activo)'
+                : (subscription.pendingPlanId === plan.id && subscription.status === 'pending_payment_verification')
+                  ? '⏳ Verificación Pendiente'
+                  : (Number(plan.price) === 0 ? 'Retornar a Base' : 'Mejorar Ahora')}
             </button>
           </div>
         ))}

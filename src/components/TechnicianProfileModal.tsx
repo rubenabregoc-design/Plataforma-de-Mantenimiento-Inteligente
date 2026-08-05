@@ -100,13 +100,17 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
                 </div>
                 <div className="flex flex-col items-end gap-3">
                   {tech.isVerified ? (
-                    <div className="relative group cursor-help">
-                      <div className="bg-[#52ffac] text-[#0d0e12] p-3 rounded-full border-4 border-[#0d0e12] shadow-[0_0_20px_#52ffac] animate-pulse">
-                         <ShieldCheck className="w-6 h-6 fill-current" />
+                    <div className="relative group cursor-help flex flex-col items-center">
+                      <div className="relative">
+                         <div className="absolute inset-0 bg-[#52ffac]/20 blur-xl rounded-full animate-pulse"></div>
+                         <div className="relative bg-[#121317] border border-[#52ffac]/50 p-3 rounded-2xl shadow-2xl">
+                            <ShieldCheck className="w-7 h-7 text-[#52ffac]" />
+                         </div>
+                         <div className="absolute -right-2 -top-2 bg-[#52ffac] text-black p-1 rounded-lg shadow-xl rotate-12">
+                            <CheckCircle2 className="w-3 h-3" />
+                         </div>
                       </div>
-                      <div className="absolute -right-2 -bottom-2 bg-white text-black p-1 rounded-full border-2 border-black rotate-12 shadow-xl">
-                         <CheckCircle2 className="w-3 h-3" />
-                      </div>
+                      <span className="text-[7px] font-black text-[#52ffac] uppercase tracking-[0.3em] mt-2 bg-[#52ffac]/5 px-2 py-0.5 rounded-full border border-[#52ffac]/10">Verified Elite</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border text-[#474556] bg-white/5 border-white/10">
@@ -234,7 +238,7 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
                 <div>
                   <h4 className="text-2xl font-black text-white uppercase tracking-widest italic">Transmisión Exitosa</h4>
                   <p className="text-sm text-[#c8c4d9] font-medium mt-4 max-w-xs mx-auto leading-relaxed uppercase">
-                    Tu ticket ha sido inyectado en el nodo del técnico. Recibirás una notificación encriptada en breve.
+                    Tu ticket ha sido inyectado en la agenda del técnico. Recibirás una notificación encriptada en breve.
                   </p>
                 </div>
               </div>

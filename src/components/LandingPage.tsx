@@ -259,10 +259,10 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
     <div className="min-h-screen bg-[#0d0e12] text-[#e3e2e8] font-sans selection:bg-[#5d3cfe] selection:text-white overflow-x-hidden">
 
       {/* 1. NAVEGACIÓN FLOTANTE */}
-      <nav className="fixed top-0 left-0 right-0 z-[100] px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between bg-[#121317]/80 backdrop-blur-xl border border-white/5 px-8 py-3 rounded-full shadow-2xl">
+      <nav className="fixed top-0 left-0 right-0 z-[100] px-4 sm:px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between bg-[#121317]/80 backdrop-blur-xl border border-white/5 px-4 sm:px-8 py-2.5 sm:py-3 rounded-full shadow-2xl">
           <Logo size="sm" />
-          <div className="hidden md:flex items-center gap-10">
+          <div className="hidden lg:flex items-center gap-10">
             <button onClick={() => handleFooterLinkClick('Logística')} className="text-[10px] font-black uppercase tracking-widest text-[#c8c4d9] hover:text-[#5d3cfe] transition-all">Logística</button>
             <button onClick={() => handleFooterLinkClick('Auditoría')} className="text-[10px] font-black uppercase tracking-widest text-[#c8c4d9] hover:text-[#5d3cfe] transition-all">Auditoría</button>
             <button onClick={() => handleFooterLinkClick('B2B')} className="text-[10px] font-black uppercase tracking-widest text-[#c8c4d9] hover:text-[#5d3cfe] transition-all">B2B</button>
@@ -270,7 +270,7 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
           </div>
           <button
             onClick={onStart}
-            className="px-6 py-2.5 bg-[#5d3cfe] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#5d3cfe]/20 hover:brightness-110 active:scale-95 transition-all"
+            className="px-5 sm:px-6 py-2 sm:py-2.5 bg-[#5d3cfe] text-white rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#5d3cfe]/20 hover:brightness-110 active:scale-95 transition-all"
           >
             Ingresar ➔
           </button>
@@ -278,31 +278,31 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
       </nav>
 
       {/* 2. HERO SECTION */}
-      <section className="relative pt-48 pb-24 px-8 overflow-hidden">
+      <section className="relative pt-32 sm:pt-48 pb-16 sm:pb-24 px-6 sm:px-8 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none">
            <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-[#5d3cfe]/10 rounded-full blur-[120px] animate-pulse"></div>
         </div>
 
-        <div className="max-w-6xl mx-auto relative z-10 text-center space-y-10">
+        <div className="max-w-6xl mx-auto relative z-10 text-center space-y-8 sm:space-y-10">
           <div className="inline-flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-full backdrop-blur-md">
              <div className="w-2 h-2 rounded-full bg-[#52ffac] animate-pulse"></div>
-             <span className="text-[9px] font-black text-white uppercase tracking-widest">Red de Mantenimiento #1 de Panamá</span>
+             <span className="text-[8px] sm:text-[9px] font-black text-white uppercase tracking-widest">Red de Mantenimiento #1 de Panamá</span>
           </div>
 
-          <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-[0.9] uppercase">
+          <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white tracking-tighter leading-[1] sm:leading-[0.9] uppercase">
             Todo Bajo Control <br />
             <span className="text-[#5d3cfe] block mt-2">Casa, PH y Empresa.</span>
           </h1>
 
-          <p className="max-w-3xl mx-auto text-[#c8c4d9] text-base md:text-2xl font-medium leading-relaxed opacity-95">
+          <p className="max-w-3xl mx-auto text-[#c8c4d9] text-sm sm:text-base md:text-2xl font-medium leading-relaxed opacity-95">
             La infraestructura de servicios #1 de Panamá para el hogar, la gran empresa y centros logísticos. Gestión inteligente de activos con respaldo certificado.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
-             <button onClick={onStart} className="w-full sm:w-auto px-10 py-5 bg-[#5d3cfe] text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5">
+             <button onClick={onStart} className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-[#5d3cfe] text-white rounded-[1.5rem] sm:rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4">
                Solicitar Soporte Ahora <ArrowRight className="w-4 h-4" />
              </button>
-             <button onClick={onWatchDemo} className="w-full sm:w-auto px-10 py-5 bg-[#121317] border border-white/10 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all flex items-center justify-center gap-4">
+             <button onClick={onWatchDemo} className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-[#121317] border border-white/10 text-white rounded-[1.5rem] sm:rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all flex items-center justify-center gap-4">
                <PlayCircle className="w-4 h-4" /> Ver Demo
              </button>
           </div>
@@ -664,23 +664,23 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
       </section>
 
       {/* WHATSAPP & CHATBOT Master */}
-      <div className="fixed bottom-10 right-6 md:right-10 z-[1000] flex flex-col gap-4 items-end pointer-events-none">
+      <div className="fixed bottom-6 right-4 sm:bottom-10 sm:right-10 z-[1000] flex flex-col gap-3 sm:gap-4 items-end pointer-events-none">
          {/* Botón Chatbot AI */}
          <button
            onClick={() => { setChatbotMode('general'); setIsChatbotOpen(true); }}
-           className="w-14 h-14 md:w-16 md:h-16 bg-[#5d3cfe] text-white rounded-full flex items-center justify-center shadow-[0_15px_40px_rgba(93,60,254,0.4)] hover:scale-110 active:scale-95 transition-all group relative pointer-events-auto border-2 border-white/10"
+           className="w-12 h-12 sm:w-16 sm:h-16 bg-[#5d3cfe] text-white rounded-full flex items-center justify-center shadow-[0_15px_40px_rgba(93,60,254,0.4)] hover:scale-110 active:scale-95 transition-all group relative pointer-events-auto border-2 border-white/10"
          >
-            <MessageSquare className="w-6 h-6 md:w-7 md:h-7 fill-current" />
-            <div className="absolute -left-32 top-1/2 -translate-y-1/2 bg-white text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-2xl pointer-events-none">Asistente IA 24/7</div>
+            <MessageSquare className="w-5 h-5 sm:w-7 sm:h-7 fill-current" />
+            <div className="absolute -left-32 top-1/2 -translate-y-1/2 bg-white text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-2xl pointer-events-none hidden sm:block">Asistente IA 24/7</div>
          </button>
 
          {/* Botón Ventas / Cotización Automática */}
          <button
            onClick={() => { setChatbotMode('sales'); setIsChatbotOpen(true); }}
-           className="w-14 h-14 md:w-16 md:h-16 bg-[#25d366] text-white rounded-full flex items-center justify-center shadow-[0_15px_40px_rgba(37,211,102,0.4)] hover:scale-110 active:scale-95 transition-all group relative pointer-events-auto border-2 border-white/10"
+           className="w-12 h-12 sm:w-16 sm:h-16 bg-[#25d366] text-white rounded-full flex items-center justify-center shadow-[0_15px_40px_rgba(37,211,102,0.4)] hover:scale-110 active:scale-95 transition-all group relative pointer-events-auto border-2 border-white/10"
          >
-            <DollarSign className="w-6 h-6 md:w-7 md:h-7" />
-            <div className="absolute -left-40 top-1/2 -translate-y-1/2 bg-white text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-2xl pointer-events-none">Cotización Inmediata</div>
+            <DollarSign className="w-5 h-5 sm:w-7 sm:h-7" />
+            <div className="absolute -left-40 top-1/2 -translate-y-1/2 bg-white text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-2xl pointer-events-none hidden sm:block">Cotización Inmediata</div>
          </button>
       </div>
 
@@ -765,7 +765,7 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
                    onClick={() => { setFooterDetail(null); onStart(); }}
                    className="w-full py-5 bg-[#5d3cfe] text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-4"
                  >
-                   Acceder al Nodo <ArrowRight className="w-4 h-4" />
+                   Acceder al Centro Control <ArrowRight className="w-4 h-4" />
                  </button>
               </div>
             </motion.div>
