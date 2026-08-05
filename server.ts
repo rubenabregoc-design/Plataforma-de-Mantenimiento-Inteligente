@@ -132,6 +132,8 @@ app.get("/api/health", (req, res) => {
     status: "online",
     nodo: "MantechPro-V4",
     firebase: admin.apps.length > 0 ? "connected" : "standalone",
+    smtp_ready: !!process.env.BREVO_API_KEY,
+    sender: process.env.SENDER_EMAIL,
     timestamp: new Date().toISOString()
   });
 });
