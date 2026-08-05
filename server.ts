@@ -98,7 +98,21 @@ async function sendEmail({ to, subject, html, replyTo }: { to: string; subject: 
       from: SMTP_FROM,
       to,
       subject,
-      html,
+      text: "MantechPro: Se ha recibido un nuevo requerimiento técnico. Por favor, abra este correo en un cliente compatible con HTML para ver los detalles.",
+      html: `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body { margin: 0; padding: 0; background-color: #0a0b0d; }
+          </style>
+        </head>
+        <body>
+          ${html}
+        </body>
+        </html>
+      `,
       ...(replyTo ? { replyTo } : {})
     });
     console.log(`✅ Email enviado exitosamente a ${to}: ${info.messageId}`);
