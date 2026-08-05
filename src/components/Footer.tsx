@@ -5,6 +5,7 @@ import MantechProLogo from './Logo';
 import { useUI } from '../context/UIContext';
 import { db } from '../firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { toast } from 'react-hot-toast';
 
 export default function Footer() {
   const { t, i18n } = useTranslation();
