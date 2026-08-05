@@ -178,6 +178,19 @@ app.post("/api/contact", async (req, res) => {
   const targetEmail = ADMIN_EMAIL || destination;
 
   try {
+    // 1. REGISTRO EN BASE DE DATOS (Para que aparezca en el Panel de Admin)
+    await db.collection("support_tickets").add({
+      userName: name,
+      userEmail: email,
+      subject: subject,
+      message: message,
+      type: type,
+      status: 'new',
+      source: 'web_portal',
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    // 2. NOTIFICACIÓN INTERNA AL ADMINISTRADOR
     await sendEmail({
       to: targetEmail,
       replyTo: `${name} <${email}>`,
