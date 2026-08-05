@@ -69,9 +69,13 @@ export default function Footer() {
             {newsToDisplay.map((n, i) => (
               <div key={i} className="p-8 bg-[#0d0e12] border border-white/5 rounded-[2.5rem] space-y-6 group hover:border-[#5d3cfe]/30 transition-all shadow-2xl relative overflow-hidden">
                  <div className="flex justify-between items-start relative z-10">
-                    <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-[#5d3cfe] group-hover:bg-[#5d3cfe] group-hover:text-white transition-all duration-500">
-                       {n.category === 'Sala de Prensa' ? <Newspaper className="w-6 h-6" /> :
-                        n.category === 'Blog' ? <Rocket className="w-6 h-6" /> : <BarChart3 className="w-6 h-6" />}
+                    <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-[#5d3cfe] group-hover:bg-[#5d3cfe] group-hover:text-white transition-all duration-500 overflow-hidden">
+                       {n.image ? (
+                         <img src={n.image} className="w-full h-full object-cover" alt="Hito" />
+                       ) : (
+                         n.category === 'Sala de Prensa' ? <Newspaper className="w-6 h-6" /> :
+                         n.category === 'Blog' ? <Rocket className="w-6 h-6" /> : <BarChart3 className="w-6 h-6" />
+                       )}
                     </div>
                     <span className="text-[8px] font-black text-[#474556] uppercase tracking-[0.3em]">{n.date || 'NOTICIA LIVE'}</span>
                  </div>
@@ -96,10 +100,23 @@ export default function Footer() {
           </div>
         </section>
 
-        {/* MIDDLE: Main Navigation */}
-        <div className="space-y-12">
-          <MantechProLogo size="md" className="mb-12" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        {/* MIDDLE: Main Navigation & Newsletter */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+          <div className="lg:col-span-4 space-y-8">
+            <MantechProLogo size="md" />
+            <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.3em] leading-relaxed">
+              La primera infraestructura digital para el mantenimiento predictivo en Panamá. Uniendo ingeniería y tecnología.
+            </p>
+            <div className="pt-4 space-y-4">
+               <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Boletín de Ingeniería</h4>
+               <div className="flex gap-2">
+                  <input type="email" placeholder="email@industria.com" className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-[10px] text-white outline-none focus:border-[#5d3cfe]" />
+                  <button onClick={() => toast.success("Suscrito al boletín oficial.")} className="px-6 py-3 bg-[#5d3cfe] text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-[#5d3cfe]/20">Unirse</button>
+               </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-8 grid grid-cols-2 md:grid-cols-4 gap-8">
             {sections.map((section, idx) => (
               <div key={idx} className="space-y-6">
                 <h4 className="font-black text-xs uppercase tracking-[0.3em] text-white/40">{section.title}</h4>

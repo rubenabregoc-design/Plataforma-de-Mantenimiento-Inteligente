@@ -57,7 +57,14 @@ export default function LandingCMS() {
   };
 
   const addNews = () => {
-    setNews([{ id: Date.now(), title: 'Nueva Noticia', date: new Date().toISOString().split('T')[0], summary: 'Breve descripción del hito...', category: 'Blog' }, ...news]);
+    setNews([{
+      id: Date.now(),
+      title: 'Nueva Noticia',
+      date: new Date().toISOString().split('T')[0],
+      summary: 'Breve descripción del hito...',
+      category: 'Blog',
+      image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800'
+    }, ...news]);
   };
 
   const updateNews = (index: number, field: string, value: string) => {
@@ -200,13 +207,22 @@ export default function LandingCMS() {
                </div>
 
                <div className="md:col-span-2 space-y-4">
-                  <input
-                    type="text"
-                    value={n.title}
-                    placeholder="Título de la noticia..."
-                    onChange={(e) => updateNews(idx, 'title', e.target.value)}
-                    className="w-full bg-transparent border-b border-white/10 py-2 text-lg font-black text-white uppercase tracking-tighter outline-none focus:border-[#52ffac]"
-                  />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <input
+                       type="text"
+                       value={n.title}
+                       placeholder="Título de la noticia..."
+                       onChange={(e) => updateNews(idx, 'title', e.target.value)}
+                       className="w-full bg-transparent border-b border-white/10 py-2 text-lg font-black text-white uppercase tracking-tighter outline-none focus:border-[#52ffac]"
+                     />
+                     <input
+                       type="text"
+                       value={n.image || ''}
+                       placeholder="URL de la imagen destacada..."
+                       onChange={(e) => updateNews(idx, 'image', e.target.value)}
+                       className="w-full bg-transparent border-b border-white/10 py-2 text-[10px] font-mono text-[#5d3cfe] outline-none focus:border-[#52ffac]"
+                     />
+                  </div>
                   <textarea
                     rows={2}
                     value={n.summary}
