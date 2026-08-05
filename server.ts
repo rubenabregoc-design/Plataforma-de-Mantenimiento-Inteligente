@@ -75,9 +75,9 @@ const db = admin.firestore();
 
 // API KEY BREVO (MANTECH PRO)
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
-const SENDER_EMAIL = process.env.SENDER_EMAIL || 'mantechpro@protonmail.com';
+const SENDER_EMAIL = process.env.SENDER_EMAIL || 'b31b49001@smtp-brevo.com';
 const SENDER_NAME = 'Mantech Pro Global';
-const APP_URL = process.env.APP_URL || 'http://localhost:3000';
+const APP_URL = process.env.APP_URL || 'https://mantech-pro.com';
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -139,7 +139,7 @@ app.post("/api/contact", async (req, res) => {
   if (type === 'jobs') destination = 'admin@mantech-pro.com';
 
   try {
-    await fetch("https://api.brevo.com/v3/smtp/email", {
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
         "accept": "application/json",
@@ -166,8 +166,15 @@ app.post("/api/contact", async (req, res) => {
         `
       })
     });
+
+    const result = await response.json();
+    console.log("Brevo API Response:", result);
+
+    if (!response.ok) throw new Error(JSON.stringify(result));
+
     res.json({ success: true });
   } catch (error: any) {
+    console.error("Contact Form Error:", error);
     res.status(500).json({ error: error.message });
   }
 });
