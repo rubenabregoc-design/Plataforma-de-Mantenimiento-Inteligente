@@ -1,5 +1,12 @@
 # Mantech Pro App Hosting Configuration
 runtime: nodejs20
-# Specify the build command if necessary
+
+runConfig:
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+# Explicit build command for Vite 6 + React 19
+# This ensures that App Hosting runs the same build process as local
 # buildConfig:
 #   buildCommand: npm run build
