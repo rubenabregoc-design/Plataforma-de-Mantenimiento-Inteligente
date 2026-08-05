@@ -141,7 +141,7 @@ export default function Footer() {
 
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <p className="text-[10px] text-[#474556] font-black uppercase tracking-widest">
-              © 2026 MantechPro Panama Industries S.A.
+              © 2026 MantechPro Panama Industries S.A. | <a href="mailto:info@mantech-pro.com" className="hover:text-white transition-colors">info@mantech-pro.com</a>
             </p>
             <div className="flex gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-[#474556]">
               <a href="#" className="hover:text-white transition-colors">Privacidad</a>

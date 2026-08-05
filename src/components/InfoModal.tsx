@@ -1,6 +1,7 @@
-import React from 'react';
-import { X, ShieldCheck, Globe, Zap, Users, Building2, FileText, Layout, Store, PieChart, BadgeCheck, Heart, Leaf, Rocket, Clock, CheckCircle2, BarChart3, Lock } from 'lucide-react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { X, ShieldCheck, Globe, Zap, Users, Building2, FileText, Layout, Store, PieChart, BadgeCheck, Heart, Leaf, Rocket, Clock, CheckCircle2, BarChart3, Lock, Send, Mail } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
 interface InfoContent {
   title: string;
@@ -296,6 +297,10 @@ interface Props {
 }
 
 export default function InfoModal({ isOpen, onClose, slug }: Props) {
+  const [showForm, setShowForm] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [form, setForm] = useState({ name: '', email: '', message: '' });
+
   if (!isOpen) return null;
 
   const actualSlug = slugMap[slug] || slug;
@@ -311,6 +316,33 @@ export default function InfoModal({ isOpen, onClose, slug }: Props) {
       { title: 'Transparencia', desc: 'Información clara para el usuario.', icon: FileText },
       { title: 'Soporte', desc: 'Contáctenos para más información.', icon: Users }
     ]
+  };
+
+  const handleSendEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSending(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          subject: `Consulta sobre ${content.title}`,
+          type: actualSlug === 'oportunidades_laborales' ? 'jobs' : 'info'
+        })
+      });
+      if (res.ok) {
+        toast.success("Mensaje enviado al Nodo Central. Recibirá una respuesta en su correo.");
+        setShowForm(false);
+        setForm({ name: '', email: '', message: '' });
+      } else {
+        throw new Error("Error en el servidor");
+      }
+    } catch (e) {
+      toast.error("Error al enviar. Intente más tarde.");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -331,38 +363,98 @@ export default function InfoModal({ isOpen, onClose, slug }: Props) {
                  <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-40 mt-1 truncate">{content.subtitle}</p>
               </div>
            </div>
-           <button onClick={onClose} className="p-3 bg-white/5 hover:bg-rose-600/20 text-white rounded-xl transition-all active:scale-95 shrink-0"><X className="w-5 h-5 sm:w-6 sm:h-6" /></button>
+           <button onClick={() => { setShowForm(false); onClose(); }} className="p-3 bg-white/5 hover:bg-rose-600/20 text-white rounded-xl transition-all active:scale-95 shrink-0"><X className="w-5 h-5 sm:w-6 sm:h-6" /></button>
         </div>
 
         {/* CONTENT */}
         <div className="p-6 sm:p-10 space-y-10 overflow-y-auto custom-scrollbar flex-1">
-           <div className="space-y-6">
-              <p className="text-[#c8c4d9] text-base sm:text-xl font-medium leading-relaxed italic border-l-4 pl-6 text-justify" style={{ borderColor: content.color }}>
-                 "{content.description}"
-              </p>
-              <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 sm:p-8">
-                <p className="text-[#8a879d] text-sm sm:text-base leading-relaxed font-medium text-justify">
-                  {content.longDesc}
-                </p>
-              </div>
-           </div>
+           <AnimatePresence mode="wait">
+             {!showForm ? (
+               <motion.div
+                 key="content"
+                 initial={{ opacity: 0, x: -20 }}
+                 animate={{ opacity: 1, x: 0 }}
+                 exit={{ opacity: 0, x: 20 }}
+                 className="space-y-10"
+               >
+                 <div className="space-y-6">
+                    <p className="text-[#c8c4d9] text-base sm:text-xl font-medium leading-relaxed italic border-l-4 pl-6 text-justify" style={{ borderColor: content.color }}>
+                       "{content.description}"
+                    </p>
+                    <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 sm:p-8">
+                      <p className="text-[#8a879d] text-sm sm:text-base leading-relaxed font-medium text-justify">
+                        {content.longDesc}
+                      </p>
+                    </div>
+                 </div>
 
-           <div className="space-y-6">
-              <h3 className="text-[10px] font-black text-[#474556] uppercase tracking-[0.4em] ml-1">Puntos de Protocolo</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                 {content.points.map((p, i) => (
-                   <div key={i} className="p-6 bg-[#0d0e12] rounded-3xl border border-white/5 space-y-4 group hover:border-white/10 transition-all">
-                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#5d3cfe] group-hover:scale-110 transition-transform duration-500">
-                         <p.icon className="w-5 h-5" style={{ color: content.color }} />
-                      </div>
-                      <div className="space-y-1">
-                         <h4 className="text-[11px] font-black text-white uppercase tracking-widest">{p.title}</h4>
-                         <p className="text-[10px] text-[#474556] font-bold leading-relaxed">{p.desc}</p>
-                      </div>
-                   </div>
-                 ))}
-              </div>
-           </div>
+                 <div className="space-y-6">
+                    <h3 className="text-[10px] font-black text-[#474556] uppercase tracking-[0.4em] ml-1">Puntos de Protocolo</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                       {content.points.map((p, i) => (
+                         <div key={i} className="p-6 bg-[#0d0e12] rounded-3xl border border-white/5 space-y-4 group hover:border-white/10 transition-all">
+                            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#5d3cfe] group-hover:scale-110 transition-transform duration-500">
+                               <p.icon className="w-5 h-5" style={{ color: content.color }} />
+                            </div>
+                            <div className="space-y-1">
+                               <h4 className="text-[11px] font-black text-white uppercase tracking-widest">{p.title}</h4>
+                               <p className="text-[10px] text-[#474556] font-bold leading-relaxed">{p.desc}</p>
+                            </div>
+                         </div>
+                       ))}
+                    </div>
+                 </div>
+
+                 <div className="bg-gradient-to-r from-[#5d3cfe]/10 to-transparent p-8 rounded-[2rem] border border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <div className="space-y-1 text-center sm:text-left">
+                       <h4 className="text-sm font-black text-white uppercase tracking-tight">¿Necesita más información?</h4>
+                       <p className="text-[10px] text-[#c8c4d9] font-bold uppercase tracking-widest opacity-60">Póngase en contacto con nuestro equipo estratégico.</p>
+                    </div>
+                    <button
+                      onClick={() => setShowForm(true)}
+                      className="px-8 py-3 bg-[#5d3cfe] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#5d3cfe]/20 hover:scale-105 transition-all flex items-center gap-3"
+                    >
+                       <Mail className="w-4 h-4" /> Contactar Ahora
+                    </button>
+                 </div>
+               </motion.div>
+             ) : (
+               <motion.div
+                 key="form"
+                 initial={{ opacity: 0, x: 20 }}
+                 animate={{ opacity: 1, x: 0 }}
+                 exit={{ opacity: 0, x: -20 }}
+                 className="space-y-8"
+               >
+                 <button
+                   onClick={() => setShowForm(false)}
+                   className="text-[9px] font-black text-[#5d3cfe] uppercase tracking-widest flex items-center gap-2 hover:underline mb-4"
+                 >
+                    ← Volver a la información
+                 </button>
+
+                 <form onSubmit={handleSendEmail} className="space-y-6 bg-[#0d0e12] p-8 rounded-[2.5rem] border border-white/5 shadow-inner">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div className="space-y-1.5">
+                          <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Nombre Completo</label>
+                          <input required type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-[#121317] border border-white/5 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#5d3cfe]" placeholder="Ej: Rubén Abrego" />
+                       </div>
+                       <div className="space-y-1.5">
+                          <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Correo Electrónico</label>
+                          <input required type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full bg-[#121317] border border-white/5 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#5d3cfe]" placeholder="email@ejemplo.com" />
+                       </div>
+                    </div>
+                    <div className="space-y-1.5">
+                       <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Mensaje o Consulta</label>
+                       <textarea required rows={4} value={form.message} onChange={e => setForm({...form, message: e.target.value})} className="w-full bg-[#121317] border border-white/5 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#5d3cfe] resize-none" placeholder="Escriba aquí los detalles industriales de su solicitud..." />
+                    </div>
+                    <button type="submit" disabled={isSending} className="w-full py-4 bg-[#5d3cfe] text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[#5d3cfe]/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3">
+                       {isSending ? "PROCESANDO..." : <><Send className="w-4 h-4" /> Enviar Solicitud Oficial</>}
+                    </button>
+                 </form>
+               </motion.div>
+             )}
+           </AnimatePresence>
 
            <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-6">
               <div className="flex items-center gap-3 order-2 sm:order-1">
@@ -373,7 +465,7 @@ export default function InfoModal({ isOpen, onClose, slug }: Props) {
                 onClick={onClose}
                 className="w-full sm:w-fit px-10 py-4 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all order-1 sm:order-2 active:scale-95 shadow-xl"
               >
-                Volver al Portal
+                Cerrar Ventana
               </button>
            </div>
         </div>

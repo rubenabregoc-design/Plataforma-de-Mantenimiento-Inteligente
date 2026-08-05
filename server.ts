@@ -129,6 +129,49 @@ app.post("/api/welcome-email", async (req, res) => {
   }
 });
 
+// 2.5 Contact Form Handler (Industrial Routing)
+app.post("/api/contact", async (req, res) => {
+  const { name, email, subject, message, type } = req.body;
+
+  // Determinamos el destino basado en el tipo de consulta
+  let destination = 'info@mantech-pro.com';
+  if (type === 'support') destination = 'soporte@mantech-pro.com';
+  if (type === 'jobs') destination = 'admin@mantech-pro.com';
+
+  try {
+    await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": process.env.BREVO_API_KEY || '',
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        sender: { name: `Portal Web: ${name}`, email: SENDER_EMAIL },
+        to: [{ email: destination }],
+        replyTo: { email: email, name: name },
+        subject: `[WEB CONTACT] ${subject}`,
+        htmlContent: `
+          <div style="font-family: sans-serif; background: #0d0e12; color: #fff; padding: 40px; border-radius: 20px;">
+            <h2 style="color: #5d3cfe;">Nueva Consulta desde mantech-pro.com</h2>
+            <div style="background: #16171d; padding: 20px; border-radius: 10px; margin-top: 20px;">
+              <p><strong>Remitente:</strong> ${name} (${email})</p>
+              <p><strong>Tipo:</strong> ${type}</p>
+              <p><strong>Asunto:</strong> ${subject}</p>
+              <hr style="border: 0; border-top: 1px solid #2a2b2f; margin: 20px 0;">
+              <p style="white-space: pre-wrap;">${message}</p>
+            </div>
+            <p style="font-size: 10px; color: #474556; margin-top: 20px;">MantechPro Node V4.6 - Email Routing Engine</p>
+          </div>
+        `
+      })
+    });
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 3. Motor de Diagnóstico IA (Gemini 1.5 Flash)
 app.post("/api/diagnose", async (req, res) => {
   const { assetName, assetDetails, problemDescription } = req.body;
