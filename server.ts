@@ -167,18 +167,66 @@ app.post("/api/contact", async (req, res) => {
     await sendEmail({
       to: targetEmail,
       replyTo: `${name} <${email}>`,
-      subject: `[WEB CONTACT] ${subject}`,
+      subject: `[AUDITORÍA WEB] ${subject}`,
       html: `
-        <div style="font-family: sans-serif; background: #0d0e12; color: #fff; padding: 40px; border-radius: 20px;">
-          <h2 style="color: #5d3cfe;">Nueva Consulta desde mantech-pro.com</h2>
-          <div style="background: #16171d; padding: 20px; border-radius: 10px; margin-top: 20px;">
-            <p><strong>Remitente:</strong> ${name} (${email})</p>
-            <p><strong>Tipo:</strong> ${type}</p>
-            <p><strong>Asunto:</strong> ${subject}</p>
-            <hr style="border: 0; border-top: 1px solid #2a2b2f; margin: 20px 0;">
-            <p style="white-space: pre-wrap;">${message}</p>
+        <div style="background-color: #0a0b0d; padding: 40px 20px; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #121317; border: 1px solid #2a2b2f; border-radius: 24px; overflow: hidden; shadow: 0 20px 50px rgba(0,0,0,0.5);">
+            <!-- Header Industrial -->
+            <div style="background-color: #1c1d21; padding: 30px; border-bottom: 2px solid #5d3cfe; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">
+                MANTECH<span style="color: #5d3cfe;">PRO</span>
+              </h1>
+              <p style="margin: 5px 0 0 0; color: #52ffac; font-size: 10px; font-weight: bold; letter-spacing: 3px; text-transform: uppercase;">Protocolo de Comunicación Oficial</p>
+            </div>
+
+            <!-- Body del Mensaje -->
+            <div style="padding: 40px;">
+              <div style="margin-bottom: 30px;">
+                <span style="background-color: #5d3cfe; color: #ffffff; padding: 5px 12px; border-radius: 50px; font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Nuevo Requerimiento</span>
+                <h2 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 15px 0 5px 0; letter-spacing: -0.5px;">${subject}</h2>
+                <p style="color: #8a879d; font-size: 14px; margin: 0;">Se ha registrado una nueva entrada desde el portal oficial de Panamá.</p>
+              </div>
+
+              <!-- Ficha Técnica del Remitente -->
+              <div style="background-color: #0d0e12; border-radius: 16px; padding: 25px; border: 1px solid #1c1d21; margin-bottom: 30px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 8px 0; font-size: 11px; color: #474556; font-weight: 900; text-transform: uppercase; width: 100px;">Remitente</td>
+                    <td style="padding: 8px 0; font-size: 14px; color: #ffffff; font-weight: 700;">${name}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; font-size: 11px; color: #474556; font-weight: 900; text-transform: uppercase;">Canal</td>
+                    <td style="padding: 8px 0; font-size: 13px; color: #52ffac; font-weight: bold;">${type.toUpperCase()} / WEB-PORTAL</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; font-size: 11px; color: #474556; font-weight: 900; text-transform: uppercase;">Contacto</td>
+                    <td style="padding: 8px 0; font-size: 13px; color: #c8c4d9;">${email}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Contenido del Mensaje -->
+              <div style="margin-bottom: 40px;">
+                <p style="font-size: 11px; color: #474556; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;">Mensaje del Usuario:</p>
+                <div style="color: #ffffff; font-size: 15px; line-height: 1.7; font-weight: 400; font-style: italic; border-left: 3px solid #5d3cfe; padding-left: 20px;">
+                  "${message}"
+                </div>
+              </div>
+
+              <!-- Botón de Acción -->
+              <div style="text-align: center;">
+                <a href="mailto:${email}" style="display: inline-block; background-color: #5d3cfe; color: #ffffff; padding: 16px 35px; border-radius: 12px; font-weight: 900; font-size: 12px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; shadow: 0 10px 20px rgba(93,60,254,0.3);">Responder al Remitente</a>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="background-color: #0d0e12; padding: 25px; text-align: center; border-top: 1px solid #1c1d21;">
+              <p style="margin: 0; color: #474556; font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">
+                MantechPro Industries Panamá • v4.8.9 <br>
+                Cifrado de Punto a Punto Activo
+              </p>
+            </div>
           </div>
-          <p style="font-size: 10px; color: #474556; margin-top: 20px;">MantechPro Node V4.6 - Email Routing Engine</p>
         </div>
       `
     });
