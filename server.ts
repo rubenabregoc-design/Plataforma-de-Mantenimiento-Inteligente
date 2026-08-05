@@ -40,34 +40,23 @@ const BRAND_CARD = '#16171d';    // Gris Carbón
 // Inicializar Firebase Admin (Sincrónico para evitar errores de App No Encontrada)
 const initFirebaseAdmin = () => {
   try {
-    const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
-
     if (admin.apps.length === 0) {
-      // Intentar cargar desde archivo local
-      try {
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccountPath)
-        });
-        console.log("✅ Sistema Operativo Mantech Pro: Firebase Admin Vinculado (Archivo).");
-      } catch (err) {
-        // Fallback: Intentar cargar desde variables de entorno si existen (Modo Cloud)
-        if (process.env.FIREBASE_PROJECT_ID) {
-          admin.initializeApp({
-            credential: admin.credential.applicationDefault(),
-            projectId: process.env.FIREBASE_PROJECT_ID
-          });
-          console.log("✅ Sistema Operativo Mantech Pro: Firebase Admin Vinculado (Default).");
-        } else {
-          console.warn("⚠️ Advertencia: No se encontró 'service-account.json'. Las funciones de servidor que requieren Firestore no funcionarán.");
-          // Inicializar app vacía para evitar crash fatal en arranque
-          admin.initializeApp({
-            projectId: "mantech-pro-placeholder"
-          });
-        }
-      }
+      // En Firebase App Hosting, simplemente inicializamos sin parámetros
+      // Google inyecta las credenciales automáticamente
+      admin.initializeApp();
+      console.log("✅ Ecosistema Mantech Pro: Firebase Admin Vinculado (Auto-Cloud).");
     }
   } catch (error) {
-    console.error("❌ Error Crítico en Nodo Maestro (Firebase):", error);
+    // Si falla el auto-vinculado (ej: local), intentamos con archivo
+    try {
+      const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccountPath)
+      });
+      console.log("✅ Ecosistema Mantech Pro: Firebase Admin Vinculado (Archivo Local).");
+    } catch (err) {
+      console.error("❌ Error Crítico en Nodo Maestro (Firebase):", err);
+    }
   }
 };
 
