@@ -158,7 +158,7 @@ app.post("/api/welcome-email", async (req, res) => {
 
 // 2.5 Contact Form Handler (Industrial Routing)
 app.post("/api/contact", async (req, res) => {
-  const { name, email, subject, message, type } = req.body;
+  const { name, email, whatsapp, subject, message, type } = req.body;
 
   let destination = 'info@mantech-pro.com';
   if (type === 'support') destination = 'soporte@mantech-pro.com';
@@ -171,6 +171,7 @@ app.post("/api/contact", async (req, res) => {
     await db.collection("support_tickets").add({
       userName: name,
       userEmail: email,
+      whatsapp: whatsapp || 'N/A',
       subject: subject,
       message: message,
       type: type,
@@ -197,11 +198,13 @@ app.post("/api/contact", async (req, res) => {
               <div style="background-color: #0d0e12; border-radius: 16px; padding: 20px; margin: 20px 0; border: 1px solid #1c1d21;">
                 <p><strong>Remitente:</strong> ${name}</p>
                 <p><strong>Email:</strong> ${email}</p>
+                <p><strong>WhatsApp:</strong> ${whatsapp || 'N/A'}</p>
                 <p><strong>Asunto:</strong> ${subject}</p>
                 <hr style="border: 0; border-top: 1px solid #2a2b2f; margin: 15px 0;">
                 <p style="font-style: italic; color: #c8c4d9;">"${message}"</p>
               </div>
-              <a href="mailto:${email}" style="display: block; text-align: center; background-color: #5d3cfe; color: #ffffff; padding: 15px; border-radius: 12px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 11px;">Responder de inmediato</a>
+              <a href="https://wa.me/${whatsapp?.replace(/\D/g,'')}" style="display: block; text-align: center; background-color: #25d366; color: #ffffff; padding: 15px; border-radius: 12px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 11px; margin-bottom: 10px;">Contactar por WhatsApp</a>
+              <a href="mailto:${email}" style="display: block; text-align: center; background-color: #5d3cfe; color: #ffffff; padding: 15px; border-radius: 12px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 11px;">Responder por Email</a>
             </div>
           </div>
         </div>
@@ -226,7 +229,7 @@ app.post("/api/contact", async (req, res) => {
             <div style="padding: 50px; color: #ffffff; text-align: center;">
                <h2 style="font-size: 24px; font-weight: 800; margin-bottom: 20px;">¡Hola, ${name.split(' ')[0]}!</h2>
                <p style="color: #c8c4d9; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
-                 Tu requerimiento sobre <strong>${subject}</strong> ha sido ingresado con éxito en nuestro ecosistema de gestión.
+                 Tu requerimiento sobre <strong>${subject}</strong> ha sido ingresado con éxito.
                </p>
 
                <div style="background-color: #1c1d21; padding: 25px; border-radius: 20px; border: 1px solid #5d3cfe20; margin-bottom: 40px;">
@@ -236,7 +239,7 @@ app.post("/api/contact", async (req, res) => {
                </div>
 
                <p style="color: #8a879d; font-size: 13px; line-height: 1.6;">
-                 Un especialista de MantechPro revisará los detalles y se pondrá en contacto contigo vía correo o WhatsApp para proceder con el protocolo técnico.
+                 Un especialista revisará los detalles y te contactará por <strong>WhatsApp (${whatsapp})</strong> o correo para proceder con el protocolo.
                </p>
             </div>
 

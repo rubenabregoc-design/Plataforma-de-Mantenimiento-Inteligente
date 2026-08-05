@@ -299,7 +299,7 @@ interface Props {
 export default function InfoModal({ isOpen, onClose, slug }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [form, setForm] = useState({ name: '', email: '', whatsapp: '', message: '' });
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // RESET SCROLL TO TOP ON OPEN OR VIEW CHANGE
@@ -342,9 +342,9 @@ export default function InfoModal({ isOpen, onClose, slug }: Props) {
         })
       });
       if (res.ok) {
-        toast.success("Mensaje enviado con éxito. Recibirá una respuesta en su correo.");
+        toast.success("Solicitud enviada. Un especialista le contactará por WhatsApp.");
         setShowForm(false);
-        setForm({ name: '', email: '', message: '' });
+        setForm({ name: '', email: '', whatsapp: '', message: '' });
       } else {
         throw new Error("Error en el servidor");
       }
@@ -447,10 +447,14 @@ export default function InfoModal({ isOpen, onClose, slug }: Props) {
                  </button>
 
                  <form onSubmit={handleSendEmail} className="space-y-6 bg-[#0d0e12] p-8 rounded-[2.5rem] border border-white/5 shadow-inner">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                        <div className="space-y-1.5">
                           <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Nombre Completo</label>
                           <input required type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-[#121317] border border-white/5 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#5d3cfe]" placeholder="Ej: Rubén Abrego" />
+                       </div>
+                       <div className="space-y-1.5">
+                          <label className="text-[9px] font-black text-[#474556] uppercase ml-1">WhatsApp</label>
+                          <input required type="tel" value={form.whatsapp} onChange={e => setForm({...form, whatsapp: e.target.value})} className="w-full bg-[#121317] border border-white/5 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#52ffac]" placeholder="+507 6000-0000" />
                        </div>
                        <div className="space-y-1.5">
                           <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Correo Electrónico</label>
