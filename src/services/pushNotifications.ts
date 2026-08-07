@@ -34,6 +34,9 @@ export async function registerPushToken(userId: string): Promise<void> {
     // Registrar el Service Worker de Firebase Messaging
     const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
 
+    // Esperar a que el service worker esté listo y activo
+    await navigator.serviceWorker.ready;
+
     const messaging = getMessaging(app);
 
     // Solicitar permiso al usuario
@@ -44,6 +47,11 @@ export async function registerPushToken(userId: string): Promise<void> {
     }
 
     // Obtener el token FCM del dispositivo
+    if (!VAPID_KEY) {
+      console.error('❌ Error: Falta VAPID_KEY en las variables de entorno. Las notificaciones push no funcionarán.');
+      return;
+    }
+
     const token = await getToken(messaging, {
       vapidKey: VAPID_KEY,
       serviceWorkerRegistration: registration
