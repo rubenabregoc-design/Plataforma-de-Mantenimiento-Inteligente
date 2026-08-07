@@ -161,13 +161,23 @@ app.post("/api/contact", async (req, res) => {
   const { name, email, whatsapp, subject, message, type } = req.body;
 
   let destination = 'info@mantech-pro.com';
-  if (type === 'support') destination = 'soporte@mantech-pro.com';
-  if (type === 'jobs') destination = 'admin@mantech-pro.com';
+  let prefix = '[INFO - GLOBAL]';
+
+  if (type === 'support') {
+    destination = 'soporte@mantech-pro.com';
+    prefix = '[SOPORTE - TÉCNICO]';
+  } else if (type === 'jobs') {
+    destination = 'admin@mantech-pro.com';
+    prefix = '[RRHH - TALENTO]';
+  } else if (subject.includes('Inversionistas')) {
+    destination = 'admin@mantech-pro.com';
+    prefix = '[ESTRATEGIA - PA]';
+  }
 
   const targetEmail = ADMIN_EMAIL || destination;
 
   try {
-    // 1. REGISTRO EN BASE DE DATOS (Para que aparezca en el Panel de Admin)
+    // 1. REGISTRO EN BASE DE DATOS
     await db.collection("support_tickets").add({
       userName: name,
       userEmail: email,
@@ -180,31 +190,36 @@ app.post("/api/contact", async (req, res) => {
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    // 2. NOTIFICACIÓN INTERNA AL ADMINISTRADOR
+    // 2. NOTIFICACIÓN INTERNA AL ADMINISTRADOR CON ASUNTO PERSONALIZADO
     await sendEmail({
       to: targetEmail,
       replyTo: `${name} <${email}>`,
-      subject: `[AUDITORÍA WEB] ${subject}`,
+      subject: `${prefix} ${subject}: ${name}`,
       html: `
-        <div style="background-color: #0a0b0d; padding: 40px 20px; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        <div style="background-color: #0a0b0d; padding: 40px 20px; font-family: 'Segoe UI', sans-serif;">
           <div style="max-width: 600px; margin: 0 auto; background-color: #121317; border: 1px solid #2a2b2f; border-radius: 24px; overflow: hidden;">
             <div style="background-color: #1c1d21; padding: 30px; border-bottom: 2px solid #5d3cfe; text-align: center;">
               <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">MANTECH<span style="color: #5d3cfe;">PRO</span></h1>
-              <p style="margin: 5px 0 0 0; color: #52ffac; font-size: 10px; font-weight: bold; letter-spacing: 3px; text-transform: uppercase;">Notificación de Auditoría Interna</p>
+              <p style="margin: 5px 0 0 0; color: #52ffac; font-size: 10px; font-weight: bold; letter-spacing: 3px; text-transform: uppercase;">Auditoría de Telemetría y Comunicaciones</p>
             </div>
             <div style="padding: 40px; color: #ffffff;">
-              <h2 style="font-size: 18px; font-weight: 800; text-transform: uppercase;">Nuevo Ticket Registrado</h2>
-              <p style="color: #8a879d; font-size: 14px;">Se ha capturado un nuevo interés desde el portal oficial.</p>
-              <div style="background-color: #0d0e12; border-radius: 16px; padding: 20px; margin: 20px 0; border: 1px solid #1c1d21;">
-                <p><strong>Remitente:</strong> ${name}</p>
-                <p><strong>Email:</strong> ${email}</p>
-                <p><strong>WhatsApp:</strong> ${whatsapp || 'N/A'}</p>
-                <p><strong>Asunto:</strong> ${subject}</p>
-                <hr style="border: 0; border-top: 1px solid #2a2b2f; margin: 15px 0;">
-                <p style="font-style: italic; color: #c8c4d9;">"${message}"</p>
+              <div style="background-color: #5d3cfe10; padding: 15px; border-radius: 12px; border: 1px solid #5d3cfe30; margin-bottom: 25px;">
+                 <p style="margin: 0; font-size: 11px; color: #5d3cfe; font-weight: 900; text-transform: uppercase;">Módulo de Origen: ${type.toUpperCase()}</p>
               </div>
-              <a href="https://wa.me/${whatsapp?.replace(/\D/g,'')}" style="display: block; text-align: center; background-color: #25d366; color: #ffffff; padding: 15px; border-radius: 12px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 11px; margin-bottom: 10px;">Contactar por WhatsApp</a>
-              <a href="mailto:${email}" style="display: block; text-align: center; background-color: #5d3cfe; color: #ffffff; padding: 15px; border-radius: 12px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 11px;">Responder por Email</a>
+              <p style="color: #8a879d; font-size: 14px;">Se ha capturado un nuevo requerimiento vinculado al protocolo de telemetría.</p>
+              <div style="background-color: #0d0e12; border-radius: 16px; padding: 25px; margin: 20px 0; border: 1px solid #1c1d21;">
+                <table style="width: 100%; color: #ffffff; font-size: 13px;">
+                  <tr><td style="color: #474556; font-weight: 900; text-transform: uppercase; font-size: 10px; padding-bottom: 5px;">Remitente</td><td>${name}</td></tr>
+                  <tr><td style="color: #474556; font-weight: 900; text-transform: uppercase; font-size: 10px; padding-bottom: 5px;">WhatsApp</td><td style="color: #52ffac; font-weight: bold;">${whatsapp}</td></tr>
+                  <tr><td style="color: #474556; font-weight: 900; text-transform: uppercase; font-size: 10px;">Email</td><td>${email}</td></tr>
+                </table>
+                <hr style="border: 0; border-top: 1px solid #2a2b2f; margin: 15px 0;">
+                <p style="font-style: italic; color: #c8c4d9; line-height: 1.6;">"${message}"</p>
+              </div>
+              <div style="text-align: center; margin-top: 30px;">
+                <a href="https://wa.me/${whatsapp?.replace(/\D/g,'')}" style="display: inline-block; background-color: #25d366; color: #ffffff; padding: 12px 25px; border-radius: 10px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 10px; margin-right: 10px;">WhatsApp</a>
+                <a href="mailto:${email}" style="display: inline-block; background-color: #5d3cfe; color: #ffffff; padding: 12px 25px; border-radius: 10px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 10px;">Responder</a>
+              </div>
             </div>
           </div>
         </div>
