@@ -48,19 +48,37 @@ export async function registerPushToken(userId: string): Promise<void> {
 
     // Obtener el token FCM del dispositivo
     if (!VAPID_KEY) {
-      console.error('❌ Error: Falta VAPID_KEY en las variables de entorno. Las notificaciones push no funcionarán.');
+      console.warn('⚠️ Falta VAPID_KEY en el entorno. Las notificaciones push operarán en modo degradado.');
       return;
     }
 
-    const token = await getToken(messaging, {
-      vapidKey: VAPID_KEY,
-      serviceWorkerRegistration: registration
-    });
+    // Intentar obtener el token con reintento industrial
+    let token = '';
+    try {
+      token = await getToken(messaging, {
+        vapidKey: VAPID_KEY,
+        serviceWorkerRegistration: registration
+      });
+    } catch (pushErr: any) {
+      if (pushErr.name === 'AbortError') {
+        console.warn('⏳ Push Service ocupado. Reintentando en 3 segundos...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        token = await getToken(messaging, {
+          vapidKey: VAPID_KEY,
+          serviceWorkerRegistration: registration
+        });
+      } else {
+        throw pushErr;
+      }
+    }
 
     if (token) {
-      // Guardar el token en Firestore para que las Cloud Functions puedan usarlo
-      await updateDoc(doc(db, 'users', userId), { pushToken: token });
-      console.log('✅ Token FCM registrado en Firestore:', token.substring(0, 20) + '...');
+      // Guardar el token en Firestore
+      await updateDoc(doc(db, 'users', userId), {
+        pushToken: token,
+        lastTokenUpdate: serverTimestamp()
+      });
+      console.log('✅ Token FCM sincronizado con el Sistema Cloud.');
     }
 
     // Escuchar mensajes cuando la app está en primer plano
