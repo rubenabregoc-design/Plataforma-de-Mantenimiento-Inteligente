@@ -47,13 +47,13 @@ const infoRegistry: Record<string, InfoContent> = {
     subtitle: 'Logística de Grado Industrial',
     icon: Globe,
     color: '#5d3cfe',
-    description: 'Optimice el tiempo operativo de su flota con nuestro panel de control centralizado y mantenimiento proyectado.',
-    longDesc: 'Diseñado para gerentes de logística que no pueden permitirse paros técnicos. Nuestra suite B2B integra rastreo GPS satelital con telemetría de mantenimiento. El sistema "aprende" el desgaste de sus unidades basándose en el kilometraje real y las condiciones climáticas de Panamá, enviando alertas automáticas a su equipo de mecánicos.',
+    description: 'Optimice su flota con nuestra Telemetría por Fusión de Sensores, eliminando la necesidad de hardware externo.',
+    longDesc: 'MantechPro utiliza la Capa de Telemetría Nativa para procesar datos de movimiento, ubicación y comportamiento operativo directamente desde el dispositivo del operador. Mediante algoritmos de Edge Computing, el sistema detecta patrones de desgaste y riesgos logísticos sin instalaciones invasivas en la unidad, garantizando una implementación inmediata en el 100% de su flota.',
     points: [
-      { title: 'Rastreo Satelital', desc: 'Ubicación en tiempo real y detección de desviaciones de ruta no autorizadas.', icon: Globe },
-      { title: 'Carga Masiva', desc: 'Sincronice miles de unidades desde archivos Excel en segundos.', icon: FileText },
-      { title: 'Auditoría Fuel', desc: 'Algoritmos que detectan anomalías en el consumo de combustible por unidad.', icon: Zap },
-      { title: 'SLA Prioritario', desc: 'Atención técnica garantizada en carretera en menos de 90 minutos.', icon: Clock }
+      { title: 'Sensor Fusion', desc: 'Aprovechamiento de los sensores de precisión del dispositivo para monitoreo 360.', icon: Zap },
+      { title: 'Zero-Hardware', desc: 'Sin adaptadores ni cables. Conectividad instantánea para flotas de cualquier tamaño.', icon: ShieldCheck },
+      { title: 'Auditoría Viva', desc: 'Rastreo satelital milimétrico y detección de anomalías de conducción.', icon: Globe },
+      { title: 'Cloud Sync', desc: 'Sincronización en tiempo real con el sistema central para reportes de cumplimiento.', icon: FileText }
     ]
   },
   'seguridad_mantech_id': {
