@@ -229,11 +229,11 @@ const infoRegistry: Record<string, InfoContent> = {
     subtitle: 'Conocimiento Industrial Compartido',
     icon: FileText,
     color: '#5d3cfe',
-    description: 'Manuales interactivos y tutoriales en video para entender mejor el funcionamiento y cuidado de sus activos.',
-    longDesc: 'El conocimiento es poder. Nuestra biblioteca de Guías Técnicas está diseñada para que el usuario aprenda lo básico y lo avanzado sobre sus equipos. Desde cómo limpiar un filtro de aire acondicionado eficientemente hasta cómo interpretar los códigos de error de un panel eléctrico. Todo accesible mediante escaneo de etiquetas QR Mantech.',
+    description: 'Manuales interactivos y documentación técnica para entender mejor el funcionamiento y cuidado de sus activos.',
+    longDesc: 'El conocimiento es poder. Nuestra biblioteca de Guías Técnicas está diseñada para que el usuario domine el funcionamiento de sus equipos. Desde protocolos de instalación hasta diagnósticos de primer nivel, todo el contenido es curado por ingenieros certificados de MantechPro.',
     points: [
       { title: 'Manuales QR', desc: 'Acceso instantáneo a la documentación de fábrica de su equipo específico.', icon: Zap },
-      { title: 'Video Tips', desc: 'Micro-tutoriales de 60 segundos para mantenimiento preventivo básico.', icon: Layout },
+      { title: 'Protocolos SOP', desc: 'Procedimientos Operativos Estándar para mantenimiento preventivo básico.', icon: Layout },
       { title: 'Safe Check', desc: 'Listas de verificación de seguridad para antes de operar maquinaria.', icon: ShieldCheck },
       { title: 'Updates', desc: 'Actualización constante de guías según nuevos modelos en el mercado.', icon: Globe }
     ]
