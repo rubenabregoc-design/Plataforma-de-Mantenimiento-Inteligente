@@ -16,6 +16,7 @@ import SubscriptionModule from '../../components/SubscriptionModule';
 import InventoryModule from '../../components/InventoryModule';
 import CommunityModule from '../../components/CommunityModule';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import MarketingBanner from '../../components/MarketingBanner';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useUI } from '../../context/UIContext';
@@ -149,6 +150,7 @@ export default function TechDashboard() {
 
       {techTab === 'received' && (
         <div className="space-y-8">
+           <MarketingBanner placement="tech" />
            <header className="flex justify-between items-center">
               <h1 className="text-4xl font-black text-white uppercase tracking-tighter">{t('service_inbox', 'Bandeja de Servicios').split(' ')[0]} <span className="text-[#5d3cfe]">{t('service_inbox', 'Bandeja de Servicios').split(' ').slice(1).join(' ')}</span></h1>
               <button onClick={() => setTab('tech', 'subscriptions')} className="px-6 py-2 bg-white/5 border border-white/10 text-white rounded-xl text-[9px] font-black uppercase hover:bg-[#5d3cfe] transition-all">{t('upgrade_plan', 'Mejorar Plan')}</button>

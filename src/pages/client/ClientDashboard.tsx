@@ -19,6 +19,7 @@ import SubscriptionModule from '../../components/SubscriptionModule';
 import SupportChatWidget from '../../components/SupportChatWidget';
 import MantechIDModule from '../../components/MantechIDModule';
 import TechnicianRadar from '../../components/TechnicianRadar';
+import MarketingBanner from '../../components/MarketingBanner';
 import * as XLSX from 'xlsx';
 import { useTranslation } from 'react-i18next';
 import { PayPalButtons } from "@paypal/react-paypal-js";
@@ -180,6 +181,7 @@ export default function ClientDashboard() {
 
       {clientTab === 'dashboard' && (
         <div className="space-y-10">
+          <MarketingBanner placement="client" />
           <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
              <div>
                 <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Mi <span className="text-[#5d3cfe]">Portafolio</span></h1>

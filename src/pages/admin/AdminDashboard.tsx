@@ -35,6 +35,10 @@ export default function AdminDashboard() {
   const [replyText, setReplyText] = useState('');
   const [isReplying, setIsReplying] = useState(false);
 
+  // --- LOGICA DE ADS ---
+  const [ads, setAds] = useState<any[]>([]);
+  const [newAd, setNewAd] = useState({ title: '', image: '', link: '', placement: 'client' });
+
   useEffect(() => {
     if (adminTab === 'tickets') {
       const q = query(collection(db, "support_tickets"), orderBy("createdAt", "desc"));
@@ -43,7 +47,37 @@ export default function AdminDashboard() {
       });
       return () => unsub();
     }
+    if (adminTab === 'ads') {
+      const unsub = onSnapshot(doc(db, "config", "marketing"), (docSnap) => {
+        if (docSnap.exists()) setAds(docSnap.data().banners || []);
+      });
+      return () => unsub();
+    }
   }, [adminTab]);
+
+  const handleSaveAds = async (updatedAds: any[]) => {
+    try {
+      await updateDoc(doc(db, "config", "marketing"), { banners: updatedAds });
+      toast.success("Campaña de marketing actualizada");
+    } catch (e) {
+      // Si no existe el documento, lo creamos
+      await setDoc(doc(db, "config", "marketing"), { banners: updatedAds });
+      toast.success("Campaña iniciada con éxito");
+    }
+  };
+
+  const addAd = () => {
+    const list = [...ads, { ...newAd, id: Date.now() }];
+    setAds(list);
+    handleSaveAds(list);
+    setNewAd({ title: '', image: '', link: '', placement: 'client' });
+  };
+
+  const deleteAd = (id: number) => {
+    const list = ads.filter(a => a.id !== id);
+    setAds(list);
+    handleSaveAds(list);
+  };
 
   const handleReplyTicket = async () => {
     if (!replyText.trim() || !selectedTicket) return;
@@ -386,6 +420,79 @@ export default function AdminDashboard() {
                 </div>
               )}
            </div>
+        </div>
+      )}
+
+      {adminTab === 'ads' && (
+        <div className="space-y-12">
+          <header className="flex justify-between items-center bg-[#121317] border border-white/5 p-8 rounded-[3rem] shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 blur-3xl rounded-full -mr-20 -mt-20"></div>
+            <div className="relative z-10">
+              <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic">Gestión de <span className="text-amber-500">Marketing & Ads</span></h1>
+              <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.4em] mt-2">Monetización y Banners Publicitarios en la Red</p>
+            </div>
+            <button onClick={addAd} className="px-8 py-4 bg-amber-500 text-black rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 hover:scale-105 transition-all flex items-center gap-3 relative z-10">
+               <Plus className="w-4 h-4" /> Crear Nuevo Espacio
+            </button>
+          </header>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+             {/* EDITOR DE NUEVO ANUNCIO */}
+             <div className="bg-[#121317] border border-white/5 p-10 rounded-[3rem] space-y-8 shadow-2xl">
+                <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Configurar Banner</h3>
+                <div className="space-y-6">
+                   <div className="space-y-2">
+                      <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Título de Campaña</label>
+                      <input type="text" value={newAd.title} onChange={e => setNewAd({...newAd, title: e.target.value})} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-4 px-6 text-sm text-white focus:border-amber-500 outline-none transition-all" placeholder="Ej: Especial Inverter 2026" />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-[9px] font-black text-[#474556] uppercase ml-1">URL de Imagen (1200x300)</label>
+                      <input type="text" value={newAd.image} onChange={e => setNewAd({...newAd, image: e.target.value})} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-4 px-6 text-sm text-white focus:border-amber-500 outline-none transition-all font-mono" placeholder="https://..." />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Enlace de Destino (Link)</label>
+                      <input type="text" value={newAd.link} onChange={e => setNewAd({...newAd, link: e.target.value})} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-4 px-6 text-sm text-white focus:border-amber-500 outline-none transition-all font-mono" placeholder="https://..." />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Ubicación del Ad</label>
+                      <select value={newAd.placement} onChange={e => setNewAd({...newAd, placement: e.target.value})} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-4 px-6 text-[10px] font-black text-white uppercase outline-none focus:border-amber-500">
+                         <option value="client">Dashboard Cliente</option>
+                         <option value="tech">Dashboard Técnico</option>
+                         <option value="marketplace">Marketplace (Sidebar)</option>
+                      </select>
+                   </div>
+                </div>
+             </div>
+
+             {/* VISTA PREVIA Y LISTADO */}
+             <div className="lg:col-span-2 space-y-6">
+                <h3 className="text-[10px] font-black text-[#474556] uppercase tracking-[0.4em] ml-2">Campaña Activa en Red</h3>
+                <div className="grid grid-cols-1 gap-6">
+                   {ads.map((ad, idx) => (
+                     <div key={ad.id} className="bg-[#1c1d21] border border-white/5 p-6 rounded-[2.5rem] flex items-center gap-8 shadow-2xl relative group hover:border-amber-500/30 transition-all overflow-hidden">
+                        <div className="w-48 h-24 rounded-2xl bg-[#0d0e12] overflow-hidden border border-white/5 shrink-0">
+                           {ad.image ? <img src={ad.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[#474556]"><ImageIcon className="w-8 h-8" /></div>}
+                        </div>
+                        <div className="flex-1 space-y-2">
+                           <div className="flex items-center gap-3">
+                              <span className="px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full text-[8px] font-black text-amber-500 uppercase tracking-widest">{ad.placement === 'client' ? 'Cliente' : ad.placement === 'tech' ? 'Técnico' : 'Market'}</span>
+                              <h4 className="text-lg font-black text-white uppercase tracking-tighter">{ad.title}</h4>
+                           </div>
+                           <p className="text-[10px] text-[#474556] font-mono truncate">{ad.link}</p>
+                        </div>
+                        <button onClick={() => deleteAd(ad.id)} className="p-4 bg-rose-600/10 text-rose-500 rounded-2xl hover:bg-rose-600 hover:text-white transition-all">
+                           <Trash2 className="w-5 h-5" />
+                        </button>
+                     </div>
+                   ))}
+                   {ads.length === 0 && (
+                     <div className="p-20 bg-[#121317]/50 border border-dashed border-white/5 rounded-[3rem] text-center">
+                        <p className="text-[10px] text-[#474556] font-black uppercase tracking-widest italic">Sin campañas publicitarias activas</p>
+                     </div>
+                   )}
+                </div>
+             </div>
+          </div>
         </div>
       )}
 
