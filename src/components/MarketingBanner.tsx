@@ -59,15 +59,19 @@ export default function MarketingBanner({ placement }: Props) {
 
             {/* Zona de Imagen con Overlay Dinámico */}
             <div className="w-full md:w-1/3 h-48 md:h-full relative overflow-hidden bg-[#1c1d21]">
-               {current.image ? (
+               {current.image && current.image.startsWith('http') ? (
                  <img
                    src={current.image}
                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                    alt={current.title}
+                   onError={(e) => {
+                     (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800';
+                   }}
                  />
                ) : (
-                 <div className="w-full h-full flex items-center justify-center opacity-20">
-                    <Zap className="w-12 h-12 text-white" />
+                 <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#5d3cfe]/20 to-[#121317] p-6">
+                    <Zap className="w-12 h-12 text-[#52ffac] mb-3 animate-pulse" />
+                    <p className="text-[8px] font-black text-white/20 uppercase tracking-widest text-center">MantechPro <br/> Visual Engine</p>
                  </div>
                )}
                <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/80 via-transparent to-transparent"></div>
