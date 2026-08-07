@@ -13,7 +13,7 @@ interface Ad {
 }
 
 interface Props {
-  placement: 'client' | 'tech' | 'marketplace';
+  placement: 'client' | 'tech' | 'marketplace' | 'landing';
 }
 
 export default function MarketingBanner({ placement }: Props) {

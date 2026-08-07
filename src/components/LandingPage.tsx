@@ -9,6 +9,7 @@ import ModuleShowcase from './ModuleShowcase';
 import AppScreensShowcase from './AppScreensShowcase';
 import Footer from './Footer';
 import LegalModal from './LegalModal';
+import MarketingBanner from './MarketingBanner';
 
 interface LandingPageProps {
   onStart: () => void;
@@ -308,6 +309,11 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
           </div>
         </div>
       </section>
+
+      {/* 2.5 BANNER PUBLICITARIO / PROMO */}
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 mb-16 sm:mb-24">
+         <MarketingBanner placement="landing" />
+      </div>
 
       {/* 3. PUBLICIDAD DINÁMICA (SOCIAL PROOF) */}
       <section className="py-16 bg-black/40 border-y border-white/5 overflow-hidden">

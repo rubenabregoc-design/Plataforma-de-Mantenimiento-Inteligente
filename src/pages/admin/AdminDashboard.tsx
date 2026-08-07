@@ -459,6 +459,7 @@ export default function AdminDashboard() {
                          <option value="client">Dashboard Cliente</option>
                          <option value="tech">Dashboard Técnico</option>
                          <option value="marketplace">Marketplace (Sidebar)</option>
+                         <option value="landing">Página de Inicio (Landing)</option>
                       </select>
                    </div>
                 </div>
@@ -475,7 +476,9 @@ export default function AdminDashboard() {
                         </div>
                         <div className="flex-1 space-y-2">
                            <div className="flex items-center gap-3">
-                              <span className="px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full text-[8px] font-black text-amber-500 uppercase tracking-widest">{ad.placement === 'client' ? 'Cliente' : ad.placement === 'tech' ? 'Técnico' : 'Market'}</span>
+                              <span className="px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full text-[8px] font-black text-amber-500 uppercase tracking-widest">
+                                {ad.placement === 'client' ? 'Cliente' : ad.placement === 'tech' ? 'Técnico' : ad.placement === 'landing' ? 'Landing' : 'Market'}
+                              </span>
                               <h4 className="text-lg font-black text-white uppercase tracking-tighter">{ad.title}</h4>
                            </div>
                            <p className="text-[10px] text-[#474556] font-mono truncate">{ad.link}</p>
