@@ -14,7 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useUI } from '../../context/UIContext';
 import { useBusinessLogic } from '../../hooks/useBusinessLogic';
 import Skeleton from '../../components/Skeleton';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { Mail, MessageSquare as MsgIcon, Send } from 'lucide-react';
 import { toast } from 'react-hot-toast';
