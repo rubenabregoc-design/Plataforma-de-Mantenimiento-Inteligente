@@ -35,9 +35,9 @@ export default function AdminDashboard() {
   const [replyText, setReplyText] = useState('');
   const [isReplying, setIsReplying] = useState(false);
 
-  // --- LOGICA DE ADS ---
+    // --- LOGICA DE ADS ---
   const [ads, setAds] = useState<any[]>([]);
-  const [newAd, setNewAd] = useState({ title: '', image: '', link: '', placement: 'client' });
+  const [newAd, setNewAd] = useState({ title: '', image: '', link: '', placement: 'client', cta: '' });
 
   useEffect(() => {
     if (adminTab === 'tickets') {
@@ -57,12 +57,10 @@ export default function AdminDashboard() {
 
   const handleSaveAds = async (updatedAds: any[]) => {
     try {
-      await updateDoc(doc(db, "config", "marketing"), { banners: updatedAds });
+      await setDoc(doc(db, "config", "marketing"), { banners: updatedAds });
       toast.success("Campaña de marketing actualizada");
     } catch (e) {
-      // Si no existe el documento, lo creamos
-      await setDoc(doc(db, "config", "marketing"), { banners: updatedAds });
-      toast.success("Campaña iniciada con éxito");
+      toast.error("Error al guardar campaña");
     }
   };
 
@@ -70,7 +68,7 @@ export default function AdminDashboard() {
     const list = [...ads, { ...newAd, id: Date.now() }];
     setAds(list);
     handleSaveAds(list);
-    setNewAd({ title: '', image: '', link: '', placement: 'client' });
+    setNewAd({ title: '', image: '', link: '', placement: 'client', cta: '' });
   };
 
   const deleteAd = (id: number) => {
@@ -452,6 +450,10 @@ export default function AdminDashboard() {
                    <div className="space-y-2">
                       <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Enlace de Destino (Link)</label>
                       <input type="text" value={newAd.link} onChange={e => setNewAd({...newAd, link: e.target.value})} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-4 px-6 text-sm text-white focus:border-amber-500 outline-none transition-all font-mono" placeholder="https://..." />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Texto del Botón (CTA)</label>
+                      <input type="text" value={newAd.cta} onChange={e => setNewAd({...newAd, cta: e.target.value})} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-4 px-6 text-sm text-white focus:border-amber-500 outline-none transition-all" placeholder="Ej: Comprar Ahora, Reservar, Inscribirme" />
                    </div>
                    <div className="space-y-2">
                       <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Ubicación del Ad</label>

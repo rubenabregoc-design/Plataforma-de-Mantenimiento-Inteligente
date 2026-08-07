@@ -10,6 +10,7 @@ interface Ad {
   image: string;
   link: string;
   placement: string;
+  cta?: string;
 }
 
 interface Props {
@@ -99,10 +100,10 @@ export default function MarketingBanner({ placement }: Props) {
 
                <div className="flex items-center gap-4 pt-2">
                   <div className="px-6 py-3 bg-white text-black rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-amber-500 transition-all shadow-xl">
-                     Obtener Beneficio <ArrowRight className="w-3.5 h-3.5" />
+                     {current.cta || 'Comprar Ahora'} <ArrowRight className="w-3.5 h-3.5" />
                   </div>
-                  <div className="hidden sm:flex items-center gap-1.5 text-[9px] font-bold text-amber-500/60 uppercase tracking-widest">
-                     Oferta Limitada <Zap className="w-3 h-3 fill-current" />
+                  <div className="hidden sm:flex items-center gap-1.5 text-[9px] font-bold text-[#474556] uppercase tracking-widest">
+                     Mantech Protection <ShieldCheck className="w-3 h-3 text-[#52ffac]" />
                   </div>
                </div>
             </div>
