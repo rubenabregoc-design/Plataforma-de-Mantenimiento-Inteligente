@@ -182,20 +182,25 @@ app.post("/api/contact", async (req, res) => {
   const targetEmail = ADMIN_EMAIL || destination;
 
   try {
-    // 1. REGISTRO EN BASE DE DATOS
-    await db.collection("support_tickets").add({
-      userName: name,
-      userEmail: email,
-      whatsapp: whatsapp || 'N/A',
-      subject: subject,
-      message: message,
-      type: type,
-      status: 'new',
-      source: 'web_portal',
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
+    // 1. REGISTRO EN BASE DE DATOS (Intento Seguro)
+    try {
+      await db.collection("support_tickets").add({
+        userName: name,
+        userEmail: email,
+        whatsapp: whatsapp || 'N/A',
+        subject: subject,
+        message: message,
+        type: type,
+        status: 'new',
+        source: 'web_portal',
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      console.log("📥 Ticket registrado en Firestore.");
+    } catch (dbErr: any) {
+      console.error("⚠️ Error guardando en Firestore (pero continuaré con el email):", dbErr.message);
+    }
 
-    // 2. NOTIFICACIÓN INTERNA AL ADMINISTRADOR CON ASUNTO PERSONALIZADO
+    // 2. NOTIFICACIÓN INTERNA AL ADMINISTRADOR
     await sendEmail({
       to: targetEmail,
       replyTo: `${name} <${email}>`,
@@ -209,21 +214,18 @@ app.post("/api/contact", async (req, res) => {
             </div>
             <div style="padding: 40px; color: #ffffff;">
               <div style="background-color: #5d3cfe10; padding: 15px; border-radius: 12px; border: 1px solid #5d3cfe30; margin-bottom: 25px;">
-                 <p style="margin: 0; font-size: 11px; color: #5d3cfe; font-weight: 900; text-transform: uppercase;">Módulo de Origen: ${type.toUpperCase()}</p>
+                 <p style="margin: 0; font-size: 11px; color: #5d3cfe; font-weight: 900; text-transform: uppercase;">Módulo de Origen: ${type?.toUpperCase() || 'INFO'}</p>
               </div>
-              <p style="color: #8a879d; font-size: 14px;">Se ha capturado un nuevo requerimiento vinculado al protocolo de telemetría.</p>
+              <p style="color: #8a879d; font-size: 14px;">Nuevo requerimiento de contacto:</p>
               <div style="background-color: #0d0e12; border-radius: 16px; padding: 25px; margin: 20px 0; border: 1px solid #1c1d21;">
-                <table style="width: 100%; color: #ffffff; font-size: 13px;">
-                  <tr><td style="color: #474556; font-weight: 900; text-transform: uppercase; font-size: 10px; padding-bottom: 5px;">Remitente</td><td>${name}</td></tr>
-                  <tr><td style="color: #474556; font-weight: 900; text-transform: uppercase; font-size: 10px; padding-bottom: 5px;">WhatsApp</td><td style="color: #52ffac; font-weight: bold;">${whatsapp}</td></tr>
-                  <tr><td style="color: #474556; font-weight: 900; text-transform: uppercase; font-size: 10px;">Email</td><td>${email}</td></tr>
-                </table>
+                <p><strong>Remitente:</strong> ${name}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>WhatsApp:</strong> ${whatsapp || 'N/A'}</p>
                 <hr style="border: 0; border-top: 1px solid #2a2b2f; margin: 15px 0;">
                 <p style="font-style: italic; color: #c8c4d9; line-height: 1.6;">"${message}"</p>
               </div>
-              <div style="text-align: center; margin-top: 30px;">
-                <a href="https://wa.me/${whatsapp?.replace(/\D/g,'')}" style="display: inline-block; background-color: #25d366; color: #ffffff; padding: 12px 25px; border-radius: 10px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 10px; margin-right: 10px;">WhatsApp</a>
-                <a href="mailto:${email}" style="display: inline-block; background-color: #5d3cfe; color: #ffffff; padding: 12px 25px; border-radius: 10px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 10px;">Responder</a>
+              <div style="text-align: center;">
+                <a href="https://wa.me/${whatsapp?.replace(/\D/g,'')}" style="display: inline-block; background-color: #25d366; color: #ffffff; padding: 12px 25px; border-radius: 10px; font-weight: 900; text-decoration: none; text-transform: uppercase; font-size: 10px;">WhatsApp</a>
               </div>
             </div>
           </div>
@@ -231,62 +233,48 @@ app.post("/api/contact", async (req, res) => {
       `
     });
 
-    // --- AUTO-RESPUESTA DINÁMICA (CANDIDATO O CLIENTE) ---
+    // --- AUTO-RESPUESTA DINÁMICA ---
     const isJob = type === 'jobs';
-    await sendEmail({
-      to: email,
-      subject: isJob ? `MantechPro Talent: Confirmación de Postulación - ${name}` : `MantechPro: Hemos recibido tu solicitud - ${name}`,
-      html: isJob ? `
-        <div style="background-color: #0a0b0d; padding: 40px 20px; font-family: 'Segoe UI', sans-serif;">
-          <div style="max-width: 600px; margin: 0 auto; background-color: #121317; border: 1px solid #5d3cfe; border-radius: 24px; overflow: hidden;">
-            <div style="background-color: #1c1d21; padding: 40px; text-align: center;">
-               <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 900; text-transform: uppercase;">MANTECH<span style="color: #5d3cfe;">TALENT</span></h1>
-               <p style="color: #52ffac; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-top: 10px;">División de Reclutamiento Industrial</p>
-            </div>
-            <div style="padding: 50px; color: #ffffff;">
-               <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 20px;">Protocolo de Postulación Iniciado</h2>
-               <p style="color: #c8c4d9; font-size: 15px; line-height: 1.8;">
-                 Hola <strong>${name.split(' ')[0]}</strong>, hemos recibido tu perfil técnico satisfactoriamente. Tu información ha sido enviada al Nodo de Auditoría de Talento.
-               </p>
-               <div style="background-color: #0d0e12; padding: 25px; border-radius: 20px; margin: 30px 0; border: 1px solid #1c1d21;">
-                  <p style="color: #52ffac; font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px;">Siguiente Paso</p>
-                  <p style="font-size: 14px; color: #ffffff;">Si tu perfil cumple con los estándares operativos, un coordinador de campo te contactará para una entrevista técnica presencial o vía Teams.</p>
-               </div>
-               <p style="color: #474556; font-size: 12px; font-style: italic;">"Construyendo la infraestructura técnica del futuro en Panamá."</p>
+    try {
+      await sendEmail({
+        to: email,
+        subject: isJob ? `MantechPro Talent: Confirmación de Postulación - ${name}` : `MantechPro: Hemos recibido tu solicitud - ${name}`,
+        html: isJob ? `
+          <div style="background-color: #0a0b0d; padding: 40px 20px; font-family: 'Segoe UI', sans-serif;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: #121317; border: 1px solid #5d3cfe; border-radius: 24px; overflow: hidden;">
+              <div style="background-color: #1c1d21; padding: 40px; text-align: center;">
+                 <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 900; text-transform: uppercase;">MANTECH<span style="color: #5d3cfe;">TALENT</span></h1>
+              </div>
+              <div style="padding: 50px; color: #ffffff;">
+                 <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 20px;">Protocolo de Postulación Iniciado</h2>
+                 <p style="color: #c8c4d9; font-size: 15px; line-height: 1.8;">Hola <strong>${name.split(' ')[0]}</strong>, hemos recibido tu perfil técnico satisfactoriamente.</p>
+              </div>
             </div>
           </div>
-        </div>
-      ` : `
-        <div style="background-color: #0a0b0d; padding: 40px 20px; font-family: 'Segoe UI', sans-serif;">
-          <div style="max-width: 600px; margin: 0 auto; background-color: #121317; border: 1px solid #2a2b2f; border-radius: 24px; overflow: hidden;">
-            <div style="background-color: #1c1d21; padding: 40px; text-align: center; border-bottom: 1px solid #2a2b2f;">
-               <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px;">
-                MANTECH<span style="color: #5d3cfe;">PRO</span>
-               </h1>
-               <div style="height: 2px; width: 40px; background-color: #52ffac; margin: 15px auto;"></div>
-               <p style="color: #52ffac; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">Confirmación de Recepción Técnica</p>
-            </div>
-
-            <div style="padding: 50px; color: #ffffff; text-align: center;">
-               <h2 style="font-size: 24px; font-weight: 800; margin-bottom: 20px;">¡Hola, ${name.split(' ')[0]}!</h2>
-               <p style="color: #c8c4d9; font-size: 16px; line-height: 1.8; margin-bottom: 30px;">
-                 Tu requerimiento sobre <strong>${subject}</strong> ha sido ingresado con éxito.
-               </p>
-
-               <div style="background-color: #1c1d21; padding: 25px; border-radius: 20px; border: 1px solid #5d3cfe20; margin-bottom: 40px;">
-                  <p style="color: #52ffac; font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px;">Estatus del Ticket</p>
-                  <p style="font-size: 18px; font-weight: 700; margin: 0;">EN COLA DE AUDITORÍA</p>
-                  <p style="color: #474556; font-size: 11px; margin-top: 5px;">Tiempo estimado de respuesta: < 2 horas</p>
-               </div>
-
-               <p style="color: #8a879d; font-size: 13px; line-height: 1.6;">
-                 Un especialista revisará los detalles y te contactará por <strong>WhatsApp (${whatsapp})</strong> para proceder con el protocolo.
-               </p>
+        ` : `
+          <div style="background-color: #0a0b0d; padding: 40px 20px; font-family: 'Segoe UI', sans-serif;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: #121317; border: 1px solid #2a2b2f; border-radius: 24px; overflow: hidden;">
+              <div style="background-color: #1c1d21; padding: 40px; text-align: center;">
+                 <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 900; text-transform: uppercase;">MANTECH<span style="color: #5d3cfe;">PRO</span></h1>
+              </div>
+              <div style="padding: 50px; color: #ffffff; text-align: center;">
+                 <h2 style="font-size: 24px; font-weight: 800; margin-bottom: 20px;">¡Hola, ${name.split(' ')[0]}!</h2>
+                 <p style="color: #c8c4d9;">Tu requerimiento ha sido ingresado con éxito.</p>
+              </div>
             </div>
           </div>
-        </div>
-      `
-    });
+        `
+      });
+    } catch (autoErr) {
+      console.error("⚠️ No se pudo enviar el auto-reply, pero el admin ya fue notificado.");
+    }
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error("❌ Error Fatal en /api/contact:", error.message);
+    res.status(500).json({ success: false, error: "Error interno del servidor. Consultar logs." });
+  }
+});
 
     res.json({ success: true });
   } catch (error: any) {
