@@ -10,8 +10,13 @@ import { readFile } from 'fs/promises';
 import { format, addDays, parseISO, differenceInCalendarDays, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -39,24 +44,24 @@ const BRAND_CARD = '#16171d';    // Gris Carbón
 
 // Inicializar Firebase Admin (Sincrónico para evitar errores de App No Encontrada)
 const initFirebaseAdmin = () => {
+  if (admin.apps.length > 0) return;
+
+  const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
+
   try {
-    if (admin.apps.length === 0) {
-      // En Firebase App Hosting, simplemente inicializamos sin parámetros
-      // Google inyecta las credenciales automáticamente
-      admin.initializeApp();
-      console.log("✅ Ecosistema Mantech Pro: Firebase Admin Vinculado (Auto-Cloud).");
-    }
-  } catch (error) {
-    // Si falla el auto-vinculado (ej: local), intentamos con archivo
-    try {
-      const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
+    if (fs.existsSync(serviceAccountPath)) {
+      // ENTORNO LOCAL: Usar archivo de credenciales
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccountPath)
       });
       console.log("✅ Ecosistema Mantech Pro: Firebase Admin Vinculado (Archivo Local).");
-    } catch (err) {
-      console.error("❌ Error Crítico en Nodo Maestro (Firebase):", err);
+    } else {
+      // ENTORNO CLOUD: Autenticación por rol de servicio (Google Cloud / App Hosting)
+      admin.initializeApp();
+      console.log("✅ Ecosistema Mantech Pro: Firebase Admin Vinculado (Auto-Cloud).");
     }
+  } catch (error: any) {
+    console.error("❌ Error Crítico en Nodo Maestro (Firebase):", error.message);
   }
 };
 
@@ -286,7 +291,8 @@ app.post("/api/admin/reply-ticket", async (req, res) => {
       subject: `Respuesta Oficial MantechPro: ${subject}`,
       html: `
         <div style="background-color: #0a0b0d; padding: 40px 20px; font-family: 'Segoe UI', sans-serif;">
-          <div style="max-width: 600px; margin: 0 auto; background-color: #121317; border: 1px solid #2a2b2f; border-radius: 24px; overflow: hidden;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #121317; border: 1px solid #2a2b2f; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+            <!-- Header -->
             <div style="background-color: #1c1d21; padding: 40px; text-align: center; border-bottom: 2px solid #5d3cfe;">
                <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px;">
                 MANTECH<span style="color: #5d3cfe;">PRO</span>
@@ -295,27 +301,50 @@ app.post("/api/admin/reply-ticket", async (req, res) => {
             </div>
 
             <div style="padding: 50px; color: #ffffff;">
-               <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 25px; color: #5d3cfe;">RE: ${subject}</h2>
-               <p style="color: #ffffff; font-size: 16px; line-height: 1.8; margin-bottom: 40px; white-space: pre-wrap;">
-                 ${message}
-               </p>
+               <div style="margin-bottom: 35px;">
+                  <span style="color: #5d3cfe; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">Asunto del Requerimiento</span>
+                  <h2 style="font-size: 22px; font-weight: 800; margin: 10px 0 0 0; color: #ffffff;">RE: ${subject}</h2>
+               </div>
 
-               <!-- Hilo de Conversación Original -->
-               <div style="background-color: #0d0e12; border-radius: 16px; padding: 25px; border: 1px solid #1c1d21; margin-top: 20px;">
-                  <p style="font-size: 10px; color: #474556; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;">Tu consulta original:</p>
+               <!-- Mensaje de Respuesta -->
+               <div style="margin-bottom: 45px;">
+                  <p style="color: #ffffff; font-size: 16px; line-height: 1.8; margin: 0; white-space: pre-wrap;">
+                    ${message}
+                  </p>
+               </div>
+
+               <!-- Contexto de la Consulta Original -->
+               <div style="background-color: #0d0e12; border-radius: 16px; padding: 30px; border: 1px solid #1c1d21;">
+                  <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                     <div style="width: 4px; height: 15px; background-color: #474556; margin-right: 10px;"></div>
+                     <span style="font-size: 10px; color: #474556; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">Consulta Original de ${name}</span>
+                  </div>
                   <p style="color: #8a879d; font-size: 14px; line-height: 1.6; font-style: italic; margin: 0;">
                     "${originalMessage}"
                   </p>
                </div>
 
-               <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #2a2b2f;">
-                  <p style="color: #ffffff; font-size: 14px; font-weight: 700; margin: 0;">Departamento de Soporte Estratégico</p>
-                  <p style="color: #474556; font-size: 12px; margin: 5px 0 0 0;">MantechPro Industries Panamá</p>
+               <!-- Firma Corporativa -->
+               <div style="margin-top: 50px; padding-top: 30px; border-top: 1px solid #2a2b2f;">
+                  <table style="width: 100%;">
+                    <tr>
+                      <td>
+                        <p style="color: #ffffff; font-size: 14px; font-weight: 700; margin: 0;">Departamento de Soporte Estratégico</p>
+                        <p style="color: #474556; font-size: 12px; margin: 5px 0 0 0;">MantechPro Industries Panamá</p>
+                      </td>
+                    </tr>
+                  </table>
                </div>
             </div>
 
-            <div style="background-color: #0d0e12; padding: 25px; text-align: center;">
-               <a href="https://mantech-pro.com" style="color: #5d3cfe; font-size: 10px; font-weight: 900; text-decoration: none; text-transform: uppercase;">Acceder al Portal Oficial</a>
+            <!-- Footer con Enlaces Rápidos -->
+            <div style="background-color: #0d0e12; padding: 30px; text-align: center; border-top: 1px solid #1c1d21;">
+               <div style="margin-bottom: 20px;">
+                  <a href="https://mantech-pro.com" style="color: #5d3cfe; font-size: 10px; font-weight: 900; text-decoration: none; text-transform: uppercase; margin: 0 15px;">Portal Web</a>
+                  <span style="color: #1c1d21;">|</span>
+                  <a href="https://wa.me/${whatsapp?.replace(/\D/g,'') || '50760000000'}" style="color: #52ffac; font-size: 10px; font-weight: 900; text-decoration: none; text-transform: uppercase; margin: 0 15px;">WhatsApp Directo</a>
+               </div>
+               <p style="color: #1c1d21; font-size: 8px; font-weight: bold; text-transform: uppercase; margin: 0;">© 2026 MantechPro Industries. Todos los derechos reservados.</p>
             </div>
           </div>
         </div>
