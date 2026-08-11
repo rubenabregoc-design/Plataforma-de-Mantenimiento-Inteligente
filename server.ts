@@ -231,11 +231,32 @@ app.post("/api/contact", async (req, res) => {
       `
     });
 
-    // --- AUTO-RESPUESTA PROFESIONAL AL CLIENTE ---
+    // --- AUTO-RESPUESTA DINÁMICA (CANDIDATO O CLIENTE) ---
+    const isJob = type === 'jobs';
     await sendEmail({
       to: email,
-      subject: `MantechPro: Hemos recibido tu solicitud - ${name}`,
-      html: `
+      subject: isJob ? `MantechPro Talent: Confirmación de Postulación - ${name}` : `MantechPro: Hemos recibido tu solicitud - ${name}`,
+      html: isJob ? `
+        <div style="background-color: #0a0b0d; padding: 40px 20px; font-family: 'Segoe UI', sans-serif;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #121317; border: 1px solid #5d3cfe; border-radius: 24px; overflow: hidden;">
+            <div style="background-color: #1c1d21; padding: 40px; text-align: center;">
+               <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 900; text-transform: uppercase;">MANTECH<span style="color: #5d3cfe;">TALENT</span></h1>
+               <p style="color: #52ffac; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-top: 10px;">División de Reclutamiento Industrial</p>
+            </div>
+            <div style="padding: 50px; color: #ffffff;">
+               <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 20px;">Protocolo de Postulación Iniciado</h2>
+               <p style="color: #c8c4d9; font-size: 15px; line-height: 1.8;">
+                 Hola <strong>${name.split(' ')[0]}</strong>, hemos recibido tu perfil técnico satisfactoriamente. Tu información ha sido enviada al Nodo de Auditoría de Talento.
+               </p>
+               <div style="background-color: #0d0e12; padding: 25px; border-radius: 20px; margin: 30px 0; border: 1px solid #1c1d21;">
+                  <p style="color: #52ffac; font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px;">Siguiente Paso</p>
+                  <p style="font-size: 14px; color: #ffffff;">Si tu perfil cumple con los estándares operativos, un coordinador de campo te contactará para una entrevista técnica presencial o vía Teams.</p>
+               </div>
+               <p style="color: #474556; font-size: 12px; font-style: italic;">"Construyendo la infraestructura técnica del futuro en Panamá."</p>
+            </div>
+          </div>
+        </div>
+      ` : `
         <div style="background-color: #0a0b0d; padding: 40px 20px; font-family: 'Segoe UI', sans-serif;">
           <div style="max-width: 600px; margin: 0 auto; background-color: #121317; border: 1px solid #2a2b2f; border-radius: 24px; overflow: hidden;">
             <div style="background-color: #1c1d21; padding: 40px; text-align: center; border-bottom: 1px solid #2a2b2f;">
@@ -248,7 +269,7 @@ app.post("/api/contact", async (req, res) => {
 
             <div style="padding: 50px; color: #ffffff; text-align: center;">
                <h2 style="font-size: 24px; font-weight: 800; margin-bottom: 20px;">¡Hola, ${name.split(' ')[0]}!</h2>
-               <p style="color: #c8c4d9; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+               <p style="color: #c8c4d9; font-size: 16px; line-height: 1.8; margin-bottom: 30px;">
                  Tu requerimiento sobre <strong>${subject}</strong> ha sido ingresado con éxito.
                </p>
 
@@ -259,14 +280,7 @@ app.post("/api/contact", async (req, res) => {
                </div>
 
                <p style="color: #8a879d; font-size: 13px; line-height: 1.6;">
-                 Un especialista revisará los detalles y te contactará por <strong>WhatsApp (${whatsapp})</strong> o correo para proceder con el protocolo.
-               </p>
-            </div>
-
-            <div style="background-color: #0d0e12; padding: 30px; text-align: center; border-top: 1px solid #1c1d21;">
-               <p style="margin: 0; color: #474556; font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px;">
-                 MantechPro Panama Industries • v4.9.1 <br>
-                 Infraestructura de Mantenimiento Inteligente
+                 Un especialista revisará los detalles y te contactará por <strong>WhatsApp (${whatsapp})</strong> para proceder con el protocolo.
                </p>
             </div>
           </div>

@@ -87,6 +87,7 @@ export default function AdminDashboard() {
         body: JSON.stringify({
           name: selectedTicket.userName,
           email: selectedTicket.userEmail,
+          whatsapp: selectedTicket.whatsapp,
           subject: selectedTicket.subject,
           message: replyText,
           originalMessage: selectedTicket.message
