@@ -342,7 +342,7 @@ export default function InfoModal({ isOpen, onClose, slug }: Props) {
         })
       });
       if (res.ok) {
-        toast.success("Solicitud enviada. Un especialista le contactará por WhatsApp.");
+        toast.success("Solicitud enviada. Un especialista le contactará.");
         setShowForm(false);
         setForm({ name: '', email: '', whatsapp: '', message: '' });
       } else {

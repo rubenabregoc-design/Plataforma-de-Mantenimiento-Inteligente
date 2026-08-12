@@ -108,14 +108,6 @@ export default function MarketingBanner({ placement }: Props) {
                </div>
             </div>
           </a>
-
-          {/* Botón de Cierre Minimalista */}
-          <button
-            onClick={(e) => { e.preventDefault(); setVisible(false); }}
-            className="absolute top-6 right-6 p-2 bg-white/5 hover:bg-rose-600/20 text-white/40 hover:text-white rounded-xl transition-all active:scale-90 border border-white/5"
-          >
-             <X className="w-4 h-4" />
-          </button>
         </div>
       </motion.div>
     </AnimatePresence>
