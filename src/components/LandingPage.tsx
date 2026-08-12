@@ -27,6 +27,41 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
   const [footerDetail, setFooterDetail] = React.useState<any>(null);
   const [legalModal, setLegalModal] = React.useState<{isOpen: boolean, type: 'privacy' | 'terms'}>({ isOpen: false, type: 'privacy' });
 
+  // --- LÓGICA DE TÚNELES (V6.3.0) ---
+  const [diagCategory, setDiagCategory] = React.useState('tecnico_ac');
+  const [diagSymptom, setDiagSymptom] = React.useState('');
+  const [numAssets, setNumAssets] = React.useState(10);
+  const [useIntensity, setUseIntensity] = React.useState(1);
+
+  const diagData: any = {
+    tecnico_ac: {
+      label: 'Aire Acondicionado',
+      symptoms: [
+        { s: 'No enfría lo suficiente', r: 'Nivel de refrigerante bajo o condensador obstruido. Requiere Limpieza Química.', code: 'ac_low_cool' },
+        { s: 'Gotea agua en el interior', r: 'Drenaje obstruido por sedimentos. Requiere protocolo de desobstrucción.', code: 'ac_leak' },
+        { s: 'Ruido excesivo / Vibración', r: 'Fallo en rodamientos de motor o aspas desbalanceadas. Riesgo de fallo total.', code: 'ac_noise' }
+      ]
+    },
+    plomero: {
+      label: 'Plomería',
+      symptoms: [
+        { s: 'Baja presión de agua', r: 'Fallo en sistema de bombeo o filtración en tubería madre.', code: 'plumb_low' },
+        { s: 'Olor a humedad persistente', r: 'Filtración oculta detectada. Requiere auditoría de cámara térmica.', code: 'plumb_smell' }
+      ]
+    }
+  };
+
+  const calculateROI = () => {
+    const costEmergency = numAssets * 250;
+    const costMantech = (numAssets * 45) + (29 * 12);
+    return Math.max(0, costEmergency - costMantech);
+  };
+
+  const handleIntention = (type: string, data: any) => {
+    localStorage.setItem('mantech_intent', JSON.stringify({ type, ...data }));
+    onStart();
+  };
+
   const tabData: Record<string, any> = {
     logistica: {
       title: t('landing_logistica_title'),
@@ -314,6 +349,89 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
       <div className="max-w-7xl mx-auto px-6 sm:px-8 mb-16 sm:mb-24">
          <MarketingBanner placement="landing" />
       </div>
+
+      {/* --- TÚNELES DE CONVERSIÓN INDUSTRIAL (V6.3.0) --- */}
+      <section className="py-24 px-8 bg-black/40">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+           {/* TÚNEL 1: DIAGNÓSTICO LÓGICO */}
+           <div className="bg-[#121317] border border-white/5 rounded-[3rem] p-10 flex flex-col justify-between shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#5d3cfe]/5 blur-2xl rounded-full -mr-10 -mt-10"></div>
+              <div className="space-y-6 relative z-10">
+                 <div className="flex items-center gap-3">
+                    <div className="p-3 bg-[#5d3cfe]/10 rounded-2xl"><Search className="w-5 h-5 text-[#5d3cfe]" /></div>
+                    <h4 className="text-sm font-black text-white uppercase tracking-widest">Protocolo de Diagnóstico</h4>
+                 </div>
+                 <div className="space-y-4">
+                    <select value={diagCategory} onChange={(e) => setDiagCategory(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:border-[#5d3cfe]">
+                       <option value="tecnico_ac">Sistemas HVAC</option>
+                       <option value="plomero">Sistemas Hidráulicos</option>
+                    </select>
+                    <div className="space-y-2">
+                       {diagData[diagCategory].symptoms.map((s: any, i: number) => (
+                         <button key={i} onClick={() => setDiagSymptom(s.r)} className={`w-full text-left p-4 rounded-2xl border transition-all text-[10px] font-bold uppercase tracking-tight ${diagSymptom === s.r ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-lg' : 'bg-white/5 border-white/5 text-[#474556] hover:border-white/20'}`}>
+                           {s.s}
+                         </button>
+                       ))}
+                    </div>
+                 </div>
+              </div>
+              <div className="mt-8 pt-8 border-t border-white/5 space-y-6">
+                 <p className="text-[10px] text-[#c8c4d9] font-medium leading-relaxed italic">{diagSymptom || 'Seleccione un síntoma para ver la recomendación técnica de ingeniería.'}</p>
+                 <button onClick={() => handleIntention('diag_request', { cat: diagCategory })} className="w-full py-4 bg-[#5d3cfe] text-white rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-xl hover:scale-105 transition-all">Solicitar Especialista Certificado</button>
+              </div>
+           </div>
+
+           {/* TÚNEL 2: CALCULADORA ROI */}
+           <div className="bg-[#121317] border border-white/5 rounded-[3rem] p-10 flex flex-col justify-between shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#52ffac]/5 blur-2xl rounded-full -mr-10 -mt-10"></div>
+              <div className="space-y-8 relative z-10">
+                 <div className="flex items-center gap-3">
+                    <div className="p-3 bg-[#52ffac]/10 rounded-2xl"><PieChart className="w-5 h-5 text-[#52ffac]" /></div>
+                    <h4 className="text-sm font-black text-white uppercase tracking-widest">Calculadora ROI 2026</h4>
+                 </div>
+                 <div className="space-y-6">
+                    <div className="space-y-3">
+                       <div className="flex justify-between text-[9px] font-black uppercase text-[#474556] tracking-widest">
+                          <span>Unidades / Activos</span>
+                          <span className="text-[#52ffac]">{numAssets}</span>
+                       </div>
+                       <input type="range" min="1" max="100" value={numAssets} onChange={(e) => setNumAssets(Number(e.target.value))} className="w-full h-1.5 bg-white/5 rounded-lg appearance-none cursor-pointer accent-[#52ffac]" />
+                    </div>
+                    <div className="p-6 bg-black/40 rounded-3xl border border-white/5 text-center">
+                       <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.4em] mb-2">Ahorro Anual Estimado</p>
+                       <p className="text-5xl font-black text-white tracking-tighter italic leading-none">${calculateROI().toLocaleString()}</p>
+                    </div>
+                 </div>
+              </div>
+              <div className="mt-8 space-y-4">
+                 <p className="text-[9px] text-[#8a879d] leading-relaxed text-center">Basado en la reducción de paros técnicos y costos de emergencia en Panamá.</p>
+                 <button onClick={() => handleIntention('plan_upgrade', {})} className="w-full py-4 bg-[#52ffac] text-black rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-xl hover:scale-105 transition-all">Activar Plan Enterprise</button>
+              </div>
+           </div>
+
+           {/* TÚNEL 3: BÓVEDA DE GARANTÍAS */}
+           <div className="bg-[#121317] border border-white/5 rounded-[3rem] p-10 flex flex-col justify-between shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-2xl rounded-full -mr-10 -mt-10"></div>
+              <div className="space-y-6 relative z-10">
+                 <div className="flex items-center gap-3">
+                    <div className="p-3 bg-amber-500/10 rounded-2xl"><ShieldCheck className="w-5 h-5 text-amber-500" /></div>
+                    <h4 className="text-sm font-black text-white uppercase tracking-widest">Bóveda de Garantías</h4>
+                 </div>
+                 <div className="bg-black/60 aspect-video rounded-3xl border border-white/5 flex items-center justify-center relative overflow-hidden">
+                    <div className="absolute inset-0 opacity-10 flex flex-wrap gap-2 p-4">
+                       {[...Array(20)].map((_, i) => <FileText key={i} className="w-4 h-4" />)}
+                    </div>
+                    <Lock className="w-12 h-12 text-amber-500 relative z-10 animate-pulse" />
+                 </div>
+                 <h3 className="text-xl font-black text-white uppercase tracking-tighter italic">¿Facturas perdidas? <br /><span className="text-amber-500">Nunca más.</span></h3>
+                 <p className="text-[10px] text-[#8a879d] leading-relaxed">Suba sus facturas de Do It Center, Cochez o Panafoto y reciba alertas antes de que expiren. Es gratis.</p>
+              </div>
+              <button onClick={() => handleIntention('warranty_vault', {})} className="w-full py-4 bg-white text-black rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-xl hover:scale-105 transition-all mt-8">Activar mi Bóveda Gratis</button>
+           </div>
+
+        </div>
+      </section>
 
       {/* 3. PUBLICIDAD DINÁMICA (SOCIAL PROOF) */}
       <section className="py-16 bg-black/40 border-y border-white/5 overflow-hidden">
