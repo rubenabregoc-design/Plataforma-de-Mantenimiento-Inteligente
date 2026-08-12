@@ -64,7 +64,6 @@ export interface Asset {
   // Nuevos campos Casero & Business V4
   purchaseDate?: string;
   warrantyMonths?: number;
-  invoiceUrl?: string; // Punto #18: Bóveda de Garantías Digitalizada
   emergencyInstructions?: string;
   isEmergencyAsset?: boolean;
   // Campos PH / Médico / Construcción

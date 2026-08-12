@@ -351,7 +351,13 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
       </div>
 
       {/* --- TÚNELES DE CONVERSIÓN INDUSTRIAL (V6.3.0) --- */}
-      <section className="py-24 px-8 bg-black/40">
+      <section className="py-32 px-8 bg-black/40">
+        <div className="max-w-7xl mx-auto mb-20 text-center space-y-6">
+           <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-[0.4em]">Optimización Activa</p>
+           <h2 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter leading-tight">Herramientas de <span className="text-[#52ffac]">Ingeniería Viva</span></h2>
+           <p className="max-w-3xl mx-auto text-[#c8c4d9] text-base md:text-xl font-medium leading-relaxed opacity-60">Utilice nuestros motores de lógica industrial para diagnosticar fallas, calcular su retorno de inversión y digitalizar la protección de sus activos en tiempo real.</p>
+        </div>
+
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
 
            {/* TÚNEL 1: DIAGNÓSTICO LÓGICO */}

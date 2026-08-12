@@ -9,12 +9,11 @@ interface WarrantyVaultModuleProps {
   onNavigate?: (tab: string) => void;
 }
 
-import React, { useRef } from 'react';
+import React from 'react';
 import { Asset } from '../types';
-import { ShieldCheck, AlertCircle, Clock, Calendar, ChevronRight, Archive, BadgeCheck, XCircle, FileText, Upload, Eye } from 'lucide-react';
+import { ShieldCheck, AlertCircle, Clock, Calendar, Archive, BadgeCheck, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { useBusinessLogic } from '../hooks/useBusinessLogic';
 
 interface WarrantyVaultModuleProps {
   assets: Asset[];
@@ -23,12 +22,8 @@ interface WarrantyVaultModuleProps {
 
 export default function WarrantyVaultModule({ assets, onNavigate }: WarrantyVaultModuleProps) {
   const { t } = useTranslation();
-  const business = useBusinessLogic();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedAssetId, setSelectedAssetId] = React.useState<string | null>(null);
 
   const getWarrantyInfo = (asset: Asset) => {
-    // ... logic remains same ...
     if (!asset.purchaseDate || !asset.warrantyMonths) return null;
 
     const purchase = new Date(asset.purchaseDate);
@@ -50,26 +45,11 @@ export default function WarrantyVaultModule({ assets, onNavigate }: WarrantyVaul
     };
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && selectedAssetId) {
-      await business.handleUploadWarrantyInvoice(selectedAssetId, file);
-      setSelectedAssetId(null);
-    }
-  };
-
-  const triggerUpload = (assetId: string) => {
-    setSelectedAssetId(assetId);
-    fileInputRef.current?.click();
-  };
-
   const assetsWithWarranty = assets.filter(a => a.purchaseDate && a.warrantyMonths);
 
   return (
     <div className="space-y-10 animate-fade-in">
-      <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*,.pdf" />
       <header className="flex justify-between items-end">
-        {/* ... header code ... */}
         <div>
           <h1 className="text-4xl font-black text-white tracking-tighter uppercase">{t('warranty_vault', 'BÓVEDA DE').split(' ')[0]} <span className="text-[#5d3cfe]">{t('warranty_vault', 'GARANTÍAS').split(' ')[1]}</span></h1>
           <p className="text-[#c8c4d9] font-medium mt-2 italic opacity-60">{t('warranty_vault_desc', 'Monitoreo inteligente de cobertura y protección de activos.')}</p>
@@ -113,11 +93,9 @@ export default function WarrantyVaultModule({ assets, onNavigate }: WarrantyVaul
                        <AlertCircle className="w-3 h-3" /> {t('expiring_alert', 'ALERTA VENCIMIENTO')}
                      </div>
                    )}
-                   {asset.invoiceUrl && (
-                     <div className="flex items-center gap-2 px-3 py-1 bg-[#52ffac]/10 border border-[#52ffac]/20 text-[#52ffac] rounded-full text-[8px] font-black uppercase tracking-widest">
-                       <BadgeCheck className="w-3 h-3" /> Digitalizada
-                     </div>
-                   )}
+                   <div className="flex items-center gap-2 px-3 py-1 bg-[#52ffac]/10 border border-[#52ffac]/20 text-[#52ffac] rounded-full text-[8px] font-black uppercase tracking-widest">
+                     <BadgeCheck className="w-3 h-3" /> Datos Sincronizados
+                   </div>
                 </div>
               </div>
 
@@ -139,28 +117,16 @@ export default function WarrantyVaultModule({ assets, onNavigate }: WarrantyVaul
               </div>
 
               <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                <div className="flex flex-col">
+                <div className="flex col flex-col">
                   <span className="text-[8px] font-black text-[#474556] uppercase">{t('coverage_status', 'Estado de Cobertura')}</span>
                   <span className={`text-[10px] font-black uppercase tracking-widest mt-1
                     ${info.status === 'valid' ? 'text-[#52ffac]' : info.status === 'expiring' ? 'text-amber-500' : 'text-rose-500'}`}>
                     {info.status === 'valid' ? t('active_protection', 'PROTECCIÓN ACTIVA') : info.status === 'expiring' ? `${t('expires_in', 'VENCE EN')} ${info.daysRemaining} ${t('days_left', 'DÍAS')}` : t('expired', 'GARANTÍA VENCIDA')}
                   </span>
                 </div>
-                <div className="flex gap-2">
-                   {asset.invoiceUrl ? (
-                     <a href={asset.invoiceUrl} target="_blank" rel="noopener noreferrer" className="p-3 bg-[#5d3cfe]/10 text-[#5d3cfe] rounded-xl hover:bg-[#5d3cfe] hover:text-white transition-all border border-[#5d3cfe]/20">
-                        <Eye className="w-4 h-4" />
-                     </a>
-                   ) : (
-                     <button onClick={() => triggerUpload(asset.id)} className="p-3 bg-white/5 text-[#474556] rounded-xl hover:bg-white/10 hover:text-white transition-all border border-white/5 flex items-center gap-2">
-                        <Upload className="w-4 h-4" />
-                        <span className="text-[8px] font-black uppercase tracking-widest">Subir Factura</span>
-                     </button>
-                   )}
-                   <button className="p-3 bg-white/5 hover:bg-rose-600/10 text-white/40 hover:text-rose-500 rounded-xl transition-all border border-white/5">
-                     <Archive className="w-4 h-4" />
-                   </button>
-                </div>
+                <button className="p-3 bg-white/5 hover:bg-rose-600/10 text-white/40 hover:text-rose-500 rounded-xl transition-all border border-white/5">
+                  <Archive className="w-4 h-4" />
+                </button>
               </div>
             </motion.div>
           );
