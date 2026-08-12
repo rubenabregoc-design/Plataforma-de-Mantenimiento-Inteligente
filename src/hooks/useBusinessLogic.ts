@@ -594,6 +594,26 @@ export function useBusinessLogic() {
     }
   };
 
+  const handleUploadWarrantyInvoice = async (assetId: string, file: File) => {
+    const loading = toast.loading("Digitalizando factura en Bóveda...");
+    try {
+      // Simulación de carga (Protocolo V6.3)
+      // En producción esto iría a Firebase Storage
+      const mockUrl = `https://storage.mantechpro.pa/warranties/${assetId}_${Date.now()}.jpg`;
+
+      await updateDoc(doc(db, "assets", assetId), {
+        invoiceUrl: mockUrl
+      });
+
+      toast.success("Factura blindada y digitalizada.", { id: loading });
+      return mockUrl;
+    } catch (err) {
+      console.error(err);
+      toast.error("Error en el protocolo de guardado.", { id: loading });
+      return null;
+    }
+  };
+
   const handleSendQuote = async (requestId: string, price: number, commission: number, notes?: string, materials?: any[], checklist?: any[], schedule?: any, visitFee: number = 15, autoThreshold: number = 0, isEmergency: boolean = false) => {
     try {
       const techEarnings = price - commission;
@@ -886,6 +906,7 @@ export function useBusinessLogic() {
     handleAddFuelLog,
     handleAddPreTrip,
     handleUploadMantechDocument,
+    handleUploadWarrantyInvoice,
     handleSendQuote,
     handleRejectQuote,
     handleAcceptBid,

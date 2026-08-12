@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   DollarSign, TrendingUp, Star, Users, Truck, Package,
   BellRing, Settings, FileText, Check, Trash2, ShieldCheck,
-  Plus, Store, AlertTriangle, Search, Activity, Pencil, Image as ImageIcon
+  Plus, Store, AlertTriangle, Search, Activity, Pencil, Image as ImageIcon, PieChart
 } from 'lucide-react';
 import AuditLogsModule from '../../components/AuditLogsModule';
 import InventoryModule from '../../components/InventoryModule';

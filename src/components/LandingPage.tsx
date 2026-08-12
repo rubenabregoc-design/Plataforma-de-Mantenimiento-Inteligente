@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
-import { ShieldCheck, Zap, Globe, MessageSquare, CheckCircle2, Star, ArrowRight, PlayCircle, Users, Activity, Package, Building2, Smartphone, DollarSign, Truck, Fuel, QrCode, CreditCard, FileText, AlertTriangle, BrainCircuit, X, Droplets, Cpu, Wind, ChevronLeft, ChevronRight, Home, Check, LayoutDashboard, Wrench, MapPin, Briefcase, Search } from 'lucide-react';
+import { ShieldCheck, Zap, Globe, MessageSquare, CheckCircle2, Star, ArrowRight, PlayCircle, Users, Activity, Package, Building2, Smartphone, DollarSign, Truck, Fuel, QrCode, CreditCard, FileText, AlertTriangle, BrainCircuit, X, Droplets, Cpu, Wind, ChevronLeft, ChevronRight, Home, Check, LayoutDashboard, Wrench, MapPin, Briefcase, Search, PieChart, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Logo from './Logo';
 import Chatbot247 from './Chatbot247';
