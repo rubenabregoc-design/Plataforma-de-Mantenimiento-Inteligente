@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   DollarSign, TrendingUp, Star, Users, Truck, Package,
   BellRing, Settings, FileText, Check, Trash2, ShieldCheck,
-  Plus, Store, AlertTriangle, Search, Activity
+  Plus, Store, AlertTriangle, Search, Activity, Pencil, Image as ImageIcon
 } from 'lucide-react';
 import AuditLogsModule from '../../components/AuditLogsModule';
 import InventoryModule from '../../components/InventoryModule';
@@ -35,9 +35,10 @@ export default function AdminDashboard() {
   const [replyText, setReplyText] = useState('');
   const [isReplying, setIsReplying] = useState(false);
 
-    // --- LOGICA DE ADS ---
+  // --- LOGICA DE ADS ---
   const [ads, setAds] = useState<any[]>([]);
   const [newAd, setNewAd] = useState({ title: '', image: '', link: '', placement: 'client', cta: '' });
+  const [editingAdId, setEditingAdId] = useState<number | null>(null);
 
   useEffect(() => {
     if (adminTab === 'tickets') {
@@ -58,23 +59,39 @@ export default function AdminDashboard() {
   const handleSaveAds = async (updatedAds: any[]) => {
     try {
       await setDoc(doc(db, "config", "marketing"), { banners: updatedAds });
-      toast.success("Campaña de marketing actualizada");
+      toast.success("Ecosistema de Marketing Sincronizado");
     } catch (e) {
-      toast.error("Error al guardar campaña");
+      toast.error("Fallo en sincronización");
     }
   };
 
   const addAd = () => {
-    const list = [...ads, { ...newAd, id: Date.now() }];
-    setAds(list);
-    handleSaveAds(list);
+    if (editingAdId) {
+      // ACTUALIZAR EXISTENTE
+      const list = ads.map(a => a.id === editingAdId ? { ...newAd, id: a.id } : a);
+      setAds(list);
+      handleSaveAds(list);
+      setEditingAdId(null);
+    } else {
+      // CREAR NUEVO
+      const list = [...ads, { ...newAd, id: Date.now() }];
+      setAds(list);
+      handleSaveAds(list);
+    }
     setNewAd({ title: '', image: '', link: '', placement: 'client', cta: '' });
+  };
+
+  const startEdit = (ad: any) => {
+    setNewAd({ title: ad.title, image: ad.image, link: ad.link, placement: ad.placement, cta: ad.cta || '' });
+    setEditingAdId(ad.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const deleteAd = (id: number) => {
     const list = ads.filter(a => a.id !== id);
     setAds(list);
     handleSaveAds(list);
+    if (editingAdId === id) setEditingAdId(null);
   };
 
   const handleReplyTicket = async () => {
@@ -430,9 +447,16 @@ export default function AdminDashboard() {
               <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic">Gestión de <span className="text-amber-500">Marketing & Ads</span></h1>
               <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.4em] mt-2">Monetización y Banners Publicitarios en la Red</p>
             </div>
-            <button onClick={addAd} className="px-8 py-4 bg-amber-500 text-black rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 hover:scale-105 transition-all flex items-center gap-3 relative z-10">
-               <Plus className="w-4 h-4" /> Crear Nuevo Espacio
-            </button>
+            <div className="flex gap-4 relative z-10">
+               {editingAdId && (
+                 <button onClick={() => { setEditingAdId(null); setNewAd({ title: '', image: '', link: '', placement: 'client', cta: '' }); }} className="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all">
+                    Cancelar Edición
+                 </button>
+               )}
+               <button onClick={addAd} className={`px-8 py-4 ${editingAdId ? 'bg-[#5d3cfe]' : 'bg-amber-500'} text-black font-black uppercase tracking-widest rounded-2xl text-[10px] shadow-xl hover:scale-105 transition-all flex items-center gap-3`}>
+                  {editingAdId ? <><Check className="w-4 h-4" /> Actualizar Campaña</> : <><Plus className="w-4 h-4" /> Crear Nuevo Espacio</>}
+               </button>
+            </div>
           </header>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -486,9 +510,14 @@ export default function AdminDashboard() {
                            </div>
                            <p className="text-[10px] text-[#474556] font-mono truncate">{ad.link}</p>
                         </div>
-                        <button onClick={() => deleteAd(ad.id)} className="p-4 bg-rose-600/10 text-rose-500 rounded-2xl hover:bg-rose-600 hover:text-white transition-all">
-                           <Trash2 className="w-5 h-5" />
-                        </button>
+                        <div className="flex gap-2">
+                           <button onClick={() => startEdit(ad)} className="p-4 bg-white/5 text-[#c8c4d9] rounded-2xl hover:bg-[#5d3cfe] hover:text-white transition-all">
+                              <Pencil className="w-5 h-5" />
+                           </button>
+                           <button onClick={() => deleteAd(ad.id)} className="p-4 bg-rose-600/10 text-rose-500 rounded-2xl hover:bg-rose-600 hover:text-white transition-all">
+                              <Trash2 className="w-5 h-5" />
+                           </button>
+                        </div>
                      </div>
                    ))}
                    {ads.length === 0 && (
