@@ -140,22 +140,36 @@ export default function ClientDashboard() {
         const intent = JSON.parse(intentStr);
         localStorage.removeItem('mantech_intent');
 
-        if (intent.type === 'promo_reservation') {
-          toast(`Activando Promo: ${intent.title}`, {
-            icon: '🎁',
-            duration: 5000,
-            style: { background: '#121317', color: '#fff', border: '1px solid #52ffac' }
-          });
+        toast(`Activando: ${intent.title || 'Protocolo Mantech'}`, {
+          icon: '⚙️',
+          duration: 6000,
+          style: { background: '#121317', color: '#fff', border: '1px solid #5d3cfe' }
+        });
 
-          // Redirección Lógica basada en el producto
-          if (intent.id === 'hvac_promo') {
+        // 1. Manejo de Promociones y Diagnósticos
+        if (intent.type === 'promo_reservation' || intent.type === 'diag_request') {
+          if (intent.id === 'hvac_promo' || intent.cat === 'tecnico_ac') {
              setMarketFilter('tecnico_ac');
              setTab('client', 'marketplace');
-             toast.success("Filtro de especialistas A/C aplicado.");
           } else if (intent.id === 'fleet_diag') {
              setTab('client', 'logistics');
+          } else if (intent.cat === 'plomero') {
+             setMarketFilter('plomero');
+             setTab('client', 'marketplace');
           }
         }
+
+        // 2. Manejo de Calculadora ROI (Upgrade)
+        if (intent.type === 'plan_upgrade') {
+          setTab('client', 'subscriptions');
+          toast.success("Inicie su Plan Enterprise para maximizar el ahorro calculado.");
+        }
+
+        // 3. Manejo de Bóveda de Garantías
+        if (intent.type === 'warranty_vault') {
+          setTab('client', 'warranty_vault');
+        }
+
       } catch (e) {
         console.error("Error procesando intención de marketing:", e);
       }
