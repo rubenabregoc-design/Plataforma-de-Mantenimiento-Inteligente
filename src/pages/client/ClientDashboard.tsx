@@ -132,6 +132,36 @@ export default function ClientDashboard() {
 
   const activeRequestForChat = requests.find(r => r.id === activeChatRequestId);
 
+  // --- MOTOR DE INTENCIONES PERSISTENTES (CONVERSIÓN DIRECTA) ---
+  React.useEffect(() => {
+    const intentStr = localStorage.getItem('mantech_intent');
+    if (intentStr && !isDataLoading) {
+      try {
+        const intent = JSON.parse(intentStr);
+        localStorage.removeItem('mantech_intent');
+
+        if (intent.type === 'promo_reservation') {
+          toast(`Activando Promo: ${intent.title}`, {
+            icon: '🎁',
+            duration: 5000,
+            style: { background: '#121317', color: '#fff', border: '1px solid #52ffac' }
+          });
+
+          // Redirección Lógica basada en el producto
+          if (intent.id === 'hvac_promo') {
+             setMarketFilter('tecnico_ac');
+             setTab('client', 'marketplace');
+             toast.success("Filtro de especialistas A/C aplicado.");
+          } else if (intent.id === 'fleet_diag') {
+             setTab('client', 'logistics');
+          }
+        }
+      } catch (e) {
+        console.error("Error procesando intención de marketing:", e);
+      }
+    }
+  }, [isDataLoading, setTab]);
+
   const getStatusLabel = (s: string) => {
     const map: any = {
       pending: 'SOLICITADO',

@@ -634,16 +634,29 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
                   tag: "Promoción Especial",
                   title: "RESERVA TU CUPO MANTENIMIENTO HVAC",
                   price: "$75.00",
-                  img: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?auto=format&fit=crop&q=80&w=800"
+                  img: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?auto=format&fit=crop&q=80&w=800",
+                  slug: 'hvac_promo'
                 },
                 {
                   tag: "Oferta Logística",
                   title: "DIAGNÓSTICO COMPUTARIZADO DE FLOTA",
                   price: "$49.99",
-                  img: "https://images.unsplash.com/photo-1599256621730-535171e28e50?auto=format&fit=crop&q=80&w=800"
+                  img: "https://images.unsplash.com/photo-1599256621730-535171e28e50?auto=format&fit=crop&q=80&w=800",
+                  slug: 'fleet_diag'
                 }
               ];
               const p = promos[currentPromo];
+
+              const handlePromoClick = () => {
+                // GUARDAR INTENCIÓN PERSISTENTE
+                localStorage.setItem('mantech_intent', JSON.stringify({
+                  type: 'promo_reservation',
+                  id: p.slug,
+                  title: p.title,
+                  price: p.price
+                }));
+                onStart(); // Ir al login/registro
+              };
 
               return (
                 <>
@@ -651,7 +664,7 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
                     <p className="text-[10px] font-black tracking-[0.4em] text-[#52ffac] uppercase">{p.tag}</p>
                     <h3 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter leading-none">{p.title}</h3>
                     <p className="text-4xl font-black text-white tracking-tighter">SOLO {p.price} <span className="text-sm opacity-40 uppercase tracking-widest">+ ITBMS</span></p>
-                    <button onClick={onStart} className="px-10 py-5 bg-[#52ffac] text-black rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:scale-105 shadow-[0_10px_30px_rgba(82,255,172,0.3)] transition-all">Reservar Ahora</button>
+                    <button onClick={handlePromoClick} className="px-10 py-5 bg-[#52ffac] text-black rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:scale-105 shadow-[0_10px_30px_rgba(82,255,172,0.3)] transition-all">Reservar Ahora</button>
                   </div>
 
                   <div className="w-full lg:w-1/2 h-[500px] relative overflow-hidden">
