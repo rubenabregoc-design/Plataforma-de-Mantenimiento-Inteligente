@@ -8,7 +8,7 @@ import { toast } from 'react-hot-toast';
 import { initializeApp, getApps } from 'firebase/app';
 import { triggerHaptic } from '../hooks/useAndroidNative';
 
-const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || '';
+const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BDjB4bJgCIbGeHWbAG9DTCcoZ1f8p8Krbx6zCbDn5DaK23O4mPOdTRewqbjqx4R7QUbSm3j6WuZPlaTtg4GOxWw';
 
 const firebaseConfig = {
   apiKey: "AIzaSyB_D5hSU2YTOctVoWho64gK-l0MqBgFdtc",
