@@ -86,15 +86,18 @@ export default function ClientDashboard() {
   ];
 
   const filteredTechnicians = technicians.filter(t => {
-    const matchesCategory = marketFilter === 'all' || (t.category && normalizeText(t.category) === marketFilter);
+    const matchesCategory = marketFilter === 'all' || 
+      (t.category && normalizeText(t.category) === marketFilter) ||
+      (t.secondaryCategories && t.secondaryCategories.some(sc => normalizeText(sc) === marketFilter));
 
-    // Búsqueda Inteligente: Incluye nombre, título, ubicación y CATEGORÍA
+    // Búsqueda Inteligente: Incluye nombre, título, ubicación y CATEGORÍA (principal y secundarias)
     const searchTerm = marketSearchQuery.toLowerCase();
     const matchesSearch =
       (t.name?.toLowerCase() || '').includes(searchTerm) ||
       (t.title?.toLowerCase() || '').includes(searchTerm) ||
       (t.location?.toLowerCase() || '').includes(searchTerm) ||
-      (t.category?.toLowerCase() || '').includes(searchTerm.replace('é','e').replace('á','a'));
+      (t.category?.toLowerCase() || '').includes(searchTerm.replace('é','e').replace('á','a')) ||
+      (t.secondaryCategories?.some(sc => sc.toLowerCase().includes(searchTerm.replace('é','e').replace('á','a'))) || false);
 
     const matchesLevel = (t.verificationLevel || 1) >= requiredVerificationLevel;
     const matchesRating = (t.rating || 0) >= minRatingFilter;
@@ -257,11 +260,19 @@ export default function ClientDashboard() {
                 assets={assets}
                 requests={requests}
                 userName={userData?.name || 'Usuario'}
-                onSeeAll={() => setTab('client', 'inventory')}
+                onSeeAll={() => {
+                  setTab('client', 'dashboard');
+                  setTimeout(() => {
+                    const el = document.getElementById('assets-portfolio-grid');
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }, 80);
+                }}
                 onOpenAssetReport={(asset) => openModal('engineeringReport', { asset })}
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div id="assets-portfolio-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
                 {assets.filter(a =>
                   a.name.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
                   a.licensePlate?.toLowerCase().includes(assetSearchQuery.toLowerCase())
@@ -480,6 +491,20 @@ export default function ClientDashboard() {
                                 {t.verificationLevel === 3 ? 'Master' : t.verificationLevel === 2 ? 'Senior' : 'Básico'}
                              </span>
                           </div>
+                          {t.secondaryCategories && t.secondaryCategories.length > 0 && (
+                             <div className="flex flex-wrap gap-1 mt-1.5">
+                                {t.secondaryCategories.slice(0, 2).map((sc, scI) => (
+                                   <span key={scI} className="text-[7px] font-bold text-[#c7bfff] bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 px-1.5 py-0.5 rounded">
+                                      + {sc.replace('_', ' ')}
+                                   </span>
+                                ))}
+                                {t.secondaryCategories.length > 2 && (
+                                   <span className="text-[7px] font-bold text-[#8e8d9a] px-1 py-0.5">
+                                      +{t.secondaryCategories.length - 2} más
+                                   </span>
+                                )}
+                             </div>
+                          )}
                        </div>
                     </div>
                     <div className="grid grid-cols-3 gap-4 py-4 border-y border-[#2a2b2f]/50 bg-[#0d0e12]/30 px-4 rounded-2xl text-center">
@@ -1268,18 +1293,18 @@ export default function ClientDashboard() {
       )}
 
       {clientTab === 'chat' && (
-        <div className="h-[600px] flex flex-col md:flex-row gap-6 animate-fade-in-up">
+        <div className="h-auto md:h-[650px] flex flex-col md:flex-row gap-4 md:gap-6 animate-fade-in-up">
            {/* Lista de Chats Activos */}
-           <div className="w-full md:w-80 bg-[#121317] border border-white/5 rounded-[2.5rem] flex flex-col overflow-hidden shrink-0 shadow-2xl">
-              <div className="p-6 border-b border-white/5 bg-white/[0.02]">
+           <div className="w-full md:w-80 max-h-[220px] md:max-h-none md:h-full bg-[#121317] border border-white/5 rounded-[2rem] flex flex-col overflow-hidden shrink-0 shadow-2xl">
+              <div className="p-4 md:p-6 border-b border-white/5 bg-white/[0.02]">
                  <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Canales Técnicos</h3>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2 md:space-y-3 custom-scrollbar">
                  {requestsWithChat.map(r => (
                     <button
                       key={r.id}
                       onClick={() => setActiveChatRequestId(r.id)}
-                      className={`w-full p-5 rounded-[1.5rem] text-left transition-all border group relative overflow-hidden ${activeChatRequestId === r.id ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-xl' : 'bg-white/5 border-white/5 text-[#c8c4d9] hover:bg-white/10 hover:border-white/10'}`}
+                      className={`w-full p-4 md:p-5 rounded-[1.5rem] text-left transition-all border group relative overflow-hidden ${activeChatRequestId === r.id ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-xl' : 'bg-white/5 border-white/5 text-[#c8c4d9] hover:bg-white/10 hover:border-white/10'}`}
                     >
                        {activeChatRequestId !== r.id && (
                           <div className="absolute top-0 left-0 w-1 h-full bg-[#5d3cfe] opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -1301,7 +1326,7 @@ export default function ClientDashboard() {
            </div>
 
            {/* Ventana de Mensajería */}
-           <div className="flex-1 min-w-0 h-[500px] md:h-full">
+           <div className="flex-1 min-w-0 h-[560px] md:h-full">
               <SupportChatWidget
                 role="client"
                 request={activeRequestForChat || null}
@@ -1432,11 +1457,38 @@ export default function ClientDashboard() {
       )}
 
       {clientTab === 'settings' && (
-        <div className="max-w-3xl mx-auto space-y-12 pb-20 animate-fade-in text-center">
+        <div className="max-w-3xl mx-auto space-y-8 pb-20 animate-fade-in text-center">
            <header className="space-y-4">
               <h2 className="text-4xl font-black text-white uppercase tracking-tighter">{t('settings_title_client', 'Ajustes de Cuenta')}</h2>
               <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em]">{t('settings_desc_client', 'Gestión de Seguridad e Identidad')}</p>
            </header>
+
+           {/* Perfil del Cliente */}
+           <div className="bg-[#121317] border border-white/5 p-6 sm:p-8 rounded-[2rem] flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xl">
+              <div className="flex items-center gap-4 text-left min-w-0 w-full sm:w-auto">
+                 <div className="w-14 h-14 rounded-2xl bg-[#5d3cfe]/10 border border-[#5d3cfe]/30 flex items-center justify-center text-[#5d3cfe] font-black text-xl shrink-0">
+                    {userData?.name?.[0] || loggedInName?.[0] || 'C'}
+                 </div>
+                 <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                       <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-tight truncate">{userData?.name || loggedInName || 'Cliente MantechPro'}</h3>
+                       <span className="px-2 py-0.5 bg-[#5d3cfe]/20 text-[#c7bfff] rounded text-[8px] font-black uppercase">Cliente</span>
+                    </div>
+                    <p className="text-xs text-[#8e8d9a] font-medium truncate">{user?.email || '---'}</p>
+                    <div className="flex items-center gap-3 mt-1 flex-wrap text-[10px] text-[#7a788d] font-bold">
+                       {userData?.phone && <span>Tel: {userData.phone}</span>}
+                       {userData?.company && <span>• {userData.company}</span>}
+                       {userData?.location && <span>• {userData.location}</span>}
+                    </div>
+                 </div>
+              </div>
+              <button
+                onClick={() => openModal('editProfile')}
+                className="w-full sm:w-auto px-6 py-3 bg-[#5d3cfe] hover:bg-[#4d2ee0] text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg shadow-[#5d3cfe]/20 transition-all flex items-center justify-center gap-2 shrink-0 active:scale-95 cursor-pointer"
+              >
+                 <Pencil className="w-4 h-4" /> Editar Perfil
+              </button>
+           </div>
 
            {/* Selector de Idioma en Ajustes */}
            <div className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] flex flex-col items-center gap-6 shadow-2xl">

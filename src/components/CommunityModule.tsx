@@ -149,161 +149,165 @@ export default function CommunityModule() {
   );
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {!selectedTopicId ? (
         <>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
             <div>
-              <h1 className="text-4xl font-black text-white uppercase tracking-tighter italic">Soporte <span className="text-[#5d3cfe]">Comunidad</span></h1>
-              <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.4em] mt-2">Sistema de Inteligencia Colectiva MantechPro</p>
+              <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight italic">
+                Soporte <span className="text-[#5d3cfe]">Comunidad</span>
+              </h1>
+              <p className="text-[9px] sm:text-[10px] text-[#6b697e] font-bold uppercase tracking-wider mt-0.5">
+                Sistema de Inteligencia Colectiva MantechPro
+              </p>
             </div>
             <button
               onClick={() => setIsCreatingTopic(true)}
-              className="px-8 py-4 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#5d3cfe]/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
+              className="w-full sm:w-auto px-4 py-2.5 sm:px-5 sm:py-2.5 bg-[#5d3cfe] hover:bg-[#4d2ee0] text-white rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider shadow-md shadow-[#5d3cfe]/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
             >
-              <Plus className="w-4 h-4" /> Nuevo Tema de Consulta
+              <Plus className="w-3.5 h-3.5" /> Nuevo Tema de Consulta
             </button>
           </div>
 
           <div className="relative">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-[#474556]" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6b697e]" />
             <input
               type="text"
               placeholder="Buscar fallas, soluciones o manuales..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#121317] border border-[#2a2b2f] rounded-[2rem] py-6 pl-16 pr-6 text-sm font-bold text-white focus:border-[#5d3cfe] outline-none transition-all shadow-inner"
+              className="w-full bg-[#121317] border border-[#2a2b2f] rounded-xl py-2.5 sm:py-3 pl-10 pr-4 text-xs sm:text-sm font-medium text-white placeholder:text-[#6b697e] focus:border-[#5d3cfe] outline-none transition-all shadow-inner"
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
              {filteredTopics.map(topic => (
                <div
                  key={topic.id}
                  onClick={() => setSelectedTopicId(topic.id)}
-                 className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] flex items-center justify-between group hover:border-[#5d3cfe]/30 transition-all cursor-pointer shadow-2xl"
+                 className="bg-[#121317] border border-white/5 hover:border-[#5d3cfe]/30 p-3 sm:p-4 rounded-xl sm:rounded-2xl flex items-center justify-between group transition-all cursor-pointer shadow-sm hover:bg-[#16171d]"
                >
-                  <div className="flex items-center gap-6">
-                     <div className="w-14 h-14 rounded-2xl bg-[#1c1d21] border border-white/5 flex items-center justify-center text-[#5d3cfe] shadow-inner group-hover:scale-110 transition-transform">
-                        <MessageSquare className="w-6 h-6" />
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                     <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-[#1c1d21] border border-white/5 flex items-center justify-center text-[#5d3cfe] shadow-inner group-hover:scale-105 transition-transform">
+                        <MessageSquare className="w-4 h-4" />
                      </div>
-                     <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                           <span className="px-3 py-1 bg-[#5d3cfe]/10 text-[#c7bfff] rounded-full text-[8px] font-black uppercase tracking-widest">{topic.category}</span>
-                           <h4 className="text-lg font-black text-white uppercase tracking-tight group-hover:text-[#5d3cfe] transition-colors">{topic.title}</h4>
+                     <div className="space-y-0.5 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                           <span className="px-2 py-0.5 bg-[#5d3cfe]/15 text-[#c7bfff] rounded-md text-[8px] font-bold uppercase tracking-wider">{topic.category}</span>
+                           <h4 className="text-xs sm:text-sm font-bold text-white uppercase tracking-tight group-hover:text-[#5d3cfe] transition-colors truncate">{topic.title}</h4>
                         </div>
-                        <div className="flex items-center gap-4 text-[9px] font-bold text-[#474556] uppercase tracking-widest">
-                           <span className="flex items-center gap-1.5"><User className="w-3 h-3" /> {topic.authorName}</span>
-                           <span className="flex items-center gap-1.5"><Clock className="w-3 h-3" /> {new Date(topic.createdAt).toLocaleDateString()}</span>
+                        <div className="flex items-center gap-3 text-[9px] font-medium text-[#7a788d] uppercase tracking-wider">
+                           <span className="flex items-center gap-1 truncate"><User className="w-2.5 h-2.5 shrink-0" /> {topic.authorName}</span>
+                           <span className="flex items-center gap-1 shrink-0"><Clock className="w-2.5 h-2.5 shrink-0" /> {new Date(topic.createdAt).toLocaleDateString()}</span>
                         </div>
                      </div>
                   </div>
-                  <div className="flex items-center gap-8">
+                  <div className="flex items-center gap-3 sm:gap-4 shrink-0 ml-2">
                      <div className="text-center">
-                        <p className="text-sm font-black text-white leading-none">{topic.repliesCount || 0}</p>
-                        <p className="text-[8px] text-[#474556] font-black uppercase mt-1">Respuestas</p>
+                        <p className="text-xs sm:text-sm font-black text-white leading-none">{topic.repliesCount || 0}</p>
+                        <p className="text-[7px] sm:text-[8px] text-[#6b697e] font-bold uppercase mt-0.5">Respuestas</p>
                      </div>
-                     <ChevronRight className="w-5 h-5 text-[#474556] group-hover:translate-x-1 transition-transform" />
+                     <ChevronRight className="w-4 h-4 text-[#6b697e] group-hover:translate-x-0.5 transition-transform" />
                   </div>
                </div>
              ))}
              {filteredTopics.length === 0 && (
-               <div className="py-20 text-center opacity-30">
-                  <Users className="w-16 h-16 mx-auto mb-4" />
-                  <p className="text-xs font-black uppercase tracking-widest">No se han encontrado temas en esta frecuencia.</p>
+               <div className="py-12 text-center opacity-40">
+                  <Users className="w-10 h-10 mx-auto mb-2 text-[#6b697e]" />
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#999]">No se han encontrado temas en esta frecuencia.</p>
                </div>
              )}
           </div>
         </>
       ) : (
-        <div className="max-w-5xl mx-auto space-y-10 animate-fade-in-up">
+        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-5 animate-fade-in-up">
            <button
              onClick={() => setSelectedTopicId(null)}
-             className="flex items-center gap-3 text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest hover:translate-x-[-5px] transition-transform"
+             className="flex items-center gap-2 text-[10px] sm:text-xs font-bold text-[#5d3cfe] uppercase tracking-wider hover:-translate-x-1 transition-transform"
            >
-              <ArrowLeft className="w-4 h-4" /> Volver al Tablero Global
+              <ArrowLeft className="w-3.5 h-3.5" /> Volver al Tablero Global
            </button>
 
-           <div className="bg-[#121317] border border-white/5 p-10 rounded-[3.5rem] shadow-2xl space-y-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-12 opacity-5 rotate-12"><MessageCircle className="w-64 h-64" /></div>
-              <div className="relative z-10 space-y-6">
+           <div className="bg-[#121317] border border-white/5 p-4 sm:p-6 rounded-2xl shadow-lg space-y-4 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-5 rotate-12 pointer-events-none"><MessageCircle className="w-28 h-28" /></div>
+              <div className="relative z-10 space-y-3">
                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                       <span className="px-4 py-1.5 bg-[#5d3cfe] text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg">{selectedTopic?.category}</span>
-                       <span className="text-[9px] font-bold text-[#474556] uppercase tracking-widest italic">{new Date(selectedTopic!.createdAt).toLocaleString()}</span>
+                    <div className="flex items-center gap-2.5">
+                       <span className="px-2.5 py-0.5 bg-[#5d3cfe] text-white rounded-md text-[8px] sm:text-[9px] font-black uppercase tracking-wider shadow">{selectedTopic?.category}</span>
+                       <span className="text-[8px] sm:text-[9px] font-bold text-[#6b697e] uppercase tracking-wider">{new Date(selectedTopic!.createdAt).toLocaleString()}</span>
                     </div>
                     {(selectedTopic?.authorId === user?.uid || role === 'admin') && (
-                       <button onClick={() => handleDeleteTopic(selectedTopic!.id)} className="p-2 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all">
-                          <Trash2 className="w-4 h-4" />
+                       <button onClick={() => handleDeleteTopic(selectedTopic!.id)} className="p-1.5 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all">
+                          <Trash2 className="w-3.5 h-3.5" />
                        </button>
                     )}
                  </div>
-                 <h2 className="text-4xl font-black text-white uppercase tracking-tighter italic leading-none">{selectedTopic?.title}</h2>
-                 <div className="flex items-center gap-4 border-b border-white/5 pb-6">
-                    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black text-[#c7bfff]">{selectedTopic?.authorName[0]}</div>
+                 <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight italic leading-snug">{selectedTopic?.title}</h2>
+                 <div className="flex items-center gap-2.5 border-b border-white/5 pb-3">
+                    <div className="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-[#c7bfff]">{selectedTopic?.authorName[0]}</div>
                     <div>
-                       <p className="text-xs font-black text-white uppercase">{selectedTopic?.authorName}</p>
-                       <p className="text-[8px] text-[#5d3cfe] font-black uppercase tracking-[0.2em]">{selectedTopic?.authorRole === 'tech' ? 'Especialista Certificado' : 'Soporte Mantech'}</p>
+                       <p className="text-xs font-bold text-white uppercase">{selectedTopic?.authorName}</p>
+                       <p className="text-[8px] text-[#5d3cfe] font-bold uppercase tracking-wider">{selectedTopic?.authorRole === 'tech' ? 'Especialista Certificado' : 'Soporte Mantech'}</p>
                     </div>
                  </div>
-                 <p className="text-sm text-[#c8c4d9] leading-relaxed font-medium">
+                 <p className="text-xs sm:text-sm text-[#c8c4d9] leading-relaxed font-normal">
                     {selectedTopic?.description}
                  </p>
               </div>
            </div>
 
-           <div className="space-y-6 ml-6 border-l-2 border-[#5d3cfe]/10 pl-10 pt-4">
-              <h3 className="text-[10px] font-black text-[#474556] uppercase tracking-[0.4em] mb-8">Debate Técnico ({replies.length})</h3>
+           <div className="space-y-3 ml-2 sm:ml-4 border-l-2 border-[#5d3cfe]/10 pl-3 sm:pl-5 pt-1">
+              <h3 className="text-[9px] sm:text-[10px] font-bold text-[#6b697e] uppercase tracking-wider mb-3">Debate Técnico ({replies.length})</h3>
 
               {replies.map(reply => (
-                <div key={reply.id} className="bg-[#1c1d21]/50 border border-white/5 p-6 rounded-3xl space-y-4 shadow-xl relative group">
+                <div key={reply.id} className="bg-[#1c1d21]/50 border border-white/5 p-3 sm:p-3.5 rounded-xl space-y-2 shadow-sm relative group">
                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                         <div className="w-8 h-8 rounded-full bg-[#5d3cfe]/20 flex items-center justify-center text-[10px] font-black text-[#5d3cfe]">{reply.authorName[0]}</div>
-                         <p className="text-[11px] font-black text-white uppercase">{reply.authorName}</p>
+                      <div className="flex items-center gap-2">
+                         <div className="w-5 h-5 rounded-full bg-[#5d3cfe]/20 flex items-center justify-center text-[9px] font-bold text-[#5d3cfe]">{reply.authorName[0]}</div>
+                         <p className="text-[10px] font-bold text-white uppercase">{reply.authorName}</p>
                       </div>
-                      <div className="flex items-center gap-4">
-                         <span className="text-[8px] font-bold text-[#474556] uppercase">{new Date(reply.createdAt).toLocaleTimeString()}</span>
+                      <div className="flex items-center gap-2.5">
+                         <span className="text-[8px] font-medium text-[#6b697e] uppercase">{new Date(reply.createdAt).toLocaleTimeString()}</span>
                          {(reply.authorId === user?.uid || role === 'admin') && (
-                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                               <button onClick={() => { setEditingReplyId(reply.id); setEditValue(reply.text); }} className="text-[#474556] hover:text-[#5d3cfe]"><Edit2 className="w-3.5 h-3.5" /></button>
-                               <button onClick={() => handleDeleteReply(reply.id, selectedTopicId!)} className="text-[#474556] hover:text-rose-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                            <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                               <button onClick={() => { setEditingReplyId(reply.id); setEditValue(reply.text); }} className="text-[#6b697e] hover:text-[#5d3cfe]"><Edit2 className="w-3 h-3" /></button>
+                               <button onClick={() => handleDeleteReply(reply.id, selectedTopicId!)} className="text-[#6b697e] hover:text-rose-500"><Trash2 className="w-3 h-3" /></button>
                             </div>
                          )}
                       </div>
                    </div>
 
                    {editingReplyId === reply.id ? (
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                          <textarea
                            value={editValue}
                            onChange={e => setEditValue(e.target.value)}
-                           className="w-full bg-black border border-[#5d3cfe]/30 rounded-xl p-4 text-xs text-white outline-none"
+                           className="w-full bg-black border border-[#5d3cfe]/30 rounded-lg p-2.5 text-xs text-white outline-none"
                          />
                          <div className="flex justify-end gap-2">
-                            <button onClick={() => setEditingReplyId(null)} className="px-3 py-1 text-[8px] font-black text-[#474556] uppercase">Cancelar</button>
-                            <button onClick={() => handleUpdateReply(reply.id)} className="px-4 py-1 bg-[#5d3cfe] text-white rounded-lg text-[8px] font-black uppercase">Guardar</button>
+                            <button onClick={() => setEditingReplyId(null)} className="px-2.5 py-1 text-[8px] font-bold text-[#6b697e] uppercase">Cancelar</button>
+                            <button onClick={() => handleUpdateReply(reply.id)} className="px-3 py-1 bg-[#5d3cfe] text-white rounded-md text-[8px] font-bold uppercase">Guardar</button>
                          </div>
                       </div>
                    ) : (
-                      <p className="text-xs text-[#c8c4d9] font-medium leading-relaxed">{reply.text}</p>
+                      <p className="text-xs text-[#c8c4d9] font-normal leading-relaxed">{reply.text}</p>
                    )}
                 </div>
               ))}
 
-              <form onSubmit={handleCreateReply} className="pt-6 space-y-4">
+              <form onSubmit={handleCreateReply} className="pt-2 space-y-2.5">
                  <textarea
                    value={newReplyText}
                    onChange={(e) => setNewReplyText(e.target.value)}
                    placeholder="Escriba su aporte técnico o solución..."
-                   className="w-full bg-[#0d0e12] border border-white/10 rounded-[2rem] p-6 text-sm text-white focus:border-[#5d3cfe] outline-none transition-all placeholder:text-white/10 resize-none min-h-[120px]"
+                   className="w-full bg-[#0d0e12] border border-white/10 rounded-xl p-3 text-xs sm:text-sm text-white focus:border-[#5d3cfe] outline-none transition-all placeholder:text-white/20 resize-none min-h-[80px]"
                  />
                  <button
                    type="submit"
                    disabled={!newReplyText.trim()}
-                   className="px-10 py-4 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#5d3cfe]/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 ml-auto disabled:opacity-50"
+                   className="px-4 py-2 bg-[#5d3cfe] hover:bg-[#4d2ee0] text-white rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider shadow-md shadow-[#5d3cfe]/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 ml-auto disabled:opacity-50"
                  >
-                    <Send className="w-4 h-4" /> Transmitir Respuesta
+                    <Send className="w-3 h-3" /> Transmitir Respuesta
                  </button>
               </form>
            </div>
@@ -312,55 +316,55 @@ export default function CommunityModule() {
 
       {/* MODAL CREAR TEMA */}
       {isCreatingTopic && (
-        <div className="fixed inset-0 z-[500] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
-           <div className="w-full max-w-2xl bg-[#121317] border border-white/10 rounded-[3.5rem] p-10 md:p-12 space-y-8 animate-fade-in-up shadow-[0_0_100px_rgba(93,60,254,0.1)]">
-              <header className="flex justify-between items-start">
+        <div className="fixed inset-0 z-[500] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+           <div className="w-full max-w-lg bg-[#121317] border border-white/10 rounded-2xl p-5 sm:p-6 space-y-4 animate-fade-in-up shadow-2xl">
+              <header className="flex justify-between items-center">
                  <div>
-                    <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter">Abrir Canal de <span className="text-[#5d3cfe]">Consulta</span></h3>
-                    <p className="text-[10px] text-[#474556] font-black uppercase tracking-widest mt-1">Colaboración de Alto Nivel</p>
+                    <h3 className="text-base sm:text-lg font-black text-white uppercase italic tracking-tight">Abrir Canal de <span className="text-[#5d3cfe]">Consulta</span></h3>
+                    <p className="text-[9px] text-[#6b697e] font-bold uppercase tracking-wider">Colaboración de Alto Nivel</p>
                  </div>
-                 <button onClick={() => setIsCreatingTopic(false)} className="p-3 bg-white/5 rounded-2xl hover:bg-rose-600 transition-all active:scale-90"><ArrowLeft className="w-6 h-6 text-white" /></button>
+                 <button onClick={() => setIsCreatingTopic(false)} className="p-1.5 bg-white/5 rounded-lg hover:bg-rose-600 transition-all active:scale-90"><ArrowLeft className="w-4 h-4 text-white" /></button>
               </header>
 
-              <form onSubmit={handleCreateTopic} className="space-y-6">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                       <label className="text-[9px] font-black text-[#474556] uppercase tracking-widest ml-2">Categoría Técnica</label>
+              <form onSubmit={handleCreateTopic} className="space-y-3.5">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                       <label className="text-[9px] font-bold text-[#6b697e] uppercase tracking-wider ml-1">Categoría Técnica</label>
                        <select
                          value={newTopicCat}
                          onChange={(e) => setNewTopicCat(e.target.value)}
-                         className="w-full bg-black border border-white/10 rounded-2xl py-4 px-6 text-xs font-bold text-white outline-none focus:border-[#5d3cfe]"
+                         className="w-full bg-black border border-white/10 rounded-xl py-2 px-3 text-xs font-medium text-white outline-none focus:border-[#5d3cfe]"
                        >
                           {categories.map(c => <option key={c} value={c}>{c.toUpperCase()}</option>)}
                        </select>
                     </div>
-                    <div className="space-y-2">
-                       <label className="text-[9px] font-black text-[#474556] uppercase tracking-widest ml-2">Título del Problema</label>
+                    <div className="space-y-1">
+                       <label className="text-[9px] font-bold text-[#6b697e] uppercase tracking-wider ml-1">Título del Problema</label>
                        <input
                          required
                          type="text"
                          value={newTopicTitle}
                          onChange={(e) => setNewTopicTitle(e.target.value)}
                          placeholder="Ej: Falla E3 en VRF Samsung"
-                         className="w-full bg-black border border-white/10 rounded-2xl py-4 px-6 text-xs font-bold text-white outline-none focus:border-[#5d3cfe]"
+                         className="w-full bg-black border border-white/10 rounded-xl py-2 px-3 text-xs font-medium text-white outline-none focus:border-[#5d3cfe]"
                        />
                     </div>
                  </div>
 
-                 <div className="space-y-2">
-                    <label className="text-[9px] font-black text-[#474556] uppercase tracking-widest ml-2">Descripción Detallada (Falla y Pasos Realizados)</label>
+                 <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-[#6b697e] uppercase tracking-wider ml-1">Descripción Detallada (Falla y Pasos Realizados)</label>
                     <textarea
                       required
                       value={newTopicDesc}
                       onChange={(e) => setNewTopicDesc(e.target.value)}
                       placeholder="Describa el comportamiento técnico, códigos de error y lo que ha intentado..."
-                      className="w-full bg-black border border-white/10 rounded-[2.5rem] p-8 text-sm text-white outline-none focus:border-[#5d3cfe] min-h-[200px] resize-none"
+                      className="w-full bg-black border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-[#5d3cfe] min-h-[100px] resize-none"
                     />
                  </div>
 
                  <button
                    type="submit"
-                   className="w-full py-5 bg-[#5d3cfe] text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[#5d3cfe]/20 hover:brightness-110 active:scale-95 transition-all"
+                   className="w-full py-2.5 bg-[#5d3cfe] hover:bg-[#4d2ee0] text-white rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider shadow-lg shadow-[#5d3cfe]/20 hover:brightness-110 active:scale-95 transition-all"
                  >
                     Publicar Tema en el Sistema Global
                  </button>

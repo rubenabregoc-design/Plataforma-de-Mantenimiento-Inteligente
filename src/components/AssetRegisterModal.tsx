@@ -4,8 +4,9 @@ import {
   Plus, X, Car, ShieldCheck, Cpu, Sliders, BatteryCharging, Zap, Boxes,
   Home, Edit2, Search, CheckCircle2, Droplets, PlugZap, Building2,
   Stethoscope, HardHat, LayoutGrid, Bike, AlertCircle, MapPin, User, FileText, Fuel, Fingerprint, Activity, ShieldAlert, Shield, Thermometer, Database, Ruler, Waves, ZapOff, Calendar,
-  Weight, Users, Flame, Eye, HardDrive, Waves as PoolIcon
+  Weight, Users, Flame, Eye, HardDrive, Waves as PoolIcon, Layers
 } from 'lucide-react';
+
 import { toast } from 'react-hot-toast';
 
 interface AssetRegisterModalProps {

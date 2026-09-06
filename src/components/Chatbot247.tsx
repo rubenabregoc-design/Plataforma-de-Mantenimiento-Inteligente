@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, X, Sparkles, Zap, PieChart, Maximize2, Minimize2 } from 'lucide-react';
+import { MessageSquare, Send, X, Headset, Zap, PieChart, Maximize2, Minimize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MantechProLogo from './Logo';
 import { useTranslation } from 'react-i18next';
+import { useUI } from '../context/UIContext';
 
 interface Message {
   id: string;
@@ -21,10 +22,18 @@ interface ChatbotProps {
 
 export default function Chatbot247({ isInline = false, assets = [], requests = [], onScheduleService, initialMode = 'general' }: ChatbotProps) {
   const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(isInline);
+  const { modals, closeModal, openModal } = useUI();
+  const [internalOpen, setInternalOpen] = useState(isInline);
+  const isOpen = isInline ? true : (internalOpen || modals.chatbot);
   const [isMaximized, setIsMaximized] = useState(false);
   const [mode, setMode] = useState<'support' | 'sales'>(initialMode === 'sales' ? 'sales' : 'support');
   const [lastQuestion, setLastQuestion] = useState<string | null>(null);
+
+  const handleClose = () => {
+    setInternalOpen(false);
+    closeModal('chatbot');
+    setIsMaximized(false);
+  };
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -210,36 +219,38 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
   };
 
   const renderContent = () => (
-    <div className={`bg-[#0d0e12] border border-white/5 flex flex-col overflow-hidden transition-all duration-500 ease-in-out ${
-      isInline
-        ? "w-full h-full rounded-[2.5rem]"
-        : isMaximized
-          ? "fixed inset-8 md:inset-20 z-[600] w-auto h-auto rounded-[3.5rem] shadow-[0_0_150px_rgba(93,60,254,0.3)]"
-          : "w-[360px] md:w-[450px] h-[600px] md:h-[750px] max-h-[calc(100vh-140px)] rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.8)] mb-4"
-    }`}>
+    <div className="w-full h-full flex flex-col overflow-hidden bg-[#0d0e12]">
       {/* HEADER COMPACTO */}
-      <div className="bg-[#1c1d21]/80 backdrop-blur-xl p-3 md:p-4 text-white flex items-center justify-between shrink-0 border-b border-white/10 z-20 flex-none">
+      <div className="bg-[#1c1d21]/90 backdrop-blur-xl px-4 py-3 text-white flex items-center justify-between shrink-0 border-b border-white/10 z-20 flex-none">
         <div className="flex items-center gap-3">
           <MantechProLogo size="sm" showText={false} className="w-8 h-8" />
           <div>
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] leading-none text-white">Asesor MantechPro</h4>
-            <div className="flex items-center gap-1.5 mt-1.5">
+            <div className="flex items-center gap-2">
+              <h4 className="text-xs font-black uppercase tracking-wider text-white">Asesor MantechPro</h4>
+              <span className="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase bg-[#52ffac]/20 text-[#52ffac]">
+                24/7
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 mt-0.5">
               <span className="w-1.5 h-1.5 bg-[#52ffac] rounded-full animate-pulse shadow-[0_0_8px_#52ffac]"></span>
-              <span className="text-[7px] font-black text-[#52ffac] uppercase tracking-widest">Protocolo Activo</span>
+              <span className="text-[8px] font-bold text-[#52ffac] uppercase tracking-wider">En línea • Asistente IA</span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {!isInline && (
             <button
               onClick={() => setIsMaximized(!isMaximized)}
-              className="p-2 hover:bg-white/10 rounded-xl transition-all text-white/40"
+              className="hidden md:flex p-2 hover:bg-white/10 rounded-xl transition-all text-white/50 hover:text-white"
             >
-              {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
           )}
           {!isInline && (
-            <button onClick={() => { setIsOpen(false); setIsMaximized(false); }} className="p-2 hover:bg-rose-500/20 text-white/40">
+            <button
+              onClick={handleClose}
+              className="p-2 rounded-xl bg-white/5 hover:bg-rose-500/20 text-white/50 hover:text-rose-400 transition-colors"
+            >
               <X className="w-4 h-4" />
             </button>
           )}
@@ -301,7 +312,7 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
       </div>
 
       {/* SUGERENCIAS Y PANEL DE ENTRADA UNIFICADOS */}
-      <div className="flex-none bg-[#1c1d21] border-t border-white/10 p-4 space-y-4">
+      <div className="flex-none bg-[#1c1d21] border-t border-white/10 p-4 pb-[max(env(safe-area-inset-bottom),1rem)] space-y-3">
          <div className="flex gap-2 overflow-x-auto no-scrollbar mask-fade-right">
             {currentFaqs.map((faq, i) => (
                <button
@@ -340,35 +351,78 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
     </div>
   );
 
-  return (
-    <div className={isInline ? "w-full h-full flex flex-col" : "fixed bottom-20 right-4 md:bottom-8 md:right-8 z-[100] font-sans flex flex-col items-end"}>
-      {isInline ? (
-        renderContent()
-      ) : (
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            >
-              {renderContent()}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      )}
+  if (isInline) {
+    return (
+      <div className="w-full h-full flex flex-col rounded-[2.5rem] overflow-hidden">
+        {renderContent()}
+      </div>
+    );
+  }
 
-      {!isInline && (
+  return (
+    <>
+      {/* Desktop Floating Launcher Button (Bottom-right on desktop only, never blocks mobile cards) */}
+      <div className="hidden md:flex fixed bottom-8 right-8 z-[100] flex-col items-end">
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-14 h-14 md:w-16 md:h-16 bg-[#5d3cfe] rounded-full flex items-center justify-center text-white shadow-2xl shadow-[#5d3cfe]/40 relative group overflow-hidden border-2 border-white/10"
+          onClick={() => {
+            if (isOpen) {
+              handleClose();
+            } else {
+              setInternalOpen(true);
+              openModal('chatbot');
+            }
+          }}
+          aria-label="Asesor Virtual MantechPro"
+          className="group relative flex items-center gap-2.5 px-4 py-3 bg-gradient-to-tr from-[#5d3cfe] to-[#7f62ff] text-white rounded-2xl shadow-[0_10px_35px_rgba(93,60,254,0.45)] border border-white/20 hover:border-white/40 transition-all duration-300 active:scale-95"
         >
-          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-10 transition-opacity"></div>
-          {isOpen ? <X className="w-7 h-7" /> : <MessageSquare className="w-8 h-8" />}
+          <div className="relative">
+            <Headset className="w-5 h-5 text-[#52ffac]" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#52ffac] rounded-full animate-ping" />
+          </div>
+          <div className="text-left hidden lg:block">
+            <p className="text-[10px] font-black uppercase tracking-wider leading-tight">Asesor IA 24/7</p>
+            <p className="text-[8px] text-[#c7bfff] font-bold">En línea</p>
+          </div>
         </motion.button>
-      )}
-    </div>
+      </div>
+
+      {/* Unified Mobile Bottom Sheet & Desktop Chat Modal Window */}
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-[250] flex flex-col justify-end md:justify-center md:items-end md:p-8">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleClose}
+              className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+            />
+
+            {/* Modal Sheet Container */}
+            <motion.div
+              initial={{ opacity: 0, y: 50, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 50, scale: 0.96 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className={`relative z-10 w-full bg-[#0d0e12] border-t md:border border-white/10 shadow-[0_-20px_60px_rgba(0,0,0,0.9)] flex flex-col overflow-hidden transition-all duration-300 ${
+                isMaximized
+                  ? "fixed inset-4 md:inset-10 z-[300] max-w-none w-auto h-auto rounded-[2rem] md:rounded-[2.5rem]"
+                  : "max-w-lg md:w-[440px] h-[88vh] md:h-[680px] max-h-[calc(100vh-2rem)] rounded-t-[2rem] md:rounded-[2.5rem]"
+              }`}
+            >
+              {/* Drag handle for mobile */}
+              <div className="md:hidden flex justify-center pt-2.5 pb-1 bg-[#1c1d21]/90">
+                <div className="w-10 h-1 bg-white/20 rounded-full" />
+              </div>
+
+              {renderContent()}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

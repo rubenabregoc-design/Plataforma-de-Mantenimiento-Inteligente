@@ -5,6 +5,22 @@ const config: CapacitorConfig = {
   appName: 'MantechPro',
   webDir: 'dist',
   plugins: {
+    StatusBar: {
+      style: 'DARK' as any,
+      backgroundColor: '#0d0e12',
+      overlaysWebView: false,
+    },
+    SplashScreen: {
+      launchShowDuration: 1800,
+      launchAutoHide: true,
+      backgroundColor: '#0d0e12',
+      androidSplashResourceName: 'splash',
+      showSpinner: false,
+    },
+    Keyboard: {
+      resize: 'body' as any,
+      resizeOnFullScreen: true,
+    },
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"],
     },
@@ -17,7 +33,9 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: true,
     captureInput: true,
+    backgroundColor: '#0d0e12',
   }
 };
 
 export default config;
+

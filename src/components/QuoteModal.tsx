@@ -7,8 +7,9 @@ interface QuoteModalProps {
   isOpen: boolean;
   onClose: () => void;
   request: JobRequest;
-  onSend: (requestId: string, price: number, commission: number, notes?: string, materials?: any[], checklist?: any[], schedule?: any) => void;
+  onSend: (requestId: string, price: number, commission: number, notes?: string, materials?: any[], checklist?: any[], schedule?: any, visitFee?: number, autoThreshold?: number, isEmergency?: boolean) => void;
   techPlan?: 'basic' | 'pro' | 'enterprise';
+
 }
 
 export default function QuoteModal({ isOpen, onClose, request, onSend, techPlan = 'basic' }: QuoteModalProps) {

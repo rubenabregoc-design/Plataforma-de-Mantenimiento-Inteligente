@@ -455,6 +455,8 @@ export default function TechDashboard() {
         </div>
       )}
 
+
+
       {techTab === 'bidding_market' && (
         <div className="space-y-8">
            <header>
@@ -563,7 +565,30 @@ export default function TechDashboard() {
             <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.3em]">{t('settings_desc', 'Validación de Credenciales y Sello Oficial')}</p>
          </header>
 
-         <div className="bg-[#121317] border border-white/5 p-10 rounded-[3rem] flex flex-col items-center gap-10 shadow-2xl">
+         <div className="bg-[#121317] border border-white/5 p-10 rounded-[3rem] flex flex-col items-center gap-8 shadow-2xl">
+            {/* PERFIL DEL TÉCNICO */}
+            <div className="w-full bg-[#1c1d21]/60 border border-white/5 p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 text-left">
+               <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 flex items-center justify-center text-[#5d3cfe] font-black text-lg shrink-0">
+                     {techProfile?.name?.[0] || loggedInName?.[0] || 'T'}
+                  </div>
+                  <div>
+                     <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-black text-white uppercase">{techProfile?.name || loggedInName || 'Especialista Técnico'}</h3>
+                        <span className="text-[8px] font-black uppercase text-[#5d3cfe] bg-[#5d3cfe]/10 px-2 py-0.5 rounded border border-[#5d3cfe]/20">Técnico</span>
+                     </div>
+                     <p className="text-xs text-[#8e8d9a] mt-0.5">{techProfile?.title || techProfile?.category || 'Especialista'}</p>
+                     {techProfile?.phone && <p className="text-[10px] text-[#7a788d] font-bold mt-0.5">Tel: {techProfile.phone}</p>}
+                  </div>
+               </div>
+               <button
+                 onClick={() => openModal('editTech', { tech: techProfile })}
+                 className="w-full sm:w-auto px-5 py-2.5 bg-[#5d3cfe] hover:bg-[#4d2ee0] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+               >
+                  <Pencil className="w-3.5 h-3.5" /> Editar Perfil
+               </button>
+            </div>
+
             {/* HERRAMIENTAS DE DIAGNÓSTICO DE SISTEMA */}
             <div className="w-full space-y-6">
                <div className="flex items-center gap-3 justify-center">
@@ -620,17 +645,17 @@ export default function TechDashboard() {
       )}
 
       {techTab === 'chat' && (
-        <div className="h-[600px] flex flex-col md:flex-row gap-6 animate-fade-in-up">
-           <div className="w-full md:w-80 bg-[#121317] border border-white/5 rounded-[2.5rem] flex flex-col overflow-hidden shrink-0 shadow-2xl">
-              <div className="p-6 border-b border-white/5 bg-white/[0.02]">
+        <div className="h-auto md:h-[650px] flex flex-col md:flex-row gap-4 md:gap-6 animate-fade-in-up">
+           <div className="w-full md:w-80 max-h-[220px] md:max-h-none md:h-full bg-[#121317] border border-white/5 rounded-[2rem] flex flex-col overflow-hidden shrink-0 shadow-2xl">
+              <div className="p-4 md:p-6 border-b border-white/5 bg-white/[0.02]">
                  <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Bandeja de Mensajes</h3>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2 md:space-y-3 custom-scrollbar">
                  {requestsWithChat.map(r => (
                     <button
                       key={r.id}
                       onClick={() => setActiveChatRequestId(r.id)}
-                      className={`w-full p-5 rounded-[1.5rem] text-left transition-all border group relative overflow-hidden ${activeChatRequestId === r.id ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-xl' : 'bg-white/5 border-white/5 text-[#c8c4d9] hover:bg-white/10 hover:border-white/10'}`}
+                      className={`w-full p-4 md:p-5 rounded-[1.5rem] text-left transition-all border group relative overflow-hidden ${activeChatRequestId === r.id ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-xl' : 'bg-white/5 border-white/5 text-[#c8c4d9] hover:bg-white/10 hover:border-white/10'}`}
                     >
                        <div className="flex justify-between items-center mb-1">
                           <p className={`text-[9px] font-black uppercase tracking-widest ${activeChatRequestId === r.id ? 'text-white/70' : 'text-[#5d3cfe]'}`}>{r.assetName}</p>
@@ -642,7 +667,7 @@ export default function TechDashboard() {
               </div>
            </div>
 
-           <div className="flex-1 min-w-0 h-[500px] md:h-full">
+           <div className="flex-1 min-w-0 h-[560px] md:h-full">
               <SupportChatWidget
                 role="tech"
                 request={activeRequestForChat || null}

@@ -18,6 +18,8 @@ import SupportModal from './components/SupportModal';
 import Chatbot247 from './components/Chatbot247';
 import AssetRegisterModal from './components/AssetRegisterModal';
 import TechnicianProfileModal from './components/TechnicianProfileModal';
+import TechnicianEditProfileModal from './components/TechnicianEditProfileModal';
+import UserProfileEditModal from './components/UserProfileEditModal';
 import SignaturePad from './components/SignaturePad';
 import AssetEngineeringReportModal from './components/AssetEngineeringReportModal';
 import FuelAuditModal from './components/FuelAuditModal';
@@ -44,16 +46,28 @@ import Logo from './components/Logo';
 import { AssetService } from './services/assetService';
 import { cleanForFirebase } from './utils/firebaseHelpers';
 import { compressImage } from './utils/imageHelpers';
+import { useAndroidNative } from './hooks/useAndroidNative';
 
 export default function App() {
-  const { user, isLoggedIn, subscription, logout, role } = useAuth();
+  const { user, userData, loggedInName, loggedInEmail, isLoggedIn, subscription, logout, role } = useAuth();
   const { assets, requests, technicians } = useData();
-  const { modals, activeData, closeModal, openModal } = useUI();
+  const { modals, activeData, closeModal, openModal, closeAllModals, tabs, setTab } = useUI();
   const business = useBusinessLogic();
   const gps = useGpsTracking();
 
+  // Initialize Android Native Integration (Hardware Back button, Status Bar, Splash Screen, Haptics)
+  useAndroidNative({
+    modals,
+    closeModal,
+    closeAllModals,
+    role,
+    tabs,
+    setTab
+  });
+
   const [ratingVal, setRatingVal] = useState(5);
   const [unreadCount, setUnreadCount] = useState(0);
+
 
   // Listen for notifications unread count
   useEffect(() => {
@@ -220,6 +234,66 @@ export default function App() {
           />
         )}
 
+        {modals.editTech && (
+          <TechnicianEditProfileModal
+            isOpen={modals.editTech}
+            onClose={() => closeModal('editTech')}
+            profile={activeData.tech || technicians.find(t => t.userId === user?.uid) || { id: 'new', name: loggedInName, category: 'mecanico' } as any}
+            onSave={async (updatedData) => {
+              const targetTech = activeData.tech || technicians.find(t => t.userId === user?.uid);
+              if (targetTech?.id && targetTech.id !== 'new') {
+                await updateDoc(doc(db, "technicians", targetTech.id), updatedData);
+              }
+              if (user?.uid) {
+                await updateDoc(doc(db, "users", user.uid), {
+                  name: updatedData.name || loggedInName,
+                  title: updatedData.title || '',
+                  phone: updatedData.phone || '',
+                  location: updatedData.location || '',
+                  companyName: updatedData.companyName || ''
+                });
+              }
+              toast.success("Perfil técnico actualizado correctamente.");
+              closeModal('editTech');
+            }}
+          />
+        )}
+
+        {modals.editProfile && (
+          <UserProfileEditModal
+            isOpen={modals.editProfile}
+            onClose={() => closeModal('editProfile')}
+            userData={userData}
+            userEmail={loggedInEmail || user?.email || ''}
+            role={role}
+            onSave={async (updatedData) => {
+              if (!user?.uid) return;
+              await updateDoc(doc(db, "users", user.uid), {
+                name: updatedData.name,
+                phone: updatedData.phone || '',
+                location: updatedData.location || '',
+                company: updatedData.company || '',
+                companyName: updatedData.company || '',
+                cedula: updatedData.cedula || ''
+              });
+              if (role === 'tech') {
+                const userSnap = await getDoc(doc(db, "users", user.uid));
+                const techId = userSnap.data()?.techId;
+                if (techId) {
+                  await updateDoc(doc(db, "technicians", techId), {
+                    name: updatedData.name,
+                    phone: updatedData.phone || '',
+                    location: updatedData.location || '',
+                    companyName: updatedData.company || ''
+                  });
+                }
+              }
+              toast.success("Perfil actualizado correctamente.");
+              closeModal('editProfile');
+            }}
+          />
+        )}
+
         {modals.signature && activeData.requestId && (
           <div className="fixed inset-0 z-[500] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4">
             <div className="max-w-md w-full bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] space-y-10 shadow-2xl text-center">
@@ -367,9 +441,11 @@ export default function App() {
                             : (activeData.request?.price || '0').toString();
 
                           return actions.order.create({
+                            intent: "CAPTURE",
                             application_context: {
                               shipping_preference: "NO_SHIPPING"
                             },
+
                             purchase_units: [{
                               description: activeData.plan ? `MantechPro Subscription: ${activeData.plan}` : `MantechPro Service: ${activeData.request?.assetName}`,
                               amount: { currency_code: "USD", value: price }
@@ -455,6 +531,7 @@ export default function App() {
             isOpen={modals.engineeringReport}
             onClose={() => closeModal('engineeringReport')}
             asset={assets.find(a => a.id === activeData.asset?.id) || activeData.asset}
+            allAssets={assets}
           />
         )}
 

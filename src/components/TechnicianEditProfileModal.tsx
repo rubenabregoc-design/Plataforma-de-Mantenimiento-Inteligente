@@ -1,6 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { TechProfile, TechCategory } from '../types';
-import { X, Save, User, Briefcase, DollarSign, MapPin, FileText, Award, RefreshCw, ShieldCheck, HelpCircle, Building } from 'lucide-react';
+import { X, Save, User, Briefcase, DollarSign, MapPin, FileText, Award, RefreshCw, ShieldCheck, HelpCircle, Building, ChevronDown, Check, Search, Plus } from 'lucide-react';
+
+const TECH_CATEGORIES: { value: TechCategory; label: string }[] = [
+  { value: 'mecanico', label: 'Mecánico Automotriz' },
+  { value: 'tecnico_ac', label: 'Técnico Aire Acondicionado' },
+  { value: 'electricista', label: 'Ingeniero Eléctrico' },
+  { value: 'informatico', label: 'Informático / IT' },
+  { value: 'plomero', label: 'Plomero Especialista' },
+  { value: 'especialista_solar', label: 'Especialista Solar' },
+  { value: 'refrigeracion', label: 'Refrigeración Comercial e Industrial' },
+  { value: 'plantas_electricas', label: 'Plantas Eléctricas y Generadores' },
+  { value: 'ascensores', label: 'Ascensores y Elevadores' },
+  { value: 'contra_incendio', label: 'Sistemas Contra Incendio' },
+  { value: 'domotica', label: 'Domótica y Automatización' },
+  { value: 'albanileria', label: 'Albañilería y Construcción' },
+  { value: 'reparacion_hogar', label: 'Reparaciones del Hogar' },
+  { value: 'jardineria', label: 'Jardinería / Paisajismo' },
+  { value: 'piscinas', label: 'Mantenimiento de Piscinas' },
+  { value: 'limpieza', label: 'Servicios de Limpieza' },
+  { value: 'lavado_muebles', label: 'Lavado de Muebles y Tapicería' },
+  { value: 'fotografo', label: 'Fotógrafo Profesional' },
+  { value: 'estilista', label: 'Estilista / Barbería' },
+  { value: 'entrenador', label: 'Entrenador Personal' },
+  { value: 'masajista', label: 'Masajista Terapéutico' },
+  { value: 'chef', label: 'Chef Privado / Catering' },
+  { value: 'mascotas', label: 'Cuidado de Mascotas' },
+  { value: 'legal', label: 'Asesoría Legal' },
+  { value: 'contabilidad', label: 'Contabilidad y Finanzas' },
+];
 
 interface TechnicianEditProfileModalProps {
   isOpen: boolean;
@@ -12,12 +40,36 @@ export default function TechnicianEditProfileModal({ isOpen, onClose, profile, o
   const [name, setName] = useState(profile.name || '');
   const [title, setTitle] = useState(profile.title || '');
   const [category, setCategory] = useState<TechCategory>(profile.category || 'mecanico');
+  const [secondaryCategories, setSecondaryCategories] = useState<TechCategory[]>(profile.secondaryCategories || []);
   const [experienceYears, setExperienceYears] = useState(profile.experienceYears || 0);
   const [hourlyRate, setHourlyRate] = useState(profile.hourlyRate || 0);
   const [location, setLocation] = useState(profile.location || '');
+  const [phone, setPhone] = useState(profile.phone || '');
   const [bio, setBio] = useState(profile.bio || '');
   const [companyName, setCompanyName] = useState(profile.companyName || '');
   const [hasInsurance, setHasInsurance] = useState(profile.hasLiabilityInsurance || false);
+
+  // Selector personalizado de especialidad principal
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Selector de especialidades secundarias
+  const [isSecondaryOpen, setIsSecondaryOpen] = useState(false);
+  const secondaryDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
+        setIsCategoryOpen(false);
+      }
+      if (secondaryDropdownRef.current && !secondaryDropdownRef.current.contains(event.target as Node)) {
+        setIsSecondaryOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Información Fiscal (Modelo V7)
   const [isDGIInscribed, setIsDGIInscribed] = useState(profile.fiscalInfo?.isDGIInscribed || false);
@@ -33,9 +85,11 @@ export default function TechnicianEditProfileModal({ isOpen, onClose, profile, o
       setName(profile.name || '');
       setTitle(profile.title || '');
       setCategory(profile.category || 'mecanico');
+      setSecondaryCategories(profile.secondaryCategories || []);
       setExperienceYears(profile.experienceYears || 0);
       setHourlyRate(profile.hourlyRate || 0);
       setLocation(profile.location || '');
+      setPhone(profile.phone || '');
       setBio(profile.bio || '');
       setCompanyName(profile.companyName || '');
       setHasInsurance(profile.hasLiabilityInsurance || false);
@@ -58,9 +112,11 @@ export default function TechnicianEditProfileModal({ isOpen, onClose, profile, o
         name,
         title,
         category,
+        secondaryCategories,
         experienceYears: Number(experienceYears),
         hourlyRate: Number(hourlyRate),
         location,
+        phone,
         bio,
         companyName,
         hasLiabilityInsurance: hasInsurance,
@@ -81,8 +137,18 @@ export default function TechnicianEditProfileModal({ isOpen, onClose, profile, o
     }
   };
 
+  const filteredCategories = TECH_CATEGORIES.filter(cat =>
+    cat.label.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  const availableSecondaryCategories = TECH_CATEGORIES.filter(
+    cat => cat.value !== category && !secondaryCategories.includes(cat.value)
+  );
+
+  const currentCategoryLabel = TECH_CATEGORIES.find(c => c.value === category)?.label || 'Seleccionar especialidad';
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0d0e12]/90 backdrop-blur-md">
+    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-[#0d0e12]/90 backdrop-blur-md">
       <div className="w-full max-w-2xl bg-[#121317] rounded-[2rem] border border-[#2a2b2f] shadow-2xl overflow-hidden animate-fade-in-up">
         <header className="px-8 py-6 bg-[#1c1d21] border-b border-[#2a2b2f] flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -99,38 +165,177 @@ export default function TechnicianEditProfileModal({ isOpen, onClose, profile, o
         <form onSubmit={handleSubmit} className="p-8 space-y-8 max-h-[75vh] overflow-y-auto custom-scrollbar">
 
           {/* SECCIÓN 1: IDENTIDAD PROFESIONAL */}
-          <div className="space-y-6">
+          <div className="space-y-6 relative z-30">
             <h3 className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-[0.4em] border-l-2 border-[#5d3cfe] pl-3">Identidad Profesional</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Nombre Oficial</label>
-                <input type="text" readOnly value={name} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-[#474556] cursor-not-allowed outline-none" />
+                <input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Pedro Castillo" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#5d3cfe] outline-none" />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Nombre Comercial / Empresa</label>
-                <input type="text" required value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Ej: MultiServicios S.A." className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none" />
+                <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Ej: MultiServicios S.A." className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#c7bfff] outline-none" />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Especialidad Principal</label>
-                <select value={category} onChange={e => setCategory(e.target.value as TechCategory)} className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white outline-none">
-                  <option value="mecanico">Mecánico Automotriz</option>
-                  <option value="tecnico_ac">Técnico Aire Acondicionado</option>
-                  <option value="electricista">Ingeniero Eléctrico</option>
-                  <option value="informatico">Informático / IT</option>
-                  <option value="plomero">Plomero Especialista</option>
-                  <option value="especialista_solar">Especialista Solar</option>
-                  <option value="jardineria">Jardinería / Paisajismo</option>
-                  <option value="fotografo">Fotógrafo Profesional</option>
-                  <option value="estilista">Estilista / Barbería</option>
-                  <option value="limpieza">Servicios de Limpieza</option>
-                  <option value="reparacion_hogar">Reparaciones del Hogar</option>
-                </select>
+                <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Teléfono / WhatsApp</label>
+                <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="Ej: +507 6123-4567" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#5d3cfe] outline-none" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Ubicación / Ciudad</label>
+                <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Ciudad de Panamá, San Francisco" className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-white focus:border-[#5d3cfe] outline-none" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2 relative" ref={categoryDropdownRef}>
+                <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1 flex items-center justify-between">
+                  <span>Especialidad Principal</span>
+                  <span className="text-[9px] text-[#5d3cfe] lowercase font-semibold">25 disponibles</span>
+                </label>
+                
+                {/* Botón Trigger del Dropdown */}
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                  className={`w-full bg-[#1c1d21] border ${isCategoryOpen ? 'border-[#5d3cfe] ring-2 ring-[#5d3cfe]/20' : 'border-[#2a2b2f]'} rounded-xl py-3.5 px-4 text-sm font-bold text-white outline-none flex items-center justify-between transition-all hover:border-[#5d3cfe]/60 text-left`}
+                >
+                  <span className="truncate">{currentCategoryLabel}</span>
+                  <ChevronDown className={`w-4 h-4 text-[#8e8d9a] transition-transform duration-200 shrink-0 ml-2 ${isCategoryOpen ? 'rotate-180 text-[#5d3cfe]' : ''}`} />
+                </button>
+
+                {/* Lista Desplegable con Scroll Suave y Búsqueda Rápida */}
+                {isCategoryOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#17181c] border border-[#3b3d45] rounded-2xl shadow-2xl p-2.5 backdrop-blur-2xl animate-fade-in-up">
+                    <div className="relative mb-2">
+                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#8e8d9a]" />
+                      <input
+                        type="text"
+                        autoFocus
+                        placeholder="Buscar especialidad..."
+                        value={categorySearch}
+                        onChange={e => setCategorySearch(e.target.value)}
+                        className="w-full bg-[#0d0e12] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs font-semibold text-white placeholder-[#5a5965] focus:border-[#5d3cfe] outline-none"
+                      />
+                    </div>
+                    
+                    <div className="max-h-56 overflow-y-auto space-y-1 custom-scrollbar pr-1">
+                      {filteredCategories.length === 0 ? (
+                        <div className="text-center py-4 text-xs text-[#6e6d7a] font-medium">
+                          No se encontraron especialidades
+                        </div>
+                      ) : (
+                        filteredCategories.map(cat => {
+                          const isSelected = cat.value === category;
+                          return (
+                            <button
+                              key={cat.value}
+                              type="button"
+                              onClick={() => {
+                                setCategory(cat.value);
+                                setIsCategoryOpen(false);
+                                setCategorySearch('');
+                              }}
+                              className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                                isSelected
+                                  ? 'bg-[#5d3cfe]/15 text-white border border-[#5d3cfe]/40'
+                                  : 'text-[#c8c4d9] hover:bg-white/5 hover:text-white'
+                              }`}
+                            >
+                              <span>{cat.label}</span>
+                              {isSelected && <Check className="w-3.5 h-3.5 text-[#5d3cfe]" />}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-[#474556] uppercase tracking-widest ml-1">Tarifa Base por Hora (B/.)</label>
                 <input type="number" required value={hourlyRate} onChange={e => setHourlyRate(Number(e.target.value))} className="w-full bg-[#1c1d21] border border-[#2a2b2f] rounded-xl py-3.5 px-4 text-sm font-bold text-[#52ffac] outline-none" />
+              </div>
+            </div>
+
+            {/* Especialidades Secundarias / Adicionales */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black text-[#c7bfff] uppercase tracking-widest ml-1 flex items-center gap-2">
+                  <Award className="w-3.5 h-3.5 text-[#5d3cfe]" /> Especialidades Secundarias / Adicionales
+                </label>
+                <span className="text-[9px] font-bold text-[#8e8d9a]">
+                  {secondaryCategories.length} seleccionada{secondaryCategories.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <p className="text-[10px] text-[#6e6d7a] ml-1">
+                Aparecerás en los filtros del Marketplace para cada una de las especialidades que agregues aquí.
+              </p>
+
+              {/* Chips de especialidades seleccionadas */}
+              <div className="flex flex-wrap gap-2 p-3.5 bg-[#0d0e12] border border-white/5 rounded-2xl min-h-[52px] items-center">
+                {secondaryCategories.length === 0 ? (
+                  <span className="text-xs text-[#525060] italic px-1">Sin especialidades adicionales seleccionadas</span>
+                ) : (
+                  secondaryCategories.map(catVal => {
+                    const label = TECH_CATEGORIES.find(c => c.value === catVal)?.label || catVal;
+                    return (
+                      <span
+                        key={catVal}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#5d3cfe]/20 text-[#c7bfff] border border-[#5d3cfe]/30 rounded-xl text-xs font-bold animate-fade-in"
+                      >
+                        {label}
+                        <button
+                          type="button"
+                          onClick={() => setSecondaryCategories(secondaryCategories.filter(c => c !== catVal))}
+                          className="hover:text-rose-400 p-0.5 rounded-full transition-colors ml-1"
+                          title="Eliminar especialidad"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Botón y Dropdown para agregar más */}
+              <div className="relative" ref={secondaryDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsSecondaryOpen(!isSecondaryOpen)}
+                  className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl text-xs font-bold transition-all flex items-center gap-2 hover:border-[#5d3cfe]/50"
+                >
+                  <Plus className="w-3.5 h-3.5 text-[#52ffac]" />
+                  <span>Agregar Especialidad Adicional...</span>
+                </button>
+
+                {isSecondaryOpen && (
+                  <div className="absolute top-full left-0 mt-2 w-80 max-w-[90vw] z-50 bg-[#17181c] border border-[#3b3d45] rounded-2xl shadow-2xl p-2.5 backdrop-blur-2xl animate-fade-in-up">
+                    <div className="max-h-52 overflow-y-auto space-y-1 custom-scrollbar pr-1">
+                      {availableSecondaryCategories.length === 0 ? (
+                        <div className="text-center py-3 text-xs text-[#6e6d7a] font-medium">
+                          Has seleccionado todas las categorías disponibles
+                        </div>
+                      ) : (
+                        availableSecondaryCategories.map(cat => (
+                          <button
+                            key={cat.value}
+                            type="button"
+                            onClick={() => {
+                              setSecondaryCategories([...secondaryCategories, cat.value]);
+                              setIsSecondaryOpen(false);
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-[#c8c4d9] hover:bg-[#5d3cfe]/20 hover:text-white transition-all flex items-center justify-between"
+                          >
+                            <span>{cat.label}</span>
+                            <Plus className="w-3 h-3 text-[#52ffac]" />
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -1,11 +1,13 @@
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { toast } from 'react-hot-toast';
 import { initializeApp, getApps } from 'firebase/app';
+import { triggerHaptic } from '../hooks/useAndroidNative';
 
-// ⚠️ REEMPLAZA ESTE VALOR con tu clave VAPID de Firebase Console
-// Firebase Console → Configuración del proyecto → Cloud Messaging → Certificados push web → Generar clave
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || '';
 
 const firebaseConfig = {
@@ -20,39 +22,114 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
 /**
- * Solicita permiso de notificaciones push, obtiene el token FCM
- * y lo guarda en Firestore bajo el documento del usuario.
+ * Registra el dispositivo para notificaciones push.
+ * Detecta automáticamente si está en Android Nativo (Capacitor) o Web.
  */
 export async function registerPushToken(userId: string): Promise<void> {
-  // Solo funciona en navegadores que soportan notificaciones
+  // ==========================================
+  // RUTA 1: ANDROID NATIVO (Capacitor)
+  // ==========================================
+  if (Capacitor.isNativePlatform()) {
+    try {
+      // 1. Crear canal de notificación prioritario para Android 8+
+      if (Capacitor.getPlatform() === 'android') {
+        await PushNotifications.createChannel({
+          id: 'mantech_alerts',
+          name: 'Alertas Operativas MantechPro',
+          description: 'Notificaciones de órdenes, emergencias y garantías',
+          importance: 5,
+          visibility: 1,
+          sound: 'radio_beep.wav',
+          vibration: true,
+          lights: true,
+          lightColor: '#5d3cfe'
+        }).catch(err => console.warn('Channel creation warning:', err));
+      }
+
+      // 2. Solicitar permisos nativos de Android 13+ (POST_NOTIFICATIONS)
+      let permStatus = await PushNotifications.checkPermissions();
+      if (permStatus.receive === 'prompt') {
+        permStatus = await PushNotifications.requestPermissions();
+      }
+
+      if (permStatus.receive !== 'granted') {
+        console.warn('🔕 Permiso de notificaciones nativas denegado por el usuario.');
+        return;
+      }
+
+      // 3. Registrar con Firebase FCM Nativo
+      await PushNotifications.register();
+
+      // 4. Escuchar evento de token recibido
+      PushNotifications.addListener('registration', async (token) => {
+        console.log('✅ Token FCM Nativo Android:', token.value);
+        try {
+          await updateDoc(doc(db, 'users', userId), {
+            pushToken: token.value,
+            platform: 'android',
+            lastTokenUpdate: serverTimestamp()
+          });
+        } catch (e) {
+          console.error('Error guardando token nativo en Firestore:', e);
+        }
+      });
+
+      PushNotifications.addListener('registrationError', (error) => {
+        console.error('❌ Error de registro FCM nativo:', error);
+      });
+
+      // 5. Escuchar notificación recibida con la app abierta (Foreground)
+      PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        console.log('📲 Notificación Nativa en Primer Plano:', notification);
+        triggerHaptic('medium');
+        toast(notification.body || notification.title || 'Nueva alerta MantechPro', {
+          icon: '🔔',
+          duration: 5000,
+          style: {
+            background: '#16171d',
+            color: '#fff',
+            border: '1px solid #5d3cfe',
+            borderRadius: '1rem',
+            fontSize: '11px',
+            fontWeight: '800'
+          }
+        });
+      });
+
+      // 6. Escuchar cuando el usuario toca la notificación en la barra de Android
+      PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+        console.log('👆 Usuario interactuó con notificación:', notification);
+        triggerHaptic('light');
+      });
+
+      return;
+    } catch (nativeErr) {
+      console.error('❌ Error inicializando notificaciones nativas Android:', nativeErr);
+      return;
+    }
+  }
+
+  // ==========================================
+  // RUTA 2: NAVEGADOR WEB (Fallback PWA)
+  // ==========================================
   if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-    console.warn('🔕 Este navegador no soporta notificaciones push.');
+    console.warn('🔕 Entorno web sin soporte de notificaciones push.');
     return;
   }
 
   try {
-    // Registrar el Service Worker de Firebase Messaging
     const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-
-    // Esperar a que el service worker esté listo y activo
     await navigator.serviceWorker.ready;
 
     const messaging = getMessaging(app);
-
-    // Solicitar permiso al usuario
     const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      console.warn('🔕 El usuario denegó el permiso de notificaciones.');
-      return;
-    }
+    if (permission !== 'granted') return;
 
-    // Obtener el token FCM del dispositivo
     if (!VAPID_KEY) {
-      console.warn('⚠️ Falta VAPID_KEY en el entorno. Las notificaciones push operarán en modo degradado.');
+      console.warn('⚠️ Falta VAPID_KEY en el entorno para Web Push.');
       return;
     }
 
-    // Intentar obtener el token con reintento industrial
     let token = '';
     try {
       token = await getToken(messaging, {
@@ -61,7 +138,6 @@ export async function registerPushToken(userId: string): Promise<void> {
       });
     } catch (pushErr: any) {
       if (pushErr.name === 'AbortError') {
-        console.warn('⏳ Push Service ocupado. Reintentando en 3 segundos...');
         await new Promise(resolve => setTimeout(resolve, 3000));
         token = await getToken(messaging, {
           vapidKey: VAPID_KEY,
@@ -73,17 +149,15 @@ export async function registerPushToken(userId: string): Promise<void> {
     }
 
     if (token) {
-      // Guardar el token en Firestore
       await updateDoc(doc(db, 'users', userId), {
         pushToken: token,
+        platform: 'web',
         lastTokenUpdate: serverTimestamp()
       });
-      console.log('✅ Token FCM sincronizado con el Sistema Cloud.');
+      console.log('✅ Token Web FCM sincronizado.');
     }
 
-    // Escuchar mensajes cuando la app está en primer plano
     onMessage(messaging, (payload) => {
-      console.log('📲 Notificación en primer plano:', payload);
       const { title, body } = payload.notification || {};
       if (title) {
         toast(body || '', {
@@ -97,8 +171,7 @@ export async function registerPushToken(userId: string): Promise<void> {
         });
       }
     });
-
-  } catch (err) {
-    console.error('❌ Error registrando push token:', err);
+  } catch (err: any) {
+    console.warn('ℹ️ Servicio de notificaciones Push Web no disponible en este entorno/navegador:', err?.message || err);
   }
 }

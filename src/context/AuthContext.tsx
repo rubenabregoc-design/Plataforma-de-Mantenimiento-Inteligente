@@ -9,6 +9,9 @@ import {
 import {
   doc,
   getDoc,
+  getDocs,
+  query,
+  where,
   setDoc,
   updateDoc,
   onSnapshot,
@@ -87,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const userRef = doc(db, "users", firebaseUser.uid);
 
         // Listener en tiempo real para los datos del usuario con manejo de error de red
-        unsubscribeDoc = onSnapshot(userRef, (docSnap) => {
+        unsubscribeDoc = onSnapshot(userRef, async (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
             setUserData(data);
@@ -99,7 +102,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setRole(data.role || 'client');
             }
 
-            setLoggedInName(data.name || firebaseUser.displayName || 'Usuario');
+            let resolvedName = data.name || firebaseUser.displayName || 'Usuario';
+            // Si el nombre es genérico pero es técnico, sincronizar con technicians
+            if (data.role === 'tech' && (!data.name || data.name.toLowerCase() === 'usuario')) {
+              try {
+                const tId = data.techId || `tech-${firebaseUser.uid}`;
+                const techSnap = await getDoc(doc(db, "technicians", tId));
+                if (techSnap.exists() && techSnap.data().name) {
+                  resolvedName = techSnap.data().name;
+                  updateDoc(userRef, { name: resolvedName });
+                }
+              } catch (e) {
+                console.error("Error auto-resolving tech name:", e);
+              }
+            }
+
+            setLoggedInName(resolvedName);
             setProfileImage(data.profileImage || '');
 
             if (data.role === 'tech') {
@@ -133,8 +151,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               };
               setDoc(userRef, adminData);
             } else {
+              // Verificar si ya existe como técnico en 'technicians'
+              let initialRole: 'client' | 'tech' = 'client';
+              let initialName = firebaseUser.displayName || 'Usuario';
+              let initialTechId: string | null = null;
+
+              try {
+                const techQuery = query(collection(db, "technicians"), where("userId", "==", firebaseUser.uid));
+                const techDocs = await getDocs(techQuery);
+                if (!techDocs.empty) {
+                  const tData = techDocs.docs[0].data();
+                  initialRole = 'tech';
+                  initialName = tData.name || initialName;
+                  initialTechId = techDocs.docs[0].id;
+                }
+              } catch (e) {
+                console.error("Error checking technician profile:", e);
+              }
+
               const defaultSub: UserSubscription = {
-                planId: 'plan-free',
+                planId: initialRole === 'tech' ? 'plan-basic' : 'plan-free',
                 status: 'active',
                 startDate: new Date().toISOString(),
                 nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
@@ -142,13 +178,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const newUserData = {
                 uid: firebaseUser.uid,
                 email: firebaseUser.email,
-                name: firebaseUser.displayName || 'Usuario',
-                role: 'client',
+                name: initialName,
+                role: initialRole,
+                techId: initialTechId,
                 subscription: defaultSub,
                 createdAt: serverTimestamp()
               };
               setDoc(userRef, newUserData);
-              setRole('client');
+              setRole(initialRole);
               setLoggedInName(newUserData.name);
               setSubscription(defaultSub);
             }
@@ -241,10 +278,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await updateDoc(doc(db, "users", user!.uid), { subscription: expiredSub });
         setSubscription(expiredSub as UserSubscription);
 
-        toast.error("Tu suscripción MantechPro ha expirado. Tus beneficios premium han sido suspendidos y has retornado al Plan Base.", {
-          duration: 8000,
-          icon: '⚠️'
-        });
+        toast(
+          (t) => (
+            <span style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <span>⚠️</span>
+              <span style={{ flex: 1, fontSize: 13 }}>Tu suscripción MantechPro ha expirado. Tus beneficios premium han sido suspendidos y has retornado al Plan Base.</span>
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                style={{ marginLeft: 8, fontWeight: 900, fontSize: 16, lineHeight: 1, background: 'none', border: 'none', color: '#fff', cursor: 'pointer', flexShrink: 0 }}
+              >✕</button>
+            </span>
+          ),
+          { duration: Infinity, style: { background: '#1c1d21', color: '#fff', border: '1px solid #e11d48', maxWidth: 380 } }
+        );
       }
     };
 

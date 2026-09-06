@@ -52,8 +52,9 @@ export interface Asset {
   performanceRating?: 'efficient' | 'average' | 'costly';
   fuelEfficiency?: number; // km por galón
   fuelLogs?: { date: string, gallons: number, price: number, mileage: number, photoUrl?: string, status: 'ok' | 'anomaly' }[];
-  preTripInspections?: { date: string, inspectorName: string, items: { label: string, status: 'ok' | 'fail' }[], observations?: string }[];
+  preTripInspections?: { date: string, inspectorName: string, items: { label: string, status: 'ok' | 'fail' }[], observations?: string, result?: string }[];
   usageStats?: {
+
     dailyAvgKm?: number,
     predictedMaintenanceDate?: string,
     rol?: number, // Remaining Oil Life (0-100)
@@ -134,12 +135,14 @@ export interface TechProfile {
   id: string;
   name: string;
   category: TechCategory;
+  secondaryCategories?: TechCategory[]; // Especialidades adicionales / secundarias
   title: string;
   rating: number;
   reviewCount: number;
   completedJobs: number;
   experienceYears: number;
   location: string;
+  phone?: string; // Teléfono de contacto
   profileImage?: string; // Foto de perfil del especialista
   isOnline?: boolean; // Estado de disponibilidad en el radar
   companyName?: string; // Nombre de la empresa a la que pertenece
@@ -208,8 +211,9 @@ export interface JobRequest {
   techId: string;
   techName: string;
   techCompanyName?: string; // Nombre de la empresa del especialista
+  techUserId?: string;
   description: string;
-  status: 'pending' | 'quoted' | 'accepted' | 'executing' | 'completed' | 'rated' | 'rejected' | 'disputed' | 'cancelled' | 'open_bidding';
+  status: 'pending' | 'quoted' | 'accepted' | 'executing' | 'completed' | 'rated' | 'rejected' | 'disputed' | 'cancelled' | 'open_bidding' | 'pending_verification';
   isPublic?: boolean; // Si es true, aparece en el Market abierto
   bids?: { techId: string; techName: string; price: number; time: string; timestamp: string }[];
   serviceType?: 'onsite' | 'remote';
@@ -223,10 +227,15 @@ export interface JobRequest {
   scheduledDuration?: number; // Duración en horas (0.5, 1, 2, etc.)
   scheduledTravelTime?: number; // Tiempo de viaje en minutos
   price?: number;
+  amountPaid?: number;
+  techNotes?: string;
+  rejectionReason?: string;
+
   commission?: number;
   commissionItbms?: number; // ITBMS que MantechPro le cobra al técnico por el servicio de plataforma
   technicianEarnings?: number;
   itbmsAmount?: number; // ITBMS que el técnico le cobra al cliente
+
 
   // Ajustes de Presupuesto en Sitio
   priceAdjustment?: {

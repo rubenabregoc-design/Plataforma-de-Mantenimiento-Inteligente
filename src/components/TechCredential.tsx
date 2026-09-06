@@ -63,6 +63,15 @@ export default function TechCredential({ tech }: TechCredentialProps) {
                 <div className="bg-[#1c1d21] px-3 py-1 sm:px-4 sm:py-1.5 rounded-lg border border-white/5 inline-block">
                   <p className="text-[#c8c4d9] text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">{t(`cat_${tech.category}`, tech.category.replace('_', ' '))}</p>
                 </div>
+                {tech.secondaryCategories && tech.secondaryCategories.length > 0 && (
+                  <div className="flex flex-wrap justify-center gap-1 max-w-[260px] mt-1">
+                    {tech.secondaryCategories.map((sc, scIdx) => (
+                      <span key={scIdx} className="bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 text-[#c7bfff] px-2 py-0.5 rounded text-[7px] sm:text-[8px] font-bold uppercase tracking-wider">
+                        + {t(`cat_${sc}`, sc.replace('_', ' '))}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {tech.cedula && (
                   <p className="text-[8px] sm:text-[9px] font-black text-[#c7bfff] uppercase tracking-[0.3em] sm:tracking-[0.4em] mt-1 sm:mt-2">{t('id_number', 'Cédula')}: {tech.cedula}</p>
                 )}

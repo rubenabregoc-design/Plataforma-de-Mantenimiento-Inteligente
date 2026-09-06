@@ -9,18 +9,8 @@ interface WarrantyVaultModuleProps {
   onNavigate?: (tab: string) => void;
 }
 
-import React from 'react';
-import { Asset } from '../types';
-import { ShieldCheck, AlertCircle, Clock, Calendar, Archive, BadgeCheck, XCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useTranslation } from 'react-i18next';
-
-interface WarrantyVaultModuleProps {
-  assets: Asset[];
-  onNavigate?: (tab: string) => void;
-}
-
 export default function WarrantyVaultModule({ assets, onNavigate }: WarrantyVaultModuleProps) {
+
   const { t } = useTranslation();
 
   const getWarrantyInfo = (asset: Asset) => {

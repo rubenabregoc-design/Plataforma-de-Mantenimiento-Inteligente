@@ -4,11 +4,13 @@ import {
   X, LayoutDashboard, Search, Bell, HelpCircle, LogOut, Camera,
   Globe, BrainCircuit, ShieldCheck, Store, FileCheck2, FileText,
   Package, Star, MessageSquare, Settings, Inbox, Layers, CalendarDays,
-  PieChart, User, DollarSign, Truck, Users, BellRing, Zap
+  PieChart, User, DollarSign, Truck, Users, BellRing, Zap, ChevronRight, Headset, Pencil
 } from 'lucide-react';
 import Logo from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
+import MobileBottomNav from '../components/MobileBottomNav';
+import MobileQuickActionsFAB from '../components/MobileQuickActionsFAB';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -27,9 +29,9 @@ export default function DashboardLayout({
   planLimits,
   handleUploadAvatar
 }: DashboardLayoutProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { role, loggedInName, profileImage, logout, subscription } = useAuth();
-  const { tabs, setTab } = useUI();
+  const { tabs, setTab, openModal } = useUI();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
 
@@ -37,179 +39,395 @@ export default function DashboardLayout({
   const currentTechTab = tabs.tech;
   const currentAdminTab = tabs.admin;
 
-  const navigateClient = (tab: string) => setTab('client', tab);
-  const navigateTech = (tab: string) => setTab('tech', tab);
-  const navigateAdmin = (tab: string) => setTab('admin', tab);
+  const navigateClient = (tab: string) => { setTab('client', tab); setIsMobileMenuOpen(false); };
+  const navigateTech = (tab: string) => { setTab('tech', tab); setIsMobileMenuOpen(false); };
+  const navigateAdmin = (tab: string) => { setTab('admin', tab); setIsMobileMenuOpen(false); };
 
-  // --- Lógica de Módulos por Plan (SaaS Flow) ---
-  const activePlan = subscription.planId || 'plan-free';
+  const currentActiveTab = role === 'client' ? currentClientTab : role === 'tech' ? currentTechTab : currentAdminTab;
+  const handleBottomTabSelect = (tab: string) => {
+    if (role === 'client') navigateClient(tab);
+    else if (role === 'tech') navigateTech(tab);
+    else if (role === 'admin') navigateAdmin(tab);
+  };
+
+  // --- Plan ---
+  const activePlan = subscription.planId || (role === 'tech' ? 'plan-basic' : 'plan-free');
   const isFree = activePlan === 'plan-free';
   const isEmprendedor = activePlan === 'plan-basic';
   const isPro = activePlan === 'plan-pro';
   const isEnterprise = activePlan === 'plan-enterprise';
-
-  // Flota B2B: Disponible desde Emprendedor ($29) en adelante
   const canAccessFleet = !isFree;
-  // Auditoría: Disponible desde Profesional ($89) en adelante
   const canAccessAudit = isPro || isEnterprise;
-  // Repuestos/Inventario: Disponible para todos (Gratis tiene límites de items)
   const canAccessInventory = true;
+
+  const getPlanInfo = () => {
+    if (role === 'admin') {
+      return { label: 'Acceso Total', color: '#e11d48' };
+    }
+    if (role === 'tech') {
+      if (activePlan === 'plan-enterprise') return { label: 'Partner Élite', color: '#f59e0b' };
+      if (activePlan === 'plan-pro') return { label: 'Técnico Pro', color: '#c7bfff' };
+      return { label: 'Estándar', color: '#52ffac' };
+    }
+    // client
+    if (activePlan === 'plan-enterprise') return { label: 'Enterprise', color: '#f59e0b' };
+    if (activePlan === 'plan-pro') return { label: 'Profesional', color: '#c7bfff' };
+    if (activePlan === 'plan-basic') return { label: 'Emprendedor', color: '#52ffac' };
+    return { label: 'Plan Gratis', color: '#8e8d9a' };
+  };
+
+  const { label: planLabel, color: planColor } = getPlanInfo();
+
+  const roleConfig = {
+    admin: {
+      label: 'Admin',
+      badgeClass: 'bg-rose-500/10 border-rose-500/30 text-rose-400',
+    },
+    tech: {
+      label: 'Técnico',
+      badgeClass: 'bg-[#52ffac]/10 border-[#52ffac]/30 text-[#52ffac]',
+    },
+    client: {
+      label: 'Cliente',
+      badgeClass: 'bg-[#5d3cfe]/10 border-[#5d3cfe]/30 text-[#c7bfff]',
+    }
+  }[role || 'client'] || {
+    label: 'Cliente',
+    badgeClass: 'bg-white/10 border-white/20 text-white',
+  };
+
+  // Reusable sidebar button
+  const SBtn = ({ tab, icon: Icon, label, nav, cur, red = false }: any) => {
+    const active = cur === tab;
+    return (
+      <button onClick={() => nav(tab)} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-[10px] font-black uppercase tracking-wider ${ active ? (red ? 'bg-[#e11d48] text-white shadow-md shadow-[#e11d48]/20' : 'bg-[#5d3cfe] text-white shadow-md shadow-[#5d3cfe]/20') : 'text-[#8a879d] hover:text-white hover:bg-white/5' }`}>
+        <Icon className="w-4 h-4 shrink-0" />
+        <span className="truncate">{label}</span>
+      </button>
+    );
+  };
+
+  // Reusable bottom sheet tile
+  const STile = ({ tab, icon: Icon, label, nav, cur, color = '#5d3cfe' }: any) => {
+    const active = cur === tab;
+    return (
+      <button onClick={() => nav(tab)} className={`flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-2xl transition-all active:scale-90 ${ active ? 'bg-white/8' : 'hover:bg-white/5' }`}>
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all ${ active ? '' : 'bg-white/5' }`} style={active ? { backgroundColor: `${color}20`, color } : { color: '#8a879d' }}>
+          <Icon className="w-5 h-5" />
+        </div>
+        <span className={`text-[8px] font-black uppercase tracking-wider leading-tight text-center w-full`} style={{ color: active ? color : '#474556' }}>
+          {label}
+        </span>
+      </button>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#0d0e12] flex flex-col font-sans text-[#e3e2e8] overflow-hidden grid-bg">
-      {/* MOBILE HEADER */}
-      <nav className="h-20 bg-[#0d0e12]/80 backdrop-blur-md border-b border-[#2a2b2f] flex items-center justify-between px-6 md:px-10 shrink-0 z-[100]">
-        <div className="flex items-center gap-4 md:gap-10">
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2.5 bg-[#1c1d21] border border-[#2a2b2f] rounded-xl text-[#c8c4d9] hover:text-white md:hidden transition-all active:scale-95"
-          >
-            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <LayoutDashboard className="w-5 h-5" />}
-          </button>
+
+      {/* TOP BAR */}
+      <nav className="h-[calc(4.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] bg-[#0d0e12]/90 backdrop-blur-md border-b border-[#2a2b2f]/60 flex items-center justify-between px-4 md:px-8 shrink-0 z-[100]">
+        <div className="flex items-center gap-3 md:gap-8">
           <Logo size="sm" />
           <div className="relative hidden md:block">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#474556]" />
-            <input
-              type="text"
-              placeholder={t('search_placeholder', 'Buscar en el ecosistema...')}
-              className="bg-[#121317] border border-[#2a2b2f] rounded-full py-2.5 pl-12 pr-6 text-xs text-white w-[300px] lg:w-[450px]"
-              value={globalSearch}
-              onChange={(e) => setGlobalSearch(e.target.value)}
-            />
+            <input type="text" placeholder={t('search_placeholder', 'Buscar...')} className="bg-[#121317] border border-[#2a2b2f] rounded-full py-2.5 pl-12 pr-6 text-xs text-white w-[260px] lg:w-[400px] focus:outline-none focus:border-[#5d3cfe]/50 transition-colors" value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />
           </div>
         </div>
-        <div className="flex items-center gap-3 md:gap-8">
-          {/* PLAQUITA DE PLAN ACTUAL */}
-          <div className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl border transition-all shadow-lg ${
-            isFree ? 'bg-white/5 border-white/10 text-[#474556]' :
-            isEmprendedor ? 'bg-[#52ffac]/10 border-[#52ffac]/20 text-[#52ffac] shadow-[#52ffac]/5' :
-            isPro ? 'bg-[#5d3cfe]/10 border-[#5d3cfe]/20 text-[#c7bfff] shadow-[#5d3cfe]/5' :
-            'bg-amber-500/10 border-amber-500/20 text-amber-500 shadow-amber-500/5'
-          }`}>
-            <Zap className={`w-3 h-3 ${isFree ? 'opacity-20' : 'fill-current'}`} />
-            <span className="text-[9px] font-black uppercase tracking-[0.2em]">
-              {activePlan === 'plan-free' ? 'Plan Gratis' :
-               activePlan === 'plan-basic' ? 'Emprendedor' :
-               activePlan === 'plan-pro' ? 'Profesional' : 'Enterprise'}
-            </span>
-          </div>
-
-          <button
-            onClick={onShowNotifications}
-            className="relative p-2.5 rounded-2xl bg-white/5 border border-white/10 hover:bg-[#5d3cfe]/10 hover:border-[#5d3cfe]/30 transition-all group"
-          >
-            <Bell className="w-5 h-5 text-[#c8c4d9] group-hover:text-[#5d3cfe] transition-colors" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#5d3cfe] text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-[#0d0e12] animate-pulse">
-                {unreadCount}
+        <div className="flex items-center gap-2 md:gap-5">
+          {role === 'client' ? (
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-wider" style={{ borderColor: `${planColor}30`, color: planColor, background: `${planColor}10` }}>
+              <Zap className="w-3 h-3 fill-current" />{planLabel}
+            </div>
+          ) : (
+            <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-wider ${roleConfig.badgeClass}`}>
+              <ShieldCheck className="w-3 h-3" />{roleConfig.label}
+            </div>
+          )}
+          {role !== 'admin' && (
+            <button
+              onClick={() => openModal('chatbot')}
+              aria-label="Asesor IA 24/7"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-[#5d3cfe]/20 to-[#52ffac]/15 border border-[#5d3cfe]/40 text-white hover:border-[#5d3cfe]/70 transition-all active:scale-95 shadow-sm"
+              title="Asesor MantechPro IA 24/7"
+            >
+              <div className="relative">
+                <Headset className="w-4 h-4 text-[#52ffac]" />
+                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-[#52ffac] rounded-full animate-ping" />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#c7bfff] hidden xs:inline">
+                Asesor IA
               </span>
-            )}
+            </button>
+          )}
+          <button onClick={onShowNotifications} className="relative p-2.5 rounded-xl bg-white/5 border border-white/8 hover:bg-[#5d3cfe]/10 hover:border-[#5d3cfe]/30 transition-all">
+            <Bell className="w-5 h-5 text-[#c8c4d9]" />
+            {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#5d3cfe] text-white text-[9px] font-black flex items-center justify-center rounded-full border-2 border-[#0d0e12] animate-pulse">{unreadCount}</span>}
           </button>
-
-          <button onClick={onShowSupport} className="p-2.5 bg-[#1c1d21] border border-[#2a2b2f] rounded-xl text-[#c8c4d9] hover:text-white transition-all"><HelpCircle className="w-5 h-5" /></button>
-          <button onClick={logout} className="flex items-center gap-3 text-[#c8c4d9] hover:text-white font-black text-[10px] uppercase tracking-widest transition-all">
-            <LogOut className="w-5 h-5" />
-            <span className="hidden sm:inline">{t('exit', 'Salir')}</span>
+          <button onClick={onShowSupport} className="p-2.5 bg-white/5 border border-white/8 rounded-xl text-[#c8c4d9] hover:text-white transition-all"><HelpCircle className="w-5 h-5" /></button>
+          <button onClick={logout} className="flex items-center gap-2 text-[#8a879d] hover:text-white font-black text-[10px] uppercase tracking-widest transition-all p-2.5 rounded-xl hover:bg-white/5">
+            <LogOut className="w-5 h-5" /><span className="hidden sm:inline">{t('exit', 'Salir')}</span>
           </button>
         </div>
       </nav>
 
       <div className="flex flex-1 overflow-hidden relative">
-        {/* SIDEBAR */}
-        <aside className={`
-          fixed md:relative inset-y-0 left-0 z-[90] w-64 bg-[#0d0e12] border-r border-[#2a2b2f] p-6 flex flex-col shrink-0 overflow-y-auto custom-scrollbar transition-transform duration-300 ease-in-out
-          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-        `}>
-          {isMobileMenuOpen && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[-1] md:hidden" onClick={() => setIsMobileMenuOpen(false)}></div>
-          )}
-
-          <div className="flex items-center gap-4 mb-10 group cursor-pointer" onClick={() => document.getElementById('avatar-input')?.click()}>
-             <div className="w-14 h-14 rounded-2xl bg-[#1c1d21] border border-white/10 flex items-center justify-center text-xl font-black text-white shadow-2xl overflow-hidden relative">
-               {profileImage ? <img src={profileImage} className="w-full h-full object-cover" /> : (loggedInName?.[0] || 'U')}
-               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Camera className="w-4 h-4 text-white" /></div>
-               <input type="file" id="avatar-input" className="hidden" accept="image/*" onChange={e => e.target.files?.[0] && handleUploadAvatar(e.target.files[0])} />
-             </div>
-             <div className="overflow-hidden">
-               <h4 className="font-black text-white text-xs tracking-tight truncate uppercase leading-tight">{loggedInName || 'Usuario'}</h4>
-               <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest mt-1">
-                 {!role ? t('loading', 'CARGANDO...') : role === 'client' ? t('client', 'CLIENTE') : role === 'tech' ? t('tech', 'TÉCNICO') : t('admin', 'ADMINISTRADOR')}
-               </p>
-             </div>
+        {/* DESKTOP SIDEBAR */}
+        <aside className="hidden md:flex w-52 bg-[#0d0e12] border-r border-[#2a2b2f]/60 py-4 px-3 flex-col shrink-0 overflow-y-auto custom-scrollbar">
+          {/* Avatar card */}
+          <div className="flex items-center gap-3 mb-5 p-3 rounded-2xl bg-[#121317] border border-white/5 group hover:border-white/10 transition-all">
+            <div className="w-10 h-10 rounded-xl bg-[#1c1d21] border border-white/10 flex items-center justify-center text-sm font-black text-white overflow-hidden relative shrink-0 cursor-pointer" onClick={() => document.getElementById('avatar-input')?.click()} title="Cambiar foto de perfil">
+              {profileImage ? <img src={profileImage} className="w-full h-full object-cover" /> : (loggedInName?.[0] || 'U')}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Camera className="w-3 h-3 text-white" /></div>
+              <input type="file" id="avatar-input" className="hidden" accept="image/*" onChange={e => e.target.files?.[0] && handleUploadAvatar(e.target.files[0])} />
+            </div>
+            <div className="overflow-hidden flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-1">
+                <h4
+                  onClick={() => role === 'tech' ? openModal('editTech') : openModal('editProfile')}
+                  className="font-black text-white text-[11px] tracking-tight truncate uppercase leading-tight cursor-pointer hover:text-[#5d3cfe] transition-colors"
+                  title="Editar Perfil"
+                >
+                  {loggedInName || 'Usuario'}
+                </h4>
+                <button
+                  onClick={() => role === 'tech' ? openModal('editTech') : openModal('editProfile')}
+                  className="text-[#6b697e] hover:text-[#5d3cfe] p-0.5 transition-colors shrink-0"
+                  title="Editar Perfil"
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+              </div>
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border leading-none ${roleConfig.badgeClass}`}>
+                  {roleConfig.label}
+                </span>
+                <span className="text-[8px] font-bold uppercase tracking-wider truncate" style={{ color: planColor }}>
+                  {planLabel}
+                </span>
+              </div>
+            </div>
           </div>
 
-          <nav className="space-y-1.5 flex-1 text-[11px] font-black uppercase tracking-wider">
-            {role === 'client' && (
-              <>
-                <button onClick={() => navigateClient('dashboard')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'dashboard' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><LayoutDashboard className="w-4 h-4" /> {t('my_assets', 'Mis Equipos')}</button>
-
-                {/* Módulos Gated (SaaS logic) */}
-                {canAccessFleet && (
-                  <button onClick={() => navigateClient('fleet')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'fleet' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Globe className="w-5 h-5" /> {t('fleet_b2b', 'Flota B2B')}</button>
-                )}
-
-                <button onClick={() => navigateClient('ai')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'ai' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><BrainCircuit className="w-5 h-5 text-[#52ffac]" /> {t('self_diagnostic', 'Autodiagnóstico')}</button>
-                <button onClick={() => navigateClient('warranties')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'warranties' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><ShieldCheck className="w-5 h-5" /> {t('warranty_vault', 'Bóveda Garantías')}</button>
-                <button onClick={() => navigateClient('marketplace')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'marketplace' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Store className="w-5 h-5" /> {t('find_experts', 'Buscar Expertos')}</button>
-                <button onClick={() => navigateClient('quotes')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'quotes' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileCheck2 className="w-4 h-4" /> {t('contracts', 'Contratos')}</button>
-
-                {canAccessAudit && (
-                  <button onClick={() => navigateClient('audit')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'audit' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileText className="w-4 h-4" /> {t('audit', 'Auditoría')}</button>
-                )}
-
-                {canAccessInventory && (
-                  <button onClick={() => navigateClient('inventory')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'inventory' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Package className="w-4 h-4" /> {t('spare_parts', 'Repuestos')}</button>
-                )}
-                <button onClick={() => navigateClient('subscriptions')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'subscriptions' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Star className="w-4 h-4" /> {t('membership', 'Membresía')}</button>
-                <button onClick={() => navigateClient('chat')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'chat' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><MessageSquare className="w-4 h-4" /> {t('chat', 'Chat')}</button>
-
-                {isEnterprise && (
-                  <button onClick={() => navigateClient('team')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'team' ? 'bg-amber-500 text-black shadow-xl shadow-amber-500/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Users className="w-4 h-4" /> Gestión de Equipo</button>
-                )}
-
-                <button onClick={() => navigateClient('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentClientTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl shadow-[#5d3cfe]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> {t('settings', 'Configuración')}</button>
-              </>
-            )}
-
-            {role === 'tech' && (
-              <>
-                <button onClick={() => navigateTech('received')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'received' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Inbox className="w-4 h-4" /> {t('inbox', 'Bandeja')}</button>
-                <button onClick={() => navigateTech('bidding_market')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'bidding_market' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Layers className="w-4 h-4" /> {t('job_market', 'Bolsa de Trabajo')}</button>
-                <button onClick={() => navigateTech('agenda')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'agenda' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><CalendarDays className="w-4 h-4" /> {t('agenda', 'Agenda')}</button>
-                <button onClick={() => navigateTech('wallet')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'wallet' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><PieChart className="w-4 h-4" /> {t('wallet', 'Billetera')}</button>
-                <button onClick={() => navigateTech('loyalty')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'loyalty' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Star className="w-4 h-4 text-amber-500" /> {t('loyalty_club', 'Club Fidelidad')}</button>
-                <button onClick={() => navigateTech('inventory')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'inventory' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Package className="w-4 h-4" /> {t('my_inventory', 'Mi Inventario')}</button>
-                <button onClick={() => navigateTech('mantech_id')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'mantech_id' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><ShieldCheck className="w-4 h-4" /> {t('mantech_id', 'Mantech ID')}</button>
-                <button onClick={() => navigateTech('community')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'community' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Users className="w-4 h-4" /> Soporte Comunidad</button>
-                <button onClick={() => navigateTech('chat')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'chat' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><MessageSquare className="w-4 h-4" /> {t('chat', 'Chat')}</button>
-                <button onClick={() => navigateTech('profile')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'profile' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><User className="w-4 h-4" /> {t('my_profile', 'Mi Perfil')}</button>
-                <button onClick={() => navigateTech('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentTechTab === 'settings' ? 'bg-[#5d3cfe] text-white shadow-xl' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> {t('settings', 'Configuración')}</button>
-              </>
-            )}
-
-            {role === 'admin' && (
-              <>
-                <button onClick={() => navigateAdmin('finance')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'finance' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><DollarSign className="w-4 h-4" /> Finanzas</button>
-                <button onClick={() => navigateAdmin('validator')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'validator' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><ShieldCheck className="w-4 h-4" /> Validador</button>
-                <button onClick={() => navigateAdmin('audit')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'audit' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><FileText className="w-4 h-4" /> Logs Actividad</button>
-                <button onClick={() => navigateAdmin('tickets')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'tickets' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><MessageSquare className="w-4 h-4" /> Tickets Web</button>
-                <button onClick={() => navigateAdmin('ads')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'ads' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Zap className="w-4 h-4 text-amber-500" /> Ads & Marketing</button>
-                <button onClick={() => navigateAdmin('logistics')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'logistics' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Truck className="w-4 h-4" /> Logística</button>
-                <button onClick={() => navigateAdmin('users')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'users' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Users className="w-4 h-4" /> Usuarios</button>
-                <button onClick={() => navigateAdmin('inventory')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'inventory' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Package className="w-4 h-4" /> Inventario</button>
-                <button onClick={() => navigateAdmin('alerts')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'alerts' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><BellRing className="w-4 h-4" /> Alertas</button>
-                <button onClick={() => navigateAdmin('settings')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${currentAdminTab === 'settings' ? 'bg-[#e11d48] text-white shadow-xl shadow-[#e11d48]/20' : 'text-[#c8c4d9] hover:bg-[#121317]'}`}><Settings className="w-4 h-4" /> Configuración</button>
-              </>
-            )}
+          <nav className="space-y-0.5 flex-1">
+            {role === 'client' && (<>
+              <SBtn tab="dashboard" icon={LayoutDashboard} label={t('my_assets','Mis Equipos')} nav={navigateClient} cur={currentClientTab} />
+              {canAccessFleet && <SBtn tab="fleet" icon={Globe} label={t('fleet_b2b','Flota B2B')} nav={navigateClient} cur={currentClientTab} />}
+              <SBtn tab="ai" icon={BrainCircuit} label={t('self_diagnostic','Autodiagnóstico')} nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="warranties" icon={ShieldCheck} label={t('warranty_vault','Bóveda')} nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="marketplace" icon={Store} label={t('find_experts','Expertos')} nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="quotes" icon={FileCheck2} label={t('contracts','Contratos')} nav={navigateClient} cur={currentClientTab} />
+              {canAccessAudit && <SBtn tab="audit" icon={FileText} label={t('audit','Auditoría')} nav={navigateClient} cur={currentClientTab} />}
+              {canAccessInventory && <SBtn tab="inventory" icon={Package} label={t('spare_parts','Repuestos')} nav={navigateClient} cur={currentClientTab} />}
+              <SBtn tab="subscriptions" icon={Star} label={t('membership','Membresía')} nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="chat" icon={MessageSquare} label={t('chat','Chat')} nav={navigateClient} cur={currentClientTab} />
+              {isEnterprise && <SBtn tab="team" icon={Users} label="Equipo" nav={navigateClient} cur={currentClientTab} />}
+              <SBtn tab="settings" icon={Settings} label={t('settings','Config.')} nav={navigateClient} cur={currentClientTab} />
+            </>)}
+            {role === 'tech' && (<>
+              <SBtn tab="received" icon={Inbox} label={t('inbox','Bandeja')} nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="bidding_market" icon={Layers} label={t('job_market','Bolsa')} nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="agenda" icon={CalendarDays} label={t('agenda','Agenda')} nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="wallet" icon={PieChart} label={t('wallet','Billetera')} nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="loyalty" icon={Star} label={t('loyalty_club','Fidelidad')} nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="inventory" icon={Package} label={t('my_inventory','Inventario')} nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="mantech_id" icon={ShieldCheck} label={t('mantech_id','Mantech ID')} nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="community" icon={Users} label="Comunidad" nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="chat" icon={MessageSquare} label={t('chat','Chat')} nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="profile" icon={User} label={t('my_profile','Perfil')} nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="settings" icon={Settings} label={t('settings','Config.')} nav={navigateTech} cur={currentTechTab} />
+            </>)}
+            {role === 'admin' && (<>
+              <SBtn tab="finance" icon={DollarSign} label="Finanzas" nav={navigateAdmin} cur={currentAdminTab} red />
+              <SBtn tab="validator" icon={ShieldCheck} label="Validador" nav={navigateAdmin} cur={currentAdminTab} red />
+              <SBtn tab="audit" icon={FileText} label="Logs" nav={navigateAdmin} cur={currentAdminTab} red />
+              <SBtn tab="tickets" icon={MessageSquare} label="Tickets" nav={navigateAdmin} cur={currentAdminTab} red />
+              <SBtn tab="ads" icon={Zap} label="Marketing" nav={navigateAdmin} cur={currentAdminTab} red />
+              <SBtn tab="logistics" icon={Truck} label="Logística" nav={navigateAdmin} cur={currentAdminTab} red />
+              <SBtn tab="users" icon={Users} label="Usuarios" nav={navigateAdmin} cur={currentAdminTab} red />
+              <SBtn tab="inventory" icon={Package} label="Inventario" nav={navigateAdmin} cur={currentAdminTab} red />
+              <SBtn tab="alerts" icon={BellRing} label="Alertas" nav={navigateAdmin} cur={currentAdminTab} red />
+              <SBtn tab="settings" icon={Settings} label="Config." nav={navigateAdmin} cur={currentAdminTab} red />
+            </>)}
           </nav>
         </aside>
 
-        <main className="flex-1 bg-[#0d0e12] p-4 sm:p-6 md:p-10 overflow-y-auto custom-scrollbar relative">
-           <div className="max-w-[1600px] mx-auto space-y-6 sm:space-y-8 md:space-y-12">
-              {children}
-           </div>
+        {/* MAIN CONTENT */}
+        <main className="flex-1 bg-[#0d0e12] p-4 sm:p-5 md:p-8 pb-[calc(8.5rem+env(safe-area-inset-bottom))] md:pb-8 overflow-y-auto custom-scrollbar relative">
+          <div className="max-w-[1600px] mx-auto space-y-5 md:space-y-10">
+            {children}
+          </div>
         </main>
       </div>
+
+      {/* MOBILE BOTTOM NAV */}
+      <MobileBottomNav role={role} currentTab={currentActiveTab} onSelectTab={handleBottomTabSelect} onOpenMoreMenu={() => setIsMobileMenuOpen(true)} unreadCount={unreadCount} />
+      <MobileQuickActionsFAB role={role} />
+
+      {/* ── MOBILE BOTTOM SHEET ── */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-[200] flex flex-col justify-end">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
+
+          {/* Panel */}
+          <div className="relative bg-[#121317] rounded-t-[1.75rem] border-t border-[#2a2b2f]/80 shadow-[0_-20px_60px_rgba(0,0,0,0.8)] overflow-y-auto" style={{ maxHeight: '80vh', animation: 'slideUp 0.25s cubic-bezier(0.32,0.72,0,1) forwards' }}>
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 bg-white/15 rounded-full" /></div>
+
+            {/* User header */}
+            <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/5">
+              <div className="w-10 h-10 rounded-xl bg-[#1c1d21] border border-white/10 flex items-center justify-center text-sm font-black text-white overflow-hidden shrink-0 cursor-pointer" onClick={() => document.getElementById('avatar-mob')?.click()} title="Cambiar foto de perfil">
+                {profileImage ? <img src={profileImage} className="w-full h-full object-cover" /> : (loggedInName?.[0] || 'U')}
+                <input type="file" id="avatar-mob" className="hidden" accept="image/*" onChange={e => e.target.files?.[0] && handleUploadAvatar(e.target.files[0])} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h4
+                    onClick={() => { setIsMobileMenuOpen(false); role === 'tech' ? openModal('editTech') : openModal('editProfile'); }}
+                    className="font-black text-white text-sm uppercase tracking-tight truncate leading-tight cursor-pointer hover:text-[#5d3cfe] transition-colors"
+                  >
+                    {loggedInName || 'Usuario'}
+                  </h4>
+                  <button
+                    onClick={() => { setIsMobileMenuOpen(false); role === 'tech' ? openModal('editTech') : openModal('editProfile'); }}
+                    className="text-[#6b697e] hover:text-[#5d3cfe] p-1 transition-colors shrink-0"
+                    title="Editar Perfil"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border leading-none ${roleConfig.badgeClass}`}>
+                    {roleConfig.label}
+                  </span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: planColor }}>
+                    {planLabel}
+                  </span>
+                </div>
+              </div>
+              <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-xl bg-white/5 text-[#474556] hover:text-white transition-colors"><X className="w-4 h-4" /></button>
+            </div>
+
+            {/* Featured AI Assistant Banner */}
+            {role !== 'admin' && (
+              <div className="px-4 pt-3 pb-1">
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    openModal('chatbot');
+                  }}
+                  className="w-full flex items-center justify-between p-3.5 bg-gradient-to-r from-[#5d3cfe]/20 via-[#5d3cfe]/10 to-[#52ffac]/15 border border-[#5d3cfe]/40 hover:border-[#5d3cfe] rounded-2xl active:scale-98 transition-all shadow-lg text-left group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#5d3cfe] to-[#52ffac] flex items-center justify-center text-white shadow-md shadow-[#5d3cfe]/30 shrink-0">
+                      <BrainCircuit className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="text-xs font-black uppercase text-white tracking-wider">
+                          Asesor MantechPro 24/7
+                        </h4>
+                        <span className="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase bg-[#52ffac]/20 text-[#52ffac]">
+                          IA Activa
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-[#8e8d9a] font-bold mt-0.5">
+                        Consultas técnicas, contratos y cotizaciones
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[#8e8d9a] group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" />
+                </button>
+              </div>
+            )}
+
+            {/* Grid of tiles */}
+            <div className="px-3 pt-2 pb-1">
+              {role === 'client' && (
+                <>
+                  <div className="grid grid-cols-4 gap-1.5 mb-1.5">
+                    <STile tab="dashboard" icon={LayoutDashboard} label="Equipos" nav={navigateClient} cur={currentClientTab} />
+                    <STile tab="ai" icon={BrainCircuit} label="IA Diag" nav={navigateClient} cur={currentClientTab} color="#52ffac" />
+                    <STile tab="warranties" icon={ShieldCheck} label="Bóveda" nav={navigateClient} cur={currentClientTab} />
+                    <STile tab="marketplace" icon={Store} label="Expertos" nav={navigateClient} cur={currentClientTab} />
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5 mb-1.5">
+                    <STile tab="quotes" icon={FileCheck2} label="Contratos" nav={navigateClient} cur={currentClientTab} />
+                    {canAccessInventory && <STile tab="inventory" icon={Package} label="Repuestos" nav={navigateClient} cur={currentClientTab} />}
+                    <STile tab="subscriptions" icon={Star} label="Membresía" nav={navigateClient} cur={currentClientTab} color="#f59e0b" />
+                    <STile tab="chat" icon={MessageSquare} label="Chat" nav={navigateClient} cur={currentClientTab} />
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5 mb-1.5">
+                    {canAccessFleet && <STile tab="fleet" icon={Globe} label="Flota B2B" nav={navigateClient} cur={currentClientTab} />}
+                    {canAccessAudit && <STile tab="audit" icon={FileText} label="Auditoría" nav={navigateClient} cur={currentClientTab} />}
+                    {isEnterprise && <STile tab="team" icon={Users} label="Equipo" nav={navigateClient} cur={currentClientTab} />}
+                    <STile tab="settings" icon={Settings} label="Config." nav={navigateClient} cur={currentClientTab} />
+                  </div>
+                </>
+              )}
+              {role === 'tech' && (
+                <>
+                  <div className="grid grid-cols-4 gap-1.5 mb-1.5">
+                    <STile tab="received" icon={Inbox} label="Bandeja" nav={navigateTech} cur={currentTechTab} />
+                    <STile tab="bidding_market" icon={Layers} label="Bolsa" nav={navigateTech} cur={currentTechTab} />
+                    <STile tab="agenda" icon={CalendarDays} label="Agenda" nav={navigateTech} cur={currentTechTab} />
+                    <STile tab="wallet" icon={PieChart} label="Billetera" nav={navigateTech} cur={currentTechTab} color="#52ffac" />
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5 mb-1.5">
+                    <STile tab="loyalty" icon={Star} label="Fidelidad" nav={navigateTech} cur={currentTechTab} color="#f59e0b" />
+                    <STile tab="inventory" icon={Package} label="Inventario" nav={navigateTech} cur={currentTechTab} />
+                    <STile tab="mantech_id" icon={ShieldCheck} label="ID" nav={navigateTech} cur={currentTechTab} />
+                    <STile tab="community" icon={Users} label="Comunidad" nav={navigateTech} cur={currentTechTab} />
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5 mb-1.5">
+                    <STile tab="chat" icon={MessageSquare} label="Chat" nav={navigateTech} cur={currentTechTab} />
+                    <STile tab="profile" icon={User} label="Perfil" nav={navigateTech} cur={currentTechTab} />
+                    <STile tab="settings" icon={Settings} label="Config." nav={navigateTech} cur={currentTechTab} />
+                  </div>
+                </>
+              )}
+              {role === 'admin' && (
+                <>
+                  <div className="grid grid-cols-4 gap-1.5 mb-1.5">
+                    <STile tab="finance" icon={DollarSign} label="Finanzas" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
+                    <STile tab="validator" icon={ShieldCheck} label="Validador" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
+                    <STile tab="audit" icon={FileText} label="Logs" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
+                    <STile tab="tickets" icon={MessageSquare} label="Tickets" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5 mb-1.5">
+                    <STile tab="ads" icon={Zap} label="Marketing" nav={navigateAdmin} cur={currentAdminTab} color="#f59e0b" />
+                    <STile tab="logistics" icon={Truck} label="Logística" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
+                    <STile tab="users" icon={Users} label="Usuarios" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
+                    <STile tab="inventory" icon={Package} label="Inventario" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5 mb-1.5">
+                    <STile tab="alerts" icon={BellRing} label="Alertas" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
+                    <STile tab="settings" icon={Settings} label="Config." nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Logout */}
+            <div className="mx-3 mb-2 mt-1 border-t border-white/5 pt-2" style={{ paddingBottom: 'max(env(safe-area-inset-bottom),1rem)' }}>
+              <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-[#474556] hover:text-rose-400 hover:bg-rose-500/5 transition-all">
+                <div className="flex items-center gap-3"><LogOut className="w-4 h-4" /><span className="text-[11px] font-black uppercase tracking-widest">{t('exit', 'Cerrar Sesión')}</span></div>
+                <ChevronRight className="w-4 h-4 opacity-30" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+        .bg-white\/8 { background-color: rgba(255,255,255,0.08); }
+      `}</style>
     </div>
   );
 }
+

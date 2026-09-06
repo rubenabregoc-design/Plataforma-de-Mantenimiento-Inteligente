@@ -21,7 +21,7 @@ import { toast } from 'react-hot-toast';
 
 export default function AdminDashboard() {
   const { assets, requests, technicians, inventory, isDataLoading, reminders } = useData();
-  const { logout } = useAuth();
+  const { logout, user, userData, loggedInName } = useAuth();
   const { tabs, openModal } = useUI();
   const business = useBusinessLogic();
 
@@ -548,8 +548,9 @@ export default function AdminDashboard() {
           <FleetDashboard
             assets={assets}
             reminders={reminders}
-            onBulkUpdate={business.handleUpdateAsset}
+            onBulkUpdate={(ids, update) => ids.forEach(id => business.handleUpdateAsset(id, update))}
             onBulkDelete={(ids) => {
+
               openModal('confirmation', {
                 confTitle: "Eliminación Masiva",
                 confMessage: `¿Estás seguro de eliminar ${ids.length} activos permanentemente? Esta acción es irreversible.`,
@@ -845,6 +846,29 @@ export default function AdminDashboard() {
                 <h1 className="text-4xl font-black text-white tracking-tighter uppercase">Consola <span className="text-[#5d3cfe]">Root Mantech</span></h1>
                 <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.4em] mt-2">Gestión de Infraestructura y Contenidos</p>
              </header>
+
+              {/* Perfil del Administrador */}
+              <div className="bg-[#1c1d21]/60 border border-white/5 p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 mb-8 relative z-10">
+                 <div className="flex items-center gap-3 text-left">
+                    <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 font-black text-lg shrink-0">
+                       {userData?.name?.[0] || loggedInName?.[0] || 'A'}
+                    </div>
+                    <div>
+                       <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-black text-white uppercase">{userData?.name || loggedInName || 'Administrador Central'}</h3>
+                          <span className="text-[8px] font-black uppercase text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">Super Administrador</span>
+                       </div>
+                       <p className="text-xs text-[#8e8d9a] mt-0.5">{user?.email || 'admin@mantech.com'}</p>
+                       {userData?.phone && <p className="text-[10px] text-[#7a788d] font-bold mt-0.5">Tel: {userData.phone}</p>}
+                    </div>
+                 </div>
+                 <button
+                   onClick={() => openModal('editProfile')}
+                   className="px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
+                 >
+                    <Pencil className="w-3.5 h-3.5" /> Editar Perfil
+                 </button>
+              </div>
 
              <LandingCMS />
 

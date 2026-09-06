@@ -9,6 +9,7 @@ interface UIContextType {
     preTrip: boolean;
     tech: boolean;
     editTech: boolean;
+    editProfile: boolean;
     report: boolean;
     signature: boolean;
     support: boolean;
@@ -29,7 +30,12 @@ interface UIContextType {
     reason: boolean;
     confirmation: boolean;
     info: boolean;
+    notification: boolean;
+    subscriptions: boolean;
+    chatbot: boolean;
+    quickActions: boolean;
   };
+
 
   // Active Data for Modals
   activeData: {
@@ -68,12 +74,14 @@ const UIContext = createContext<UIContextType | undefined>(undefined);
 
 export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [modals, setModals] = useState<UIContextType['modals']>({
-    asset: false, fuel: false, preTrip: false, tech: false, editTech: false,
+    asset: false, fuel: false, preTrip: false, tech: false, editTech: false, editProfile: false,
     report: false, signature: false, support: false, corpSupport: false,
     scanner: false, videoCall: false, credential: false, auth: false,
     demo: false, payment: false, unforeseen: false, material: false,
-    checkpoint: false, routeStart: false, engineeringReport: false, quote: false, priceAdjustment: false, reason: false, confirmation: false, info: false
+    checkpoint: false, routeStart: false, engineeringReport: false, quote: false, priceAdjustment: false, reason: false, confirmation: false, info: false,
+    notification: false, subscriptions: false, chatbot: false, quickActions: false
   });
+
 
   const [activeData, setActiveData] = useState<UIContextType['activeData']>({
     asset: null, tech: null, request: null, requestId: null,
