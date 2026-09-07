@@ -18,7 +18,7 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, role, isLoggedIn } = useAuth();
+  const { user, role, isLoggedIn, loggedInName, userData } = useAuth();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [requests, setRequests] = useState<JobRequest[]>([]);
   const [technicians, setTechnicians] = useState<TechProfile[]>([]);
@@ -55,9 +55,29 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     let unsubAssets = () => {};
     if (role === 'client' || role === 'admin' || role === 'driver') {
-      const qAssets = (role === 'admin' || role === 'driver')
-        ? collection(db, "assets")
-        : query(collection(db, "assets"), where("clientId", "==", user.uid));
+      let qAssets;
+      if (role === 'admin') {
+        qAssets = collection(db, "assets");
+      } else if (role === 'driver') {
+        // BLINDAJE DE PRIVACIDAD: El conductor NUNCA ve activos privados de clientes.
+        // Solo ve camiones de su empresa o donde fue asignado por su coordinador.
+        const nameVariants = Array.from(new Set([
+          loggedInName?.trim(),
+          user.displayName?.trim(),
+          user.email?.trim()
+        ].filter(Boolean) as string[]));
+
+        if (userData?.companyId) {
+          qAssets = query(collection(db, "assets"), where("companyId", "==", userData.companyId));
+        } else if (nameVariants.length > 0) {
+          qAssets = query(collection(db, "assets"), where("driverName", "in", nameVariants.slice(0, 10)));
+        } else {
+          qAssets = query(collection(db, "assets"), where("assignedDriverId", "==", user.uid));
+        }
+      } else {
+        // Clientes regulares: blindaje estricto, solo sus propios equipos
+        qAssets = query(collection(db, "assets"), where("clientId", "==", user.uid));
+      }
 
       unsubAssets = onSnapshot(qAssets, (snap) => {
         setAssets(snap.docs.map(d => ({ id: d.id, ...d.data() })) as Asset[]);
@@ -106,7 +126,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsubReminders();
       unsubAgenda();
     };
-  }, [isLoggedIn, user, role]);
+  }, [isLoggedIn, user, role, loggedInName, userData?.companyId]);
 
   return (
     <DataContext.Provider value={{
