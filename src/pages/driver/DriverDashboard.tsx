@@ -3,7 +3,7 @@ import {
   Truck, Radio, Fuel, ClipboardCheck, AlertTriangle, MapPin,
   Clock, Gauge, ShieldCheck, CheckCircle2, ChevronRight, Navigation,
   RotateCcw, Sparkles, PhoneCall, AlertCircle, RefreshCw, Layers,
-  MessageSquare, ArrowLeft
+  MessageSquare, ArrowLeft, Compass
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
@@ -12,6 +12,7 @@ import { useGpsTracking } from '../../hooks/useGpsTracking';
 import { triggerHaptic } from '../../hooks/useAndroidNative';
 import PTTRadioModule from '../../components/PTTRadioModule';
 import FleetDispatchChat from '../../components/FleetDispatchChat';
+import DriverRouteMap from '../../components/DriverRouteMap';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { toast } from 'react-hot-toast';
@@ -205,6 +206,53 @@ export default function DriverDashboard() {
           assignedAssetName={assignedAsset ? `${assignedAsset.name} (${assignedAsset.licensePlate || assignedAsset.details})` : undefined}
         />
       </div>
+    );
+  }
+
+  // --- VISTA DE HOJA DE RUTA Y MAPA GPS SATELITAL ---
+  if (currentTab === 'routes') {
+    if (!assignedAsset) {
+      return (
+        <div className="p-10 sm:p-14 text-center bg-[#121317] border border-[#2a2b2f] rounded-3xl space-y-5 shadow-2xl relative overflow-hidden max-w-2xl mx-auto">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto shadow-lg">
+            <Truck className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 border border-amber-500/30 text-amber-400 inline-block">
+              Navegación GPS Inactiva
+            </span>
+            <h3 className="text-xl font-black text-white uppercase tracking-tight">
+              Sin Vehículo Asignado
+            </h3>
+            <p className="text-xs text-[#8a879d] leading-relaxed">
+              Para visualizar la hoja de ruta del coordinador y navegar con Waze o Google Maps en vivo, debe tener una unidad asignada por el Coordinador de Flota.
+            </p>
+          </div>
+          <div className="flex justify-center gap-3 pt-2">
+            <button
+              onClick={() => setTab('driver', 'cockpit')}
+              className="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white text-xs font-black uppercase rounded-xl transition-all"
+            >
+              Ir a Cabina
+            </button>
+            <button
+              onClick={() => setTab('driver', 'chat')}
+              className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-black text-xs font-black uppercase rounded-xl transition-all font-extrabold shadow-lg shadow-amber-500/20"
+            >
+              Solicitar Camión en Despacho
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <DriverRouteMap
+        asset={assignedAsset}
+        driverName={loggedInName || 'Conductor'}
+        userId={user?.uid}
+        onBackToCockpit={() => setTab('driver', 'cockpit')}
+      />
     );
   }
 
@@ -412,6 +460,32 @@ export default function DriverDashboard() {
               <button
                 onClick={() => {
                   triggerHaptic('medium');
+                  setTab('driver', 'routes');
+                }}
+                className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-600/15 border border-cyan-500/40 hover:border-cyan-500/70 text-white font-black uppercase text-xs tracking-wider transition-all active:scale-98 group shadow-lg sm:col-span-2 shadow-cyan-500/10"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                    <Navigation className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <div className="flex items-center gap-2">
+                      <span className="block text-white font-black">Ruta & Navegación GPS Satelital</span>
+                      <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[8px] font-black uppercase border border-cyan-500/30">
+                        Waze / Maps / En Vivo
+                      </span>
+                    </div>
+                    <span className="text-[9px] font-bold text-[#8a879d] lowercase block">
+                      destino: {assignedAsset.currentRoute || 'Zona Libre Colón'} • ver mapa, Waze y marcar checkpoints
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#8a879d] group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+              </button>
+
+              <button
+                onClick={() => {
+                  triggerHaptic('medium');
                   openModal('preTrip', { asset: assignedAsset });
                 }}
                 className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-indigo-500/15 to-indigo-600/10 border border-indigo-500/30 hover:border-indigo-500/60 text-white font-black uppercase text-xs tracking-wider transition-all active:scale-98 group shadow-lg"
@@ -491,19 +565,75 @@ export default function DriverDashboard() {
               unitName={assignedAsset.licensePlate || assignedAsset.name}
             />
 
-            {/* TARJETA DE ESTADO DE RUTA */}
-            <div className="bg-[#121317] border border-[#2a2b2f] rounded-2xl p-4 space-y-3">
+            {/* TARJETA DE ESTADO DE RUTA & NAVEGACIÓN GPS */}
+            <div className="bg-[#121317] border border-[#2a2b2f] rounded-2xl p-4 space-y-3.5 shadow-xl">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-amber-400 text-xs font-black uppercase tracking-wider">
-                  <MapPin className="w-4 h-4" />
-                  Estado de Telemetría GPS
+                <div className="flex items-center gap-2 text-cyan-400 text-xs font-black uppercase tracking-wider">
+                  <Navigation className="w-4 h-4" />
+                  Ruta & Navegación GPS
                 </div>
-                <span className="w-2 h-2 rounded-full bg-[#52ffac] animate-ping" />
+                <span className="flex items-center gap-1 text-[9px] font-black uppercase text-[#52ffac] bg-[#52ffac]/10 border border-[#52ffac]/20 px-2 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#52ffac] animate-ping" />
+                  En Línea
+                </span>
               </div>
-              <p className="text-[11px] text-[#8a879d] font-medium leading-relaxed">
-                El canal de radio y el sensor GPS están enlazados a la torre de control de la empresa.
-                Cualquier mensaje de voz se transmite en tiempo real al jefe de taller y base operativa.
-              </p>
+
+              {/* Destino y Origen */}
+              <div className="bg-[#1c1d21] border border-white/5 rounded-xl p-3 space-y-2">
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-[#8a879d] font-bold">Origen:</span>
+                  <span className="text-white font-black truncate max-w-[170px]">{assignedAsset.location || 'Base Central Panamá'}</span>
+                </div>
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-rose-400 font-bold">Destino:</span>
+                  <span className="text-white font-black truncate max-w-[170px]">
+                    {assignedAsset.currentRoute && assignedAsset.currentRoute !== 'En Ruta / Operación Activa' && assignedAsset.currentRoute !== 'En Base / Turno Cerrado'
+                      ? assignedAsset.currentRoute
+                      : 'Zona Libre Colón (Almacén B-12)'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Botones rápidos de navegación */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    triggerHaptic('medium');
+                    const dest = '9.3556,-79.8894';
+                    window.open(`https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`, '_blank');
+                    toast.success('Iniciando Google Maps...');
+                  }}
+                  className="px-2.5 py-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                >
+                  <Compass className="w-3.5 h-3.5" />
+                  Google Maps
+                </button>
+
+                <button
+                  onClick={() => {
+                    triggerHaptic('medium');
+                    const dest = '9.3556,-79.8894';
+                    window.open(`https://waze.com/ul?ll=${dest}&navigate=yes`, '_blank');
+                    toast.success('Iniciando Waze...');
+                  }}
+                  className="px-2.5 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/30 text-sky-400 text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                >
+                  <Navigation className="w-3.5 h-3.5" />
+                  Waze
+                </button>
+              </div>
+
+              {/* Abrir Hoja de Ruta y Mapa Completo */}
+              <button
+                onClick={() => {
+                  triggerHaptic('medium');
+                  setTab('driver', 'routes');
+                }}
+                className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 active:scale-95"
+              >
+                <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                Ver Hoja de Ruta & Checkpoints
+              </button>
             </div>
           </div>
         </div>

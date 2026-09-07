@@ -5,7 +5,7 @@ import {
   Globe, BrainCircuit, ShieldCheck, Store, FileCheck2, FileText,
   Package, Star, MessageSquare, Settings, Inbox, Layers, CalendarDays,
   PieChart, User, DollarSign, Truck, Users, BellRing, Zap, ChevronRight, Headset, Pencil,
-  ClipboardCheck, Fuel, Radio
+  ClipboardCheck, Fuel, Radio, Navigation
 } from 'lucide-react';
 import Logo from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
@@ -250,6 +250,7 @@ export default function DashboardLayout({
             </>)}
             {role === 'driver' && (<>
               <SBtn tab="cockpit" icon={Truck} label="Cabina" nav={navigateDriver} cur={currentDriverTab} />
+              <SBtn tab="routes" icon={Navigation} label="Ruta & GPS" nav={navigateDriver} cur={currentDriverTab} />
               <SBtn tab="inspection" icon={ClipboardCheck} label="Pre-Viaje" nav={navigateDriver} cur={currentDriverTab} />
               <SBtn tab="fuel" icon={Fuel} label="Combustible" nav={navigateDriver} cur={currentDriverTab} />
               <SBtn tab="chat" icon={MessageSquare} label="Chat Flota" nav={navigateDriver} cur={currentDriverTab} />
@@ -406,8 +407,9 @@ export default function DashboardLayout({
               )}
               {role === 'driver' && (
                 <>
-                  <div className="grid grid-cols-4 gap-1.5 mb-1.5">
+                  <div className="grid grid-cols-5 gap-1.5 mb-1.5">
                     <STile tab="cockpit" icon={Truck} label="Cabina" nav={navigateDriver} cur={currentDriverTab} color="#f59e0b" />
+                    <STile tab="routes" icon={Navigation} label="Ruta GPS" nav={navigateDriver} cur={currentDriverTab} color="#00d2ff" />
                     <STile tab="inspection" icon={ClipboardCheck} label="Pre-Viaje" nav={navigateDriver} cur={currentDriverTab} color="#818cf8" />
                     <STile tab="fuel" icon={Fuel} label="Combustible" nav={navigateDriver} cur={currentDriverTab} color="#52ffac" />
                     <STile tab="chat" icon={MessageSquare} label="Chat" nav={navigateDriver} cur={currentDriverTab} />

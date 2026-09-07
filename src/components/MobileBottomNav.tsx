@@ -1,8 +1,7 @@
-import React from 'react';
 import {
   LayoutDashboard, BrainCircuit, Store, ShieldCheck,
   Inbox, Layers, CalendarDays, PieChart, Menu,
-  DollarSign, FileText, MessageSquare, Plus, Truck
+  DollarSign, FileText, MessageSquare, Plus, Truck, Navigation
 } from 'lucide-react';
 import { triggerHaptic } from '../hooks/useAndroidNative';
 import { useUI } from '../context/UIContext';
@@ -67,6 +66,7 @@ export default function MobileBottomNav({
 
   const driverLeftTabs: BottomNavTab[] = [
     { id: 'cockpit', label: 'Cabina', icon: Truck, highlight: true },
+    { id: 'routes', label: 'Ruta GPS', icon: Navigation },
   ];
   const driverRightTabs: BottomNavTab[] = [
     { id: 'chat', label: 'Flota', icon: MessageSquare },
