@@ -80,6 +80,29 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
 
+    // Agenda de Citas / Mantenimiento
+    match /agenda/{agendaId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Señales PTT y Radio en tiempo real (Volátiles)
+    match /radio_signals/{signalId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Foro y Comunidad Técnica
+    match /forum_topics/{topicId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin());
+    }
+
+    match /forum_replies/{replyId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin());
+    }
+
     // Inventario
     match /inventory/{itemId} {
       allow read, write: if isSignedIn();
