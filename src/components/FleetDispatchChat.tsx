@@ -129,20 +129,25 @@ export default function FleetDispatchChat({
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         toast.dismiss(loadToast);
-        const { latitude, longitude } = pos.coords;
+        const { latitude, longitude, accuracy } = pos.coords;
+        const accuracyMeters = Math.round(accuracy || 0);
         const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
         handleSendMessage(
-          `📍 Ubicación GPS transmitida: Coordenadas ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`,
+          `📍 Ubicación GPS transmitida: Coordenadas ${latitude.toFixed(5)}, ${longitude.toFixed(5)} (Precisión: ±${accuracyMeters}m)`,
           'location',
           mapsUrl
         );
-        toast.success('Ubicación compartida con Despacho.');
+        if (accuracyMeters > 30) {
+          toast(`Ubicación enviada con precisión de ±${accuracyMeters}m (señal asistida por red/WiFi).`, { icon: '📡' });
+        } else {
+          toast.success('Ubicación satelital precisa compartida.');
+        }
       },
       (err) => {
         toast.dismiss(loadToast);
-        toast.error('Permiso de GPS denegado.');
+        toast.error('No se pudo obtener señal GPS satelital.');
       },
-      { enableHighAccuracy: true, timeout: 8000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 

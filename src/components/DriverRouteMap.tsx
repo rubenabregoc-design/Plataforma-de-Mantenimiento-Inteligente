@@ -155,7 +155,7 @@ export default function DriverRouteMap({ asset, driverName, userId, onBackToCock
       (err) => {
         console.warn('GPS watch error:', err);
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
 
     return () => {
