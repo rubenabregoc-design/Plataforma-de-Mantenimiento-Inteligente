@@ -26,6 +26,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
   const [criticality, setCriticality] = useState<Asset['criticalityLevel']>('medium');
   const [details, setDetails] = useState('');
   const [licensePlate, setLicensePlate] = useState('');
+  const [driverName, setDriverName] = useState('');
   const [mileage, setMileage] = useState<number>(0);
   const [usageHours, setUsageHours] = useState<number>(0);
   const [lastMaintenance, setLastMaintenance] = useState('');
@@ -99,6 +100,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       setCriticality(assetToEdit.criticalityLevel || 'medium');
       setDetails(assetToEdit.details);
       setLicensePlate(assetToEdit.licensePlate || '');
+      setDriverName(assetToEdit.driverName || '');
       setMileage(assetToEdit.mileage || 0);
       setUsageHours(assetToEdit.usageHours || 0);
       setLastMaintenance(assetToEdit.lastMaintenanceDate);
@@ -114,6 +116,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
       setSpecs(assetToEdit.specs || {});
     } else {
       setName('');
+      setDriverName('');
       setLatitude('');
       setLongitude('');
       setLocationDetails('');
@@ -157,6 +160,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
     onAdd({
       name, type, category, riskLevel, criticalityLevel: criticality, details,
       licensePlate: (type === 'car' || type === 'moto') ? (licensePlate || null) : undefined,
+      driverName: (type === 'car' || type === 'moto' || type === 'industrial_equip') ? (driverName.trim() || undefined) : undefined,
       mileage: (type === 'car' || type === 'moto') ? Number(mileage) : undefined,
       usageHours: (type === 'generator' || type === 'industrial_equip') ? Number(usageHours) : undefined,
       lastMaintenanceDate: lastMaintenance,
@@ -303,6 +307,7 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
                   <div className="space-y-1.5"><label className="text-[8px] font-black text-[#52ffac] uppercase ml-1">Placa Oficial</label><input type="text" value={licensePlate} onChange={e => setLicensePlate(e.target.value)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-black text-white uppercase outline-none focus:border-[#52ffac]" /></div>
                   <div className="space-y-1.5"><label className="text-[8px] font-black text-[#52ffac] uppercase ml-1">Odómetro (KM)</label><input type="number" step="any" value={mileage || ''} onChange={e => setMileage(Number(e.target.value))} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-black text-white outline-none focus:border-[#52ffac]" placeholder="0" /></div>
                   <div className="space-y-1.5 md:col-span-2"><label className="text-[8px] font-black text-[#474556] uppercase ml-1">Combustible</label><select value={fuelType} onChange={e => setFuelType(e.target.value as any)} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-[10px] font-bold text-white outline-none focus:border-[#52ffac]"><option value="diesel">DIESEL</option><option value="gas91">GASOLINERA 91</option><option value="gas95">GASOLINERA 95</option></select></div>
+                  <div className="space-y-1.5 md:col-span-2"><label className="text-[8px] font-black text-[#52ffac] uppercase ml-1">Conductor / Técnico Asignado (Radio PTT)</label><input type="text" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="Ej: Juan Pérez o Rubén Abrego" className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3 px-4 text-xs font-black text-white outline-none focus:border-[#52ffac]" /></div>
                </div>
              )}
 

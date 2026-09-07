@@ -184,6 +184,8 @@ export interface TechProfile {
   policeRecordUrl?: string;
   idCardUrl?: string;
   userId?: string; // Link to auth user
+  assignedAssetId?: string; // ID del camión / vehículo asignado
+  isFleetMember?: boolean; // Pertenencia activa a cuadrilla o flota
 }
 
 export interface MaterialItem {

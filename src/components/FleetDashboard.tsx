@@ -81,7 +81,11 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
         const now = Date.now();
         const msgTime = data.timestamp?.toMillis ? data.timestamp.toMillis() : now;
 
-        if (now - msgTime < 10000 && data.senderId !== 'admin-control') {
+        const myAssetIds = assets.map(a => a.id);
+        const myOwnerIds = Array.from(new Set(assets.map(a => a.ownerId).filter(Boolean)));
+        const isForMyFleet = !data.assetId || data.assetId === 'all' || myAssetIds.includes(data.assetId) || (data.channelId && myOwnerIds.includes(data.channelId));
+
+        if (now - msgTime < 10000 && data.senderId !== 'admin-control' && isForMyFleet) {
           if (data.status === 'talking') {
             setReceivingFrom(data.senderName);
           } else if (data.status === 'broadcast' && data.audioData) {
@@ -166,6 +170,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
             const base64Audio = reader.result as string;
 
             try {
+              const targetAsset = assets.find(a => a.id === assetId);
               // TRANSMISIÓN EFÍMERA AL SISTEMA CLOUD (DATO PURO EN MEMORIA)
               await addDoc(collection(db, "radio_signals"), {
                 senderId: 'admin-control',
@@ -173,6 +178,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                 status: 'broadcast',
                 audioData: base64Audio,
                 assetId: assetId,
+                channelId: targetAsset?.ownerId || (assetId !== 'all' ? assetId : 'all'),
                 timestamp: serverTimestamp()
               });
               console.log("🛰️ Sat-Link: Ráfaga de voz transmitida (Stream Volátil).");
@@ -186,11 +192,13 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
         mediaRecorderRef.current.start();
       }
 
+      const targetAsset = assets.find(a => a.id === assetId);
       await addDoc(collection(db, "radio_signals"), {
         senderId: 'admin-control',
         senderName: 'CONTROL CENTRAL',
         status: 'talking',
         assetId: assetId,
+        channelId: targetAsset?.ownerId || (assetId !== 'all' ? assetId : 'all'),
         timestamp: serverTimestamp()
       });
     } catch (e) { console.error("PTT Start Error:", e); }
@@ -207,9 +215,12 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
       setIsRadioActive(false);
       playRadioSignal('end');
 
+      const targetAsset = assets.find(a => a.id === assetId);
       await addDoc(collection(db, "radio_signals"), {
         senderId: 'admin-control',
         status: 'idle',
+        assetId: assetId,
+        channelId: targetAsset?.ownerId || (assetId !== 'all' ? assetId : 'all'),
         timestamp: serverTimestamp()
       });
     }

@@ -33,6 +33,19 @@ export default function TechDashboard() {
   const techTab = tabs.tech;
   const techProfile = technicians.find(t => t.userId === user?.uid) || { id: 'new', name: loggedInName, category: 'mecanico' } as TechProfile;
 
+  // Detección de Asignación a Camión / Cuadrilla de Flota
+  const assignedAsset = assets.find(a => 
+    (a.driverName && (
+      a.driverName.toLowerCase().trim() === (techProfile.name || '').toLowerCase().trim() ||
+      a.driverName.toLowerCase().trim() === (loggedInName || '').toLowerCase().trim() ||
+      a.driverName.toLowerCase().trim() === (user?.email || '').toLowerCase().trim()
+    )) ||
+    (a.assignedTechId && (a.assignedTechId === techProfile.id || a.assignedTechId === user?.uid)) ||
+    (techProfile.assignedAssetId && a.id === techProfile.assignedAssetId)
+  );
+
+  const isFleetDriver = Boolean(assignedAsset || techProfile.isFleetMember || techProfile.companyId);
+
   // Lógica de Chat Dinámica
   const [activeChatRequestId, setActiveChatRequestId] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -153,12 +166,18 @@ export default function TechDashboard() {
         </button>
       </div>
 
-      {/* CANAL DE RADIO PTT INDUSTRIAL (100% EFÍMERO - CERO ALMACENAMIENTO) */}
-      <PTTRadioModule
-        userId={user?.uid || 'tech-user'}
-        userName={techProfile?.name || loggedInName || 'Técnico de Campo'}
-        role="tech"
-      />
+      {/* CANAL DE RADIO PTT INDUSTRIAL (SOLO PARA TÉCNICOS / CHOFERES DE FLOTA CON CUADRILLA) */}
+      {isFleetDriver && assignedAsset && (
+        <PTTRadioModule
+          userId={user?.uid || 'tech-user'}
+          userName={`${techProfile?.name || loggedInName || 'Operador'} (${assignedAsset.licensePlate || assignedAsset.name})`}
+          role="tech"
+          assetId={assignedAsset.id}
+          channelId={assignedAsset.ownerId || assignedAsset.id}
+          channelName={assignedAsset.name}
+          unitName={assignedAsset.licensePlate || 'Móvil'}
+        />
+      )}
 
       {techTab === 'received' && (
         <div className="space-y-8">

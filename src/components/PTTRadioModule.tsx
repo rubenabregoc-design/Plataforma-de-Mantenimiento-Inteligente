@@ -10,6 +10,9 @@ interface PTTRadioModuleProps {
   userName: string;
   role?: 'tech' | 'admin' | 'client';
   assetId?: string;
+  channelId?: string;
+  channelName?: string;
+  unitName?: string;
   compact?: boolean;
 }
 
@@ -18,6 +21,9 @@ export default function PTTRadioModule({
   userName,
   role = 'tech',
   assetId = 'all',
+  channelId = 'all',
+  channelName,
+  unitName,
   compact = false
 }: PTTRadioModuleProps) {
   const [isTalking, setIsTalking] = useState(false);
@@ -86,7 +92,10 @@ export default function PTTRadioModule({
       const msgTime = data.timestamp?.toMillis ? data.timestamp.toMillis() : now;
 
       // Descartar mis propias transmisiones o mensajes de más de 12 segundos
-      if (data.senderId !== userId && now - msgTime < 12000) {
+      const isTargetChannel = !channelId || channelId === 'all' || !data.channelId || data.channelId === 'all' || data.channelId === channelId;
+      const isTargetAsset = !assetId || assetId === 'all' || !data.assetId || data.assetId === 'all' || data.assetId === assetId;
+
+      if (data.senderId !== userId && isTargetChannel && isTargetAsset && now - msgTime < 12000) {
         if (data.status === 'talking') {
           setReceivingFrom(data.senderName || 'Operador');
           triggerHaptic('light');
@@ -120,7 +129,7 @@ export default function PTTRadioModule({
     });
 
     return () => unsub();
-  }, [isScannerActive, userId]);
+  }, [isScannerActive, userId, channelId, assetId]);
 
   // Comenzar a hablar (Push)
   const handleStartTalking = async () => {
@@ -148,7 +157,7 @@ export default function PTTRadioModule({
           reader.onloadend = async () => {
             const base64Audio = reader.result as string;
             try {
-              // Transmitir ráfaga volátil a Firestore
+              // Transmitir ráfaga volátil a Firestore en canal privado
               const docRef = await addDoc(collection(db, 'radio_signals'), {
                 senderId: userId,
                 senderName: userName || 'Técnico Móvil',
@@ -156,6 +165,7 @@ export default function PTTRadioModule({
                 status: 'broadcast',
                 audioData: base64Audio,
                 assetId,
+                channelId,
                 timestamp: serverTimestamp()
               });
 
@@ -181,6 +191,7 @@ export default function PTTRadioModule({
         senderName: userName || 'Técnico Móvil',
         status: 'talking',
         assetId,
+        channelId,
         timestamp: serverTimestamp()
       });
     } catch (e) {
@@ -205,6 +216,8 @@ export default function PTTRadioModule({
       await addDoc(collection(db, 'radio_signals'), {
         senderId: userId,
         status: 'idle',
+        assetId,
+        channelId,
         timestamp: serverTimestamp()
       });
     } catch (e) {}
@@ -223,9 +236,13 @@ export default function PTTRadioModule({
           <div>
             <div className="flex items-center gap-1.5">
               <Radio className={`w-4 h-4 ${receivingFrom ? 'text-[#52ffac]' : isTalking ? 'text-[#5d3cfe]' : 'text-[#8e8d9a]'}`} />
-              <span className="text-[11px] font-black uppercase tracking-wider text-white">Canal de Radio Industrial</span>
+              <span className="text-[11px] font-black uppercase tracking-wider text-white">
+                Radio PTT Flota {channelName ? `• ${channelName}` : ''}
+              </span>
             </div>
-            <p className="text-[9px] text-[#6e6d7a] font-bold uppercase tracking-wider">Comunicación Efímera Directa • 0 Bytes Guardados</p>
+            <p className="text-[9px] text-[#6e6d7a] font-bold uppercase tracking-wider">
+              {unitName ? `Unidad Asignada: ${unitName} • ` : ''}Canal Privado • Cero Almacenamiento
+            </p>
           </div>
         </div>
 
