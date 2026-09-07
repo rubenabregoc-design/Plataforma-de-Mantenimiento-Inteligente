@@ -63,11 +63,17 @@ service cloud.firestore {
       allow update, delete: if isSignedIn();
     }
 
-    // Notificaciones (Solo el destinatario o admin)
+    // Notificaciones
     match /notifications/{notifId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.userId == request.auth.token.email || isAdmin());
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.userId == request.auth.token.email || isAdmin());
+      allow read, write: if isSignedIn();
+    }
+
+    // Videollamadas WebRTC (Señalización temporal)
+    match /calls/{callId} {
+      allow read, write: if isSignedIn();
+      match /{subCollection=**} {
+        allow read, write: if isSignedIn();
+      }
     }
 
     // Activos de Clientes

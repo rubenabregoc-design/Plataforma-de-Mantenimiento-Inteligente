@@ -73,32 +73,36 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
 
     // Listener de Señalización Firestore (Funciona en Background si la App no es matada por el OS)
     const qSignal = query(collection(db, "radio_signals"), orderBy("timestamp", "desc"), limit(1));
-    const unsub = onSnapshot(qSignal, (snap) => {
-      if (snap.empty) return;
-      const data = snap.docs[0].data();
-      const now = Date.now();
-      const msgTime = data.timestamp?.toMillis ? data.timestamp.toMillis() : now;
+    const unsub = onSnapshot(
+      qSignal,
+      (snap) => {
+        if (snap.empty) return;
+        const data = snap.docs[0].data();
+        const now = Date.now();
+        const msgTime = data.timestamp?.toMillis ? data.timestamp.toMillis() : now;
 
-      if (now - msgTime < 10000 && data.senderId !== 'admin-control') {
-        if (data.status === 'talking') {
-          setReceivingFrom(data.senderName);
-        } else if (data.status === 'broadcast' && data.audioData) {
+        if (now - msgTime < 10000 && data.senderId !== 'admin-control') {
+          if (data.status === 'talking') {
+            setReceivingFrom(data.senderName);
+          } else if (data.status === 'broadcast' && data.audioData) {
+            setReceivingFrom(null);
+            // REPRODUCCIÓN DE STREAM VOLÁTIL DESDE MEMORIA
+            const audio = new Audio(data.audioData);
+            audio.volume = 1.0;
+            audio.onended = async () => {
+              try { await deleteDoc(snap.docs[0].ref); } catch (e) {}
+            };
+            audio.play().catch(e => {
+              console.warn("Modo Escáner: Audio bloqueado por política de silencio del navegador.", e);
+              setTimeout(() => deleteDoc(snap.docs[0].ref).catch(() => {}), 10000);
+            });
+          }
+        } else {
           setReceivingFrom(null);
-          // REPRODUCCIÓN DE STREAM VOLÁTIL DESDE MEMORIA
-          const audio = new Audio(data.audioData);
-          audio.volume = 1.0;
-          audio.onended = async () => {
-            try { await deleteDoc(snap.docs[0].ref); } catch (e) {}
-          };
-          audio.play().catch(e => {
-            console.warn("Modo Escáner: Audio bloqueado por política de silencio del navegador.", e);
-            setTimeout(() => deleteDoc(snap.docs[0].ref).catch(() => {}), 10000);
-          });
         }
-      } else {
-        setReceivingFrom(null);
-      }
-    });
+      },
+      (err) => console.warn("Fleet radio_signals error:", err)
+    );
 
     return () => {
       unsub();

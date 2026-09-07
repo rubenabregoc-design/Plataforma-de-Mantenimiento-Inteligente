@@ -128,9 +128,13 @@ export default function ClientDashboard() {
       where("requestId", "==", activeChatRequestId),
       orderBy("timestamp", "asc")
     );
-    return onSnapshot(q, (snap) => {
-      setChatMessages(snap.docs.map(d => ({ id: d.id, ...d.data(), timestamp: d.data().timestamp?.toDate?.()?.toISOString() || new Date().toISOString() })) as ChatMessage[]);
-    });
+    return onSnapshot(
+      q, 
+      (snap) => {
+        setChatMessages(snap.docs.map(d => ({ id: d.id, ...d.data(), timestamp: d.data().timestamp?.toDate?.()?.toISOString() || new Date().toISOString() })) as ChatMessage[]);
+      },
+      (err) => console.warn("Client chat messages error:", err)
+    );
   }, [activeChatRequestId]);
 
   const activeRequestForChat = requests.find(r => r.id === activeChatRequestId);

@@ -74,7 +74,11 @@ export default function App() {
   useEffect(() => {
     if (!isLoggedIn || !user) return;
     const qNotif = query(collection(db, "notifications"), where("userId", "==", user.uid), where("read", "==", false));
-    return onSnapshot(qNotif, (snap) => setUnreadCount(snap.size));
+    return onSnapshot(
+      qNotif,
+      (snap) => setUnreadCount(snap.size),
+      (err) => console.warn("Notifications count snapshot error:", err)
+    );
   }, [isLoggedIn, user]);
 
   // --- PLAN LIMITS LOGIC ---

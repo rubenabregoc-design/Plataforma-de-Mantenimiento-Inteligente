@@ -27,9 +27,13 @@ export default function CommunityModule() {
 
   useEffect(() => {
     const q = query(collection(db, "forum_topics"), orderBy("createdAt", "desc"));
-    return onSnapshot(q, (snap) => {
-      setTopics(snap.docs.map(d => ({ id: d.id, ...d.data() } as ForumTopic)));
-    });
+    return onSnapshot(
+      q, 
+      (snap) => {
+        setTopics(snap.docs.map(d => ({ id: d.id, ...d.data() } as ForumTopic)));
+      },
+      (err) => console.warn("Forum topics error:", err)
+    );
   }, []);
 
   useEffect(() => {
@@ -42,9 +46,13 @@ export default function CommunityModule() {
       where("topicId", "==", selectedTopicId),
       orderBy("createdAt", "asc")
     );
-    return onSnapshot(q, (snap) => {
-      setReplies(snap.docs.map(d => ({ id: d.id, ...d.data() } as ForumReply)));
-    });
+    return onSnapshot(
+      q, 
+      (snap) => {
+        setReplies(snap.docs.map(d => ({ id: d.id, ...d.data() } as ForumReply)));
+      },
+      (err) => console.warn("Forum replies error:", err)
+    );
   }, [selectedTopicId]);
 
   const handleCreateTopic = async (e: React.FormEvent) => {

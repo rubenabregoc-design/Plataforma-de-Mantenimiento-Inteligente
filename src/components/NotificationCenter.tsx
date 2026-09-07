@@ -38,11 +38,18 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
       orderBy("createdAt", "desc")
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Notification));
-      setNotifications(docs);
-      setLoading(false);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Notification));
+        setNotifications(docs);
+        setLoading(false);
+      },
+      (err) => {
+        console.warn("NotificationCenter snapshot error:", err);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, [userId]);
