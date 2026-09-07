@@ -244,8 +244,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   title: "⚠️ ACCESO POR EXPIRAR",
                   body: "Tu suscripción MantechPro vence en 24 horas. Renueva ahora para mantener tus beneficios premium.",
                   id: 101,
-                  schedule: { at: new Date(Date.now() + 1000) },
-                  sound: 'beep.wav'
+                  schedule: { at: new Date(Date.now() + 1000) }
                 }
               ]
             });

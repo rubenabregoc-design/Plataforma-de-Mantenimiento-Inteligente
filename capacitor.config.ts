@@ -27,7 +27,6 @@ const config: CapacitorConfig = {
     LocalNotifications: {
       smallIcon: "ic_stat_mantech",
       iconColor: "#5d3cfe",
-      sound: "radio_beep.wav",
     },
   },
   android: {

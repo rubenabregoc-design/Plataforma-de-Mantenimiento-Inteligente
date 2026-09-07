@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Printer, ShieldCheck, Zap, Mail, Loader2, Globe, Building2 } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 
 interface MonthlyClosureModalProps {
   isOpen: boolean;
@@ -30,8 +30,8 @@ export default function MonthlyClosureModal({ isOpen, onClose, adminEmail, data 
   const handleAutoSendEmail = async () => {
     setIsSendingEmail(true);
     try {
-      // Aseguramos que la URL sea la correcta y manejamos el éxito visualmente
-      await axios.post('/api/send-report', {
+      // Usamos el cliente centralizado para que funcione tanto en Web como en Android Nativo
+      await api.post('/api/send-report', {
         to: adminEmail,
         reportData: data
       });

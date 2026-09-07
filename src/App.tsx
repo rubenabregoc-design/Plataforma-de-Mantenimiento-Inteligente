@@ -10,6 +10,7 @@ import { useGpsTracking } from './hooks/useGpsTracking';
 import { useBusinessLogic } from './hooks/useBusinessLogic';
 import { db } from './firebase';
 import { doc, updateDoc, setDoc, getDoc, query, collection, where, onSnapshot } from 'firebase/firestore';
+import { verifyPaymentOrder } from './services/api';
 
 // Router & Components
 import AppRouter from './routes/AppRouter';
@@ -415,17 +416,31 @@ export default function App() {
                             countryCode: 'PA',
                           },
                         }}
-                        onLoadPaymentData={paymentRequest => {
-                          const loading = toast.loading("Verificando Token...");
-                          setTimeout(async () => {
-                            if(activeData.plan) {
-                               await business.handleApproveSubscription(user!.uid, activeData.plan);
-                            } else {
-                               await business.handleAcceptQuote(activeData.request?.id || '', 'googlepay');
-                            }
-                            toast.success("Pago verificado vía Google Pay", { id: loading });
+                        onLoadPaymentData={async (paymentRequest: any) => {
+                          const loading = toast.loading("Verificando transacción en servidor seguro...");
+                          try {
+                            const token = paymentRequest?.paymentMethodData?.tokenizationData?.token || `gpay-${Date.now()}`;
+                            const calculatedAmount = activeData.plan
+                              ? (role === 'tech'
+                                  ? (activeData.plan === 'plan-pro' ? 45 : 99)
+                                  : (activeData.plan === 'plan-pro' ? 89 : activeData.plan === 'plan-enterprise' ? 199 : 29))
+                              : (activeData.request?.price || 0);
+
+                            await verifyPaymentOrder({
+                              orderId: token,
+                              provider: 'googlepay',
+                              userId: user!.uid,
+                              planId: activeData.plan || null,
+                              requestId: activeData.request?.id || null,
+                              amount: calculatedAmount
+                            });
+
+                            toast.success("Pago verificado y registrado exitosamente.", { id: loading });
                             closeModal('payment');
-                          }, 1500);
+                          } catch (err: any) {
+                            console.error("Error validando pago:", err);
+                            toast.error("Error en validación de pago por el servidor.", { id: loading });
+                          }
                         }}
                       />
                    </div>
@@ -453,15 +468,31 @@ export default function App() {
                           });
                         }}
                         onApprove={async (data, actions) => {
-                           return actions.order!.capture().then(async () => {
-                             if(activeData.plan) {
-                                await business.handleApproveSubscription(user!.uid, activeData.plan);
-                             } else {
-                                await business.handleAcceptQuote(activeData.request?.id || '', 'paypal');
-                             }
-                             closeModal('payment');
-                             toast.success("Pago procesado exitosamente.");
-                           });
+                          const loading = toast.loading("Validando orden con el servidor central...");
+                          try {
+                            const order = await actions.order!.capture();
+                            const orderId = order.id || data.orderID || `paypal-${Date.now()}`;
+                            const calculatedAmount = activeData.plan
+                              ? (role === 'tech'
+                                  ? (activeData.plan === 'plan-pro' ? 45 : 99)
+                                  : (activeData.plan === 'plan-pro' ? 89 : activeData.plan === 'plan-enterprise' ? 199 : 29))
+                              : (activeData.request?.price || 0);
+
+                            await verifyPaymentOrder({
+                              orderId,
+                              provider: 'paypal',
+                              userId: user!.uid,
+                              planId: activeData.plan || null,
+                              requestId: activeData.request?.id || null,
+                              amount: calculatedAmount
+                            });
+
+                            toast.success("Pago verificado y suscripción activada.", { id: loading });
+                            closeModal('payment');
+                          } catch (err: any) {
+                            console.error("Error validando pago PayPal:", err);
+                            toast.error("Error al certificar el pago en el servidor.", { id: loading });
+                          }
                         }}
                       />
                    </div>

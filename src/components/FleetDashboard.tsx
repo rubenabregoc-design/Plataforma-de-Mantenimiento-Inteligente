@@ -12,7 +12,7 @@ import 'leaflet/dist/leaflet.css';
 import { Geolocation } from '@capacitor/geolocation';
 import { storage, db } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp, query, where, onSnapshot, limit, orderBy } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, onSnapshot, limit, orderBy, deleteDoc } from 'firebase/firestore';
 import { useUI } from '../context/UIContext';
 
 interface FleetDashboardProps {
@@ -87,7 +87,13 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
           // REPRODUCCIÓN DE STREAM VOLÁTIL DESDE MEMORIA
           const audio = new Audio(data.audioData);
           audio.volume = 1.0;
-          audio.play().catch(e => console.warn("Modo Escáner: Audio bloqueado por política de silencio del navegador.", e));
+          audio.onended = async () => {
+            try { await deleteDoc(snap.docs[0].ref); } catch (e) {}
+          };
+          audio.play().catch(e => {
+            console.warn("Modo Escáner: Audio bloqueado por política de silencio del navegador.", e);
+            setTimeout(() => deleteDoc(snap.docs[0].ref).catch(() => {}), 10000);
+          });
         }
       } else {
         setReceivingFrom(null);

@@ -18,6 +18,7 @@ import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, setD
 import { db } from '../../firebase';
 import { Mail, MessageSquare as MsgIcon, Send } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { getApiUrl } from '../../services/api';
 
 export default function AdminDashboard() {
   const { assets, requests, technicians, inventory, isDataLoading, reminders } = useData();
@@ -98,7 +99,7 @@ export default function AdminDashboard() {
     if (!replyText.trim() || !selectedTicket) return;
     setIsReplying(true);
     try {
-      const res = await fetch("/api/admin/reply-ticket", {
+      const res = await fetch(getApiUrl("/api/admin/reply-ticket"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

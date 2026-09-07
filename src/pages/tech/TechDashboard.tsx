@@ -17,6 +17,7 @@ import InventoryModule from '../../components/InventoryModule';
 import CommunityModule from '../../components/CommunityModule';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import MarketingBanner from '../../components/MarketingBanner';
+import PTTRadioModule from '../../components/PTTRadioModule';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useUI } from '../../context/UIContext';
@@ -147,6 +148,13 @@ export default function TechDashboard() {
           {techProfile.isOnline ? t('stop_position', 'Desactivar Posición') : t('start_position', 'Iniciar Posición')}
         </button>
       </div>
+
+      {/* CANAL DE RADIO PTT INDUSTRIAL (100% EFÍMERO - CERO ALMACENAMIENTO) */}
+      <PTTRadioModule
+        userId={user?.uid || 'tech-user'}
+        userName={techProfile?.name || loggedInName || 'Técnico de Campo'}
+        role="tech"
+      />
 
       {techTab === 'received' && (
         <div className="space-y-8">

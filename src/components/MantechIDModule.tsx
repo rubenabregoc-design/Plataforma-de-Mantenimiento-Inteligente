@@ -43,6 +43,10 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
   };
 
   const handleGenerateCertificate = () => {
+    const expNumber = cedula 
+      ? `EXP-${cedula.replace(/[^a-zA-Z0-9]/g, '').slice(-6).toUpperCase() || '772190'}` 
+      : `EXP-${(userName || 'TEC').substring(0, 3).toUpperCase()}-4001`;
+
     const printContent = `
       <html>
         <head>
@@ -63,7 +67,7 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
               <p style="margin:0; font-size: 10px; font-weight: 700; letter-spacing: 2px;">AUDITORÍA DE INTEGRIDAD INTERNA V4</p>
             </div>
             <div style="text-align: right">
-              <p style="margin:0; font-weight: 900;">EXP: ${Math.floor(Math.random()*999999)}</p>
+              <p style="margin:0; font-weight: 900;">${expNumber}</p>
               <p style="margin:0; font-size: 10px;">PANAMÁ, ${new Date().toLocaleDateString('es-PA')}</p>
             </div>
           </div>

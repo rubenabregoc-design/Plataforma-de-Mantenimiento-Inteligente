@@ -3,23 +3,11 @@ import { PushNotifications } from '@capacitor/push-notifications';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, app } from '../firebase';
 import { toast } from 'react-hot-toast';
-import { initializeApp, getApps } from 'firebase/app';
 import { triggerHaptic } from '../hooks/useAndroidNative';
 
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BDjB4bJgCIbGeHWbAG9DTCcoZ1f8p8Krbx6zCbDn5DaK23O4mPOdTRewqbjqx4R7QUbSm3j6WuZPlaTtg4GOxWw';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyB_D5hSU2YTOctVoWho64gK-l0MqBgFdtc",
-  authDomain: "recordatoriostecnicos.firebaseapp.com",
-  projectId: "recordatoriostecnicos",
-  storageBucket: "recordatoriostecnicos.firebasestorage.app",
-  messagingSenderId: "690946125913",
-  appId: "1:690946125913:web:fb7f0d12a4aba192d18148"
-};
-
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
 /**
  * Registra el dispositivo para notificaciones push.
@@ -39,7 +27,6 @@ export async function registerPushToken(userId: string): Promise<void> {
           description: 'Notificaciones de órdenes, emergencias y garantías',
           importance: 5,
           visibility: 1,
-          sound: 'radio_beep.wav',
           vibration: true,
           lights: true,
           lightColor: '#5d3cfe'

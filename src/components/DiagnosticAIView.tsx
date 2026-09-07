@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Asset, TechCategory } from '../types';
 import { Wrench, ShieldAlert, Sparkles, AlertCircle, ArrowRight, Droplets, Thermometer, Radio, Flame, Search, BrainCircuit, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { getApiUrl } from '../services/api';
 
 interface DiagnosticAIViewProps {
   assets: Asset[];
@@ -113,7 +114,7 @@ export default function DiagnosticAIView({ assets, onFindTechnicians, mode = 'ma
     if (!selectedAsset || !customNotes) return;
     setIsAiLoading(true);
     try {
-      const res = await fetch('/api/diagnose', {
+      const res = await fetch(getApiUrl('/api/diagnose'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from "../context/AuthContext";
 import { useData } from "../context/DataContext";
 import { Asset, TechProfile, JobRequest, InventoryItem } from "../types";
-import axios from 'axios';
+import api from '../services/api';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
 export function useBusinessLogic() {
@@ -27,39 +27,27 @@ export function useBusinessLogic() {
     }
   }
 
-  // --- PROTOCOLO DE PRIVACIDAD: PURGA DE CHAT ---
-  const purgeChatMessages = async (requestId: string) => {
+  // Purga de Mensajes al Terminar Servicio (Privacidad y Cero Basura Digital)
+  const purgeJobChat = async (requestId: string) => {
     try {
-      // 1. Eliminar historial previo
-      const messagesQuery = query(collection(db, "messages"), where("requestId", "==", requestId));
-      const messagesSnap = await getDocs(messagesQuery);
-      if (!messagesSnap.empty) {
-        const batch = writeBatch(db);
-        messagesSnap.docs.forEach((msgDoc) => batch.delete(msgDoc.ref));
-        await batch.commit();
-      }
-
-      // 2. Insertar notificación final de seguridad (Mensaje efímero de cierre)
-      await addDoc(collection(db, "messages"), {
-        requestId,
-        sender: 'tech',
-        text: "🔐 PROTOCOLO DE PRIVACIDAD: La sesión de comunicación ha sido purgada y cerrada por finalización de servicio. Los datos del chat ya no son accesibles por seguridad.",
-        timestamp: serverTimestamp()
-      });
-
+      const q = query(collection(db, "messages"), where("requestId", "==", requestId));
+      const snap = await getDocs(q);
+      const batch = writeBatch(db);
+      snap.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
       console.log(`🧹 Protocolo de Privacidad ejecutado para el ticket ${requestId}.`);
     } catch (err) { console.error("Error purging chat:", err); }
   };
+  const purgeChatMessages = purgeJobChat;
 
   const notifyAdmin = async (title: string, body: string) => {
     try {
-      // 1. Notificación en Tiempo Real (Push)
-      await axios.post('/api/push-notification', {
+      // 1. Notificación en Tiempo Real (Push vía FCM / Backend)
+      await api.post('/api/push-notification', {
         title,
-        body,
-        token: 'ADMIN_TOKEN_MASTER'
+        body
       });
-      // 2. Registro en Firestore para Historial del Admin (admin-uid es un placeholder)
+      // 2. Registro en Firestore para Historial del Admin
       await addDoc(collection(db, "notifications"), {
         userId: 'admin@mantech.com',
         title,
@@ -80,8 +68,7 @@ export function useBusinessLogic() {
             title: "📡 PRUEBA DE ENLACE EXITOSA",
             body: "Este es el canal de notificaciones industriales de MantechPro Master V4 operando correctamente.",
             id: 999,
-            schedule: { at: new Date(Date.now() + 2000) },
-            sound: 'beep.wav'
+            schedule: { at: new Date(Date.now() + 2000) }
           }
         ]
       });

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, ShieldCheck, Globe, Zap, Users, Building2, FileText, Layout, Store, PieChart, BadgeCheck, Heart, Leaf, Rocket, Clock, CheckCircle2, BarChart3, Lock, Send, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import { getApiUrl } from '../services/api';
 
 interface InfoContent {
   title: string;
@@ -332,7 +333,7 @@ export default function InfoModal({ isOpen, onClose, slug }: Props) {
     e.preventDefault();
     setIsSending(true);
     try {
-      const res = await fetch("/api/contact", {
+      const res = await fetch(getApiUrl("/api/contact"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

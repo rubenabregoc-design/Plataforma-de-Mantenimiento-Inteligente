@@ -12,8 +12,8 @@ const db = admin.firestore(app);
 
 setGlobalOptions({ maxInstances: 10, region: "us-central1" });
 
-const BREVO_API_KEY = process.env.BREVO_API_KEY;
-const SENDER_EMAIL = 'mantechpro@protonmail.com';
+const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
+const SENDER_EMAIL = process.env.SENDER_EMAIL || 'info@mantech-pro.com';
 const SENDER_NAME = 'Mantech Pro Global';
 
 // --- MOTOR DE NOTIFICACIONES MULTICANAL ---
@@ -39,15 +39,56 @@ async function enviarPush(userId, title, body, data = {}) {
         const userDoc = await db.collection("users").doc(userId).get();
         const token = userDoc.data()?.pushToken;
         if (token) {
+            const stringData = {};
+            for (const [k, v] of Object.entries(data)) {
+                stringData[k] = String(v ?? '');
+            }
+
             await admin.messaging().send({
                 notification: { title, body },
-                data: { ...data, click_action: "FLUTTER_NOTIFICATION_CLICK" },
+                data: stringData,
+                android: {
+                    priority: 'high',
+                    notification: {
+                        channelId: 'mantech_alerts',
+                        sound: 'default'
+                    }
+                },
                 token: token
             });
-            info(`📲 Push enviada a: ${userId}`);
+            info(`📲 Push enviada con éxito a: ${userId}`);
         }
         await registrarNotificacion(userId, title, body, data.type || 'system', data);
     } catch (err) { logError("💥 Error Push:", err.message); }
+}
+
+async function enviarEmailBrevo(to, subject, html) {
+    if (!BREVO_API_KEY || !to) return;
+    try {
+        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'api-key': BREVO_API_KEY,
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({
+                sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+                to: [{ email: to }],
+                subject: subject,
+                htmlContent: html
+            })
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            logError("❌ [BREVO API ERROR]:", errText);
+        } else {
+            info(`📧 [CORREO BREVO] Entregado a: ${to}`);
+        }
+    } catch (err) {
+        logError("💥 Error en llamada a Brevo API:", err.message);
+    }
 }
 
 // --- TRIGGERS INTELIGENTES ---
@@ -79,11 +120,27 @@ export const onJobCompleted = onDocumentUpdated("requests/{requestId}", async (e
     // Notificar al Técnico cuando el pago es aceptado (Agendado)
     if (before.status !== 'accepted' && after.status === 'accepted') {
         await enviarPush(after.techUserId, "✅ Pago Verificado", `El pago para ${after.assetName} ha sido verificado. Puedes iniciar el servicio según la agenda.`, { type: 'system', requestId: event.params.requestId });
+        try {
+            const techDoc = await db.collection("users").doc(after.techUserId).get();
+            const techEmail = techDoc.data()?.email;
+            if (techEmail) {
+                await enviarEmailBrevo(techEmail, `✅ Orden Agendada: ${after.assetName}`, `<h3>Servicio Confirmado</h3><p>El cliente ha verificado el pago para el servicio de <b>${after.assetName}</b>.</p><p><b>Monto acordado:</b> $${Number(after.price || 0).toFixed(2)}</p><p>Puedes gestionar el servicio directamente desde tu panel de MantechPro.</p>`);
+            }
+        } catch (e) { logError("Error enviando email al técnico:", e.message); }
     }
 
     // DISPARADOR FIFO: Al terminar un trabajo, buscar si hay clientes en espera para ese técnico
     if (before.status !== 'completed' && after.status === 'completed') {
-        const { techId, price, techUserId, assetName } = after;
+        const { techId, price, techUserId, assetName, clientId } = after;
+
+        // Notificar por correo al cliente que el servicio ha finalizado
+        try {
+            const clientDoc = await db.collection("users").doc(clientId).get();
+            const clientEmail = clientDoc.data()?.email;
+            if (clientEmail) {
+                await enviarEmailBrevo(clientEmail, `🛠️ Servicio Finalizado: ${assetName}`, `<h3>Mantenimiento Completado con Éxito</h3><p>El técnico <b>${after.techName || 'Especialista MantechPro'}</b> ha finalizado el trabajo para el equipo <b>${assetName}</b>.</p><p>El equipo ya está certificado en el sistema. Puedes acceder a MantechPro para calificar la atención.</p>`);
+            }
+        } catch (e) { logError("Error enviando email al cliente:", e.message); }
 
         // Búsqueda de clientes "onHold" para este técnico
         const waitlistSnap = await db.collection("requests")
@@ -195,6 +252,13 @@ export const cronMantechProSmartBot = onSchedule({
 
             if (diasRestantes === 3) {
                 await enviarPush(data.clientId, "🚨 Protocolo Próximo", `Mantenimiento de ${asset.name || data.title} en 3 días.`, { type: 'maintenance', assetId: data.assetId });
+                try {
+                    const clientDoc = await db.collection("users").doc(data.clientId).get();
+                    const clientEmail = clientDoc.data()?.email;
+                    if (clientEmail) {
+                        await enviarEmailBrevo(clientEmail, `🚨 Alerta de Mantenimiento: ${asset.name || data.title} (3 días)`, `<h3>Recordatorio Preventivo MantechPro</h3><p>Tu activo <b>${asset.name || data.title}</b> requiere mantenimiento preventivo programado para la fecha <b>${data.dueDate}</b>.</p><p>Ingresa a tu cuenta para agendar a tu técnico certificado.</p>`);
+                    }
+                } catch (e) { logError("Error en email cron:", e.message); }
             } else if (diasRestantes === 0) {
                 await enviarPush(data.clientId, "🛠️ Día de Ejecución", `Hoy se realiza el mantenimiento de ${asset.name || data.title}.`, { type: 'maintenance', assetId: data.assetId });
             }

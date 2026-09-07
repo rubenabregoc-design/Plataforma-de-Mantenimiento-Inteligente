@@ -2,26 +2,105 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Función para validar autenticación
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Regla de Desarrollo Abierto Blindada
-    // Permite lectura de configuración pública incluso sin estar logueado (para Landing Page)
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'admin@mantech.com' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    // Configuración Pública (Landing Page y constantes de plataforma)
     match /app_config/{docId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /config/{docId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow write: if isAdmin();
     }
 
-    // El resto de colecciones requieren estar logueado
-    match /{document=**} {
+    // Perfiles de Usuarios (Blindaje contra auto-elevación a admin y auto-asignación de suscripciones)
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role != 'admin');
+      allow update: if isOwner(userId) ? (
+        isAdmin() || (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'subscription', 'plan', 'subscriptionStatus'])
+        )
+      ) : isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Perfiles Técnicos (Blindaje de billetera y plan técnico)
+    match /technicians/{techId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        isAdmin() || 
+        (resource.data.userId == request.auth.uid && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['wallet', 'plan']) || isAdmin()))
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Solicitudes de Servicio (Requests)
+    match /requests/{requestId} {
+      allow read, create, update: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    // Mensajes de Chat
+    match /messages/{messageId} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if isSignedIn();
+    }
+
+    // Notificaciones (Solo el destinatario o admin)
+    match /notifications/{notifId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.userId == request.auth.token.email || isAdmin());
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.userId == request.auth.token.email || isAdmin());
+    }
+
+    // Activos de Clientes
+    match /assets/{assetId} {
       allow read, write: if isSignedIn();
+    }
+
+    // Recordatorios de Mantenimiento
+    match /reminders/{reminderId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Inventario
+    match /inventory/{itemId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Tickets de Soporte
+    match /support_tickets/{ticketId} {
+      allow create: if true; // Formularios de contacto web
+      allow read, update, delete: if isAdmin() || (isSignedIn() && resource.data.userEmail == request.auth.token.email);
+    }
+
+    // Logs de Auditoría
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if false; // Inmutables
+    }
+
+    // Fallback seguro
+    match /{document=**} {
+      allow read, write: if isAdmin();
     }
   }
 }

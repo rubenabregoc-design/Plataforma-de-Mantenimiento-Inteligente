@@ -13,7 +13,24 @@ const firebaseConfig = {
   measurementId: "G-M2MSKJ0QWV"
 };
 
-const app = initializeApp(firebaseConfig);
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+
+export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const auth = getAuth(app);
+
+// Inicialización de Firebase App Check (Protección contra scraping y abuso de API)
+if (typeof window !== 'undefined' && import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
+  try {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
+      isTokenAutoRefreshEnabled: true
+    });
+    console.log("🛡️ [SECURITY] Firebase App Check activado.");
+  } catch (err: any) {
+    console.warn("⚠️ [SECURITY] No se pudo inicializar App Check:", err.message);
+  }
+}
+
+export { firebaseConfig };
