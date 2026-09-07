@@ -3,7 +3,7 @@ import {
   Truck, Radio, Fuel, ClipboardCheck, AlertTriangle, MapPin,
   Clock, Gauge, ShieldCheck, CheckCircle2, ChevronRight, Navigation,
   RotateCcw, Sparkles, PhoneCall, AlertCircle, RefreshCw, Layers,
-  MessageSquare, UserCheck, ArrowLeft
+  MessageSquare, ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
@@ -26,7 +26,6 @@ export default function DriverDashboard() {
   const [selectedAssetId, setSelectedAssetId] = useState<string>('');
   const [odometerInput, setOdometerInput] = useState<string>('');
   const [isUpdatingOdo, setIsUpdatingOdo] = useState(false);
-  const [isClaiming, setIsClaiming] = useState(false);
   const [isShiftActive, setIsShiftActive] = useState<boolean>(() => {
     return localStorage.getItem('mantech_driver_shift') === 'active';
   });
@@ -34,32 +33,26 @@ export default function DriverDashboard() {
     return localStorage.getItem('mantech_driver_shift_start') || '';
   });
 
-  // Filtrar vehículos de la flota
-  const driverAssets = assets.filter(a => {
-    if (!loggedInName) return true;
-    const nameMatch = a.driverName && (
-      a.driverName.toLowerCase().includes(loggedInName.toLowerCase()) ||
-      loggedInName.toLowerCase().includes(a.driverName.toLowerCase())
+  // Camiones asignados oficialmente por la coordinación a este conductor
+  const myAssignedAssets = assets.filter(a => {
+    if (!loggedInName) return false;
+    return a.driverName && (
+      a.driverName.toLowerCase().trim() === loggedInName.toLowerCase().trim() ||
+      a.driverName.toLowerCase().includes(loggedInName.toLowerCase().trim()) ||
+      loggedInName.toLowerCase().includes(a.driverName.toLowerCase().trim())
     );
-    const isVehicle = a.type === 'car' || a.type === 'moto' || (a.type as any) === 'VEHICULO' || Boolean(a.licensePlate);
-    return nameMatch || isVehicle;
   });
 
-  // Camión asignado o seleccionado
+  // Unidad activa (si el coordinador le asignó múltiples camiones, permite alternar entre ellos)
   const assignedAsset: Asset | undefined = 
-    assets.find(a => a.id === selectedAssetId) ||
-    assets.find(a => a.driverName && loggedInName && (
-      a.driverName.toLowerCase().includes(loggedInName.toLowerCase()) ||
-      loggedInName.toLowerCase().includes(a.driverName.toLowerCase())
-    )) ||
-    driverAssets[0] ||
-    assets[0];
+    myAssignedAssets.find(a => a.id === selectedAssetId) ||
+    myAssignedAssets[0];
 
   useEffect(() => {
-    if (assignedAsset && (!selectedAssetId || !assets.some(a => a.id === selectedAssetId))) {
+    if (assignedAsset && (!selectedAssetId || !myAssignedAssets.some(a => a.id === selectedAssetId))) {
       setSelectedAssetId(assignedAsset.id);
     }
-  }, [assignedAsset, selectedAssetId, assets]);
+  }, [assignedAsset, selectedAssetId, myAssignedAssets]);
 
   // Manejador para abrir Pre-Viaje y Combustible desde la barra lateral
   useEffect(() => {
@@ -122,22 +115,6 @@ export default function DriverDashboard() {
     }
   };
 
-  // Vincular conductor actual al vehículo seleccionado
-  const handleClaimVehicle = async () => {
-    if (!assignedAsset || !loggedInName) return;
-    try {
-      setIsClaiming(true);
-      await updateDoc(doc(db, 'assets', assignedAsset.id), {
-        driverName: loggedInName
-      });
-      toast.success(`Vehículo vinculado exitosamente a ${loggedInName}`);
-    } catch (e) {
-      console.error(e);
-      toast.error('Error al vincular vehículo.');
-    } finally {
-      setIsClaiming(false);
-    }
-  };
 
   // Actualizar Odómetro rápido
   const handleUpdateOdometer = async () => {
@@ -307,7 +284,7 @@ export default function DriverDashboard() {
         </div>
       </header>
 
-      {/* SELECTOR DE CAMIÓN / VEHÍCULO EN OPERACIÓN */}
+      {/* VEHÍCULO ASIGNADO */}
       <div className="bg-[#121317] border border-[#2a2b2f] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-amber-400">
@@ -315,41 +292,32 @@ export default function DriverDashboard() {
           </div>
           <div>
             <span className="text-[9px] font-black uppercase tracking-wider text-[#8a879d]">
-              Vehículo en Servicio:
+              Vehículo Asignado por Coordinación:
             </span>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-black text-white uppercase">
-                {assignedAsset ? `${assignedAsset.name} — ${assignedAsset.details}` : 'Sin camión seleccionado'}
+                {assignedAsset ? `${assignedAsset.name} — ${assignedAsset.details}` : 'Sin camión asignado por Coordinador'}
               </span>
-              {assignedAsset?.driverName ? (
+              {assignedAsset?.driverName && (
                 <span className="text-[9px] font-black uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                  Asignado a: {assignedAsset.driverName}
+                  Operador Oficial: {assignedAsset.driverName}
                 </span>
-              ) : assignedAsset ? (
-                <button
-                  onClick={handleClaimVehicle}
-                  disabled={isClaiming}
-                  className="px-2.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-black text-[9px] font-black uppercase rounded-md transition-all active:scale-95 flex items-center gap-1"
-                >
-                  <UserCheck className="w-3 h-3" />
-                  {isClaiming ? 'Vinculando...' : 'Asignarme a mí'}
-                </button>
-              ) : null}
+              )}
             </div>
           </div>
         </div>
 
-        {assets.length > 0 && (
+        {myAssignedAssets.length > 1 && (
           <div className="w-full sm:w-auto flex items-center gap-2">
-            <label className="text-[9px] font-black uppercase text-[#8a879d] hidden sm:inline">Cambiar Unidad:</label>
+            <label className="text-[9px] font-black uppercase text-[#8a879d] hidden sm:inline">Mis Unidades Asignadas:</label>
             <select
               value={selectedAssetId}
               onChange={(e) => setSelectedAssetId(e.target.value)}
               className="w-full sm:w-auto bg-[#0d0e12] border border-[#2a2b2f] text-white text-xs font-bold rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500"
             >
-              {assets.map((a) => (
+              {myAssignedAssets.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {a.name} ({a.licensePlate || a.details || 'S/P'}) {a.driverName ? `— ${a.driverName}` : ''}
+                  {a.name} ({a.licensePlate || a.details || 'S/P'})
                 </option>
               ))}
             </select>
@@ -539,20 +507,30 @@ export default function DriverDashboard() {
           </div>
         </div>
       ) : (
-        <div className="p-12 text-center bg-[#121317] border border-[#2a2b2f] rounded-2xl space-y-4">
-          <Truck className="w-14 h-14 text-amber-400/40 mx-auto" />
-          <div className="space-y-1">
-            <h3 className="text-lg font-black text-white uppercase">Aún no hay camiones en la flota</h3>
-            <p className="text-xs text-[#8a879d] max-w-md mx-auto">
-              Para operar la cabina, se necesita registrar al menos un vehículo en la flota de la empresa o asignárselo a este conductor.
+        <div className="p-10 sm:p-14 text-center bg-[#121317] border border-[#2a2b2f] rounded-3xl space-y-5 shadow-2xl relative overflow-hidden">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto shadow-lg">
+            <Truck className="w-8 h-8" />
+          </div>
+          <div className="space-y-2 max-w-lg mx-auto">
+            <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 border border-amber-500/30 text-amber-400 inline-block">
+              Esperando Asignación de Unidad
+            </span>
+            <h3 className="text-xl font-black text-white uppercase tracking-tight">
+              Sin Vehículo Asignado
+            </h3>
+            <p className="text-xs text-[#8a879d] leading-relaxed">
+              Hola <strong className="text-white">{loggedInName || 'Conductor'}</strong>. Por motivos de seguridad y control operativo, la vinculación del vehículo de ruta es gestionada exclusivamente por el <strong>Coordinador de Flota</strong> o <strong>Administrador</strong> desde la torre de control.
             </p>
           </div>
-          <button
-            onClick={() => openModal('asset')}
-            className="px-5 py-3 bg-amber-500 hover:bg-amber-400 text-black text-xs font-black uppercase rounded-xl shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
-          >
-            + Registrar Vehículo / Camión
-          </button>
+          <div className="pt-2">
+            <button
+              onClick={() => setTab('driver', 'chat')}
+              className="px-6 py-3.5 bg-gradient-to-r from-[#5d3cfe] to-[#52ffac] hover:brightness-110 text-white text-xs font-black uppercase rounded-2xl shadow-lg shadow-[#5d3cfe]/25 active:scale-95 transition-all inline-flex items-center gap-2.5"
+            >
+              <MessageSquare className="w-4 h-4 text-[#52ffac]" />
+              Solicitar Asignación a Coordinación (Chat Flota)
+            </button>
+          </div>
         </div>
       )}
 
