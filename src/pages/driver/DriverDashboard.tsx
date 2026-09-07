@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Truck, Radio, Fuel, ClipboardCheck, AlertTriangle, MapPin,
   Clock, Gauge, ShieldCheck, CheckCircle2, ChevronRight, Navigation,
-  RotateCcw, Sparkles, PhoneCall, AlertCircle, RefreshCw, Layers
+  RotateCcw, Sparkles, PhoneCall, AlertCircle, RefreshCw, Layers,
+  MessageSquare, UserCheck, ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
@@ -10,6 +11,7 @@ import { useUI } from '../../context/UIContext';
 import { useGpsTracking } from '../../hooks/useGpsTracking';
 import { triggerHaptic } from '../../hooks/useAndroidNative';
 import PTTRadioModule from '../../components/PTTRadioModule';
+import SupportChatWidget from '../../components/SupportChatWidget';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { toast } from 'react-hot-toast';
@@ -24,6 +26,7 @@ export default function DriverDashboard() {
   const [selectedAssetId, setSelectedAssetId] = useState<string>('');
   const [odometerInput, setOdometerInput] = useState<string>('');
   const [isUpdatingOdo, setIsUpdatingOdo] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
   const [isShiftActive, setIsShiftActive] = useState<boolean>(() => {
     return localStorage.getItem('mantech_driver_shift') === 'active';
   });
@@ -31,16 +34,18 @@ export default function DriverDashboard() {
     return localStorage.getItem('mantech_driver_shift_start') || '';
   });
 
-  // Buscar camión / vehículo asignado al conductor actual
+  // Filtrar vehículos de la flota
   const driverAssets = assets.filter(a => {
     if (!loggedInName) return true;
     const nameMatch = a.driverName && (
       a.driverName.toLowerCase().includes(loggedInName.toLowerCase()) ||
       loggedInName.toLowerCase().includes(a.driverName.toLowerCase())
     );
-    return nameMatch || a.type === 'VEHICULO';
+    const isVehicle = a.type === 'car' || a.type === 'moto' || (a.type as any) === 'VEHICULO' || Boolean(a.licensePlate);
+    return nameMatch || isVehicle;
   });
 
+  // Camión asignado o seleccionado
   const assignedAsset: Asset | undefined = 
     assets.find(a => a.id === selectedAssetId) ||
     assets.find(a => a.driverName && loggedInName && (
@@ -51,16 +56,35 @@ export default function DriverDashboard() {
     assets[0];
 
   useEffect(() => {
-    if (assignedAsset && !selectedAssetId) {
+    if (assignedAsset && (!selectedAssetId || !assets.some(a => a.id === selectedAssetId))) {
       setSelectedAssetId(assignedAsset.id);
     }
-  }, [assignedAsset, selectedAssetId]);
+  }, [assignedAsset, selectedAssetId, assets]);
 
-  // Manejar Inicio / Fin de Turno
+  // Manejador para abrir Pre-Viaje y Combustible desde la barra lateral
+  useEffect(() => {
+    if (tabs.driver === 'inspection') {
+      if (assignedAsset) {
+        openModal('preTrip', { asset: assignedAsset });
+      } else {
+        toast.error('Seleccione un camión para realizar la inspección.');
+      }
+      setTab('driver', 'cockpit');
+    } else if (tabs.driver === 'fuel') {
+      if (assignedAsset) {
+        openModal('fuel', { asset: assignedAsset });
+      } else {
+        toast.error('Seleccione un camión para registrar combustible.');
+      }
+      setTab('driver', 'cockpit');
+    }
+  }, [tabs.driver, assignedAsset]);
+
+  // Manejar Inicio / Fin de Turno (Formato 12 horas AM/PM)
   const handleToggleShift = async () => {
     triggerHaptic('medium');
     if (!isShiftActive) {
-      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const nowStr = new Date().toLocaleTimeString('es-PA', { hour: 'numeric', minute: '2-digit', hour12: true });
       setIsShiftActive(true);
       setShiftStartTime(nowStr);
       localStorage.setItem('mantech_driver_shift', 'active');
@@ -95,6 +119,23 @@ export default function DriverDashboard() {
         }
       }
       toast('Turno finalizado y bitácora sincronizada.', { icon: '🏁' });
+    }
+  };
+
+  // Vincular conductor actual al vehículo seleccionado
+  const handleClaimVehicle = async () => {
+    if (!assignedAsset || !loggedInName) return;
+    try {
+      setIsClaiming(true);
+      await updateDoc(doc(db, 'assets', assignedAsset.id), {
+        driverName: loggedInName
+      });
+      toast.success(`Vehículo vinculado exitosamente a ${loggedInName}`);
+    } catch (e) {
+      console.error(e);
+      toast.error('Error al vincular vehículo.');
+    } finally {
+      setIsClaiming(false);
     }
   };
 
@@ -153,6 +194,43 @@ export default function DriverDashboard() {
 
   const currentTab = tabs.driver || 'cockpit';
 
+  // --- VISTA DE CHAT DE FLOTA / SOPORTE ---
+  if (currentTab === 'chat') {
+    return (
+      <div className="space-y-6 max-w-5xl mx-auto pb-12">
+        <div className="flex items-center justify-between bg-[#121317] border border-[#2a2b2f] p-4 sm:p-5 rounded-2xl shadow-xl">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#5d3cfe] to-[#52ffac] flex items-center justify-center text-white shadow-lg">
+              <MessageSquare className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-black text-white uppercase tracking-tight">
+                Central de Monitoreo & Despacho
+              </h2>
+              <p className="text-xs text-[#8e8d9a] font-bold">
+                Canal de comunicación directo con la torre de control y jefatura de taller
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setTab('driver', 'cockpit')}
+            className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 active:scale-95"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Volver a Cabina
+          </button>
+        </div>
+
+        <SupportChatWidget
+          userId={user?.uid || 'driver'}
+          userName={loggedInName || 'Conductor'}
+          userRole="driver"
+        />
+      </div>
+    );
+  }
+
+  // --- VISTA PRINCIPAL DE CABINA (COCKPIT) ---
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* CAB TOP BAR / STATUS */}
@@ -239,14 +317,31 @@ export default function DriverDashboard() {
             <span className="text-[9px] font-black uppercase tracking-wider text-[#8a879d]">
               Vehículo en Servicio:
             </span>
-            <div className="text-sm font-black text-white uppercase">
-              {assignedAsset ? `${assignedAsset.name} — ${assignedAsset.details}` : 'Sin camión seleccionado'}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-black text-white uppercase">
+                {assignedAsset ? `${assignedAsset.name} — ${assignedAsset.details}` : 'Sin camión seleccionado'}
+              </span>
+              {assignedAsset?.driverName ? (
+                <span className="text-[9px] font-black uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                  Asignado a: {assignedAsset.driverName}
+                </span>
+              ) : assignedAsset ? (
+                <button
+                  onClick={handleClaimVehicle}
+                  disabled={isClaiming}
+                  className="px-2.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-black text-[9px] font-black uppercase rounded-md transition-all active:scale-95 flex items-center gap-1"
+                >
+                  <UserCheck className="w-3 h-3" />
+                  {isClaiming ? 'Vinculando...' : 'Asignarme a mí'}
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
 
-        {assets.length > 1 && (
-          <div className="w-full sm:w-auto">
+        {assets.length > 0 && (
+          <div className="w-full sm:w-auto flex items-center gap-2">
+            <label className="text-[9px] font-black uppercase text-[#8a879d] hidden sm:inline">Cambiar Unidad:</label>
             <select
               value={selectedAssetId}
               onChange={(e) => setSelectedAssetId(e.target.value)}
@@ -444,12 +539,20 @@ export default function DriverDashboard() {
           </div>
         </div>
       ) : (
-        <div className="p-12 text-center bg-[#121317] border border-[#2a2b2f] rounded-2xl space-y-3">
-          <Truck className="w-12 h-12 text-[#474556] mx-auto" />
-          <h3 className="text-base font-black text-white uppercase">No hay camión o vehículo asignado</h3>
-          <p className="text-xs text-[#8a879d]">
-            Contacte con el administrador de la flota para vincular su cuenta a un activo.
-          </p>
+        <div className="p-12 text-center bg-[#121317] border border-[#2a2b2f] rounded-2xl space-y-4">
+          <Truck className="w-14 h-14 text-amber-400/40 mx-auto" />
+          <div className="space-y-1">
+            <h3 className="text-lg font-black text-white uppercase">Aún no hay camiones en la flota</h3>
+            <p className="text-xs text-[#8a879d] max-w-md mx-auto">
+              Para operar la cabina, se necesita registrar al menos un vehículo en la flota de la empresa o asignárselo a este conductor.
+            </p>
+          </div>
+          <button
+            onClick={() => openModal('asset')}
+            className="px-5 py-3 bg-amber-500 hover:bg-amber-400 text-black text-xs font-black uppercase rounded-xl shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+          >
+            + Registrar Vehículo / Camión
+          </button>
         </div>
       )}
 
@@ -465,7 +568,7 @@ export default function DriverDashboard() {
               </div>
               <button
                 onClick={() => openModal('preTrip', { asset: assignedAsset })}
-                className="text-[10px] font-black uppercase text-indigo-400 hover:underline"
+                className="text-[10px] font-black uppercase text-indigo-400 hover:underline cursor-pointer"
               >
                 + Nueva
               </button>
@@ -509,7 +612,7 @@ export default function DriverDashboard() {
               </div>
               <button
                 onClick={() => openModal('fuel', { asset: assignedAsset })}
-                className="text-[10px] font-black uppercase text-[#52ffac] hover:underline"
+                className="text-[10px] font-black uppercase text-[#52ffac] hover:underline cursor-pointer"
               >
                 + Cargar
               </button>

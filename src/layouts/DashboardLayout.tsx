@@ -250,8 +250,8 @@ export default function DashboardLayout({
             </>)}
             {role === 'driver' && (<>
               <SBtn tab="cockpit" icon={Truck} label="Cabina" nav={navigateDriver} cur={currentDriverTab} />
-              <SBtn tab="inspection" icon={ClipboardCheck} label="Pre-Viaje" nav={() => openModal('preTrip', { asset: undefined })} cur={currentDriverTab} />
-              <SBtn tab="fuel" icon={Fuel} label="Combustible" nav={() => openModal('fuel', { asset: undefined })} cur={currentDriverTab} />
+              <SBtn tab="inspection" icon={ClipboardCheck} label="Pre-Viaje" nav={navigateDriver} cur={currentDriverTab} />
+              <SBtn tab="fuel" icon={Fuel} label="Combustible" nav={navigateDriver} cur={currentDriverTab} />
               <SBtn tab="chat" icon={MessageSquare} label="Chat Flota" nav={navigateDriver} cur={currentDriverTab} />
             </>)}
             {role === 'admin' && (<>
@@ -408,8 +408,8 @@ export default function DashboardLayout({
                 <>
                   <div className="grid grid-cols-4 gap-1.5 mb-1.5">
                     <STile tab="cockpit" icon={Truck} label="Cabina" nav={navigateDriver} cur={currentDriverTab} color="#f59e0b" />
-                    <STile tab="inspection" icon={ClipboardCheck} label="Pre-Viaje" nav={() => { setIsMobileMenuOpen(false); openModal('preTrip', { asset: undefined }); }} cur={currentDriverTab} color="#818cf8" />
-                    <STile tab="fuel" icon={Fuel} label="Combustible" nav={() => { setIsMobileMenuOpen(false); openModal('fuel', { asset: undefined }); }} cur={currentDriverTab} color="#52ffac" />
+                    <STile tab="inspection" icon={ClipboardCheck} label="Pre-Viaje" nav={navigateDriver} cur={currentDriverTab} color="#818cf8" />
+                    <STile tab="fuel" icon={Fuel} label="Combustible" nav={navigateDriver} cur={currentDriverTab} color="#52ffac" />
                     <STile tab="chat" icon={MessageSquare} label="Chat" nav={navigateDriver} cur={currentDriverTab} />
                   </div>
                 </>

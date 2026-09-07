@@ -54,8 +54,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, (err) => console.warn("Req Snapshot Error:", err));
 
     let unsubAssets = () => {};
-    if (role === 'client' || role === 'admin') {
-      const qAssets = role === 'admin'
+    if (role === 'client' || role === 'admin' || role === 'driver') {
+      const qAssets = (role === 'admin' || role === 'driver')
         ? collection(db, "assets")
         : query(collection(db, "assets"), where("clientId", "==", user.uid));
 
