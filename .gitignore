@@ -10,6 +10,7 @@ service-account.json
 android/app/google-services.json
 .idea/
 .aistudio/
+.firebase/
 temp_app.tsx
 temp_out.txt
 final_target.txt
