@@ -6,6 +6,7 @@ import DashboardLayout from '../layouts/DashboardLayout';
 const ClientDashboard = lazy(() => import('../pages/client/ClientDashboard'));
 const TechDashboard = lazy(() => import('../pages/tech/TechDashboard'));
 const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard'));
+const DriverDashboard = lazy(() => import('../pages/driver/DriverDashboard'));
 
 export default function AppRouter(props: any) {
   const { isLoggedIn, role, isAuthResolving } = useAuth();
@@ -29,6 +30,7 @@ export default function AppRouter(props: any) {
         {role === 'client' && <ClientDashboard />}
         {role === 'tech' && <TechDashboard />}
         {role === 'admin' && <AdminDashboard />}
+        {role === 'driver' && <DriverDashboard />}
       </Suspense>
     </DashboardLayout>
   );

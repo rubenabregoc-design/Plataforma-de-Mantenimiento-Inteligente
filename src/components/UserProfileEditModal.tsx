@@ -6,7 +6,7 @@ interface UserProfileEditModalProps {
   onClose: () => void;
   userData: any;
   userEmail: string;
-  role: 'client' | 'tech' | 'admin' | null;
+  role: 'client' | 'tech' | 'admin' | 'driver' | null;
   onSave: (updatedData: {
     name: string;
     phone?: string;

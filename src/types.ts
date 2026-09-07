@@ -19,6 +19,7 @@ export type FuelType = 'diesel' | 'gas91' | 'gas95';
 
 export type AssetCategory = 'GENERAL' | 'PH' | 'SALUD' | 'CONSTRUCCION';
 export type RiskLevel = 'low' | 'medium' | 'high';
+export type UserRole = 'client' | 'tech' | 'admin' | 'driver';
 
 export interface Asset {
   id: string;

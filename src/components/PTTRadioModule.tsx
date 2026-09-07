@@ -8,7 +8,7 @@ import { triggerHaptic } from '../hooks/useAndroidNative';
 interface PTTRadioModuleProps {
   userId: string;
   userName: string;
-  role?: 'tech' | 'admin' | 'client';
+  role?: 'tech' | 'admin' | 'client' | 'driver';
   assetId?: string;
   channelId?: string;
   channelName?: string;

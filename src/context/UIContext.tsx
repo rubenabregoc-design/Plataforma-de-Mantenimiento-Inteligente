@@ -66,8 +66,9 @@ interface UIContextType {
     client: string;
     tech: string;
     admin: string;
+    driver: string;
   };
-  setTab: (role: 'client' | 'tech' | 'admin', tab: string) => void;
+  setTab: (role: 'client' | 'tech' | 'admin' | 'driver', tab: string) => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -94,7 +95,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [tabs, setTabs] = useState<UIContextType['tabs']>({
     client: 'dashboard',
     tech: 'received',
-    admin: 'finance'
+    admin: 'finance',
+    driver: 'cockpit'
   });
 
   const openModal = (name: keyof UIContextType['modals'], data?: any) => {
@@ -118,7 +120,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     setModals(closed);
   };
 
-  const setTab = (role: 'client' | 'tech' | 'admin', tab: string) => {
+  const setTab = (role: 'client' | 'tech' | 'admin' | 'driver', tab: string) => {
     setTabs(prev => ({ ...prev, [role]: tab }));
   };
 

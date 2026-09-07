@@ -1,10 +1,10 @@
 import React from 'react';
-import { Plus, X, QrCode, AlertTriangle, ShieldCheck, Wrench, Headset, ChevronRight } from 'lucide-react';
+import { Plus, X, QrCode, AlertTriangle, ShieldCheck, Wrench, Headset, ChevronRight, Truck, ClipboardCheck, Fuel } from 'lucide-react';
 import { triggerHaptic } from '../hooks/useAndroidNative';
 import { useUI } from '../context/UIContext';
 
 interface MobileQuickActionsFABProps {
-  role: 'client' | 'tech' | 'admin' | null;
+  role: 'client' | 'tech' | 'admin' | 'driver' | null;
 }
 
 export default function MobileQuickActionsFAB({ role }: MobileQuickActionsFABProps) {
@@ -202,6 +202,58 @@ export default function MobileQuickActionsFAB({ role }: MobileQuickActionsFABPro
                   <div className="text-left">
                     <h4 className="text-xs font-black text-white uppercase tracking-wider">Asesor Técnico IA</h4>
                     <p className="text-[10px] text-[#8e8d9a] font-bold">Soporte de ingeniería y resolución</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#8e8d9a]" />
+              </button>
+            </>
+          )}
+
+          {role === 'driver' && (
+            <>
+              <button
+                onClick={() => handleAction(() => openModal('preTrip', { asset: undefined }))}
+                className="w-full flex items-center justify-between p-3.5 bg-[#1c1d21] border border-indigo-500/30 hover:border-indigo-500 rounded-2xl active:scale-98 transition-all group shadow-lg"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-md">
+                    <ClipboardCheck className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-xs font-black text-white uppercase tracking-wider">Inspección Pre-Viaje</h4>
+                    <p className="text-[10px] text-[#8e8d9a] font-bold">Revisión de luces, fluidos y frenos</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#8e8d9a]" />
+              </button>
+
+              <button
+                onClick={() => handleAction(() => openModal('fuel', { asset: undefined }))}
+                className="w-full flex items-center justify-between p-3.5 bg-[#1c1d21] border border-[#52ffac]/30 hover:border-[#52ffac] rounded-2xl active:scale-98 transition-all group shadow-lg"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-[#52ffac]/20 flex items-center justify-center text-[#52ffac] shadow-md">
+                    <Fuel className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-xs font-black text-white uppercase tracking-wider">Carga de Combustible</h4>
+                    <p className="text-[10px] text-[#8e8d9a] font-bold">Registrar galones y factura</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#8e8d9a]" />
+              </button>
+
+              <button
+                onClick={() => handleAction(() => openModal('support'))}
+                className="w-full flex items-center justify-between p-3.5 bg-[#1c1d21] border border-rose-500/30 hover:border-rose-500 rounded-2xl active:scale-98 transition-all group shadow-lg"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shadow-md">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-xs font-black text-rose-400 uppercase tracking-wider">SOS / Incidente Vial</h4>
+                    <p className="text-[10px] text-[#8e8d9a] font-bold">Notificar avería o auxilio en ruta</p>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-[#8e8d9a]" />

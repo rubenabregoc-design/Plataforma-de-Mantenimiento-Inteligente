@@ -16,7 +16,7 @@ export default function AuthPage() {
 
   // Local Auth State
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [authRole, setAuthRole] = useState<'client' | 'tech'>('client');
+  const [authRole, setAuthRole] = useState<'client' | 'tech' | 'driver'>('client');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginName, setLoginName] = useState('');
@@ -130,6 +130,7 @@ export default function AuthPage() {
                   <select value={authRole} onChange={e => setAuthRole(e.target.value as any)} className="w-full bg-[#0d0e12] border border-[#2a2b2f] rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#5d3cfe]">
                     <option value="client">Cliente</option>
                     <option value="tech">Técnico</option>
+                    <option value="driver">Conductor de Flota</option>
                   </select>
                 </div>
               )}

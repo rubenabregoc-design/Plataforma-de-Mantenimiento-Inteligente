@@ -29,7 +29,7 @@ import { registerPushToken } from '../services/pushNotifications';
 interface AuthContextType {
   user: FirebaseUser | null;
   userData: any | null;
-  role: 'client' | 'tech' | 'admin' | null;
+  role: 'client' | 'tech' | 'admin' | 'driver' | null;
   isLoggedIn: boolean;
   isAuthResolving: boolean;
   subscription: UserSubscription;
@@ -47,7 +47,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userData, setUserData] = useState<any>(null);
-  const [role, setRole] = useState<'client' | 'tech' | 'admin' | null>(null);
+  const [role, setRole] = useState<'client' | 'tech' | 'admin' | 'driver' | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthResolving, setIsAuthResolving] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);

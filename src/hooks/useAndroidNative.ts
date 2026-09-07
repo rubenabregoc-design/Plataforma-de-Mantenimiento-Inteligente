@@ -12,9 +12,9 @@ interface UseAndroidNativeOptions {
   closeAllModals: () => void;
   isMobileMenuOpen?: boolean;
   setIsMobileMenuOpen?: (open: boolean) => void;
-  role?: 'client' | 'tech' | 'admin' | null;
-  tabs?: { client: string; tech: string; admin: string };
-  setTab?: (role: 'client' | 'tech' | 'admin', tab: string) => void;
+  role?: 'client' | 'tech' | 'admin' | 'driver' | null;
+  tabs?: { client: string; tech: string; admin: string; driver?: string };
+  setTab?: (role: 'client' | 'tech' | 'admin' | 'driver', tab: string) => void;
 }
 
 /**
@@ -122,7 +122,7 @@ export function useAndroidNative({
       // 3. If in a secondary tab, navigate back to the primary dashboard tab
       if (role && tabs && setTab) {
         const currentTab = tabs[role];
-        const defaultTab = role === 'client' ? 'dashboard' : role === 'tech' ? 'received' : 'finance';
+        const defaultTab = role === 'client' ? 'dashboard' : role === 'tech' ? 'received' : role === 'driver' ? 'cockpit' : 'finance';
 
         if (currentTab !== defaultTab) {
           setTab(role, defaultTab);

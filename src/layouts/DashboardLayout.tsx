@@ -4,7 +4,8 @@ import {
   X, LayoutDashboard, Search, Bell, HelpCircle, LogOut, Camera,
   Globe, BrainCircuit, ShieldCheck, Store, FileCheck2, FileText,
   Package, Star, MessageSquare, Settings, Inbox, Layers, CalendarDays,
-  PieChart, User, DollarSign, Truck, Users, BellRing, Zap, ChevronRight, Headset, Pencil
+  PieChart, User, DollarSign, Truck, Users, BellRing, Zap, ChevronRight, Headset, Pencil,
+  ClipboardCheck, Fuel, Radio
 } from 'lucide-react';
 import Logo from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
@@ -38,15 +39,18 @@ export default function DashboardLayout({
   const currentClientTab = tabs.client;
   const currentTechTab = tabs.tech;
   const currentAdminTab = tabs.admin;
+  const currentDriverTab = tabs.driver || 'cockpit';
 
   const navigateClient = (tab: string) => { setTab('client', tab); setIsMobileMenuOpen(false); };
   const navigateTech = (tab: string) => { setTab('tech', tab); setIsMobileMenuOpen(false); };
   const navigateAdmin = (tab: string) => { setTab('admin', tab); setIsMobileMenuOpen(false); };
+  const navigateDriver = (tab: string) => { setTab('driver', tab); setIsMobileMenuOpen(false); };
 
-  const currentActiveTab = role === 'client' ? currentClientTab : role === 'tech' ? currentTechTab : currentAdminTab;
+  const currentActiveTab = role === 'client' ? currentClientTab : role === 'tech' ? currentTechTab : role === 'driver' ? currentDriverTab : currentAdminTab;
   const handleBottomTabSelect = (tab: string) => {
     if (role === 'client') navigateClient(tab);
     else if (role === 'tech') navigateTech(tab);
+    else if (role === 'driver') navigateDriver(tab);
     else if (role === 'admin') navigateAdmin(tab);
   };
 
@@ -63,6 +67,9 @@ export default function DashboardLayout({
   const getPlanInfo = () => {
     if (role === 'admin') {
       return { label: 'Acceso Total', color: '#e11d48' };
+    }
+    if (role === 'driver') {
+      return { label: 'Conductor Flota', color: '#f59e0b' };
     }
     if (role === 'tech') {
       if (activePlan === 'plan-enterprise') return { label: 'Partner Élite', color: '#f59e0b' };
@@ -82,6 +89,10 @@ export default function DashboardLayout({
     admin: {
       label: 'Admin',
       badgeClass: 'bg-rose-500/10 border-rose-500/30 text-rose-400',
+    },
+    driver: {
+      label: 'Conductor',
+      badgeClass: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
     },
     tech: {
       label: 'Técnico',
@@ -237,6 +248,12 @@ export default function DashboardLayout({
               <SBtn tab="profile" icon={User} label={t('my_profile','Perfil')} nav={navigateTech} cur={currentTechTab} />
               <SBtn tab="settings" icon={Settings} label={t('settings','Config.')} nav={navigateTech} cur={currentTechTab} />
             </>)}
+            {role === 'driver' && (<>
+              <SBtn tab="cockpit" icon={Truck} label="Cabina" nav={navigateDriver} cur={currentDriverTab} />
+              <SBtn tab="inspection" icon={ClipboardCheck} label="Pre-Viaje" nav={() => openModal('preTrip', { asset: undefined })} cur={currentDriverTab} />
+              <SBtn tab="fuel" icon={Fuel} label="Combustible" nav={() => openModal('fuel', { asset: undefined })} cur={currentDriverTab} />
+              <SBtn tab="chat" icon={MessageSquare} label="Chat Flota" nav={navigateDriver} cur={currentDriverTab} />
+            </>)}
             {role === 'admin' && (<>
               <SBtn tab="finance" icon={DollarSign} label="Finanzas" nav={navigateAdmin} cur={currentAdminTab} red />
               <SBtn tab="validator" icon={ShieldCheck} label="Validador" nav={navigateAdmin} cur={currentAdminTab} red />
@@ -384,6 +401,16 @@ export default function DashboardLayout({
                     <STile tab="chat" icon={MessageSquare} label="Chat" nav={navigateTech} cur={currentTechTab} />
                     <STile tab="profile" icon={User} label="Perfil" nav={navigateTech} cur={currentTechTab} />
                     <STile tab="settings" icon={Settings} label="Config." nav={navigateTech} cur={currentTechTab} />
+                  </div>
+                </>
+              )}
+              {role === 'driver' && (
+                <>
+                  <div className="grid grid-cols-4 gap-1.5 mb-1.5">
+                    <STile tab="cockpit" icon={Truck} label="Cabina" nav={navigateDriver} cur={currentDriverTab} color="#f59e0b" />
+                    <STile tab="inspection" icon={ClipboardCheck} label="Pre-Viaje" nav={() => { setIsMobileMenuOpen(false); openModal('preTrip', { asset: undefined }); }} cur={currentDriverTab} color="#818cf8" />
+                    <STile tab="fuel" icon={Fuel} label="Combustible" nav={() => { setIsMobileMenuOpen(false); openModal('fuel', { asset: undefined }); }} cur={currentDriverTab} color="#52ffac" />
+                    <STile tab="chat" icon={MessageSquare} label="Chat" nav={navigateDriver} cur={currentDriverTab} />
                   </div>
                 </>
               )}

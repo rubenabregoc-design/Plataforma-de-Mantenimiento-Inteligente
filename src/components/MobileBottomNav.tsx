@@ -2,13 +2,13 @@ import React from 'react';
 import {
   LayoutDashboard, BrainCircuit, Store, ShieldCheck,
   Inbox, Layers, CalendarDays, PieChart, Menu,
-  DollarSign, FileText, MessageSquare, Plus
+  DollarSign, FileText, MessageSquare, Plus, Truck
 } from 'lucide-react';
 import { triggerHaptic } from '../hooks/useAndroidNative';
 import { useUI } from '../context/UIContext';
 
 interface MobileBottomNavProps {
-  role: 'client' | 'tech' | 'admin' | null;
+  role: 'client' | 'tech' | 'admin' | 'driver' | null;
   currentTab: string;
   onSelectTab: (tab: string) => void;
   onOpenMoreMenu: () => void;
@@ -65,6 +65,13 @@ export default function MobileBottomNav({
     { id: 'agenda', label: 'Agenda', icon: CalendarDays },
   ];
 
+  const driverLeftTabs: BottomNavTab[] = [
+    { id: 'cockpit', label: 'Cabina', icon: Truck, highlight: true },
+  ];
+  const driverRightTabs: BottomNavTab[] = [
+    { id: 'chat', label: 'Flota', icon: MessageSquare },
+  ];
+
   const adminLeftTabs: BottomNavTab[] = [
     { id: 'finance', label: 'Finanzas', icon: DollarSign },
     { id: 'validator', label: 'Validador', icon: ShieldCheck },
@@ -73,8 +80,8 @@ export default function MobileBottomNav({
     { id: 'tickets', label: 'Tickets', icon: MessageSquare },
   ];
 
-  const leftTabs = role === 'client' ? clientLeftTabs : role === 'tech' ? techLeftTabs : adminLeftTabs;
-  const rightTabs = role === 'client' ? clientRightTabs : role === 'tech' ? techRightTabs : adminRightTabs;
+  const leftTabs = role === 'client' ? clientLeftTabs : role === 'tech' ? techLeftTabs : role === 'driver' ? driverLeftTabs : adminLeftTabs;
+  const rightTabs = role === 'client' ? clientRightTabs : role === 'tech' ? techRightTabs : role === 'driver' ? driverRightTabs : adminRightTabs;
 
   const allVisibleTabs = [...leftTabs, ...rightTabs];
   const isMoreTabActive = !allVisibleTabs.some(t => t.id === currentTab);
