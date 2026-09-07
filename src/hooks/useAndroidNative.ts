@@ -22,6 +22,11 @@ interface UseAndroidNativeOptions {
  */
 export async function triggerHaptic(type: 'light' | 'medium' | 'heavy' | 'selection' | 'success' | 'warning' | 'error' = 'light') {
   if (!Capacitor.isPluginAvailable('Haptics')) return;
+  // En navegadores web, evitar vibración si el usuario no ha interactuado aún con la página (evita advertencia de Chrome)
+  if (!Capacitor.isNativePlatform() && typeof navigator !== 'undefined') {
+    const userAct = (navigator as any).userActivation;
+    if (userAct && !userAct.hasBeenActive) return;
+  }
   try {
     switch (type) {
       case 'selection':

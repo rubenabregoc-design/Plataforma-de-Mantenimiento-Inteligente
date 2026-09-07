@@ -93,7 +93,7 @@ service cloud.firestore {
 
     // Señales PTT y Radio en tiempo real (Volátiles)
     match /radio_signals/{signalId} {
-      allow read, write: if isSignedIn();
+      allow read, write: if true;
     }
 
     // Foro y Comunidad Técnica
