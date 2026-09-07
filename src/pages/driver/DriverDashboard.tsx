@@ -13,7 +13,7 @@ import { triggerHaptic } from '../../hooks/useAndroidNative';
 import PTTRadioModule from '../../components/PTTRadioModule';
 import FleetDispatchChat from '../../components/FleetDispatchChat';
 import DriverRouteMap from '../../components/DriverRouteMap';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { toast } from 'react-hot-toast';
 import { Asset } from '../../types';
@@ -33,6 +33,11 @@ export default function DriverDashboard() {
   const [shiftStartTime, setShiftStartTime] = useState<string>(() => {
     return localStorage.getItem('mantech_driver_shift_start') || '';
   });
+
+  // Modal de Alerta SOS de Emergencia Táctica
+  const [isSosModalOpen, setIsSosModalOpen] = useState(false);
+  const [sosReason, setSosReason] = useState('Accidente o Falla Mecánica Crítica');
+  const [isSendingSos, setIsSendingSos] = useState(false);
 
   // Camiones asignados oficialmente por la coordinación a este conductor
   const myAssignedAssets = assets.filter(a => {
@@ -142,26 +147,72 @@ export default function DriverDashboard() {
     }
   };
 
-  // Alerta SOS Inmediata
-  const handleEmergencySOS = async () => {
+  // Abrir Modal de Alerta SOS Inmediata (Diseño Profesional Táctico)
+  const handleOpenSosModal = () => {
     triggerHaptic('heavy');
-    const confirmSOS = window.confirm('¿Desea emitir una ALERTA SOS INMEDIATA a la Central de Despacho y Monitoreo?');
-    if (!confirmSOS) return;
+    setIsSosModalOpen(true);
+  };
 
+  // Confirmar y Transmitir Alerta SOS a la Central de Despacho y Monitoreo
+  const handleConfirmEmergencySOS = async () => {
     try {
+      setIsSendingSos(true);
+      triggerHaptic('heavy');
+
+      let currentCoordsStr = 'GPS en espera';
+      let currentLat = assignedAsset?.latitude || 8.9833;
+      let currentLng = assignedAsset?.longitude || -79.5167;
+
+      if (navigator.geolocation) {
+        await new Promise<void>((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              currentLat = pos.coords.latitude;
+              currentLng = pos.coords.longitude;
+              currentCoordsStr = `${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`;
+              resolve();
+            },
+            () => resolve(),
+            { enableHighAccuracy: true, timeout: 4000 }
+          );
+        });
+      }
+
       if (assignedAsset) {
         await updateDoc(doc(db, 'assets', assignedAsset.id), {
           emergencyAlert: {
             active: true,
             reportedBy: loggedInName || 'Conductor',
             timestamp: new Date().toISOString(),
-            status: 'URGENTE'
-          }
+            status: 'URGENTE',
+            reason: sosReason,
+            coordinates: currentCoordsStr
+          },
+          latitude: currentLat,
+          longitude: currentLng
+        });
+
+        // Transmisión inmediata con máxima prioridad al canal de Despacho
+        await addDoc(collection(db, 'messages'), {
+          channel: 'fleet_dispatch',
+          senderId: user?.uid || 'driver',
+          senderName: loggedInName || 'Conductor',
+          senderRole: 'driver',
+          type: 'sos',
+          text: `🚨 [ALERTA SOS - PRIORIDAD MÁXIMA]: El conductor ${loggedInName} ha emitido alerta urgente en la unidad ${assignedAsset.name} (${assignedAsset.licensePlate || assignedAsset.details || 'S/P'}). Motivo: "${sosReason}". Ubicación satelital: ${currentCoordsStr}.`,
+          locationUrl: currentLat && currentLng ? `https://www.google.com/maps?q=${currentLat},${currentLng}` : null,
+          assignedAssetName: `${assignedAsset.name} (${assignedAsset.licensePlate || 'S/P'})`,
+          createdAt: serverTimestamp()
         });
       }
-      toast.error('🚨 ALERTA SOS TRANSMITIDA. Central de flota notificada con coordenadas GPS.', { duration: 6000 });
+
+      toast.error('🚨 ALERTA SOS TRANSMITIDA. Central de flota notificada con coordenadas GPS.', { duration: 7000 });
+      setIsSosModalOpen(false);
     } catch (err) {
+      console.error('Error transmitiendo alerta SOS:', err);
       toast.error('Error transmitiendo alerta SOS.');
+    } finally {
+      setIsSendingSos(false);
     }
   };
 
@@ -323,7 +374,7 @@ export default function DriverDashboard() {
           </button>
 
           <button
-            onClick={handleEmergencySOS}
+            onClick={handleOpenSosModal}
             className="px-3 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-rose-600 text-white hover:bg-rose-500 transition-all flex items-center gap-1.5 shadow-lg shadow-rose-600/30 active:scale-95 animate-pulse"
             title="Botón de Pánico / Alerta SOS Central"
           >
@@ -756,6 +807,113 @@ export default function DriverDashboard() {
                 No hay registros de combustible para este vehículo.
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PROFESIONAL DE ALERTA SOS TÁCTICA (SIN VENTANAS DEL NAVEGADOR) */}
+      {isSosModalOpen && (
+        <div className="fixed inset-0 z-[350] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#121317] border border-rose-500/40 rounded-3xl p-6 sm:p-7 max-w-lg w-full space-y-6 shadow-[0_0_90px_rgba(225,29,72,0.35)] relative animate-fade-in">
+            {/* AMBIENT GLOW */}
+            <div className="absolute top-0 right-0 w-48 h-48 bg-rose-600/10 rounded-full blur-3xl pointer-events-none" />
+
+            {/* HEADER DE EMERGENCIA */}
+            <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-5">
+              <div className="flex items-center gap-3.5">
+                <div className="w-14 h-14 rounded-2xl bg-rose-500/20 border-2 border-rose-500 text-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/30 animate-pulse shrink-0">
+                  <AlertTriangle className="w-7 h-7 fill-current" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-rose-400 bg-rose-500/15 border border-rose-500/30 px-2 py-0.5 rounded">
+                      Protocolo de Auxilio en Ruta
+                    </span>
+                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight mt-1">
+                    Emitir Alerta SOS Inmediata
+                  </h3>
+                  <p className="text-xs text-[#8a879d] font-bold">
+                    Central de Despacho, Monitoreo & Jefatura de Flota
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsSosModalOpen(false)}
+                disabled={isSendingSos}
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-[#8a879d] hover:text-white flex items-center justify-center text-sm font-bold transition-all shrink-0"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* INFORMACIÓN DEL CAMIÓN Y ADVERTENCIA */}
+            <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 space-y-2">
+              <p className="text-xs text-rose-200/90 leading-relaxed font-medium">
+                ¿Desea emitir una <strong>ALERTA SOS INMEDIATA</strong> a la Torre de Control? Se transmitirán automáticamente sus coordenadas GPS satelitales en vivo, el camión asignado y se activará respuesta prioritaria en la sala de operaciones.
+              </p>
+              {assignedAsset && (
+                <div className="pt-2 border-t border-rose-500/20 flex items-center justify-between text-[11px] text-rose-300 font-bold">
+                  <span>Unidad: {assignedAsset.name}</span>
+                  <span>Placa: {assignedAsset.licensePlate || assignedAsset.details || 'S/P'}</span>
+                </div>
+              )}
+            </div>
+
+            {/* SELECCIÓN DEL TIPO DE EMERGENCIA */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#8a879d]">
+                Seleccione el Motivo de Emergencia:
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                  'Colisión o Accidente en Vía',
+                  'Falla Mecánica Crítica (Frenos / Motor)',
+                  'Incidente de Seguridad / Asalto',
+                  'Emergencia Médica de Salud'
+                ].map((reason, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setSosReason(reason);
+                    }}
+                    className={`p-3 rounded-xl text-left text-xs font-bold transition-all border ${
+                      sosReason === reason
+                        ? 'bg-rose-500/20 border-rose-500 text-white shadow-md shadow-rose-500/20'
+                        : 'bg-[#1c1d21] border-white/5 text-[#8a879d] hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    {reason}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* BOTONES DE ACCIÓN */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsSosModalOpen(false)}
+                disabled={isSendingSos}
+                className="w-full sm:w-1/2 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[#c8c4d9] text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 active:scale-95"
+              >
+                Cancelar / Falsa Alarma
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmEmergencySOS}
+                disabled={isSendingSos}
+                className="w-full sm:w-1/2 py-3 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/30 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+              >
+                <AlertTriangle className="w-4 h-4 fill-current" />
+                {isSendingSos ? 'Transmitiendo SOS...' : 'Transmitir Alerta SOS'}
+              </button>
+            </div>
           </div>
         </div>
       )}
