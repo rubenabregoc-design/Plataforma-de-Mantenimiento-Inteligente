@@ -11,7 +11,7 @@ import { useUI } from '../../context/UIContext';
 import { useGpsTracking } from '../../hooks/useGpsTracking';
 import { triggerHaptic } from '../../hooks/useAndroidNative';
 import PTTRadioModule from '../../components/PTTRadioModule';
-import SupportChatWidget from '../../components/SupportChatWidget';
+import FleetDispatchChat from '../../components/FleetDispatchChat';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { toast } from 'react-hot-toast';
@@ -198,10 +198,11 @@ export default function DriverDashboard() {
           </button>
         </div>
 
-        <SupportChatWidget
+        <FleetDispatchChat
           userId={user?.uid || 'driver'}
           userName={loggedInName || 'Conductor'}
           userRole="driver"
+          assignedAssetName={assignedAsset ? `${assignedAsset.name} (${assignedAsset.licensePlate || assignedAsset.details})` : undefined}
         />
       </div>
     );
