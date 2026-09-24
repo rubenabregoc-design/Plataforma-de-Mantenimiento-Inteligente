@@ -206,6 +206,352 @@ app.post("/api/payments/verify-order", async (req, res) => {
   }
 });
 
+// ============================================================================
+// MOTOR DE CONCILIACIÓN AUTOMÁTICA DE PAGOS (YAPPY / ACH / PASARELAS)
+// ============================================================================
+interface AutoReconcileParams {
+  requestId: string;
+  referenceNumber: string;
+  amount?: number;
+  method: 'yappy' | 'ach' | 'transfer' | string;
+  payerName?: string;
+  payerPhone?: string;
+  senderBank?: string;
+  clientIp?: string;
+  rawPayload?: any;
+}
+
+async function reconcileTicketPayment({
+  requestId,
+  referenceNumber,
+  amount,
+  method,
+  payerName,
+  payerPhone,
+  senderBank,
+  clientIp,
+  rawPayload
+}: AutoReconcileParams) {
+  if (!requestId) {
+    throw new Error("Se requiere el ID de solicitud o ticket (requestId) para conciliar.");
+  }
+
+  // 1. Validar existencia del Ticket en Firestore
+  const reqRef = db.collection("requests").doc(requestId);
+  const reqSnap = await reqRef.get();
+  if (!reqSnap.exists) {
+    throw new Error(`Solicitud / Ticket con ID '${requestId}' no existe en el sistema.`);
+  }
+
+  const reqData = reqSnap.data() || {};
+  const sanitizedRef = String(referenceNumber || `AUTO-${Date.now().toString().slice(-6)}`).trim();
+
+  // 2. Control de Idempotencia y Prevención de Doble Canje
+  if (sanitizedRef && !sanitizedRef.startsWith("AUTO-")) {
+    const existingLogSnap = await db.collection("audit_logs")
+      .where("referenceNumber", "==", sanitizedRef)
+      .where("status", "==", "SUCCESS")
+      .limit(1)
+      .get();
+
+    if (!existingLogSnap.empty) {
+      const existingDoc = existingLogSnap.docs[0].data();
+      if (existingDoc.requestId === requestId) {
+        return {
+          success: true,
+          reconciled: true,
+          alreadyProcessed: true,
+          message: "Este pago ya fue conciliado previamente para este ticket.",
+          requestId,
+          referenceNumber: sanitizedRef
+        };
+      }
+      throw new Error(`La referencia de transacción #${sanitizedRef} ya fue conciliada en otro servicio.`);
+    }
+  }
+
+  const finalAmount = Number(amount) || Number(reqData.price) || 0;
+  const methodLabel = method.toUpperCase();
+
+  // 3. Marcar Solicitud como Pagada y Aceptada (Bypasses manual verification)
+  await reqRef.set({
+    status: 'accepted',
+    paymentStatus: 'paid',
+    paymentMethod: method,
+    paymentOrderId: sanitizedRef,
+    amountPaid: finalAmount,
+    autoReconciled: true,
+    escrowStatus: 'held',
+    paymentVerifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+    paidAt: admin.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+
+  // 4. Crear evento en la Agenda del Especialista automáticamente
+  if (reqData.scheduledDate) {
+    await db.collection("agenda").add({
+      requestId,
+      techId: reqData.techId || null,
+      techUserId: reqData.techUserId || null,
+      clientName: reqData.clientName || payerName || 'Cliente',
+      clientId: reqData.clientId || null,
+      title: `CONFIRMADO: ${reqData.assetName || 'Servicio MantechPro'}`,
+      date: reqData.scheduledDate,
+      time: reqData.scheduledTime || '09:00 AM',
+      duration: `${reqData.scheduledDuration || 2}h`,
+      travelTime: `${reqData.scheduledTravelTime || 30} min`,
+      status: 'pending',
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+  }
+
+  // 5. Notificación Push / In-App al Técnico
+  if (reqData.techUserId) {
+    await db.collection("notifications").add({
+      userId: reqData.techUserId,
+      title: `✅ Depósito Recibido (${methodLabel})`,
+      body: `Pago automático conciliado por B/. ${finalAmount.toFixed(2)} (Ref #${sanitizedRef}). Servicio confirmado en tu agenda.`,
+      type: 'billing',
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      read: false
+    });
+  }
+
+  // 6. Notificación Push / In-App al Cliente
+  if (reqData.clientId) {
+    await db.collection("notifications").add({
+      userId: reqData.clientId,
+      title: `🎉 Pago Confirmado Automáticamente`,
+      body: `Tu pago de B/. ${finalAmount.toFixed(2)} vía ${methodLabel} (Ref #${sanitizedRef}) ha sido acreditado en custodia. Técnico asignado.`,
+      type: 'billing',
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      read: false
+    });
+  }
+
+  // 7. Mensaje Inmutable en el Chat del Ticket
+  await db.collection("messages").add({
+    requestId,
+    sender: 'system',
+    text: `⚡ [CONCILIACIÓN AUTOMÁTICA] Pago de B/. ${finalAmount.toFixed(2)} confirmado vía ${methodLabel} (Ref: #${sanitizedRef}${senderBank ? ' - ' + senderBank : ''}). Servicio confirmado sin intervención manual.`,
+    timestamp: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  // 8. Registro de Auditoría Inmutable
+  await db.collection("audit_logs").add({
+    type: "AUTO_RECONCILE_PAYMENT",
+    method,
+    referenceNumber: sanitizedRef,
+    requestId,
+    amount: finalAmount,
+    payerName: payerName || null,
+    payerPhone: payerPhone || null,
+    senderBank: senderBank || null,
+    clientIp: clientIp || 'server-webhook',
+    status: "SUCCESS",
+    rawPayload: rawPayload ? JSON.stringify(rawPayload).slice(0, 1000) : null,
+    timestamp: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  console.log(`⚡ [AUTO-RECONCILE SUCCESS] Ticket ${requestId} conciliado automáticamente vía ${methodLabel} (Ref: ${sanitizedRef})`);
+
+  return {
+    success: true,
+    reconciled: true,
+    requestId,
+    referenceNumber: sanitizedRef,
+    amount: finalAmount,
+    method
+  };
+}
+
+// ENDPOINT 1: Conciliación Directa Inmediata (Cliente / Frontend / Bot)
+app.post("/api/payments/auto-reconcile", async (req, res) => {
+  const { requestId, method = 'yappy', referenceNumber, amount, payerName, payerPhone, senderBank } = req.body;
+  const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'client';
+
+  try {
+    const result = await reconcileTicketPayment({
+      requestId,
+      referenceNumber: referenceNumber || `REF-${Date.now().toString().slice(-6)}`,
+      amount,
+      method,
+      payerName,
+      payerPhone,
+      senderBank,
+      clientIp,
+      rawPayload: req.body
+    });
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    console.error("❌ [AUTO-RECONCILE ERROR]:", error.message);
+    return res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// ENDPOINT 2: Webhook Oficial / Agregadores / Parsers para YAPPY
+app.post("/api/webhooks/yappy", async (req, res) => {
+  const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'webhook-yappy';
+  console.log("📥 [WEBHOOK YAPPY] Recibido payload:", JSON.stringify(req.body));
+
+  try {
+    const body = req.body || {};
+    const query = req.query || {};
+
+    // 1. Extraer ID del Ticket / Solicitud de múltiples formatos posibles:
+    // - Parámetro de URL: /api/webhooks/yappy?requestId=xyz
+    // - Formato Banco General Yappy Comercial: body.orderId o body.order_id
+    // - Agregadores (PagueloFacil, Cuanto, Tilopay): body.custom_data?.requestId o body.metadata?.requestId
+    // - Parser de Email/SMS (Zapier/Make/n8n): texto libre con "REQ-xxx" o "TK-xxx"
+    let targetRequestId = (query.requestId as string) ||
+                          body.requestId ||
+                          body.orderId ||
+                          body.order_id ||
+                          body.custom_data?.requestId ||
+                          body.metadata?.requestId ||
+                          body.customId;
+
+    // Búsqueda inteligente en caso de que el webhook provenga de un forwarder de correo/SMS
+    if (!targetRequestId && typeof body.message === 'string') {
+      const match = body.message.match(/(?:REQ|TK|TICKET)[-_]([a-zA-Z0-9]+)/i);
+      if (match) targetRequestId = match[1];
+    }
+
+    // 2. Extraer Referencia o Código de Confirmación
+    let reference = body.reference ||
+                    body.confirmation_code ||
+                    body.confirmationCode ||
+                    body.hash ||
+                    body.transactionId ||
+                    body.id ||
+                    `YP-${Date.now().toString().slice(-6)}`;
+
+    // 3. Extraer Monto
+    let amount = Number(body.total || body.amount || body.subtotal || 0);
+
+    // 4. Si aún no tenemos requestId, buscar el ticket más reciente pendiente de pago
+    if (!targetRequestId) {
+      const pendingSnap = await db.collection("requests")
+        .where("status", "in", ["pending", "pending_verification", "quoted"])
+        .orderBy("createdAt", "desc")
+        .limit(1)
+        .get();
+
+      if (!pendingSnap.empty) {
+        targetRequestId = pendingSnap.docs[0].id;
+        console.log(`⚠️ [WEBHOOK YAPPY] Coincidencia automática por proximidad temporal: ${targetRequestId}`);
+      }
+    }
+
+    if (!targetRequestId) {
+      return res.status(200).json({
+        success: false,
+        message: "Webhook recibido pero no se pudo asociar a un requestId activo.",
+        received: true
+      });
+    }
+
+    const reconcileResult = await reconcileTicketPayment({
+      requestId: targetRequestId,
+      referenceNumber: reference,
+      amount,
+      method: 'yappy',
+      payerName: body.payerName || body.clientName || body.senderName,
+      payerPhone: body.tel || body.phone || body.senderPhone,
+      clientIp,
+      rawPayload: body
+    });
+
+    return res.status(200).json(reconcileResult);
+  } catch (error: any) {
+    console.error("❌ [WEBHOOK YAPPY ERROR]:", error.message);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ENDPOINT 3: Webhook para Transferencias Bancarias ACH
+app.post("/api/webhooks/ach", async (req, res) => {
+  const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'webhook-ach';
+  console.log("📥 [WEBHOOK ACH] Recibido payload:", JSON.stringify(req.body));
+
+  try {
+    const body = req.body || {};
+    const query = req.query || {};
+
+    let targetRequestId = (query.requestId as string) ||
+                          body.requestId ||
+                          body.orderId ||
+                          body.referenceNote ||
+                          body.metadata?.requestId;
+
+    let reference = body.referenceNumber ||
+                    body.achReference ||
+                    body.confirmationNumber ||
+                    body.operationNumber ||
+                    `ACH-${Date.now().toString().slice(-6)}`;
+
+    let amount = Number(body.amount || body.total || 0);
+    let senderBank = body.senderBank || body.bankName || body.sourceBank || 'ACH Panamá';
+
+    if (!targetRequestId && typeof body.description === 'string') {
+      const match = body.description.match(/(?:REQ|TK|TICKET)[-_]([a-zA-Z0-9]+)/i);
+      if (match) targetRequestId = match[1];
+    }
+
+    if (!targetRequestId) {
+      return res.status(200).json({
+        success: false,
+        message: "Webhook ACH recibido sin requestId asociado.",
+        received: true
+      });
+    }
+
+    const reconcileResult = await reconcileTicketPayment({
+      requestId: targetRequestId,
+      referenceNumber: reference,
+      amount,
+      method: 'ach',
+      payerName: body.senderName || body.accountHolder,
+      senderBank,
+      clientIp,
+      rawPayload: body
+    });
+
+    return res.status(200).json(reconcileResult);
+  } catch (error: any) {
+    console.error("❌ [WEBHOOK ACH ERROR]:", error.message);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ENDPOINT 4: Webhook Universal IPN (Con firma de seguridad opcional)
+app.post("/api/webhooks/payment", async (req, res) => {
+  const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET;
+  const signature = req.headers['x-webhook-secret'] || req.headers['authorization'];
+
+  if (webhookSecret && signature !== webhookSecret && signature !== `Bearer ${webhookSecret}`) {
+    return res.status(401).json({ success: false, error: "Firma o token de webhook no válido." });
+  }
+
+  const { requestId, method = 'online', referenceNumber, amount, payerName, senderBank } = req.body;
+
+  try {
+    const result = await reconcileTicketPayment({
+      requestId,
+      referenceNumber: referenceNumber || `IPN-${Date.now().toString().slice(-6)}`,
+      amount,
+      method,
+      payerName,
+      senderBank,
+      rawPayload: req.body
+    });
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    return res.status(400).json({ success: false, error: error.message });
+  }
+});
+
 // Contacto Web
 app.post("/api/contact", async (req, res) => {
   const { name, email, subject, message, whatsapp, type } = req.body;

@@ -42,6 +42,8 @@ import Truck from 'lucide-react/dist/esm/icons/truck';
 import MessageSquare from 'lucide-react/dist/esm/icons/message-square';
 import CreditCard from 'lucide-react/dist/esm/icons/credit-card';
 import Download from 'lucide-react/dist/esm/icons/download';
+import Zap from 'lucide-react/dist/esm/icons/zap';
+import Building2 from 'lucide-react/dist/esm/icons/building-2';
 import Logo from './components/Logo';
 
 import { AssetService } from './services/assetService';
@@ -380,7 +382,7 @@ export default function App() {
                    </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                    <button
                      onClick={() => {
                         if (activeData.plan) {
@@ -390,9 +392,23 @@ export default function App() {
                         }
                         closeModal('payment');
                      }}
-                     className="w-full py-5 bg-[#52ffac] text-[#0d0e12] rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[#52ffac]/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3"
+                     className="w-full py-4 bg-[#52ffac] text-[#0d0e12] rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[#52ffac]/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3"
                    >
-                      <Download className="w-4 h-4" /> Pagar vía YAPPY (Manual)
+                      <Zap className="w-4 h-4 fill-current" /> Pagar vía YAPPY (Automático)
+                   </button>
+
+                   <button
+                     onClick={() => {
+                        if (activeData.plan) {
+                          business.handleRequestSubscription(user!.uid, activeData.plan);
+                        } else {
+                          business.handleAcceptQuote(activeData.request?.id || '', 'ach');
+                        }
+                        closeModal('payment');
+                     }}
+                     className="w-full py-4 bg-[#1c1d21] border border-[#2a2b2f] text-white hover:border-[#5d3cfe] rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3"
+                   >
+                      <Building2 className="w-4 h-4 text-[#5d3cfe]" /> Transferencia ACH (Conciliación Automática)
                    </button>
 
                    <div className="rounded-2xl overflow-hidden shadow-none hover:brightness-110 active:scale-[0.98] transition-all h-[64px] bg-black border-0">
