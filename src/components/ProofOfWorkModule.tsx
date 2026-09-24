@@ -11,35 +11,42 @@ interface ProofOfWorkProps {
 export default function ProofOfWorkModule({ requestId, onSave, onClose }: ProofOfWorkProps) {
   const [oldPhoto, setOldPhoto] = useState<string | null>(null);
   const [newPhoto, setNewPhoto] = useState<string | null>(null);
-  const [capturing, setCapturing] = useState<'old' | 'new' | null>(null);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const oldInputRef = React.useRef<HTMLInputElement | null>(null);
+  const newInputRef = React.useRef<HTMLInputElement | null>(null);
 
-  const handleCapture = (type: 'old' | 'new') => {
-    // Implementación Nativa via Capacitor para Android/iOS
-    // Si no estamos en móvil, cae en la simulación anterior
-    setCapturing(type);
+  React.useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => console.warn("GPS Warning:", err),
+        { enableHighAccuracy: true }
+      );
+    }
+  }, []);
 
-    // Obtenemos GPS de alta precisión en el momento de la foto
-    navigator.geolocation.getCurrentPosition((pos) => {
-      setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-    }, (err) => {
-      console.warn("GPS Fallback:", err);
-      setLocation({ lat: 8.9824, lng: -79.5199 }); // Ciudad de Panamá
-    }, { enableHighAccuracy: true });
+  const handleFileChange = (type: 'old' | 'new', e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    // Lógica de captura (En App real llamaríamos a Camera.getPhoto)
-    setTimeout(() => {
-      const mockPhoto = type === 'old'
-        ? "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=400&q=80"
-        : "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=400&q=80";
+    // Obtener GPS en el instante de la toma
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => console.warn("GPS Fallback:", err),
+        { enableHighAccuracy: true }
+      );
+    }
 
-      if (type === 'old') setOldPhoto(mockPhoto);
-      else setNewPhoto(mockPhoto);
-
-      setCapturing(null);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (type === 'old') setOldPhoto(result);
+      else setNewPhoto(result);
       toast.success(`${type === 'old' ? 'Pieza Vieja' : 'Pieza Nueva'} capturada con éxito`);
-    }, 1500);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleConfirm = async () => {
@@ -53,17 +60,22 @@ export default function ProofOfWorkModule({ requestId, onSave, onClose }: ProofO
       oldPartPhoto: oldPhoto,
       newPartPhoto: newPhoto,
       timestamp: new Date().toISOString(),
-      location: location || { lat: 8.9824, lng: -79.5199 } // Fallback Panamá
+      location: location || { lat: 8.9824, lng: -79.5199 }
     };
 
-    setTimeout(() => {
-      onSave(proofData);
+    try {
+      await onSave(proofData);
       setIsSaving(false);
       toast.success("Certificado de Trabajo Generado", {
         icon: '🛡️',
         style: { background: '#121317', color: '#fff', border: '1px solid #52ffac' }
       });
-    }, 2000);
+      onClose();
+    } catch (err) {
+      console.error("Error saving proof:", err);
+      setIsSaving(false);
+      toast.error("Error al guardar la evidencia");
+    }
   };
 
   return (
@@ -87,11 +99,30 @@ export default function ProofOfWorkModule({ requestId, onSave, onClose }: ProofO
         <div className="p-8 space-y-8">
 
           <div className="grid grid-cols-2 gap-6">
+            {/* Input oculto Pieza Vieja */}
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              ref={oldInputRef}
+              className="hidden"
+              onChange={(e) => handleFileChange('old', e)}
+            />
+            {/* Input oculto Pieza Nueva */}
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              ref={newInputRef}
+              className="hidden"
+              onChange={(e) => handleFileChange('new', e)}
+            />
+
             {/* Slot Pieza Vieja */}
             <div className="space-y-4">
               <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">1. Evidencia: Pieza Vieja</span>
               <div
-                onClick={() => handleCapture('old')}
+                onClick={() => oldInputRef.current?.click()}
                 className={`aspect-video rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center cursor-pointer overflow-hidden group
                   ${oldPhoto ? 'border-[#52ffac] bg-[#52ffac]/5' : 'border-white/10 hover:border-white/30 bg-white/5'}`}
               >
@@ -105,7 +136,7 @@ export default function ProofOfWorkModule({ requestId, onSave, onClose }: ProofO
                 ) : (
                   <>
                     <Camera className="w-8 h-8 text-white/20 mb-2 group-hover:scale-110 transition-transform" />
-                    <span className="text-[9px] font-black text-white/30 uppercase">Capturar Foto</span>
+                    <span className="text-[9px] font-black text-white/30 uppercase">Tomar / Seleccionar Foto</span>
                   </>
                 )}
               </div>
@@ -115,7 +146,7 @@ export default function ProofOfWorkModule({ requestId, onSave, onClose }: ProofO
             <div className="space-y-4">
               <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">2. Evidencia: Pieza Nueva</span>
               <div
-                onClick={() => handleCapture('new')}
+                onClick={() => newInputRef.current?.click()}
                 className={`aspect-video rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center cursor-pointer overflow-hidden group
                   ${newPhoto ? 'border-[#52ffac] bg-[#52ffac]/5' : 'border-white/10 hover:border-white/30 bg-white/5'}`}
               >
@@ -129,7 +160,7 @@ export default function ProofOfWorkModule({ requestId, onSave, onClose }: ProofO
                 ) : (
                   <>
                     <Camera className="w-8 h-8 text-white/20 mb-2 group-hover:scale-110 transition-transform" />
-                    <span className="text-[9px] font-black text-white/30 uppercase">Capturar Foto</span>
+                    <span className="text-[9px] font-black text-white/30 uppercase">Tomar / Seleccionar Foto</span>
                   </>
                 )}
               </div>

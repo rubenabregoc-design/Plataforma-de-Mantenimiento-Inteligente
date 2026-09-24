@@ -18,6 +18,7 @@ import CommunityModule from '../../components/CommunityModule';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import MarketingBanner from '../../components/MarketingBanner';
 import PTTRadioModule from '../../components/PTTRadioModule';
+import ProofOfWorkModule from '../../components/ProofOfWorkModule';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useUI } from '../../context/UIContext';
@@ -49,6 +50,7 @@ export default function TechDashboard() {
   // Lógica de Chat Dinámica
   const [activeChatRequestId, setActiveChatRequestId] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [proofOfWorkRequestId, setProofOfWorkRequestId] = useState<string | null>(null);
 
   const requestsWithChat = requests.filter(r => r.techId === techProfile.id && ['accepted', 'executing', 'completed', 'rated', 'disputed'].includes(r.status));
 
@@ -97,6 +99,68 @@ export default function TechDashboard() {
       return;
     }
     setLoyaltyConfirm({ name: benefitName, cost });
+  };
+
+  const handleWithdraw = async (targetTechId: string, amount: number) => {
+    const idToUse = targetTechId || techProfile.id;
+    if (!idToUse || idToUse === 'new') {
+      toast.error("Perfil de técnico no inicializado");
+      return;
+    }
+    try {
+      const currentWallet = techProfile.wallet || { balance: 0, pendingBalance: 0, transactions: [] };
+      if (amount > (currentWallet.balance || 0)) {
+        toast.error("El monto solicitado supera el balance disponible.");
+        return;
+      }
+
+      const txId = `tx_${Date.now()}`;
+      const newTransaction = {
+        id: txId,
+        type: 'debit' as const,
+        description: `Solicitud de Retiro a ${currentWallet.bankName || 'Banco / Yappy'}`,
+        amount: amount,
+        date: new Date().toISOString(),
+        status: 'pending' as const
+      };
+
+      const updatedWallet = {
+        ...currentWallet,
+        balance: Math.max(0, (currentWallet.balance || 0) - amount),
+        pendingBalance: (currentWallet.pendingBalance || 0) + amount,
+        transactions: [newTransaction, ...(currentWallet.transactions || [])]
+      };
+
+      await updateDoc(doc(db, "technicians", idToUse), {
+        wallet: updatedWallet
+      });
+
+      await addDoc(collection(db, "payouts"), {
+        techId: idToUse,
+        techName: techProfile.name || loggedInName,
+        amount,
+        status: 'pending',
+        bankName: currentWallet.bankName || '',
+        accountNumber: currentWallet.accountNumber || '',
+        accountType: currentWallet.accountType || '',
+        ownerName: currentWallet.ownerName || '',
+        yappyNumber: currentWallet.yappyNumber || '',
+        createdAt: serverTimestamp()
+      });
+
+      await addDoc(collection(db, "audit_logs"), {
+        action: 'WITHDRAWAL_REQUEST',
+        performedBy: user?.email || techProfile.name || 'Técnico',
+        targetId: idToUse,
+        details: `Solicitud de retiro de fondos por $${amount.toFixed(2)}`,
+        timestamp: new Date().toISOString()
+      });
+
+      toast.success("Solicitud de retiro registrada exitosamente.");
+    } catch (err) {
+      console.error("Error en solicitud de retiro:", err);
+      toast.error("Ocurrió un error al procesar el retiro.");
+    }
   };
 
   const getStatusLabel = (s: string) => {
@@ -156,9 +220,36 @@ export default function TechDashboard() {
 
         <button
           onClick={async () => {
-            if (!techProfile.id) return;
-            await updateDoc(doc(db, "technicians", techProfile.id), { isOnline: !techProfile.isOnline });
-            toast.success(techProfile.isOnline ? "Modo Invisible Activado" : "¡En línea en el Radar!");
+            if (!techProfile.id || techProfile.id === 'new') return;
+            const newOnlineStatus = !techProfile.isOnline;
+            if (newOnlineStatus && navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                  try {
+                    await updateDoc(doc(db, "technicians", techProfile.id), {
+                      isOnline: true,
+                      latitude: position.coords.latitude,
+                      longitude: position.coords.longitude,
+                      lastLocationUpdate: new Date().toISOString()
+                    });
+                    toast.success("¡En línea en el Radar con GPS activo!");
+                  } catch (e) {
+                    console.error("Error updating location:", e);
+                    await updateDoc(doc(db, "technicians", techProfile.id), { isOnline: true });
+                    toast.success("¡En línea en el Radar!");
+                  }
+                },
+                async (geoErr) => {
+                  console.warn("Geolocation warning:", geoErr);
+                  await updateDoc(doc(db, "technicians", techProfile.id), { isOnline: true });
+                  toast.success("¡En línea en el Radar!");
+                },
+                { enableHighAccuracy: true, timeout: 8000 }
+              );
+            } else {
+              await updateDoc(doc(db, "technicians", techProfile.id), { isOnline: false });
+              toast.success("Modo Fuera de Línea Activado");
+            }
           }}
           className={`w-full md:w-auto px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${techProfile.isOnline ? 'bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-600 hover:text-white' : 'bg-[#52ffac] text-black shadow-[#52ffac]/20 hover:brightness-110'}`}
         >
@@ -373,13 +464,20 @@ export default function TechDashboard() {
 
                     {req.status === 'executing' && (
                       <div className="space-y-8 animate-fade-in">
-                         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
                             <button
                               onClick={() => openModal('material', { request: req })}
                               className="p-4 bg-[#1c1d21] border border-[#2a2b2f] text-white rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 hover:bg-[#5d3cfe] transition-all group"
                             >
                                <Package className="w-5 h-5 text-[#5d3cfe] group-hover:text-white" />
                                Cargar Material
+                            </button>
+                            <button
+                              onClick={() => setProofOfWorkRequestId(req.id)}
+                              className={`p-4 border rounded-2xl text-[9px] font-black uppercase flex flex-col items-center gap-2 transition-all ${req.proofOfWork ? 'bg-[#52ffac]/10 border-[#52ffac]/20 text-[#52ffac]' : 'bg-[#1c1d21] border border-[#2a2b2f] text-white hover:bg-[#52ffac] hover:text-black'}`}
+                            >
+                               <ShieldCheck className="w-5 h-5" />
+                               {req.proofOfWork ? 'Evidencia Lista' : 'Evidencia Fotos'}
                             </button>
                             <button
                               onClick={() => openModal('unforeseen', { request: req })}
@@ -548,7 +646,7 @@ export default function TechDashboard() {
         <TechWalletModule
           wallet={techProfile.wallet || { balance: 0, pendingBalance: 0, transactions: [] }}
           techId={techProfile.id!}
-          onWithdraw={() => {}}
+          onWithdraw={handleWithdraw}
           plan={techProfile.plan || 'basic'}
         />
       )}
@@ -767,7 +865,14 @@ export default function TechDashboard() {
       {techTab === 'inventory' && (
          <div className="max-w-5xl mx-auto space-y-8 animate-fade-in pb-20">
             {techProfile.unlockedModules?.includes('inventory_pro') ? (
-               <InventoryModule items={inventory} assets={assets} onUpdateQuantity={() => {}} onAddItem={() => {}} onDeleteItem={() => {}} />
+               <InventoryModule
+                 items={inventory}
+                 assets={assets}
+                 onUpdateQuantity={business.handleUpdateInventoryQuantity}
+                 onAddItem={business.handleAddInventoryItem}
+                 onDeleteItem={business.handleDeleteInventoryItem}
+                 onUpdateItem={business.handleUpdateInventoryItem}
+               />
             ) : (
                <div className="bg-[#121317] border border-white/5 rounded-[3rem] p-16 text-center space-y-8 shadow-2xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-20 opacity-5 -rotate-12"><Package className="w-64 h-64" /></div>
@@ -788,6 +893,27 @@ export default function TechDashboard() {
         confirmText="Confirmar Canje"
         type="success"
       />
+
+      {proofOfWorkRequestId && (
+        <ProofOfWorkModule
+          requestId={proofOfWorkRequestId}
+          onSave={async (proofData) => {
+            await updateDoc(doc(db, "requests", proofOfWorkRequestId), {
+              proofOfWork: proofData,
+              updatedAt: serverTimestamp()
+            });
+            await addDoc(collection(db, "messages"), {
+              requestId: proofOfWorkRequestId,
+              sender: 'tech',
+              text: "📸 Evidencia técnica de labor y repuestos adjuntada con certificación GPS.",
+              timestamp: serverTimestamp()
+            });
+            toast.success("Evidencia de labor guardada con éxito.");
+            setProofOfWorkRequestId(null);
+          }}
+          onClose={() => setProofOfWorkRequestId(null)}
+        />
+      )}
     </div>
   );
 }

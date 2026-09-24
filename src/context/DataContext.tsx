@@ -3,7 +3,6 @@ import { collection, query, where, onSnapshot, orderBy } from "firebase/firestor
 import { db } from "../firebase";
 import { useAuth } from './AuthContext';
 import { Asset, MaintenanceReminder, TechProfile, JobRequest, InventoryItem, AgendaEvent } from '../types';
-import { initialTechnicians } from '../mockData';
 
 interface DataContextType {
   assets: Asset[];
@@ -35,12 +34,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const unsubTechs = onSnapshot(collection(db, "technicians"), (snap) => {
       const techs = snap.docs.map(d => ({ id: d.id, ...d.data() })) as TechProfile[];
-      // Fallback a mock si la base de datos está vacía para pruebas
-      if (techs.length === 0) {
-        setTechnicians(initialTechnicians);
-      } else {
-        setTechnicians(techs);
-      }
+      setTechnicians(techs);
     },
     (err) => console.error("Tech Snapshot Error:", err)
     );
@@ -80,7 +74,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       unsubAssets = onSnapshot(qAssets, (snap) => {
-        setAssets(snap.docs.map(d => ({ id: d.id, ...d.data() })) as Asset[]);
+        const loadedAssets = (snap.docs.map(d => ({ id: d.id, ...d.data() })) as Asset[])
+          .filter(a => a.status !== 'deleted');
+        setAssets(loadedAssets);
         setIsDataLoading(false);
       }, (err) => {
         console.warn("Asset Snapshot Error:", err);
@@ -94,8 +90,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     let unsubReminders = () => {};
-    if (role === 'client') {
-      const qRem = query(collection(db, "reminders"), where("clientId", "==", user.uid));
+    if (role === 'client' || role === 'admin') {
+      const qRem = role === 'admin'
+        ? collection(db, "reminders")
+        : query(collection(db, "reminders"), where("clientId", "==", user.uid));
       unsubReminders = onSnapshot(qRem, (snap) =>
         setReminders(snap.docs.map(d => ({ id: d.id, ...d.data() })) as MaintenanceReminder[]),
         (err) => console.warn("Rem Snapshot Error:", err)
@@ -105,9 +103,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // --- AGENDA LISTENER BLINDADO ---
     let unsubAgenda = () => {};
     try {
-      const qAgenda = role === 'tech'
-        ? query(collection(db, "agenda"), where("techUserId", "==", user.uid))
-        : query(collection(db, "agenda"), where("clientId", "==", user.uid));
+      const qAgenda = role === 'admin'
+        ? collection(db, "agenda")
+        : (role === 'tech'
+          ? query(collection(db, "agenda"), where("techUserId", "==", user.uid))
+          : query(collection(db, "agenda"), where("clientId", "==", user.uid)));
 
       unsubAgenda = onSnapshot(qAgenda, (snap) => {
         setAgenda(snap.docs.map(d => ({ id: d.id, ...d.data() })) as AgendaEvent[]);

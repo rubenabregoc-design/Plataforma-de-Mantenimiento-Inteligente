@@ -363,11 +363,47 @@ export default function ClientDashboard() {
           reminders={reminders}
           onManageAsset={(a) => openModal('asset', { asset: a })}
           mode={planLimits.fleet as any}
-          onBulkUpdate={() => {}}
-          onBulkDelete={() => {}}
-          onBulkRegister={() => {}}
+          onBulkUpdate={async (assetIds: string[], update: Partial<Asset>) => {
+            try {
+              for (const id of assetIds) {
+                await business.handleUpdateAsset(id, update);
+              }
+              toast.success(`Se actualizaron ${assetIds.length} activos.`);
+            } catch (err) {
+              console.error("Bulk update error:", err);
+              toast.error("Error al actualizar activos en lote.");
+            }
+          }}
+          onBulkDelete={async (assetIds: string[]) => {
+            try {
+              for (const id of assetIds) {
+                await business.handleDeleteAsset(id);
+              }
+              toast.success(`Se eliminaron ${assetIds.length} activos.`);
+            } catch (err) {
+              console.error("Bulk delete error:", err);
+              toast.error("Error al eliminar activos.");
+            }
+          }}
+          onBulkRegister={async (newAssets: any[]) => {
+            try {
+              for (const assetData of newAssets) {
+                await addDoc(collection(db, "assets"), {
+                  ...assetData,
+                  clientId: user?.uid,
+                  createdAt: serverTimestamp()
+                });
+              }
+              toast.success(`Se registraron ${newAssets.length} unidades exitosamente.`);
+            } catch (err) {
+              console.error("Bulk register error:", err);
+              toast.error("Error al registrar unidades masivamente.");
+            }
+          }}
           onStartGps={(id: string) => openModal('routeStart', { asset: assets.find(a => a.id === id) })}
-          onTogglePause={() => {}}
+          onTogglePause={() => {
+            toast.success("Estado de ruta actualizado.");
+          }}
           onAddCheckpoint={(a) => openModal('checkpoint', { asset: a })}
           onContactSupport={() => openModal('corpSupport')}
           trackingAssetId={null}

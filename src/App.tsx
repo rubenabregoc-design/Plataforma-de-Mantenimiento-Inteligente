@@ -9,7 +9,7 @@ import { useUI } from './context/UIContext';
 import { useGpsTracking } from './hooks/useGpsTracking';
 import { useBusinessLogic } from './hooks/useBusinessLogic';
 import { db } from './firebase';
-import { doc, updateDoc, setDoc, getDoc, query, collection, where, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, getDoc, query, collection, where, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { verifyPaymentOrder } from './services/api';
 
 // Router & Components
@@ -109,12 +109,30 @@ export default function App() {
     const cleanData = cleanForFirebase(data);
 
     try {
+      let targetAssetId = activeData.asset ? activeData.asset.id : null;
       if (activeData.asset) {
         await AssetService.updateAsset(activeData.asset.id, cleanData);
         toast.success("Equipo actualizado.");
       } else {
-        await AssetService.createAsset({ ...cleanData, clientId: user.uid, registeredAt: new Date().toISOString() });
+        const docRef = await AssetService.createAsset({ ...cleanData, clientId: user.uid, registeredAt: new Date().toISOString() });
+        targetAssetId = docRef.id;
         toast.success("Equipo registrado.");
+      }
+
+      // Sincronización automática de recordatorios de mantenimiento
+      if (targetAssetId && cleanData.nextMaintenanceDate) {
+        const isUrgent = new Date(cleanData.nextMaintenanceDate).getTime() - Date.now() <= 7 * 24 * 60 * 60 * 1000;
+        await setDoc(doc(db, "reminders", `rem_${targetAssetId}`), {
+          id: `rem_${targetAssetId}`,
+          assetId: targetAssetId,
+          clientId: user.uid,
+          title: `Mantenimiento Preventivo: ${cleanData.name || 'Activo'}`,
+          description: `Servicio programado para ${cleanData.name || 'unidad'} ${cleanData.licensePlate ? `(Placa: ${cleanData.licensePlate})` : ''}`,
+          dueDate: cleanData.nextMaintenanceDate,
+          status: isUrgent ? 'urgent' : 'pending',
+          type: 'general',
+          updatedAt: serverTimestamp()
+        }, { merge: true });
       }
     } catch (err) {
       console.error("Firebase Error:", err);

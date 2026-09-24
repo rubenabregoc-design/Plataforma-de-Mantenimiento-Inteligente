@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, X, Send, User, ShieldCheck, Zap, DollarSign, Bot } from 'lucide-react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-hot-toast';
 
 interface Message {
   id: string;
@@ -16,8 +20,10 @@ interface AdvisorChatWidgetProps {
 }
 
 export default function AdvisorChatWidget({ isOpen, onClose, userName, initialMode = 'general' }: AdvisorChatWidgetProps) {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -39,30 +45,48 @@ export default function AdvisorChatWidget({ isOpen, onClose, userName, initialMo
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || isSubmitting) return;
 
+    const currentText = inputText;
     const userMsg: Message = {
       id: Date.now().toString(),
-      text: inputText,
+      text: currentText,
       sender: 'user',
       timestamp: new Date().toISOString()
     };
 
     setMessages(prev => [...prev, userMsg]);
     setInputText('');
+    setIsSubmitting(true);
 
-    // Respuesta simulada del Asesor
-    setTimeout(() => {
+    try {
+      const ticketRef = await addDoc(collection(db, "support_tickets"), {
+        userName: userName || user?.displayName || 'Usuario',
+        userEmail: user?.email || 'contacto@mantechpro.pa',
+        userId: user?.uid || 'guest',
+        subject: initialMode === 'sales' ? 'Consulta de Ventas Flota / Planes' : 'Consulta Asesor Central MantechPro',
+        message: currentText,
+        status: 'open',
+        source: 'advisor_widget',
+        createdAt: serverTimestamp()
+      });
+
       const reply: Message = {
         id: (Date.now() + 1).toString(),
-        text: "Entendido. He recibido su consulta. Un especialista de mi equipo revisará su caso y le responderemos en menos de 15 minutos. Gracias por su paciencia.",
+        text: `Entendido. He registrado su solicitud con el Ticket #${ticketRef.id.slice(0, 6).toUpperCase()} en nuestro Nodo Central. Un asesor revisará los detalles y le contactará a su correo.`,
         sender: 'advisor',
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, reply]);
-    }, 1500);
+      toast.success("Consulta enviada a la central");
+    } catch (err) {
+      console.error("Error creating ticket:", err);
+      toast.error("Error al enviar la consulta");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;

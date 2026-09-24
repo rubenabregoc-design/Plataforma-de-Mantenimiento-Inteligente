@@ -6,6 +6,7 @@ import {
   Plus, Store, AlertTriangle, Search, Activity, Pencil, Image as ImageIcon, PieChart
 } from 'lucide-react';
 import AuditLogsModule from '../../components/AuditLogsModule';
+import MonthlyClosureModal from '../../components/MonthlyClosureModal';
 import InventoryModule from '../../components/InventoryModule';
 import FleetDashboard from '../../components/FleetDashboard';
 import LandingCMS from '../../components/LandingCMS';
@@ -36,12 +37,23 @@ export default function AdminDashboard() {
   const [replyText, setReplyText] = useState('');
   const [isReplying, setIsReplying] = useState(false);
 
+  // --- LOGICA DE AUDITORIA Y CIERRE ---
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [isClosureModalOpen, setIsClosureModalOpen] = useState(false);
+
   // --- LOGICA DE ADS ---
   const [ads, setAds] = useState<any[]>([]);
   const [newAd, setNewAd] = useState({ title: '', image: '', link: '', placement: 'client', cta: '' });
   const [editingAdId, setEditingAdId] = useState<number | null>(null);
 
   useEffect(() => {
+    if (adminTab === 'audit') {
+      const q = query(collection(db, "audit_logs"), orderBy("timestamp", "desc"));
+      const unsub = onSnapshot(q, (snap) => {
+        setAuditLogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      }, (err) => console.warn("Audit logs error:", err));
+      return () => unsub();
+    }
     if (adminTab === 'tickets') {
       const q = query(collection(db, "support_tickets"), orderBy("createdAt", "desc"));
       const unsub = onSnapshot(q, (snap) => {
@@ -345,7 +357,7 @@ export default function AdminDashboard() {
       )}
 
       {adminTab === 'audit' && (
-        <AuditLogsModule logs={[]} />
+        <AuditLogsModule logs={auditLogs} />
       )}
 
       {adminTab === 'tickets' && (
@@ -566,6 +578,20 @@ export default function AdminDashboard() {
 
       {adminTab === 'finance' && (
         <div className="space-y-12">
+          {/* Header de Finanzas */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Finanzas & Liquidaciones</h2>
+              <p className="text-[10px] text-[#474556] font-bold uppercase tracking-widest mt-1">Control de comisiones, pasarela y cierres contables</p>
+            </div>
+            <button
+              onClick={() => setIsClosureModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-3.5 bg-[#5d3cfe] hover:bg-[#5d3cfe]/80 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-[#5d3cfe]/20 active:scale-95 cursor-pointer"
+            >
+              <FileText className="w-4 h-4" /> Generar Cierre Mensual
+            </button>
+          </div>
+
           {/* Métricas Principales */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-[#121317] border border-[#2a2b2f] p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
@@ -879,6 +905,21 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* Modal de Cierre Mensual Ejecutivo */}
+      <MonthlyClosureModal
+        isOpen={isClosureModalOpen}
+        onClose={() => setIsClosureModalOpen(false)}
+        adminEmail={user?.email || 'admin@mantechpro.pa'}
+        data={{
+          totalCommissions,
+          totalSubscriptions: subscriptionIncome,
+          pendingPayments: requests.filter(r => r.status === 'accepted' || r.status === 'executing').reduce((acc, r) => acc + (r.price || 0), 0),
+          netUtility: totalCommissions + subscriptionIncome,
+          month: new Date().toLocaleString('es-ES', { month: 'long' }),
+          year: new Date().getFullYear()
+        }}
+      />
     </div>
   );
 }

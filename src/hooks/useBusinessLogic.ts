@@ -1,5 +1,6 @@
 import { collection, addDoc, serverTimestamp, updateDoc, doc, getDoc, getDocs, query, where, arrayUnion, deleteDoc, increment, writeBatch } from "firebase/firestore";
-import { db } from "../firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "../firebase";
 import { toast } from 'react-hot-toast';
 import { useAuth } from "../context/AuthContext";
 import { useData } from "../context/DataContext";
@@ -12,18 +13,23 @@ export function useBusinessLogic() {
   const { assets, requests, technicians } = useData();
 
   async function handleVerifyIdentityAIProcess(userId: string) {
-    const loading = toast.loading("Analizando identidad con motor IA...");
+    const loading = toast.loading("Analizando identidad con motor de verificación...");
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
       await updateDoc(doc(db, "users", userId), {
         'mantechId.aiVerified': true,
         'mantechId.verifiedAt': serverTimestamp(),
         'recordStatus': 'verified'
       });
-      toast.success("Identidad validada por IA.", { id: loading });
+      await addDoc(collection(db, "audit_logs"), {
+        action: 'AI_IDENTITY_VERIFIED',
+        performedBy: 'System / IA Validator',
+        targetId: userId,
+        timestamp: new Date().toISOString()
+      });
+      toast.success("Identidad validada exitosamente.", { id: loading });
     } catch (err) {
       console.error(err);
-      toast.error("Fallo en verificación IA.", { id: loading });
+      toast.error("Fallo en verificación.", { id: loading });
     }
   }
 
@@ -508,6 +514,11 @@ export function useBusinessLogic() {
         status: 'deleted',
         deletedAt: serverTimestamp()
       });
+      try {
+        await deleteDoc(doc(db, "reminders", `rem_${id}`));
+      } catch (e) {
+        // Ignorar si no existe recordatorio
+      }
       toast.success("Activo eliminado correctamente.");
     } catch (err) {
       console.error(err);
@@ -553,8 +564,9 @@ export function useBusinessLogic() {
     const loading = toast.loading(`Subiendo ${type === 'id' ? 'Identidad' : 'Récord Policivo'}...`);
 
     try {
-      // Simulación de URL de almacenamiento (En producción usaría Firebase Storage)
-      const mockUrl = `https://storage.mantechpro.pa/${user.uid}/${type}_${Date.now()}.pdf`;
+      const storageRef = ref(storage, `mantech_documents/${user.uid}/${type}_${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(storageRef);
 
       if (role === 'tech') {
         const userSnap = await getDoc(doc(db, "users", user.uid));
@@ -563,16 +575,24 @@ export function useBusinessLogic() {
 
         const updateKey = type === 'id' ? 'mantechId.documentUrl' : 'mantechId.policeRecordUrl';
         await updateDoc(doc(db, "technicians", techId), {
-          [updateKey]: mockUrl,
+          [updateKey]: downloadUrl,
           'mantechId.status': 'pending'
         });
       } else {
         const updateKey = type === 'id' ? 'mantechId.documentUrl' : 'mantechId.policeRecordUrl';
         await updateDoc(doc(db, "users", user.uid), {
-          [updateKey]: mockUrl,
+          [updateKey]: downloadUrl,
           'recordStatus': 'pending'
         });
       }
+
+      await addDoc(collection(db, "audit_logs"), {
+        action: 'MANTECH_DOCUMENT_UPLOADED',
+        performedBy: user.email || user.uid,
+        targetId: user.uid,
+        details: `Documento ${type} cargado a Firebase Storage`,
+        timestamp: new Date().toISOString()
+      });
 
       toast.success("Documento registrado para auditoría.", { id: loading });
     } catch (err) {

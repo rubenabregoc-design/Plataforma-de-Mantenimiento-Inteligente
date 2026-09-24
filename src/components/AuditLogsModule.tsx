@@ -19,12 +19,12 @@ interface Props {
 export default function AuditLogsModule({ logs }: Props) {
   const exportLogs = () => {
     const data = logs.map(l => ({
-      Fecha: l.timestamp?.toDate().toLocaleString() || 'N/A',
-      Usuario: l.userName,
-      ID_Usuario: l.userId,
-      Accion: l.action,
-      Detalles: l.details,
-      Plataforma: l.platform
+      Fecha: l.timestamp?.toDate ? l.timestamp.toDate().toLocaleString() : (l.timestamp ? new Date(l.timestamp).toLocaleString() : 'N/A'),
+      Usuario: l.userName || 'Sistema',
+      ID_Usuario: l.userId || 'N/A',
+      Accion: l.action || 'GENERAL',
+      Detalles: l.details || '',
+      Plataforma: l.platform || 'Web'
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -66,7 +66,7 @@ export default function AuditLogsModule({ logs }: Props) {
                     <div className="flex items-center gap-3">
                        <Clock className="w-3.5 h-3.5 text-[#5d3cfe]" />
                        <span className="text-[11px] font-bold text-white/60">
-                         {log.timestamp?.toDate().toLocaleString() || 'Sincronizando...'}
+                         {log.timestamp?.toDate ? log.timestamp.toDate().toLocaleString() : (log.timestamp ? new Date(log.timestamp).toLocaleString() : 'Sincronizando...')}
                        </span>
                     </div>
                   </td>
@@ -76,8 +76,8 @@ export default function AuditLogsModule({ logs }: Props) {
                           <User className="w-4 h-4" />
                        </div>
                        <div>
-                          <p className="text-xs font-black text-white uppercase tracking-tight">{log.userName}</p>
-                          <p className="text-[8px] font-bold text-[#474556] tracking-widest uppercase">ID: {log.userId.substring(0,8)}...</p>
+                          <p className="text-xs font-black text-white uppercase tracking-tight">{log.userName || 'Sistema'}</p>
+                          <p className="text-[8px] font-bold text-[#474556] tracking-widest uppercase">ID: {(log.userId || 'system').substring(0,8)}...</p>
                        </div>
                     </div>
                   </td>
