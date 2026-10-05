@@ -124,6 +124,39 @@ app.use("/api/send-report", strictLimiter);
 app.use("/api/push-notification", strictLimiter);
 app.use("/api/payments/verify-order", strictLimiter);
 
+// 3.1 MIDDLEWARES DE SEGURIDAD Y AUTENTICACIÓN FIREBASE
+const authenticateToken = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, error: "Autenticación requerida. Token no proporcionado." });
+  }
+  const token = authHeader.split('Bearer ')[1];
+  try {
+    const decoded = await admin.auth().verifyIdToken(token);
+    (req as any).user = decoded;
+    next();
+  } catch (err: any) {
+    return res.status(403).json({ success: false, error: "Token de acceso inválido o expirado." });
+  }
+};
+
+const requireAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  await authenticateToken(req, res, async () => {
+    const user = (req as any).user;
+    if (!user) return res.status(403).json({ success: false, error: "Acceso no autorizado." });
+    try {
+      const userSnap = await db.collection("users").doc(user.uid).get();
+      const userData = userSnap.data();
+      if (userData?.role === 'admin' || (user.email === 'admin@mantech.com' && user.email_verified)) {
+        return next();
+      }
+      return res.status(403).json({ success: false, error: "Se requieren privilegios de Administrador Maestro." });
+    } catch (e: any) {
+      return res.status(500).json({ success: false, error: "Error validando credenciales de administrador." });
+    }
+  });
+};
+
 // 4. API ROUTES (Prioridad 2 - Deben estar ANTES del catch-all '*')
 
 app.get("/api/health", (req, res) => res.json({ status: "active", version: "4.0.0", security: "hardened" }));
@@ -574,7 +607,7 @@ app.post("/api/contact", async (req, res) => {
 });
 
 // Respuesta a Tickets (Respuesta Oficial Premium)
-app.post("/api/admin/reply-ticket", async (req, res) => {
+app.post("/api/admin/reply-ticket", requireAdmin, async (req, res) => {
   console.log("ðŸ“¤ [ADMIN] Procesando respuesta oficial...");
   const { name, email, whatsapp, subject, message, originalMessage } = req.body;
 
@@ -696,7 +729,7 @@ app.post("/api/diagnose", async (req, res) => {
 });
 
 // Enviar NotificaciÃ³n Push (Celulares & FCM)
-app.post("/api/push-notification", async (req, res) => {
+app.post("/api/push-notification", authenticateToken, async (req, res) => {
   const { title, body, token, userId, data } = req.body;
   try {
     const tokensToSend: string[] = [];
@@ -765,7 +798,7 @@ app.post("/api/push-notification", async (req, res) => {
 });
 
 // Enviar Reporte Oficial Mensual por Correo
-app.post("/api/send-report", async (req, res) => {
+app.post("/api/send-report", requireAdmin, async (req, res) => {
   const { to, reportData } = req.body;
   const recipient = to || process.env.ADMIN_EMAIL?.split(',')[0]?.trim() || 'rubenabregoc@gmail.com';
   console.log(`ðŸ“Š [REPORTE] Procesando reporte mensual para: ${recipient}...`);

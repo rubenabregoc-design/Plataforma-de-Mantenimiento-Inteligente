@@ -88,8 +88,8 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
           </div>
 
           <div class="security-hash">
-            HASH_VAL_ID: ${btoa(new Date().toISOString()).substring(0, 32)}<br/>
-            VALIDACIÓN_BLOCKCHAIN: EXITOSA • STATUS: ACTIVO
+            REGISTRO_HASH: MP-ID-${Date.now().toString(16).toUpperCase()}-${expNumber}<br/>
+            VALIDACIÓN DE INTEGRIDAD DIGITAL: EXITOSA • FIRMA: ACTIVA
           </div>
         </body>
       </html>

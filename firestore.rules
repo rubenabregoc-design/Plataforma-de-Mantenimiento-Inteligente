@@ -2,6 +2,109 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ===============================================================
+    // Assumed Data Model & Architecture
+    // ===============================================================
+    //
+    // Platform: MantechPro (Plataforma de Mantenimiento Inteligente)
+    //
+    // Collections & Schemas:
+    //
+    // 1. app_config / config:
+    //    - Platform-wide constants, landing configurations, pricing tables.
+    //    - Publicly readable, writeable only by verified admins.
+    //
+    // 2. users/{userId}:
+    //    - uid: string (matches userId)
+    //    - email: string (user email)
+    //    - name: string (full name)
+    //    - role: 'client' | 'tech' | 'driver' | 'admin'
+    //    - subscription: map (planId, status, startDate, nextBillingDate, etc.)
+    //    - techId?: string (technician profile reference)
+    //    - companyId?: string (B2B fleet reference)
+    //    - cedula?: string (national ID)
+    //    - createdAt?: timestamp
+    //
+    // 3. technicians/{techId}:
+    //    - id: string (tech identifier)
+    //    - userId: string (owning user uid)
+    //    - name: string
+    //    - category: string
+    //    - plan: 'basic' | 'pro' | 'enterprise'
+    //    - wallet: map (balance, pendingBalance, transactions)
+    //    - isVerified: bool
+    //    - isOnline: bool
+    //    - rating: number
+    //    - reviewCount: number
+    //
+    // 4. requests/{requestId}:
+    //    - clientId: string (customer uid)
+    //    - techUserId?: string (assigned technician uid)
+    //    - techId?: string
+    //    - assetId: string
+    //    - assetName: string
+    //    - description: string
+    //    - status: 'pending' | 'quoted' | 'accepted' | 'executing' | 'completed' | 'rated' | 'rejected' | 'disputed' | 'cancelled' | 'open_bidding' | 'pending_verification'
+    //    - isPublic?: bool
+    //    - price?: number
+    //    - amountPaid?: number
+    //    - escrowStatus?: string
+    //    - clientSignature?: string
+    //
+    // 5. assets/{assetId}:
+    //    - clientId: string (owner uid)
+    //    - assignedDriverId?: string (assigned driver uid)
+    //    - companyId?: string (corporate fleet)
+    //    - name: string
+    //    - type: string
+    //    - category: string
+    //    - mileage?: number
+    //    - latitude?: number
+    //    - longitude?: number
+    //    - routeHistory?: list
+    //    - fuelLogs?: list
+    //
+    // 6. messages/{messageId}:
+    //    - requestId?: string
+    //    - channel?: string ('fleet_dispatch', etc.)
+    //    - senderId?: string
+    //    - sender: 'client' | 'tech' | 'system' | 'advisor'
+    //    - text: string
+    //    - timestamp: timestamp | string
+    //
+    // 7. notifications/{notifId}:
+    //    - userId: string
+    //    - title: string
+    //    - body: string
+    //    - read: bool
+    //
+    // 8. calls/{callId}:
+    //    - WebRTC signaling for video/voice support sessions.
+    //
+    // 9. radio_signals/{signalId}:
+    //    - Real-time PTT (Push-to-Talk) volatile audio signals.
+    //
+    // 10. reminders/{reminderId}:
+    //     - Maintenance reminders scoped to client.
+    //
+    // 11. agenda/{agendaId}:
+    //     - Scheduled visits/calendar items.
+    //
+    // 12. inventory/{itemId}:
+    //     - Spare parts and stock management.
+    //
+    // 13. support_tickets/{ticketId}:
+    //     - Help desk and inbound web inquiry tickets.
+    //
+    // 14. audit_logs/{logId}:
+    //     - Immutable system and transaction audit logs.
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
     function isSignedIn() {
       return request.auth != null;
     }
@@ -10,14 +113,142 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // Hardened Admin Verification:
+    // 1. Prohibits trusting unverified emails.
+    // 2. Accepts custom claims (request.auth.token.role == 'admin' or admin == true).
+    // 3. Or validates 'admin' role in the Firestore users document.
     function isAdmin() {
       return isSignedIn() && (
-        request.auth.token.email == 'admin@mantech.com' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        (request.auth.token.email == 'admin@mantech.com' && request.auth.token.email_verified == true) ||
+        (request.auth.token.role == 'admin') ||
+        (request.auth.token.admin == true) ||
+        (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        )
       );
     }
 
-    // Configuración Pública (Landing Page y constantes de plataforma)
+    // String length boundary validation to block Resource Exhaustion / 1MB DoS attacks
+    function isValidString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function isValidOptionalString(data, field, minLen, maxLen) {
+      return !(field in data) || (data[field] is string && data[field].size() >= minLen && data[field].size() <= maxLen);
+    }
+
+    // ===============================================================
+    // Domain Validators (Validator Function Pattern)
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.uid is string &&
+             isValidString(data.name, 1, 120) &&
+             isValidString(data.email, 3, 150) &&
+             data.role in ['client', 'tech', 'driver', 'admin'] &&
+             isValidOptionalString(data, 'cedula', 0, 50) &&
+             isValidOptionalString(data, 'phone', 0, 30) &&
+             isValidOptionalString(data, 'profileImage', 0, 1000) &&
+             isValidOptionalString(data, 'companyId', 0, 100);
+    }
+
+    function isValidTechnician(data) {
+      return isValidString(data.name, 1, 120) &&
+             data.category is string && data.category.size() <= 80 &&
+             data.plan in ['basic', 'pro', 'enterprise'] &&
+             (!('rating' in data) || data.rating is number) &&
+             (!('reviewCount' in data) || data.reviewCount is number) &&
+             (!('completedJobs' in data) || data.completedJobs is number) &&
+             isValidOptionalString(data, 'bio', 0, 3000) &&
+             isValidOptionalString(data, 'phone', 0, 30);
+    }
+
+    function isValidRequest(data) {
+      return data.clientId is string &&
+             isValidString(data.assetName, 1, 150) &&
+             isValidString(data.description, 1, 4000) &&
+             data.status in [
+               'pending', 'quoted', 'accepted', 'executing',
+               'completed', 'rated', 'rejected', 'disputed',
+               'cancelled', 'open_bidding', 'pending_verification'
+             ] &&
+             (!('price' in data) || (data.price is number && data.price >= 0)) &&
+             isValidOptionalString(data, 'clientSignature', 0, 50000);
+    }
+
+    function isValidAsset(data) {
+      return data.clientId is string &&
+             isValidString(data.name, 1, 150) &&
+             data.type is string && data.type.size() <= 60 &&
+             data.category is string && data.category.size() <= 60 &&
+             (!('mileage' in data) || (data.mileage is number && data.mileage >= 0)) &&
+             (!('usageHours' in data) || (data.usageHours is number && data.usageHours >= 0)) &&
+             isValidOptionalString(data, 'licensePlate', 0, 30) &&
+             isValidOptionalString(data, 'details', 0, 500);
+    }
+
+    function isValidMessage(data) {
+      return isValidString(data.text, 1, 5000) &&
+             isValidOptionalString(data, 'requestId', 0, 120) &&
+             isValidOptionalString(data, 'channel', 0, 80) &&
+             isValidOptionalString(data, 'senderId', 0, 120);
+    }
+
+    function isValidNotification(data) {
+      return isValidString(data.title, 1, 200) &&
+             isValidString(data.body, 1, 1000) &&
+             (!('read' in data) || data.read is bool);
+    }
+
+    function isValidSupportTicket(data) {
+      return isValidString(data.message, 1, 4000) &&
+             isValidOptionalString(data, 'userEmail', 3, 150) &&
+             isValidOptionalString(data, 'userName', 1, 120) &&
+             isValidOptionalString(data, 'subject', 1, 250);
+    }
+
+    function isValidReminder(data) {
+      return data.clientId is string &&
+             isValidString(data.title, 1, 200) &&
+             isValidOptionalString(data, 'description', 0, 2000);
+    }
+
+    function isValidAgenda(data) {
+      return isValidString(data.title, 1, 200) &&
+             isValidOptionalString(data, 'date', 0, 60) &&
+             isValidOptionalString(data, 'time', 0, 30);
+    }
+
+    function isValidInventory(data) {
+      return isValidString(data.name, 1, 150) &&
+             (!('quantity' in data) || data.quantity is number) &&
+             (!('pricePerUnit' in data) || (data.pricePerUnit is number && data.pricePerUnit >= 0));
+    }
+
+    function isValidAuditLog(data) {
+      return isValidOptionalString(data, 'action', 0, 100) &&
+             isValidOptionalString(data, 'type', 0, 100) &&
+             isValidOptionalString(data, 'details', 0, 3000);
+    }
+
+    function isValidForumTopic(data) {
+      return isValidString(data.title, 3, 200) &&
+             isValidString(data.description, 3, 5000) &&
+             data.authorId is string;
+    }
+
+    function isValidForumReply(data) {
+      return isValidString(data.text, 1, 3000) &&
+             data.topicId is string &&
+             data.authorId is string;
+    }
+
+    // ===============================================================
+    // Rules Definition by Collection
+    // ===============================================================
+
+    // 1. Configuración Pública y Parámetros Globales
     match /app_config/{docId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -28,47 +259,228 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Perfiles de Usuarios (Blindaje contra auto-elevación a admin y auto-asignación de suscripciones)
+    // 2. Perfiles de Usuario (PII protegida, blindaje contra auto-elevación)
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow create: if isOwner(userId) && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role != 'admin');
-      allow update: if isOwner(userId) ? (
-        isAdmin() || (
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'subscription', 'plan', 'subscriptionStatus'])
+      // Lectura: Propietario, admin o perfiles públicos de técnicos/conductores autenticados. PII de clientes protegida.
+      allow read: if isOwner(userId) ||
+                     isAdmin() ||
+                     (isSignedIn() && resource.data.role in ['tech', 'driver']);
+
+      // Creación: Solo el propio usuario con rol no-admin y plan base, o un admin verificado
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        (
+          isOwner(userId) &&
+          request.resource.data.uid == request.auth.uid &&
+          request.resource.data.role in ['client', 'tech', 'driver'] &&
+          request.resource.data.role != 'admin' &&
+          (!('subscription' in request.resource.data) ||
+           request.resource.data.subscription.planId in ['plan-free', 'plan-basic']) &&
+          isValidUser(request.resource.data)
         )
-      ) : isAdmin();
+      );
+
+      // Actualización: Prohibir auto-elevación a admin y auto-asignación de planes premium
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (
+          isOwner(userId) &&
+          request.resource.data.uid == resource.data.uid &&
+          request.resource.data.role == resource.data.role &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'plan']) &&
+          (
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['subscription']) ||
+            (
+              request.resource.data.subscription.planId == resource.data.subscription.planId &&
+              (request.resource.data.subscription.status in ['pending_payment_verification', 'expired'] ||
+               request.resource.data.subscription.status == resource.data.subscription.status)
+            )
+          ) &&
+          isValidUser(request.resource.data)
+        )
+      );
+
+      // Borrado: Solo administrador
       allow delete: if isAdmin();
     }
 
-    // Perfiles Técnicos (Blindaje de billetera y plan técnico)
+    // 3. Perfiles de Técnicos (Billetera y planes protegidos)
     match /technicians/{techId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && (
-        isAdmin() || 
-        (resource.data.userId == request.auth.uid && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['wallet', 'plan']) || isAdmin()))
+
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        (
+          request.resource.data.userId == request.auth.uid &&
+          request.resource.data.plan == 'basic' &&
+          (!('wallet' in request.resource.data) ||
+           (request.resource.data.wallet.balance == 0 && request.resource.data.wallet.pendingBalance == 0)) &&
+          isValidTechnician(request.resource.data)
+        )
       );
+
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (
+          resource.data.userId == request.auth.uid &&
+          request.resource.data.userId == resource.data.userId &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['wallet', 'plan', 'userId', 'id', 'isVerified']) &&
+          isValidTechnician(request.resource.data)
+        )
+      );
+
       allow delete: if isAdmin();
     }
 
-    // Solicitudes de Servicio (Requests)
+    // 4. Solicitudes de Servicio (Requests)
     match /requests/{requestId} {
-      allow read, create, update: if isSignedIn();
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.clientId == request.auth.uid ||
+        resource.data.techUserId == request.auth.uid ||
+        resource.data.isPublic == true ||
+        resource.data.status == 'open_bidding'
+      );
+
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        (
+          request.resource.data.clientId == request.auth.uid &&
+          request.resource.data.status in ['pending', 'open_bidding', 'quoted'] &&
+          (!('amountPaid' in request.resource.data) || request.resource.data.amountPaid == 0) &&
+          (!('escrowStatus' in request.resource.data) || request.resource.data.escrowStatus == 'pending') &&
+          isValidRequest(request.resource.data)
+        )
+      );
+
+      // Actualización: Solo cliente o técnico asignado. Prohibir cambio directo a 'completed' y campos financieros
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (
+          (resource.data.clientId == request.auth.uid || resource.data.techUserId == request.auth.uid) &&
+          request.resource.data.clientId == resource.data.clientId &&
+          request.resource.data.status != 'completed' &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['escrowStatus', 'amountPaid']) &&
+          isValidRequest(request.resource.data)
+        )
+      );
+
       allow delete: if isAdmin();
     }
 
-    // Mensajes de Chat
+    // 5. Activos de Clientes / Flota
+    match /assets/{assetId} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.clientId == request.auth.uid ||
+        resource.data.assignedDriverId == request.auth.uid ||
+        (
+          resource.data.companyId != null &&
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == resource.data.companyId
+        )
+      );
+
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        (
+          request.resource.data.clientId == request.auth.uid &&
+          isValidAsset(request.resource.data)
+        )
+      );
+
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (
+          // Dueño del equipo
+          resource.data.clientId == request.auth.uid &&
+          request.resource.data.clientId == resource.data.clientId &&
+          isValidAsset(request.resource.data)
+        ) ||
+        (
+          // Conductor asignado (actualización telemática, km, combustible, ruta)
+          resource.data.assignedDriverId == request.auth.uid &&
+          request.resource.data.clientId == resource.data.clientId &&
+          request.resource.data.assignedDriverId == resource.data.assignedDriverId &&
+          isValidAsset(request.resource.data)
+        )
+      );
+
+      allow delete: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.clientId == request.auth.uid
+      );
+    }
+
+    // 6. Mensajes de Chat y Despacho
     match /messages/{messageId} {
-      allow read, create: if isSignedIn();
-      allow update, delete: if isSignedIn();
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.senderId == request.auth.uid ||
+        resource.data.receiverId == request.auth.uid ||
+        resource.data.channel == 'fleet_dispatch' ||
+        (
+          resource.data.requestId != null &&
+          exists(/databases/$(database)/documents/requests/$(resource.data.requestId)) &&
+          (
+            get(/databases/$(database)/documents/requests/$(resource.data.requestId)).data.clientId == request.auth.uid ||
+            get(/databases/$(database)/documents/requests/$(resource.data.requestId)).data.techUserId == request.auth.uid
+          )
+        )
+      );
+
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        (
+          (
+            request.resource.data.senderId == request.auth.uid ||
+            request.resource.data.sender in ['client', 'tech', 'system', 'advisor'] ||
+            request.resource.data.channel == 'fleet_dispatch' ||
+            (
+              request.resource.data.requestId != null &&
+              exists(/databases/$(database)/documents/requests/$(request.resource.data.requestId)) &&
+              (
+                get(/databases/$(database)/documents/requests/$(request.resource.data.requestId)).data.clientId == request.auth.uid ||
+                get(/databases/$(database)/documents/requests/$(request.resource.data.requestId)).data.techUserId == request.auth.uid
+              )
+            )
+          ) &&
+          isValidMessage(request.resource.data)
+        )
+      );
+
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (
+          resource.data.senderId == request.auth.uid &&
+          request.resource.data.senderId == resource.data.senderId &&
+          isValidMessage(request.resource.data)
+        )
+      );
+
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.senderId == request.auth.uid);
     }
 
-    // Notificaciones
+    // 7. Notificaciones
     match /notifications/{notifId} {
-      allow read, write: if isSignedIn();
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.userId == request.auth.uid ||
+        (resource.data.email != null && resource.data.email == request.auth.token.email)
+      );
+
+      allow create: if isSignedIn() && isValidNotification(request.resource.data);
+
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.userId == request.auth.uid ||
+        (resource.data.email != null && resource.data.email == request.auth.token.email)
+      ) && isValidNotification(request.resource.data);
+
+      allow delete: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
     }
 
-    // Videollamadas WebRTC (Señalización temporal)
+    // 8. Videollamadas WebRTC (Señalización temporal)
     match /calls/{callId} {
       allow read, write: if isSignedIn();
       match /{subCollection=**} {
@@ -76,58 +488,118 @@ service cloud.firestore {
       }
     }
 
-    // Activos de Clientes
-    match /assets/{assetId} {
-      allow read, write: if isSignedIn();
-    }
-
-    // Recordatorios de Mantenimiento
-    match /reminders/{reminderId} {
-      allow read, write: if isSignedIn();
-    }
-
-    // Agenda de Citas / Mantenimiento
-    match /agenda/{agendaId} {
-      allow read, write: if isSignedIn();
-    }
-
-    // Señales PTT y Radio en tiempo real (Volátiles)
+    // 9. Señales PTT y Radio en tiempo real (Protegido con Autenticación Obligatoria)
     match /radio_signals/{signalId} {
-      allow read, write: if true;
+      allow read, write: if isSignedIn();
     }
 
-    // Foro y Comunidad Técnica
+    // 10. Recordatorios de Mantenimiento
+    match /reminders/{reminderId} {
+      allow read, update, delete: if isSignedIn() && (
+        resource.data.clientId == request.auth.uid ||
+        isAdmin()
+      );
+
+      allow create: if isSignedIn() && (
+        request.resource.data.clientId == request.auth.uid ||
+        isAdmin()
+      ) && isValidReminder(request.resource.data);
+    }
+
+    // 11. Agenda de Citas / Mantenimiento
+    match /agenda/{agendaId} {
+      allow read, update, delete: if isSignedIn() && (
+        resource.data.clientId == request.auth.uid ||
+        resource.data.techUserId == request.auth.uid ||
+        isAdmin()
+      );
+
+      allow create: if isSignedIn() && (
+        request.resource.data.clientId == request.auth.uid ||
+        request.resource.data.techUserId == request.auth.uid ||
+        isAdmin()
+      ) && isValidAgenda(request.resource.data);
+    }
+
+    // 12. Inventario y Repuestos
+    match /inventory/{itemId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        request.resource.data.ownerId == request.auth.uid ||
+        request.resource.data.userId == request.auth.uid ||
+        !('ownerId' in request.resource.data)
+      ) && isValidInventory(request.resource.data);
+
+      allow update, delete: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.ownerId == request.auth.uid ||
+        resource.data.userId == request.auth.uid ||
+        !('ownerId' in resource.data)
+      );
+    }
+
+    // 13. Tickets de Soporte
+    match /support_tickets/{ticketId} {
+      // Creación abierta para formularios de contacto web y asesor
+      allow create: if isValidSupportTicket(request.resource.data);
+
+      // Lectura y respuesta: admin o el autor del ticket
+      allow read, update: if isAdmin() || (
+        isSignedIn() && (
+          (resource.data.userEmail != null && resource.data.userEmail == request.auth.token.email) ||
+          (resource.data.userId != null && resource.data.userId == request.auth.uid)
+        )
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // 14. Logs de Auditoría (Inmutables)
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn() && isValidAuditLog(request.resource.data);
+      allow update, delete: if false; // Estrictamente inmutables
+    }
+
+    // 15. Foro y Comunidad Técnica
     match /forum_topics/{topicId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() &&
+                    request.resource.data.authorId == request.auth.uid &&
+                    isValidForumTopic(request.resource.data);
+      allow update, delete: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid || isAdmin()
+      );
     }
 
     match /forum_replies/{replyId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() &&
+                    request.resource.data.authorId == request.auth.uid &&
+                    isValidForumReply(request.resource.data);
+      allow update, delete: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid || isAdmin()
+      );
     }
 
-    // Inventario
-    match /inventory/{itemId} {
-      allow read, write: if isSignedIn();
+    // 16. Retiros y Liquidaciones (Payouts)
+    match /payouts/{payoutId} {
+      allow read: if isAdmin() || (
+        isSignedIn() && (
+          resource.data.techId == request.auth.uid ||
+          (
+            exists(/databases/$(database)/documents/technicians/$(resource.data.techId)) &&
+            get(/databases/$(database)/documents/technicians/$(resource.data.techId)).data.userId == request.auth.uid
+          )
+        )
+      );
+      allow create: if isSignedIn() && request.resource.data.techId != null;
+      allow update, delete: if isAdmin();
     }
 
-    // Tickets de Soporte
-    match /support_tickets/{ticketId} {
-      allow create: if true; // Formularios de contacto web
-      allow read, update, delete: if isAdmin() || (isSignedIn() && resource.data.userEmail == request.auth.token.email);
-    }
-
-    // Logs de Auditoría
-    match /audit_logs/{logId} {
-      allow read: if isAdmin();
-      allow create: if isSignedIn();
-      allow update, delete: if false; // Inmutables
-    }
-
-    // Fallback seguro
+    // Fallback: Denegar todo por defecto para documentos no contemplados excepto admin
     match /{document=**} {
       allow read, write: if isAdmin();
     }

@@ -1,6 +1,8 @@
 import { toast } from 'react-hot-toast';
 import React, { useState } from 'react';
 import { X, Send, User, Mail, MessageSquare, Smartphone, ExternalLink } from 'lucide-react';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase';
 
 interface SupportResponseModalProps {
   isOpen: boolean;
@@ -16,19 +18,30 @@ export default function SupportResponseModal({ isOpen, onClose, ticket }: Suppor
 
   const handleSendResponse = async (type: 'app' | 'email' | 'whatsapp') => {
     setIsSending(true);
-    // Simulación de envío
-    setTimeout(() => {
+    try {
+      if (ticket.id) {
+        await updateDoc(doc(db, "support_tickets", ticket.id), {
+          status: 'resolved',
+          adminResponse: response,
+          respondedVia: type,
+          resolvedAt: serverTimestamp()
+        });
+      }
       if (type === 'email') {
         window.location.href = `mailto:${ticket.userEmail}?subject=Respuesta MantechPro: ${ticket.subject}&body=Hola ${ticket.userName},%0D%0A%0D%0A${response}`;
       } else if (type === 'whatsapp' && ticket.userPhone) {
         const phone = ticket.userPhone.replace(/[^0-9]/g, '');
-        window.open(`https://wa.me/${phone}?text=Hola ${ticket.userName}, soy el Administrador Master de MantechPro. Respecto a su ticket "${ticket.subject}": ${response}`, '_blank');
+        window.open(`https://wa.me/${phone}?text=Hola ${ticket.userName}, Administrador MantechPro. Respecto a su ticket "${ticket.subject}": ${response}`, '_blank');
       } else {
-        toast.success("Respuesta enviada a través del canal interno de la App.");
+        toast.success("Respuesta registrada y ticket marcado como atendido en Firestore.");
       }
+    } catch (err) {
+      console.error("Error guardando respuesta de ticket:", err);
+      toast.error("Error al actualizar estado del ticket en Firestore.");
+    } finally {
       setIsSending(false);
       onClose();
-    }, 1000);
+    }
   };
 
   return (

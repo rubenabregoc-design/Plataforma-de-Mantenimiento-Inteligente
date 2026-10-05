@@ -6,19 +6,7 @@
     <title>MantechPro Master V4</title>
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#0d0e12" />
-    <script>
-      // Protocolo de Limpieza Total de Service Workers (Modo Desarrollo)
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          for (let registration of registrations) {
-            registration.unregister().then(() => {
-              console.log('MantechPro: Service Worker desinstalado correctamente.');
-              window.location.reload(); // Recargar una vez para limpiar cache
-            });
-          }
-        });
-      }
-    </script>
+    <!-- MantechPro Master V4 Core -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23121317%22/><path d=%22M20 75V35L50 60L80 35V75%22 stroke=%22%235d3cfe%22 stroke-width=%2212%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22 fill=%22none%22/><circle cx=%2250%22 cy=%2220%22 r=%226%22 fill=%22%2352ffac%22/></svg>" />
     <script src="https://unpkg.com/html5-qrcode" crossorigin="anonymous"></script>
   </head>

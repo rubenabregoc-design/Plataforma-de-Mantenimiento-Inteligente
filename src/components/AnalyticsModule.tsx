@@ -13,6 +13,17 @@ export default function AnalyticsModule({ requests, assets }: AnalyticsModulePro
   const totalSpent = completedJobs.reduce((acc, curr) => acc + (curr.price || 0), 0);
 
   const estimatedSavings = totalSpent * 0.67;
+  // Cálculo de salud real de los activos en base al ciclo de mantenimiento
+  const calculateRealHealth = () => {
+    if (!assets || assets.length === 0) return 100;
+    const scores = assets.map(a => {
+      const currentKm = a.mileage || 0;
+      const kmSinceService = currentKm % 5000;
+      return Math.max(0, Math.min(100, 100 - (kmSinceService / 5000) * 100));
+    });
+    return Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length);
+  };
+  const fleetHealth = calculateRealHealth();
 
   return (
     <div className="space-y-6">
@@ -72,9 +83,7 @@ export default function AnalyticsModule({ requests, assets }: AnalyticsModulePro
               <div className="space-y-2">
                 <span className="text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest">3. Score de Salud</span>
                 <div className="bg-[#1a1b20] p-3 rounded-xl border border-[#474556]/30 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full border-2 border-amber-500 flex items-center justify-center text-[9px] font-black text-amber-500">
-                    94%
-                  </div>
+                  <div className="w-8 h-8 rounded-full border-2 border-amber-500 flex items-center justify-center text-[9px] font-black text-amber-500">{fleetHealth}%</div>
                 </div>
               </div>
             </div>
@@ -110,9 +119,9 @@ export default function AnalyticsModule({ requests, assets }: AnalyticsModulePro
             </div>
             <span className="text-[10px] font-bold text-[#c8c4d9] uppercase">Salud de Equipos</span>
           </div>
-          <p className="text-2xl font-black text-white">94%</p>
+          <p className="text-2xl font-black text-white">{fleetHealth}%</p>
           <div className="w-full bg-white/10 h-1.5 rounded-full mt-3">
-            <div className="bg-amber-500 h-full rounded-full" style={{ width: '94%' }}></div>
+            <div className="bg-amber-500 h-full rounded-full" style={{ width: `${fleetHealth}%` }}></div>
           </div>
         </div>
       </div>

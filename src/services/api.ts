@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
+import { auth } from '../firebase';
 
 // En entorno nativo móvil (Android/iOS), las peticiones no pueden ser relativas a localhost.
 // Deben dirigirse al dominio del servidor en producción o a la variable VITE_API_URL.
@@ -24,10 +25,23 @@ export const getApiUrl = (path: string): string => {
 
 export const api = axios.create();
 
-api.interceptors.request.use((config) => {
+// Interceptor para inyectar Base URL y Token de Autenticación de Firebase en cada petición
+api.interceptors.request.use(async (config) => {
   if (config.url && !config.url.startsWith('http')) {
     config.url = getApiUrl(config.url);
   }
+  
+  // Inyección de token seguro Bearer
+  try {
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      const token = await currentUser.getIdToken();
+      (config.headers as any).Authorization = `Bearer ${token}`;
+    }
+  } catch (err) {
+    console.warn("⚠️ No se pudo obtener el token para la petición API:", err);
+  }
+
   return config;
 });
 

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Lock, ArrowRight, Smartphone } from 'lucide-react';
+import { ShieldCheck, Smartphone } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 interface Props {
   onVerify: () => void;
   email: string;
+  expectedCode?: string;
 }
 
-export default function TwoFactorModal({ onVerify, email }: Props) {
+export default function TwoFactorModal({ onVerify, email, expectedCode }: Props) {
   const [code, setCode] = useState(['', '', '', '', '', '']);
 
   const handleInput = (v: string, i: number) => {
@@ -17,6 +19,19 @@ export default function TwoFactorModal({ onVerify, email }: Props) {
     if (v && i < 5) document.getElementById(`digit-${i+1}`)?.focus();
   };
 
+  const handleVerifyClick = () => {
+    const entered = code.join('');
+    if (entered.length < 6) {
+      toast.error('Por favor ingrese el código de 6 dígitos.');
+      return;
+    }
+    if (expectedCode && entered !== expectedCode) {
+      toast.error('Código de verificación incorrecto.');
+      return;
+    }
+    onVerify();
+  };
+
   return (
     <div className="fixed inset-0 z-[1000] bg-[#0d0e12]/95 backdrop-blur-xl flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-[#121317] border border-[#2a2b2f] p-12 rounded-[3rem] space-y-10 shadow-3xl text-center animate-fade-in-up">
@@ -25,7 +40,9 @@ export default function TwoFactorModal({ onVerify, email }: Props) {
              <Smartphone className="w-10 h-10" />
           </div>
           <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Verificación 2FA</h2>
-          <p className="text-xs text-[#c8c4d9] font-medium leading-relaxed opacity-60">Hemos enviado un código de seguridad a <br/><span className="text-[#5d3cfe]">{email}</span></p>
+          <p className="text-xs text-[#c8c4d9] font-medium leading-relaxed opacity-60">
+            Código de seguridad enviado a <br/><span className="text-[#5d3cfe]">{email}</span>
+          </p>
         </div>
 
         <div className="flex justify-center gap-3">
@@ -34,6 +51,7 @@ export default function TwoFactorModal({ onVerify, email }: Props) {
               key={i}
               id={`digit-${i}`}
               type="text"
+              maxLength={1}
               value={d}
               onChange={(e) => handleInput(e.target.value, i)}
               className="w-12 h-16 bg-[#1c1d21] border border-[#2a2b2f] rounded-2xl text-center text-2xl font-black text-[#52ffac] focus:border-[#5d3cfe] outline-none transition-all"
@@ -42,27 +60,18 @@ export default function TwoFactorModal({ onVerify, email }: Props) {
         </div>
 
         <button
-          onClick={onVerify}
+          onClick={handleVerifyClick}
           className="w-full py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[#5d3cfe]/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4"
         >
           Verificar Identidad <ShieldCheck className="w-4 h-4" />
         </button>
 
         <div className="flex flex-col gap-4">
-          <p className="text-[9px] font-black text-[#474556] uppercase tracking-widest cursor-pointer hover:text-white transition-colors">¿No recibiste el código? Reenviar</p>
           <button
             onClick={() => window.location.reload()}
             className="text-[9px] font-black text-rose-500 uppercase tracking-widest hover:underline"
           >
-            ¿Correo incorrecto? Salir y corregir
-          </button>
-
-          {/* BYPASS TÁCTICO PARA PRUEBAS */}
-          <button
-            onClick={onVerify}
-            className="text-[8px] font-black text-white/10 uppercase tracking-[0.4em] hover:text-[#52ffac] transition-all mt-4"
-          >
-            [ Bypass 2FA Dev ]
+            Cancelar y Volver
           </button>
         </div>
       </div>

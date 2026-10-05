@@ -26,6 +26,9 @@ export interface Asset {
   name: string; // Marca o Nombre descriptivo
   type: AssetType;
   category: AssetCategory;
+  status?: 'active' | 'deleted' | 'maintenance' | string;
+  assignedTechId?: string;
+  companyId?: string;
   riskLevel?: RiskLevel; // Punto #22: Clasificación por riesgo
   details: string; // Modelo
   licensePlate?: string; // Placa (Panamá)
@@ -98,6 +101,7 @@ export interface MaintenanceReminder {
   assetId: string;
   clientId: string;
   title: string;
+  companyId?: string;
   description: string;
   dueDate: string;
   status: 'pending' | 'urgent' | 'completed';
@@ -138,6 +142,7 @@ export interface TechProfile {
   category: TechCategory;
   secondaryCategories?: TechCategory[]; // Especialidades adicionales / secundarias
   title: string;
+  companyId?: string;
   rating: number;
   reviewCount: number;
   completedJobs: number;
@@ -469,6 +474,7 @@ export interface StaffingProject {
 export interface ForumTopic {
   id: string;
   title: string;
+  companyId?: string;
   description: string;
   category: string;
   authorId: string;
@@ -493,6 +499,7 @@ export interface ForumReply {
 export interface AgendaEvent {
   id: string;
   title: string;
+  companyId?: string;
   date: string;
   time?: string;
   type?: 'service' | 'maintenance' | 'reminder' | 'deadline';

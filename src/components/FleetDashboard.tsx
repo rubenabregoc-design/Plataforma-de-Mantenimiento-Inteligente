@@ -781,10 +781,8 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                          const kmSinceService = currentKm - lastServiceKm;
                          const baseRol = Math.max(0, 100 - (kmSinceService / 5000) * 100);
 
-                         // Factores MDM (Mock basados en placa para demostración)
-                         const thermalFactor = (asset.licensePlate?.charCodeAt(0) || 0) % 5; // Simula horas ralentí
-                         const altitudeFactor = (asset.licensePlate?.charCodeAt(1) || 0) % 3; // Simula montaña
-                         const rol = Math.round(baseRol - thermalFactor - altitudeFactor);
+                         // ROL Operativo real basado en odómetro y ciclo preventivo (5,000 km)
+                          const rol = Math.max(0, Math.min(100, Math.round(baseRol)));
 
                          return (
                             <tr key={asset.id} className="border-b border-[#474556]/10 hover:bg-white/[0.02] transition-colors">
@@ -894,7 +892,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                   const lastServiceKm = currentKm - (currentKm % 5000);
                   const kmSinceService = currentKm - lastServiceKm;
                   const baseRol = Math.max(0, 100 - (kmSinceService / 5000) * 100);
-                  const rol = Math.round(baseRol - ((asset.licensePlate?.charCodeAt(0) || 0) % 8)); // Simulación de desgaste multivariable
+                  const rol = Math.max(0, Math.min(100, Math.round(baseRol))); // Desgaste operativo real basado en odómetro
 
                   return (
                     <div key={asset.id} className={`bg-[#1f1f24] rounded-2xl border transition-all p-5 hover:shadow-xl group relative overflow-hidden ${isUrgent ? 'border-rose-500/50 bg-rose-500/5' : 'border-[#474556]/30'}`}>
