@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Asset } from '../types';
 import { Fuel, AlertTriangle, CheckCircle2, TrendingUp, Search } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import VehicleSearchSelect from './VehicleSearchSelect';
 
 interface FuelAuditModuleProps {
   assets: Asset[];
@@ -66,7 +67,7 @@ export default function FuelAuditModule({ assets, onSaveLog }: FuelAuditModulePr
 
   if (assets.length === 0) {
     return (
-      <div className="bg-[#121317] border border-white/5 rounded-[2.5rem] p-8 text-center">
+      <div className="bg-[#121317] border border-white/5 rounded-[2.5rem] p-6 sm:p-8 text-center">
         <Fuel className="w-12 h-12 text-white/10 mx-auto mb-4" />
         <p className="text-white/40 font-black uppercase text-xs">No hay activos registrados para auditar</p>
       </div>
@@ -74,28 +75,32 @@ export default function FuelAuditModule({ assets, onSaveLog }: FuelAuditModulePr
   }
 
   return (
-    <div className="bg-[#121317] border border-white/5 rounded-[2.5rem] p-8 space-y-8 shadow-2xl">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center">
-            <Fuel className="w-6 h-6" />
+    <div className="bg-[#121317] border border-white/5 rounded-[2.5rem] p-5 sm:p-8 space-y-6 sm:space-y-8 shadow-2xl w-full max-w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
+            <Fuel className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <div>
-            <h3 className="text-xl font-black text-white uppercase tracking-tight">Auditoría de Combustible</h3>
-            <p className="text-[10px] text-[#474556] font-black uppercase tracking-widest">Control de Gasto y Rendimiento</p>
+          <div className="min-w-0">
+            <h3 className="text-base sm:text-xl font-black text-white uppercase tracking-tight leading-tight">
+              Auditoría de Combustible
+            </h3>
+            <p className="text-[9px] sm:text-[10px] text-[#8a879d] font-black uppercase tracking-widest mt-0.5">
+              Control de Gasto y Rendimiento
+            </p>
           </div>
         </div>
 
-        <select
-          value={selectedAssetId}
-          onChange={(e) => setSelectedAssetId(e.target.value)}
-          className="bg-[#0d0e12] border border-white/10 rounded-xl px-4 py-2 text-[10px] font-black text-white uppercase outline-none focus:border-[#5d3cfe] transition-all"
-        >
-          <option value="">Seleccionar Vehículo</option>
-          {assets.map(a => (
-            <option key={a.id} value={a.id}>{a.name} ({a.licensePlate || 'S/P'})</option>
-          ))}
-        </select>
+        <div className="w-full sm:w-72 shrink-0">
+          <VehicleSearchSelect
+            vehicles={assets}
+            selectedId={selectedAssetId}
+            onSelect={(id) => setSelectedAssetId(id)}
+            placeholder="Seleccionar Vehículo"
+            allowEmpty={false}
+            compact
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

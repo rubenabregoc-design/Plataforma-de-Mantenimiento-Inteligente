@@ -11,6 +11,7 @@ import {
 import { db, firebaseConfig } from '../firebase';
 import { Asset } from '../types';
 import { toast } from 'react-hot-toast';
+import VehicleSearchSelect from './VehicleSearchSelect';
 
 interface EnterpriseTeamManagerProps {
   companyId: string;
@@ -863,18 +864,14 @@ export default function EnterpriseTeamManager({
                 </div>
                 <div className="sm:col-span-3">
                   {targetType === 'driver' ? (
-                    <select
-                      value={row.extra}
-                      onChange={e => handleRowChange(idx, 'extra', e.target.value)}
-                      className="w-full bg-[#0d0e12] border border-white/10 rounded-xl py-2.5 px-3 text-xs text-white outline-none focus:border-amber-400"
-                    >
-                      <option value="">-- Sin camión o elegir placa --</option>
-                      {fleetVehicles.map(v => (
-                        <option key={v.id} value={v.id}>
-                          🚛 {v.name} {v.licensePlate ? `(${v.licensePlate})` : ''}
-                        </option>
-                      ))}
-                    </select>
+                    <VehicleSearchSelect
+                      vehicles={fleetVehicles}
+                      selectedId={row.extra}
+                      onSelect={assetId => handleRowChange(idx, 'extra', assetId)}
+                      placeholder="Elegir camión o placa..."
+                      emptyLabel="Sin camión (En Reserva)"
+                      compact
+                    />
                   ) : (
                     <select
                       value={row.extra}
@@ -1018,18 +1015,16 @@ export default function EnterpriseTeamManager({
 
                   <div className="flex items-center gap-2 flex-wrap">
                     {m.targetType === 'driver' && (
-                      <select
-                        value={m.assignedAssetId || ''}
-                        onChange={e => handleAssignVehicleToMember(m, e.target.value)}
-                        className="bg-[#0d0e12] border border-white/10 rounded-xl py-2 px-2.5 text-[10px] font-bold text-amber-400 outline-none"
-                      >
-                        <option value="">-- Asignar Camión --</option>
-                        {fleetVehicles.map(v => (
-                          <option key={v.id} value={v.id}>
-                            🚛 {v.name}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="w-full sm:w-56">
+                        <VehicleSearchSelect
+                          vehicles={fleetVehicles}
+                          selectedId={m.assignedAssetId || ''}
+                          onSelect={assetId => handleAssignVehicleToMember(m, assetId)}
+                          placeholder="Asignar Camión"
+                          emptyLabel="Sin camión (En Reserva)"
+                          compact
+                        />
+                      </div>
                     )}
 
                     <button

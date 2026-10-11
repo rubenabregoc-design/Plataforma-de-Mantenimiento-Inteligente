@@ -24,7 +24,7 @@ import EnterpriseTeamManager from '../../components/EnterpriseTeamManager';
 import * as XLSX from 'xlsx';
 import { useTranslation } from 'react-i18next';
 import { PayPalButtons } from "@paypal/react-paypal-js";
-import { doc, deleteDoc, updateDoc, collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, updateDoc, collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
@@ -206,24 +206,41 @@ export default function ClientDashboard() {
     diag: subscription.planId === 'plan-enterprise' ? 'auto' : (subscription.planId === 'plan-pro' ? 'assisted' : 'manual'),
   };
 
-  const subRole: 'fleet_coordinator' | 'building_coordinator' | null = userData?.subRole || null;
+  const [overrideSubRole, setOverrideSubRole] = useState<'fleet_coordinator' | 'building_coordinator' | null | undefined>(() => {
+    try {
+      const saved = localStorage.getItem('mantech_active_subrole');
+      if (saved === 'fleet_coordinator' || saved === 'building_coordinator') return saved;
+      if (saved === 'owner') return null;
+    } catch (_) {}
+    return undefined;
+  });
+
+  const subRole: 'fleet_coordinator' | 'building_coordinator' | null =
+    overrideSubRole !== undefined ? overrideSubRole : (userData?.subRole || null);
 
   const handleSwitchSubRole = async (newSubRole: 'fleet_coordinator' | 'building_coordinator' | null) => {
-    if (!user) return;
+    setOverrideSubRole(newSubRole);
     try {
-      await updateDoc(doc(db, 'users', user.uid), { subRole: newSubRole });
-      if (newSubRole === 'fleet_coordinator') {
-        setTab('client', 'fleet');
-        toast.success('Espacio de Coordinador de Flota activado.');
-      } else if (newSubRole === 'building_coordinator') {
-        setTab('client', 'dashboard');
-        toast.success('Espacio de Coordinador de Edificio (PH) activado.');
-      } else {
-        setTab('client', 'dashboard');
-        toast.success('Vista de Gerencia General restaurada.');
-      }
-    } catch (e) {
-      toast.error('No se pudo cambiar el espacio.');
+      localStorage.setItem('mantech_active_subrole', newSubRole || 'owner');
+    } catch (_) {}
+
+    if (user?.uid) {
+      setDoc(
+        doc(db, 'users', user.uid),
+        { uid: user.uid, subRole: newSubRole },
+        { merge: true }
+      ).catch(err => console.warn('Aviso sincronizando subRole:', err));
+    }
+
+    if (newSubRole === 'fleet_coordinator') {
+      setTab('client', 'fleet');
+      toast.success('🚛 Espacio de Coordinador de Flota activado.');
+    } else if (newSubRole === 'building_coordinator') {
+      setTab('client', 'dashboard');
+      toast.success('🏢 Espacio de Coordinador de Edificio (PH) activado.');
+    } else {
+      setTab('client', 'dashboard');
+      toast.success('👑 Vista de Gerencia General (Dueño) restaurada.');
     }
   };
 

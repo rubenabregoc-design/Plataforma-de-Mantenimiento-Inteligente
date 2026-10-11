@@ -461,7 +461,7 @@ export default function App() {
                             },
                           ],
                           merchantInfo: {
-                            merchantId: import.meta.env.VITE_GOOGLE_PAY_MERCHANT_ID || '12345678901234567890',
+                            merchantId: import.meta.env.VITE_GOOGLE_PAY_MERCHANT_ID || 'BCR2DN6DRKU6TODA',
                             merchantName: 'MantechPro PA',
                           },
                           transactionInfo: {
