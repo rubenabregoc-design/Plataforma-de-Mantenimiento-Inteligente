@@ -79,44 +79,44 @@ export default function AppScreensShowcase({ onExplore }: AppScreensShowcaseProp
   const current = screens.find(s => s.id === activeId) || screens[0];
 
   return (
-    <section className="py-32 px-8 bg-[#0a0b0d] relative overflow-hidden">
+    <section className="py-16 sm:py-28 px-4 sm:px-8 bg-[#0a0b0d] relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_30%,#5d3cfe05,transparent_50%)] pointer-events-none"></div>
 
-      <div className="max-w-7xl mx-auto space-y-24">
+      <div className="max-w-7xl mx-auto space-y-12 sm:space-y-20">
 
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-           <div className="space-y-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 sm:gap-8">
+           <div className="space-y-3 sm:space-y-4">
               <span className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-[0.4em]">Experiencia de Usuario</span>
-              <h2 className="text-4xl sm:text-5xl md:text-8xl font-black text-white uppercase tracking-tighter leading-none">
+              <h2 className="text-3xl sm:text-5xl md:text-8xl font-black text-white uppercase tracking-tighter leading-none">
                 La App <span className="text-white/20">Master.</span>
               </h2>
            </div>
-           <p className="max-w-md text-[#c8c4d9] font-medium text-sm sm:text-base md:text-lg opacity-60 leading-relaxed">
+           <p className="max-w-md text-[#c8c4d9] font-medium text-xs sm:text-base md:text-lg opacity-70 leading-relaxed">
              Una interfaz diseñada para la velocidad y la seguridad. Explore los módulos que están transformando el soporte técnico en Panamá.
            </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 sm:gap-16 items-start">
 
            {/* LADO IZQUIERDO: Navegación de Pantallas */}
-           <div className="lg:col-span-4 space-y-3">
+           <div className="lg:col-span-4 space-y-2.5 sm:space-y-3">
               {screens.map((screen) => (
                 <button
                   key={screen.id}
                   onClick={() => setActiveId(screen.id)}
-                  className={`w-full p-6 rounded-[2rem] border transition-all text-left relative overflow-hidden group
+                  className={`w-full p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border transition-all text-left relative overflow-hidden group
                     ${activeId === screen.id
-                      ? 'bg-[#1c1d21] border-white/10 shadow-2xl'
-                      : 'bg-transparent border-transparent hover:bg-white/5 opacity-40 hover:opacity-100'}`}
+                      ? 'bg-[#1c1d21] border-white/10 shadow-xl'
+                      : 'bg-transparent border-transparent hover:bg-white/5 opacity-50 hover:opacity-100'}`}
                 >
-                  <div className="flex items-center gap-5 relative z-10">
-                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all
+                  <div className="flex items-center gap-4 sm:gap-5 relative z-10">
+                     <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all shrink-0
                        ${activeId === screen.id ? 'bg-[#5d3cfe] text-white shadow-[0_0_20px_rgba(93,60,254,0.4)]' : 'bg-white/5 text-white/40'}`}>
-                        <screen.icon className="w-6 h-6" />
+                        <screen.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                      </div>
                      <div>
-                        <h4 className="text-base font-black text-white uppercase tracking-tight">{screen.title}</h4>
-                        <p className="text-[9px] font-bold text-[#474556] uppercase tracking-widest mt-0.5">{screen.subtitle}</p>
+                        <h4 className="text-sm sm:text-base font-black text-white uppercase tracking-tight">{screen.title}</h4>
+                        <p className="text-[8px] sm:text-[9px] font-bold text-[#8a879d] uppercase tracking-widest mt-0.5">{screen.subtitle}</p>
                      </div>
                   </div>
                 </button>
@@ -131,12 +131,12 @@ export default function AppScreensShowcase({ onExplore }: AppScreensShowcaseProp
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -30 }}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 bg-[#121317] border border-white/5 p-6 sm:p-10 md:p-16 rounded-[2rem] sm:rounded-[4rem] shadow-3xl"
+                  className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 bg-[#121317] border border-white/5 p-5 sm:p-10 md:p-14 rounded-3xl sm:rounded-[3rem] shadow-2xl"
                 >
                    {/* Mockup de Celular */}
-                   <div className="relative mx-auto w-[240px] sm:w-[280px] h-[500px] sm:h-[580px] bg-[#0d0e12] rounded-[3rem] border-[8px] border-[#1c1d21] shadow-2xl overflow-hidden shadow-[#000000] shrink-0">
+                   <div className="relative mx-auto w-[220px] sm:w-[280px] h-[460px] sm:h-[580px] bg-[#0d0e12] rounded-[2.5rem] sm:rounded-[3rem] border-[6px] sm:border-[8px] border-[#1c1d21] shadow-2xl overflow-hidden shadow-[#000000] shrink-0">
                       {/* Cámara Frontal */}
-                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 sm:w-32 h-5 sm:h-6 bg-[#1c1d21] rounded-b-2xl z-20"></div>
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 sm:w-32 h-4 sm:h-6 bg-[#1c1d21] rounded-b-xl sm:rounded-b-2xl z-20"></div>
 
                       {/* Pantalla App */}
                       <div className="w-full h-full relative">

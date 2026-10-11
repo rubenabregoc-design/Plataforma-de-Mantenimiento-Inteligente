@@ -19,6 +19,7 @@ import ConfirmationModal from '../../components/ConfirmationModal';
 import MarketingBanner from '../../components/MarketingBanner';
 import PTTRadioModule from '../../components/PTTRadioModule';
 import ProofOfWorkModule from '../../components/ProofOfWorkModule';
+import { Geolocation } from '@capacitor/geolocation';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useUI } from '../../context/UIContext';
@@ -222,33 +223,86 @@ export default function TechDashboard() {
           onClick={async () => {
             if (!techProfile.id || techProfile.id === 'new') return;
             const newOnlineStatus = !techProfile.isOnline;
-            if (newOnlineStatus && navigator.geolocation) {
-              navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                  try {
-                    await updateDoc(doc(db, "technicians", techProfile.id), {
-                      isOnline: true,
-                      latitude: position.coords.latitude,
-                      longitude: position.coords.longitude,
-                      lastLocationUpdate: new Date().toISOString()
-                    });
-                    toast.success("¡En línea en el Radar con GPS activo!");
-                  } catch (e) {
-                    console.error("Error updating location:", e);
-                    await updateDoc(doc(db, "technicians", techProfile.id), { isOnline: true });
-                    toast.success("¡En línea en el Radar!");
-                  }
-                },
-                async (geoErr) => {
-                  console.warn("Geolocation warning:", geoErr);
-                  await updateDoc(doc(db, "technicians", techProfile.id), { isOnline: true });
-                  toast.success("¡En línea en el Radar!");
-                },
-                { enableHighAccuracy: true, timeout: 8000 }
-              );
-            } else {
+
+            if (!newOnlineStatus) {
               await updateDoc(doc(db, "technicians", techProfile.id), { isOnline: false });
               toast.success("Modo Fuera de Línea Activado");
+              return;
+            }
+
+            // Función auxiliar para obtener coordenadas con múltiples respaldos
+            const fetchBestCoords = async (): Promise<{ lat: number; lng: number } | null> => {
+              // 1. Intentar con Capacitor Geolocation nativo
+              try {
+                const check = await Geolocation.checkPermissions();
+                if (check.location !== 'granted') {
+                  const req = await Geolocation.requestPermissions();
+                  if (req.location !== 'granted') {
+                    console.warn("Capacitor location permission denied by user");
+                  }
+                }
+
+                // Intento 1A: Alta precisión
+                try {
+                  const p = await Geolocation.getCurrentPosition({
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 30000
+                  });
+                  return { lat: p.coords.latitude, lng: p.coords.longitude };
+                } catch (highAccErr) {
+                  // Intento 1B: Precisión estándar / WiFi (ideal en interiores)
+                  const pLow = await Geolocation.getCurrentPosition({
+                    enableHighAccuracy: false,
+                    timeout: 8000,
+                    maximumAge: 60000
+                  });
+                  return { lat: pLow.coords.latitude, lng: pLow.coords.longitude };
+                }
+              } catch (capErr) {
+                console.warn("Capacitor GPS unavailable, trying browser navigator:", capErr);
+              }
+
+              // 2. Respaldo: navigator.geolocation estándar del navegador
+              if (typeof navigator !== 'undefined' && navigator.geolocation) {
+                return new Promise((resolve) => {
+                  navigator.geolocation.getCurrentPosition(
+                    (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                    () => {
+                      // Reintento rápido en baja precisión si falló la alta
+                      navigator.geolocation.getCurrentPosition(
+                        (p2) => resolve({ lat: p2.coords.latitude, lng: p2.coords.longitude }),
+                        () => resolve(null),
+                        { enableHighAccuracy: false, timeout: 6000, maximumAge: 60000 }
+                      );
+                    },
+                    { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+                  );
+                });
+              }
+
+              return null;
+            };
+
+            const coords = await fetchBestCoords();
+
+            if (coords) {
+              try {
+                await updateDoc(doc(db, "technicians", techProfile.id), {
+                  isOnline: true,
+                  latitude: coords.lat,
+                  longitude: coords.lng,
+                  lastLocationUpdate: new Date().toISOString()
+                });
+                toast.success("¡En línea en el Radar con GPS activo!");
+              } catch (err) {
+                await updateDoc(doc(db, "technicians", techProfile.id), { isOnline: true });
+                toast.success("¡En línea en el Radar!");
+              }
+            } else {
+              // Si el usuario no dio permiso o el GPS está apagado, queda en línea sin bloquearlo
+              await updateDoc(doc(db, "technicians", techProfile.id), { isOnline: true });
+              toast("¡En línea en el Radar! Activa el GPS de tu equipo si deseas aparecer en el mapa satelital.", { icon: '📍' });
             }
           }}
           className={`w-full md:w-auto px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${techProfile.isOnline ? 'bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-600 hover:text-white' : 'bg-[#52ffac] text-black shadow-[#52ffac]/20 hover:brightness-110'}`}
@@ -593,22 +647,22 @@ export default function TechDashboard() {
               <p className="text-[10px] font-black text-[#474556] uppercase tracking-[0.4em] mt-2">{t('job_market_subtitle', 'Oportunidades en Subasta Abierta')}</p>
            </header>
 
-           <div className="py-32 bg-[#121317] border border-dashed border-[#52ffac]/10 rounded-[4rem] text-center space-y-8 relative overflow-hidden">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-[#52ffac]/5 rounded-full blur-[120px]"></div>
-              <div className="relative z-10 space-y-6">
-                 <div className="w-24 h-24 bg-[#52ffac]/10 rounded-[2.5rem] flex items-center justify-center mx-auto text-[#52ffac] shadow-[0_0_50px_rgba(82,255,172,0.1)]">
-                    <Layers className="w-10 h-10" />
+           <div className="py-16 sm:py-28 px-4 sm:px-8 bg-[#121317] border border-dashed border-[#52ffac]/15 rounded-3xl sm:rounded-[3rem] text-center space-y-6 sm:space-y-8 relative overflow-hidden">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[350px] sm:w-[500px] h-[350px] sm:h-[500px] bg-[#52ffac]/5 rounded-full blur-[100px] pointer-events-none"></div>
+              <div className="relative z-10 space-y-5 sm:space-y-6">
+                 <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[#52ffac]/10 rounded-2xl sm:rounded-[2.5rem] flex items-center justify-center mx-auto text-[#52ffac] shadow-[0_0_40px_rgba(82,255,172,0.15)] border border-[#52ffac]/20">
+                    <Layers className="w-8 h-8 sm:w-10 sm:h-10" />
                  </div>
-                 <div className="space-y-3">
-                    <h3 className="text-xl font-black text-white uppercase tracking-widest italic">{t('market_calm_title', 'Mercado en Calma')}</h3>
-                    <p className="text-[10px] text-[#c8c4d9] font-medium uppercase tracking-[0.3em] max-w-md mx-auto leading-relaxed">
-                       {t('market_calm_desc', 'Actualmente no hay subastas activas en tu zona.')}
+                 <div className="space-y-2 sm:space-y-3">
+                    <h3 className="text-lg sm:text-2xl font-black text-white uppercase tracking-wider italic">{t('market_calm_title', 'Mercado en Calma')}</h3>
+                    <p className="text-xs sm:text-sm text-[#c8c4d9] font-normal normal-case sm:uppercase tracking-normal sm:tracking-wider max-w-md mx-auto leading-relaxed px-2">
+                       {t('market_calm_desc', 'Actualmente no hay subastas activas en tu zona. MantechPro te notificará cuando una nueva solicitud esté disponible.')}
                     </p>
                  </div>
-                 <div className="flex justify-center gap-4">
-                    <div className="px-5 py-2 bg-black/40 border border-white/5 rounded-full flex items-center gap-2">
-                       <span className="w-1.5 h-1.5 rounded-full bg-[#52ffac] animate-pulse"></span>
-                       <span className="text-[8px] font-black text-[#52ffac] uppercase tracking-widest">{t('scanning_network', 'Escaneando Red...')}</span>
+                 <div className="flex justify-center gap-4 pt-2">
+                    <div className="px-5 py-2.5 bg-black/60 border border-[#52ffac]/20 rounded-full flex items-center gap-2.5 shadow-lg">
+                       <span className="w-2 h-2 rounded-full bg-[#52ffac] animate-pulse"></span>
+                       <span className="text-[10px] sm:text-xs font-bold text-[#52ffac] uppercase tracking-wider">{t('scanning_network', 'Escaneando Red...')}</span>
                     </div>
                  </div>
               </div>
@@ -696,64 +750,64 @@ export default function TechDashboard() {
 
          <div className="bg-[#121317] border border-white/5 p-10 rounded-[3rem] flex flex-col items-center gap-8 shadow-2xl">
             {/* PERFIL DEL TÉCNICO */}
-            <div className="w-full bg-[#1c1d21]/60 border border-white/5 p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 text-left">
-               <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 flex items-center justify-center text-[#5d3cfe] font-black text-lg shrink-0">
+            <div className="w-full bg-[#1c1d21]/80 border border-white/10 p-5 sm:p-6 rounded-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-left">
+               <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-[#5d3cfe]/20 border border-[#5d3cfe]/30 flex items-center justify-center text-[#5d3cfe] font-black text-xl shrink-0 shadow-lg">
                      {techProfile?.name?.[0] || loggedInName?.[0] || 'T'}
                   </div>
-                  <div>
-                     <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-black text-white uppercase">{techProfile?.name || loggedInName || 'Especialista Técnico'}</h3>
-                        <span className="text-[8px] font-black uppercase text-[#5d3cfe] bg-[#5d3cfe]/10 px-2 py-0.5 rounded border border-[#5d3cfe]/20">Técnico</span>
+                  <div className="min-w-0">
+                     <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-base font-bold text-white uppercase tracking-tight truncate">{techProfile?.name || loggedInName || 'Especialista Técnico'}</h3>
+                        <span className="text-[9px] font-bold uppercase text-[#5d3cfe] bg-[#5d3cfe]/10 px-2 py-0.5 rounded border border-[#5d3cfe]/20">Técnico</span>
                      </div>
-                     <p className="text-xs text-[#8e8d9a] mt-0.5">{techProfile?.title || techProfile?.category || 'Especialista'}</p>
-                     {techProfile?.phone && <p className="text-[10px] text-[#7a788d] font-bold mt-0.5">Tel: {techProfile.phone}</p>}
+                     <p className="text-xs text-[#a3a1b5] font-medium mt-0.5 capitalize">{techProfile?.title || techProfile?.category || 'Especialista'}</p>
+                     {techProfile?.phone && <p className="text-[11px] text-[#7a788d] font-semibold mt-0.5">Tel: {techProfile.phone}</p>}
                   </div>
                </div>
                <button
                  onClick={() => openModal('editTech', { tech: techProfile })}
-                 className="w-full sm:w-auto px-5 py-2.5 bg-[#5d3cfe] hover:bg-[#4d2ee0] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                 className="w-full sm:w-auto px-5 py-3 bg-[#5d3cfe] hover:bg-[#4d2ee0] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer shadow-lg shadow-[#5d3cfe]/20"
                >
-                  <Pencil className="w-3.5 h-3.5" /> Editar Perfil
+                  <Pencil className="w-4 h-4" /> Editar Perfil
                </button>
             </div>
 
             {/* HERRAMIENTAS DE DIAGNÓSTICO DE SISTEMA */}
-            <div className="w-full space-y-6">
-               <div className="flex items-center gap-3 justify-center">
-                  <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center text-[#5d3cfe]"><ShieldCheck className="w-4 h-4" /></div>
-                  <h4 className="text-sm font-black text-white uppercase tracking-widest">Diagnóstico de Dispositivo</h4>
+            <div className="w-full space-y-4">
+               <div className="flex items-center gap-2.5 justify-center">
+                  <div className="w-7 h-7 rounded-xl bg-white/5 flex items-center justify-center text-[#5d3cfe]"><ShieldCheck className="w-4 h-4" /></div>
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Diagnóstico de Dispositivo</h4>
                </div>
-               <div className="p-6 bg-black/40 rounded-3xl border border-white/5 space-y-4">
-                  <p className="text-[10px] text-[#474556] font-bold uppercase tracking-widest leading-relaxed">
-                     Verifique la conectividad de su dispositivo con la red satelital de MantechPro y la recepción de ráfagas push.
+               <div className="p-5 sm:p-6 bg-black/40 rounded-2xl sm:rounded-3xl border border-white/5 space-y-4">
+                  <p className="text-xs text-[#a3a1b5] font-normal leading-relaxed text-center max-w-sm mx-auto">
+                     Verifique la conectividad de su dispositivo con la plataforma MantechPro y la recepción de notificaciones push.
                   </p>
                   <button
                     onClick={() => business.handleSendTestPush()}
-                    className="w-full py-4 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[#5d3cfe]/10 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3"
+                    className="w-full py-3.5 sm:py-4 bg-[#5d3cfe] text-white rounded-xl sm:rounded-2xl text-xs font-bold uppercase tracking-wider shadow-lg shadow-[#5d3cfe]/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2.5"
                   >
                      <BellRing className="w-4 h-4" /> Enviar Señal de Prueba Push
                   </button>
                </div>
             </div>
 
-            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+            <div className="w-full h-px bg-white/5"></div>
 
-            <div className="space-y-6 w-full text-center">
-               <div className="space-y-2">
-                  <h4 className="text-xs font-black text-white uppercase tracking-widest">{t('language_preference', 'Preferencia de Idioma')}</h4>
-                  <p className="text-[9px] text-[#474556] font-bold uppercase tracking-widest">{t('language_desc', 'Seleccione el idioma de la interfaz del ecosistema.')}</p>
+            <div className="space-y-4 w-full text-center">
+               <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">{t('language_preference', 'Preferencia de Idioma')}</h4>
+                  <p className="text-xs text-[#8a879d] font-normal">{t('language_desc', 'Seleccione el idioma de la interfaz del sistema.')}</p>
                </div>
-               <div className="flex bg-[#1c1d21] p-1.5 rounded-2xl border border-[#2a2b2f] w-full max-w-xs mx-auto">
+               <div className="flex bg-[#1c1d21] p-1.5 rounded-xl border border-white/10 w-full max-w-xs mx-auto">
                  <button
                    onClick={() => i18n.changeLanguage('es')}
-                   className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${i18n.language.startsWith('es') ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}
+                   className={`flex-1 py-2.5 rounded-lg text-xs font-bold uppercase transition-all ${i18n.language.startsWith('es') ? 'bg-[#5d3cfe] text-white shadow-md' : 'text-[#8a879d] hover:text-white'}`}
                  >
                    Español (PA)
                  </button>
                  <button
                    onClick={() => i18n.changeLanguage('en')}
-                   className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${i18n.language.startsWith('en') ? 'bg-[#5d3cfe] text-white shadow-lg' : 'text-[#474556] hover:text-[#c8c4d9]'}`}
+                   className={`flex-1 py-2.5 rounded-lg text-xs font-bold uppercase transition-all ${i18n.language.startsWith('en') ? 'bg-[#5d3cfe] text-white shadow-md' : 'text-[#8a879d] hover:text-white'}`}
                  >
                    English (US)
                  </button>

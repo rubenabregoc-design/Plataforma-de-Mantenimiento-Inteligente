@@ -4,6 +4,7 @@ import { TechWallet } from '../types';
 import { Wallet, TrendingUp, TrendingDown, Download, CreditCard, Landmark, Smartphone, Save, ShieldCheck } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { downloadHtmlAsPdf } from '../utils/pdfExport';
 
 interface TechWalletModuleProps {
   wallet: TechWallet;
@@ -66,7 +67,7 @@ export default function TechWalletModule({ wallet, techId, onWithdraw, plan = 'b
     }
   };
 
-  const handleDownloadHistoryPDF = () => {
+  const handleDownloadHistoryPDF = async () => {
     const transactions = wallet.transactions || [];
     const creditsTotal = transactions
       .filter(t => t.type === 'credit')
@@ -85,41 +86,41 @@ export default function TechWalletModule({ wallet, techId, onWithdraw, plan = 'b
   <style>
     @page { size: letter portrait; margin: 0.4in 0.5in; }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 24px; color: #1e293b; background: #fff; line-height: 1.5; font-size: 12px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 24px; color: #000000; background: #fff; line-height: 1.5; font-size: 12px; }
     .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #5d3cfe; padding-bottom: 16px; margin-bottom: 24px; }
     .brand { display: flex; align-items: center; gap: 12px; }
     .logo-box { width: 44px; height: 44px; background: #0d0e12; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #5d3cfe; }
-    .title-area h1 { margin: 0; font-size: 20px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: -0.5px; }
-    .title-area p { margin: 2px 0 0; font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
+    .title-area h1 { margin: 0; font-size: 20px; font-weight: 900; color: #000000; text-transform: uppercase; letter-spacing: -0.5px; }
+    .title-area p { margin: 2px 0 0; font-size: 10px; color: #000000; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; }
     .meta-box { text-align: right; }
     .meta-badge { display: inline-block; background: #5d3cfe; color: #fff; padding: 4px 10px; border-radius: 6px; font-weight: 900; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
-    .meta-code { margin-top: 4px; font-size: 11px; font-weight: 800; color: #5d3cfe; }
-    .meta-date { font-size: 10px; color: #64748b; margin-top: 2px; }
+    .meta-code { margin-top: 4px; font-size: 11px; font-weight: 900; color: #000000; }
+    .meta-date { font-size: 10px; color: #000000; font-weight: 700; margin-top: 2px; }
 
     .grid-info { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; }
-    .card-title { font-size: 9px; font-weight: 900; color: #5d3cfe; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-    .card-val { font-size: 13px; font-weight: 800; color: #0f172a; }
-    .card-sub { font-size: 10px; color: #64748b; margin-top: 3px; }
+    .card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px 16px; }
+    .card-title { font-size: 9px; font-weight: 900; color: #000000; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .card-val { font-size: 13px; font-weight: 900; color: #000000; }
+    .card-sub { font-size: 10px; color: #000000; font-weight: 700; margin-top: 3px; }
 
     .summary-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
-    .sum-card { background: #0f172a; color: #fff; border-radius: 10px; padding: 12px 16px; text-align: center; }
-    .sum-card.green { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
-    .sum-card.rose { background: #fff1f2; color: #9f1239; border: 1px solid #fecdd3; }
-    .sum-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sum-card { background: #f8fafc; color: #000000; border: 2px solid #000000; border-radius: 10px; padding: 12px 16px; text-align: center; }
+    .sum-card.green { background: #ecfdf5; color: #065f46; border: 2px solid #059669; }
+    .sum-card.rose { background: #fff1f2; color: #9f1239; border: 2px solid #e11d48; }
+    .sum-label { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #000000; }
     .sum-amount { font-size: 18px; font-weight: 900; margin-top: 4px; }
 
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th { text-align: left; background: #f1f5f9; padding: 10px 12px; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #475569; border-bottom: 2px solid #cbd5e1; }
-    td { padding: 10px 12px; font-size: 11px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+    th { text-align: left; background: #f1f5f9; padding: 10px 12px; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #000000; border-bottom: 2px solid #000000; }
+    td { padding: 10px 12px; font-size: 11px; color: #000000; font-weight: 700; border-bottom: 1px solid #cbd5e1; vertical-align: middle; }
     tr:nth-child(even) td { background: #fafafa; }
-    .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: 800; text-transform: uppercase; }
+    .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: 900; text-transform: uppercase; }
     .badge-credit { background: #d1fae5; color: #065f46; }
     .badge-debit { background: #ffe4e6; color: #9f1239; }
-    .amount-credit { color: #059669; font-weight: 800; }
-    .amount-debit { color: #e11d48; font-weight: 800; }
+    .amount-credit { color: #059669; font-weight: 900; }
+    .amount-debit { color: #e11d48; font-weight: 900; }
 
-    .footer { margin-top: 32px; border-top: 1px solid #e2e8f0; padding-top: 16px; display: flex; justify-content: space-between; align-items: center; color: #94a3b8; font-size: 9px; }
+    .footer { margin-top: 32px; border-top: 1px solid #000000; padding-top: 16px; display: flex; justify-content: space-between; align-items: center; color: #000000; font-weight: 700; font-size: 9px; }
     .seal { display: inline-flex; align-items: center; gap: 6px; border: 1.5px dashed #059669; color: #059669; padding: 6px 12px; border-radius: 8px; font-weight: 900; text-transform: uppercase; font-size: 9px; }
   </style>
 </head>
@@ -130,7 +131,7 @@ export default function TechWalletModule({ wallet, techId, onWithdraw, plan = 'b
         <svg viewBox="0 0 100 100" style="width:28px;height:28px;"><rect width="100" height="100" rx="20" fill="#0d0e12"/><path d="M20 75V35L50 60L80 35V75" stroke="#5d3cfe" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="50" cy="20" r="6" fill="#52ffac"/></svg>
       </div>
       <div class="title-area">
-        <h1>MantechPro Panama</h1>
+        <h1>Mantech<span style="color:#5d3cfe;">Pro</span> Panama</h1>
         <p>Estado de Cuenta y Liquidaciones Técnicas</p>
       </div>
     </div>
@@ -171,7 +172,7 @@ export default function TechWalletModule({ wallet, techId, onWithdraw, plan = 'b
     </div>
   </div>
 
-  <h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: #334155; margin-bottom: 8px;">
+  <h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: #000000; margin-bottom: 8px;">
     Detalle Cronológico de Transacciones (${transactions.length})
   </h3>
 
@@ -190,21 +191,21 @@ export default function TechWalletModule({ wallet, techId, onWithdraw, plan = 'b
       ${transactions.length > 0 ? transactions.map(t => `
         <tr>
           <td>${new Date(t.timestamp).toLocaleDateString('es-PA')}</td>
-          <td style="font-family: monospace; font-size: 10px; color: #64748b;">${t.id}</td>
+          <td style="font-family: monospace; font-size: 10px; color: #000000; font-weight: 800;">${t.id}</td>
           <td>
             <span class="badge ${t.type === 'credit' ? 'badge-credit' : 'badge-debit'}">
               ${t.type === 'credit' ? 'INGRESO' : 'RETIRO'}
             </span>
           </td>
-          <td style="font-weight: 700; color: #0f172a; text-transform: uppercase;">${t.description}</td>
-          <td><span style="font-size: 9px; font-weight: 800; color: #059669;">COMPLETADO</span></td>
+          <td style="font-weight: 800; color: #000000; text-transform: uppercase;">${t.description}</td>
+          <td><span style="font-size: 9px; font-weight: 900; color: #059669;">COMPLETADO</span></td>
           <td style="text-align: right;" class="${t.type === 'credit' ? 'amount-credit' : 'amount-debit'}">
             ${t.type === 'credit' ? '+' : '-'}$${t.amount.toFixed(2)}
           </td>
         </tr>
       `).join('') : `
         <tr>
-          <td colspan="6" style="text-align: center; color: #94a3b8; padding: 40px; font-style: italic;">
+          <td colspan="6" style="text-align: center; color: #000000; padding: 40px; font-weight: 800;">
             No hay transacciones registradas en este período.
           </td>
         </tr>
@@ -220,45 +221,17 @@ export default function TechWalletModule({ wallet, techId, onWithdraw, plan = 'b
       Documento generado electrónicamente. Válido como comprobante de liquidación y retiros operativos.
     </div>
   </div>
-
-  <script>
-    window.addEventListener('load', function() {
-      setTimeout(function() {
-        window.print();
-      }, 350);
-    });
-  <\/script>
 </body>
 </html>`;
 
-    const printWin = window.open('', '_blank');
-    if (printWin) {
-      printWin.document.write(html);
-      printWin.document.close();
-      toast.success("Generando PDF de liquidaciones...");
-    } else {
-      const iframe = document.createElement('iframe');
-      iframe.style.position = 'fixed';
-      iframe.style.right = '0';
-      iframe.style.bottom = '0';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.border = '0';
-      document.body.appendChild(iframe);
-      const doc = iframe.contentWindow?.document;
-      if (doc) {
-        doc.open();
-        doc.write(html);
-        doc.close();
-        setTimeout(() => {
-          iframe.contentWindow?.focus();
-          iframe.contentWindow?.print();
-          document.body.removeChild(iframe);
-        }, 500);
-        toast.success("Generando PDF de liquidaciones...");
-      } else {
-        toast.error("Por favor habilita las ventanas emergentes para descargar el PDF.");
-      }
+    const loadingId = toast.loading("Generando PDF de liquidaciones...");
+    try {
+      await downloadHtmlAsPdf(html, `Estado_Cuenta_${reportCode}`);
+      toast.dismiss(loadingId);
+      toast.success("Estado de cuenta PDF descargado.");
+    } catch (err) {
+      toast.dismiss(loadingId);
+      toast.error("No se pudo generar el PDF.");
     }
   };
 

@@ -20,6 +20,7 @@ import SupportChatWidget from '../../components/SupportChatWidget';
 import MantechIDModule from '../../components/MantechIDModule';
 import TechnicianRadar from '../../components/TechnicianRadar';
 import MarketingBanner from '../../components/MarketingBanner';
+import EnterpriseTeamManager from '../../components/EnterpriseTeamManager';
 import * as XLSX from 'xlsx';
 import { useTranslation } from 'react-i18next';
 import { PayPalButtons } from "@paypal/react-paypal-js";
@@ -200,13 +201,79 @@ export default function ClientDashboard() {
   };
 
   const planLimits = {
-    maxAssets: subscription.planId === 'plan-enterprise' ? 9999 : (subscription.planId === 'plan-pro' ? 25 : (subscription.planId === 'plan-basic' ? 5 : 5)),
+    maxAssets: subscription.planId === 'plan-enterprise' ? 9999 : (subscription.planId === 'plan-pro' ? 25 : (subscription.planId === 'plan-basic' ? 10 : 5)),
     fleet: subscription.planId === 'plan-enterprise' ? 'full' : (subscription.planId === 'plan-pro' ? 'lite' : 'none'),
     diag: subscription.planId === 'plan-enterprise' ? 'auto' : (subscription.planId === 'plan-pro' ? 'assisted' : 'manual'),
   };
 
+  const subRole: 'fleet_coordinator' | 'building_coordinator' | null = userData?.subRole || null;
+
+  const handleSwitchSubRole = async (newSubRole: 'fleet_coordinator' | 'building_coordinator' | null) => {
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, 'users', user.uid), { subRole: newSubRole });
+      if (newSubRole === 'fleet_coordinator') {
+        setTab('client', 'fleet');
+        toast.success('Espacio de Coordinador de Flota activado.');
+      } else if (newSubRole === 'building_coordinator') {
+        setTab('client', 'dashboard');
+        toast.success('Espacio de Coordinador de Edificio (PH) activado.');
+      } else {
+        setTab('client', 'dashboard');
+        toast.success('Vista de Gerencia General restaurada.');
+      }
+    } catch (e) {
+      toast.error('No se pudo cambiar el espacio.');
+    }
+  };
+
   return (
     <div className="space-y-10 animate-fade-in">
+      {/* Banner de Espacio de Coordinador (Flota o Edificio) */}
+      {subRole && (
+        <div className={`p-4 sm:p-5 rounded-3xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+          subRole === 'fleet_coordinator'
+            ? 'bg-amber-500/10 border-amber-500/30'
+            : 'bg-[#52ffac]/10 border-[#52ffac]/30'
+        }`}>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+              subRole === 'fleet_coordinator' ? 'bg-amber-500 text-black' : 'bg-[#52ffac] text-black'
+            }`}>
+              {subRole === 'fleet_coordinator' ? <Truck className="w-5 h-5" /> : <Building2 className="w-5 h-5" />}
+            </div>
+            <div>
+              <h4 className="text-xs sm:text-sm font-black text-white uppercase tracking-tight">
+                {subRole === 'fleet_coordinator'
+                  ? '🚛 Espacio Exclusivo: Coordinador de Flota Logística'
+                  : '🏢 Espacio Exclusivo: Coordinador de Edificio / Planta (PH)'}
+              </h4>
+              <p className="text-[10px] text-[#c8c4d9] font-bold">
+                {subRole === 'fleet_coordinator'
+                  ? 'Viendo únicamente vehículos de flota, rutas GPS, combustible y lote de conductores.'
+                  : 'Viendo únicamente infraestructura del edificio, preventivos, repuestos y cuadrilla técnica interna.'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-end sm:self-center">
+            <button
+              onClick={() => setTab('client', 'team')}
+              className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-[10px] font-black uppercase tracking-wider"
+            >
+              {subRole === 'fleet_coordinator' ? '+ Lote Conductores' : '+ Lote Técnicos'}
+            </button>
+            {!userData?.companyId && (
+              <button
+                onClick={() => handleSwitchSubRole(null)}
+                className="px-3.5 py-2 rounded-xl bg-[#5d3cfe] text-white text-[10px] font-black uppercase tracking-wider"
+              >
+                Volver a Dueño
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Alerta de Facturación Próxima */}
       {daysUntilExpiration !== null && daysUntilExpiration <= 3 && daysUntilExpiration >= 0 && subscription.planId !== 'plan-free' && (
         <div className="bg-rose-500/10 border border-rose-500/30 p-5 rounded-[2rem] flex items-center justify-between gap-6 shadow-2xl animate-pulse">
@@ -1426,74 +1493,13 @@ export default function ClientDashboard() {
       )}
 
       {clientTab === 'team' && (
-        <div className="max-w-4xl mx-auto space-y-12 animate-fade-in pb-20">
-           <header className="text-center space-y-3 italic">
-              <h1 className="text-5xl font-black text-white uppercase tracking-tighter leading-none italic">Gestión de <span className="text-amber-500">Equipo</span></h1>
-              <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.4em]">Multi-Administrador / Sedes de Operación PH</p>
-           </header>
-
-           <div className="bg-[#121317] border border-white/5 p-10 rounded-[3rem] space-y-8 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-12 opacity-5"><Users className="w-48 h-48 text-amber-500" /></div>
-
-              <div className="flex justify-between items-center relative z-10">
-                 <div className="space-y-1">
-                    <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Administradores de Sede</h3>
-                    <p className="text-[10px] text-[#474556] font-bold uppercase tracking-widest italic">Personal con acceso a gestión de activos</p>
-                 </div>
-                 <button onClick={() => toast("Funcionalidad disponible en la próxima actualización de seguridad.", { icon: '🚀' })} className="px-8 py-3 bg-white/5 border border-white/10 text-white rounded-2xl text-[9px] font-black uppercase hover:bg-white/10 transition-all">+ Añadir Miembro</button>
-              </div>
-
-              <div className="space-y-3">
-                 <div className="p-6 bg-white/5 border border-white/5 rounded-3xl flex items-center justify-between group hover:border-amber-500/30 transition-all">
-                    <div className="flex items-center gap-5">
-                       <div className="w-12 h-12 rounded-full bg-amber-500 flex items-center justify-center text-black font-black text-sm shadow-lg shadow-amber-500/20">
-                          {loggedInName[0]}
-                       </div>
-                       <div>
-                          <p className="text-sm font-black text-white uppercase tracking-tight">{loggedInName}</p>
-                          <p className="text-[9px] text-amber-500 font-bold uppercase tracking-widest italic leading-none mt-1">Super Administrador (Propietario)</p>
-                       </div>
-                    </div>
-                    <div className="px-4 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full text-[8px] font-black text-amber-500 uppercase tracking-widest">Activo</div>
-                 </div>
-
-                 {/* Simulación de Multi-Administrador para Enterprise */}
-                 <div className="p-6 bg-white/[0.02] border border-dashed border-white/10 rounded-3xl flex items-center justify-between opacity-60">
-                    <div className="flex items-center gap-5">
-                       <div className="w-12 h-12 rounded-full bg-[#1c1d21] border border-white/5 flex items-center justify-center text-[#474556] font-black text-sm">
-                          ?
-                       </div>
-                       <div>
-                          <p className="text-sm font-black text-[#474556] uppercase tracking-tight italic italic">Cupo de Administrador Delegado</p>
-                          <p className="text-[8px] text-[#474556] font-bold uppercase tracking-widest leading-none mt-1 italic italic">Permitido en Plan Enterprise</p>
-                       </div>
-                    </div>
-                    <button className="text-[8px] font-black text-[#5d3cfe] uppercase tracking-widest hover:underline">Invitar Gerente</button>
-                 </div>
-              </div>
-           </div>
-
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] space-y-4">
-                 <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
-                    <PieChart className="w-5 h-5" />
-                 </div>
-                 <h4 className="text-sm font-black text-white uppercase tracking-widest italic">Auditoría de Acciones</h4>
-                 <p className="text-[10px] text-[#c8c4d9] font-medium leading-relaxed uppercase opacity-70">
-                    Rastree qué administrador registró un activo o aprobó un mantenimiento en tiempo real.
-                 </p>
-              </div>
-              <div className="bg-[#121317] border border-white/5 p-8 rounded-[2.5rem] space-y-4">
-                 <div className="w-10 h-10 rounded-xl bg-[#52ffac]/10 flex items-center justify-center text-[#52ffac]">
-                    <Building2 className="w-5 h-5" />
-                 </div>
-                 <h4 className="text-sm font-black text-white uppercase tracking-widest italic">Sedes PH / Ubicación</h4>
-                 <p className="text-[10px] text-[#c8c4d9] font-medium leading-relaxed uppercase opacity-70">
-                    Segmente sus activos por ubicación (Ej: Torre 1, Sótano, Depósito) y asigne encargados específicos.
-                 </p>
-              </div>
-           </div>
-        </div>
+        <EnterpriseTeamManager
+          companyId={userData?.companyId || user?.uid || ''}
+          companyName={userData?.company || loggedInName || 'Empresa MantechPro'}
+          currentSubRole={subRole}
+          assets={assets}
+          onSwitchSubRole={handleSwitchSubRole}
+        />
       )}
 
       {clientTab === 'settings' && (

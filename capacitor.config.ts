@@ -4,22 +4,28 @@ const config: CapacitorConfig = {
   appId: 'com.mantech.pro',
   appName: 'MantechPro',
   webDir: 'dist',
+  server: {
+    url: 'https://recordatoriostecnicos.web.app',
+    cleartext: true,
+  },
   plugins: {
     StatusBar: {
       style: 'DARK' as any,
-      backgroundColor: '#0d0e12',
+      backgroundColor: '#020521',
       overlaysWebView: false,
     },
     SplashScreen: {
-      launchShowDuration: 1800,
+      launchShowDuration: 0,
       launchAutoHide: true,
-      backgroundColor: '#0d0e12',
+      backgroundColor: '#020521',
       androidSplashResourceName: 'splash',
+      androidScaleType: 'CENTER_CROP',
       showSpinner: false,
+      splashFullScreen: true,
+      splashImmersive: true,
     },
     Keyboard: {
-      resize: 'body' as any,
-      resizeOnFullScreen: true,
+      resize: 'native' as any,
     },
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"],
@@ -31,10 +37,8 @@ const config: CapacitorConfig = {
   },
   android: {
     allowMixedContent: true,
-    captureInput: true,
-    backgroundColor: '#0d0e12',
+    backgroundColor: '#020521',
   }
 };
 
 export default config;
-

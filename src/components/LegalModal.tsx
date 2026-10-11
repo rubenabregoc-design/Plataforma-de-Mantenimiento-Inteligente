@@ -12,30 +12,36 @@ export default function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[4000] bg-[#0d0e12]/95 backdrop-blur-2xl flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-[4000] bg-[#0d0e12] sm:bg-black/85 sm:backdrop-blur-xl flex flex-col justify-end sm:justify-center sm:items-center p-0 sm:p-6">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="max-w-3xl w-full bg-[#121317] border border-white/10 rounded-[3rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.8)] relative"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full h-full sm:h-auto sm:max-w-3xl sm:max-h-[85vh] bg-[#0d0e12] sm:bg-[#121317] sm:border border-white/10 sm:rounded-3xl overflow-hidden shadow-2xl relative flex flex-col pt-[max(env(safe-area-inset-top),0.75rem)] pb-[max(env(safe-area-inset-bottom),1rem)]"
       >
-        <button onClick={onClose} className="absolute top-8 right-8 z-50 p-3 bg-white/5 hover:bg-rose-600 text-white rounded-2xl border border-white/10 transition-all active:scale-90">
-          <X className="w-5 h-5" />
-        </button>
-
-        <div className="p-12 space-y-10 max-h-[80vh] overflow-y-auto custom-scrollbar">
-          <div className="flex items-center gap-6">
-             <div className="w-16 h-16 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-[1.5rem] flex items-center justify-center text-[#5d3cfe]">
-                {type === 'privacy' ? <Lock className="w-8 h-8" /> : <Scale className="w-8 h-8" />}
+        {/* HEADER */}
+        <div className="px-5 py-4 sm:px-8 sm:py-6 border-b border-white/5 flex justify-between items-center bg-[#16171d] shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4 pr-3">
+             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-xl flex items-center justify-center text-[#5d3cfe] shrink-0">
+                {type === 'privacy' ? <Lock className="w-5 h-5" /> : <Scale className="w-5 h-5" />}
              </div>
              <div>
-                <h2 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">
+                <h2 className="text-base sm:text-2xl font-black text-white uppercase tracking-tight leading-tight">
                    {type === 'privacy' ? 'Política de Privacidad' : 'Términos y Condiciones'}
                 </h2>
-                <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.4em] mt-2">Protocolo Legal MantechPro Panamá</p>
+                <p className="text-[9px] text-[#8a879d] font-bold uppercase tracking-wider mt-0.5">Protocolo Legal MantechPro Panamá</p>
              </div>
           </div>
+          <button
+            onClick={onClose}
+            className="p-2.5 bg-white/5 hover:bg-rose-600 text-white rounded-xl border border-white/10 transition-all active:scale-90 shrink-0"
+            aria-label="Cerrar"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-          <div className="prose prose-invert max-w-none text-[#c8c4d9] space-y-6 text-sm leading-relaxed">
+        <div className="p-5 sm:p-8 space-y-6 overflow-y-auto no-scrollbar flex-1 text-[#c8c4d9] text-xs sm:text-sm leading-relaxed">
+          <div className="prose prose-invert max-w-none text-[#c8c4d9] space-y-6 text-xs sm:text-sm leading-relaxed">
             {type === 'privacy' ? (
               <>
                 <p className="font-bold text-white uppercase">1. Protección de Datos (Ley 81)</p>
@@ -66,7 +72,7 @@ export default function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
           <button
             onClick={onClose}
-            className="w-full py-5 bg-[#5d3cfe] text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl hover:brightness-110 transition-all"
+            className="w-full py-4 bg-gradient-to-r from-[#5d3cfe] to-[#4c2bd6] text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-xl hover:brightness-110 active:scale-95 transition-all mt-4"
           >
             He leído y acepto los términos
           </button>

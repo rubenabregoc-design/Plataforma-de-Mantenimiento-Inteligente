@@ -151,13 +151,18 @@ export default function VerticalDashboard({ assets, requests, userName, onSeeAll
             {config.icon}
           </div>
           <div className="overflow-hidden min-w-0">
-            <h1 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tighter leading-none italic">
-              ¡Bienvenido, <span style={{ color: config.color }}>{userName}</span>!
+            <h1 className="text-lg sm:text-2xl md:text-3xl font-black text-white uppercase tracking-tighter leading-none italic">
+              {(() => {
+                const hour = new Date().getHours();
+                if (hour >= 5 && hour < 12) return '¡Buenos días';
+                if (hour >= 12 && hour < 19) return '¡Buenas tardes';
+                return '¡Buenas noches';
+              })()}, <span style={{ color: config.color }}>{userName}</span>!
             </h1>
             <h2 className="text-sm sm:text-lg font-black text-white uppercase tracking-tight mt-1 flex items-center gap-2">
                {config.title}
             </h2>
-            <p className="text-[8px] sm:text-[10px] font-black text-[#474556] uppercase tracking-[0.2em] sm:tracking-[0.3em] mt-1">
+            <p className="text-[8px] sm:text-[10px] font-black text-[#8a879d] uppercase tracking-[0.2em] sm:tracking-[0.3em] mt-1">
               {config.subtitle}
             </p>
           </div>

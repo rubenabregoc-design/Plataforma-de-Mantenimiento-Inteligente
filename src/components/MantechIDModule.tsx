@@ -5,6 +5,7 @@ import ConfirmationModal from './ConfirmationModal';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useBusinessLogic } from '../hooks/useBusinessLogic';
+import { downloadHtmlAsPdf } from '../utils/pdfExport';
 
 interface MantechIDModuleProps {
   mantechId?: MantechID;
@@ -42,7 +43,7 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
     }
   };
 
-  const handleGenerateCertificate = () => {
+  const handleGenerateCertificate = async () => {
     const expNumber = cedula 
       ? `EXP-${cedula.replace(/[^a-zA-Z0-9]/g, '').slice(-6).toUpperCase() || '772190'}` 
       : `EXP-${(userName || 'TEC').substring(0, 3).toUpperCase()}-4001`;
@@ -52,23 +53,24 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
         <head>
           <title>Certificado de Integridad Interno - MantechPro</title>
           <style>
-            body { font-family: sans-serif; padding: 50px; color: #1a1a1a; line-height: 1.5; background: white; }
+            * { box-sizing: border-box; color: #000000 !important; }
+            body { font-family: sans-serif; padding: 50px; color: #000000; line-height: 1.5; background: white; }
             .header { display: flex; justify-content: space-between; border-bottom: 3px solid #000; padding-bottom: 20px; }
-            .stamp-approved { border: 4px solid #059669; color: #059669; padding: 15px; font-weight: 900; text-transform: uppercase; transform: rotate(-15deg); display: inline-block; margin: 20px; border-radius: 10px; font-size: 24px; }
-            .security-hash { font-family: monospace; font-size: 10px; color: #888; margin-top: 50px; word-break: break-all; }
-            .data-row { margin: 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-            .label { font-weight: 900; font-size: 10px; text-transform: uppercase; color: #666; }
+            .stamp-approved { border: 4px solid #059669; color: #059669 !important; padding: 15px; font-weight: 900; text-transform: uppercase; transform: rotate(-15deg); display: inline-block; margin: 20px; border-radius: 10px; font-size: 24px; }
+            .security-hash { font-family: monospace; font-size: 10px; color: #000000 !important; font-weight: 700; margin-top: 50px; word-break: break-all; }
+            .data-row { margin: 10px 0; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+            .label { font-weight: 900; font-size: 10px; text-transform: uppercase; color: #000000 !important; }
           </style>
         </head>
         <body>
           <div class="header">
             <div>
-              <h1 style="margin:0; font-size: 28px; font-weight: 900;">MANTECH<span style="color:#5d3cfe">PRO</span></h1>
-              <p style="margin:0; font-size: 10px; font-weight: 700; letter-spacing: 2px;">AUDITORÍA DE INTEGRIDAD INTERNA V4</p>
+              <h1 style="margin:0; font-size: 28px; font-weight: 900; color: #000000 !important;">MANTECH<span style="color:#5d3cfe !important;">PRO</span></h1>
+              <p style="margin:0; font-size: 10px; font-weight: 900; letter-spacing: 2px; color: #000000 !important;">AUDITORÍA DE INTEGRIDAD INTERNA V4</p>
             </div>
             <div style="text-align: right">
-              <p style="margin:0; font-weight: 900;">${expNumber}</p>
-              <p style="margin:0; font-size: 10px;">PANAMÁ, ${new Date().toLocaleDateString('es-PA')}</p>
+              <p style="margin:0; font-weight: 900; color: #000000 !important;">${expNumber}</p>
+              <p style="margin:0; font-size: 10px; font-weight: 800; color: #000000 !important;">PANAMÁ, ${new Date().toLocaleDateString('es-PA')}</p>
             </div>
           </div>
 
@@ -78,7 +80,7 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
 
             <div class="data-row"><span class="label">Especialista Auditado:</span><br/><b>${userName?.toUpperCase() || 'ESPECIALISTA MANTECHPRO'}</b></div>
             <div class="data-row"><span class="label">Documento de Identidad:</span><br/><b>${cedula || 'NO REGISTRADA'}</b></div>
-            <div class="data-row"><span class="label">Estatus de Conducta:</span><br/><b style="color: #059669;">ÓPTIMO - NIVEL DE CONFIANZA ALTO</b></div>
+            <div class="data-row"><span class="label">Estatus de Conducta:</span><br/><b style="color: #059669 !important;">ÓPTIMO - NIVEL DE CONFIANZA ALTO</b></div>
             <div class="data-row"><span class="label">Validado por:</span><br/><b>SISTEMA CENTRAL MANTECH (AUTORIZACIÓN DIGITAL)</b></div>
             <div class="data-row"><span class="label">Fecha de Activación:</span><br/>${new Date().toLocaleString('es-PA')}</div>
           </div>
@@ -95,14 +97,14 @@ export default function MantechIDModule({ mantechId, userName, cedula, onUpload,
       </html>
     `;
 
-    const win = window.open('', '_blank');
-    if (win) {
-      win.document.write(printContent);
-      win.document.close();
-      setTimeout(() => win.print(), 500);
-      toast.success("Certificado de Confianza emitido y registrado.");
-    } else {
-      toast.error("El navegador bloqueó la ventana emergente.");
+    const loadingId = toast.loading("Generando Certificado PDF...");
+    try {
+      await downloadHtmlAsPdf(printContent, `Certificado_MantechID_${expNumber}`);
+      toast.dismiss(loadingId);
+      toast.success("Certificado de Confianza descargado.");
+    } catch (err) {
+      toast.dismiss(loadingId);
+      toast.error("No se pudo generar el PDF.");
     }
   };
 

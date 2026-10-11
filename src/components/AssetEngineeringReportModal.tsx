@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Asset } from '../types';
 import { X, Cpu, Activity, Zap, Thermometer, ShieldCheck, Download, TrendingUp, AlertTriangle, Battery, Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { downloadHtmlAsPdf } from '../utils/pdfExport';
 
 interface Props {
   isOpen: boolean;
@@ -249,24 +250,25 @@ export default function AssetEngineeringReportModal({ isOpen, onClose, asset, al
                     <head>
                       <style>
                         @page { size: A4; margin: 0; }
-                        body { font-family: 'Inter', sans-serif; color: #1a1a1a; padding: 0; margin: 0; }
-                        .header { background: #1c1d21; color: white; padding: 25px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #5d3cfe; }
+                        *, *::before, *::after { box-sizing: border-box; }
+                        html, body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: #000000 !important; background-color: #ffffff !important; padding: 0; margin: 0; width: 100%; overflow-x: hidden; }
+                        .header { background: #ffffff !important; color: #000000 !important; padding: 24px 36px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #5d3cfe; }
                         .logo-container { display: flex; align-items: center; gap: 12px; }
-                        .logo-container svg { width: 35px; height: 35px; }
-                        .header-info { text-align: right; }
-                        .content { padding: 30px 50px; position: relative; }
-                        .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 70px; font-weight: 900; color: rgba(0,0,0,0.015); white-space: nowrap; pointer-events: none; }
-                        .section-title { font-size: 9px; font-weight: 900; color: #5d3cfe; text-transform: uppercase; letter-spacing: 2.5px; margin-bottom: 15px; border-left: 3px solid #5d3cfe; padding-left: 10px; }
+                        .logo-container svg { width: 38px; height: 38px; }
+                        .header-info { text-align: right; color: #000000 !important; }
+                        .content { padding: 28px 40px; position: relative; background-color: #ffffff !important; color: #000000 !important; }
+                        .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 70px; font-weight: 900; color: rgba(0,0,0,0.03); white-space: nowrap; pointer-events: none; }
+                        .section-title { font-size: 10px; font-weight: 900; color: #5d3cfe !important; text-transform: uppercase; letter-spacing: 2.5px; margin-bottom: 15px; border-left: 4px solid #5d3cfe; padding-left: 10px; }
                         .grid { display: grid; grid-template-cols: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
-                        .metric-card { background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px solid #eee; }
-                        .metric-label { font-size: 7px; font-weight: 900; color: #888; text-transform: uppercase; margin-bottom: 3px; }
-                        .metric-value { font-size: 20px; font-weight: 900; color: #0d0e12; }
-                        .analysis-box { background: #0d0e12; color: white; padding: 20px; border-radius: 15px; margin-top: 15px; }
-                        .analysis-text { font-size: 11px; line-height: 1.5; opacity: 0.9; }
-                        .footer { margin-top: 30px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 20px; }
+                        .metric-card { background: #ffffff !important; padding: 16px; border-radius: 12px; border: 1.5px solid #000000; }
+                        .metric-label { font-size: 9px; font-weight: 900; color: #000000 !important; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
+                        .metric-value { font-size: 22px; font-weight: 900; color: #000000 !important; }
+                        .analysis-box { background: #f8fafc !important; color: #000000 !important; border: 2px solid #000000; padding: 20px; border-radius: 15px; margin-top: 15px; }
+                        .analysis-text { font-size: 12px; line-height: 1.6; color: #000000 !important; font-weight: 600; margin: 0; }
+                        .footer { margin-top: 30px; display: flex; justify-content: space-between; align-items: center; border-top: 2px solid #000000; padding-top: 20px; color: #000000 !important; }
                         .seal {
                           border: 2px double #5d3cfe;
-                          color: #5d3cfe;
+                          color: #000000 !important;
                           padding: 8px 15px;
                           border-radius: 8px;
                           font-weight: 900;
@@ -281,23 +283,23 @@ export default function AssetEngineeringReportModal({ isOpen, onClose, asset, al
                       <div class="header">
                         <div class="logo-container">
                           <svg viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="#121317"/><path d="M20 75V35L50 60L80 35V75" stroke="#5d3cfe" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="50" cy="20" r="6" fill="#52ffac"/></svg>
-                          <div style="font-size: 24px; font-weight: 900;">Mantech<span style="color: #5d3cfe">Pro</span></div>
+                          <div style="font-size: 26px; font-weight: 900; color: #000000 !important; letter-spacing: -0.5px;">Mantech<span style="color: #5d3cfe !important;">Pro</span></div>
                         </div>
                         <div class="header-info">
-                          <div style="font-size: 10px; font-weight: 800; color: #52ffac; letter-spacing: 2px;">REPORT ID: ${currentAsset.id.substring(0,12).toUpperCase()}</div>
-                          <div style="font-size: 12px; font-weight: 700; margin-top: 5px;">${new Date().toLocaleDateString('es-PA')}</div>
+                          <div style="font-size: 10px; font-weight: 900; color: #000000 !important; letter-spacing: 2px;">REPORT ID: ${currentAsset.id.substring(0,12).toUpperCase()}</div>
+                          <div style="font-size: 12px; font-weight: 800; margin-top: 5px; color: #000000 !important;">${new Date().toLocaleDateString('es-PA')}</div>
                         </div>
                       </div>
                       <div class="content">
                         <div class="watermark">ENGINEERING AUDIT V4.2</div>
-                        <h1 style="font-size: 28px; font-weight: 900; text-transform: uppercase; letter-spacing: -1.5px; margin-bottom: 40px;">Auditoría de Ingeniería MDM-V4</h1>
+                        <h1 style="font-size: 26px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; margin-bottom: 30px; color: #000000 !important;">Auditoría de Ingeniería MDM-V4</h1>
 
                         <div class="section-title">Parámetros Operativos</div>
                         <div class="grid">
                           <div class="metric-card"><div class="metric-label">Estrés Operativo</div><div class="metric-value">${operationalStress.toFixed(1)}%</div></div>
                           <div class="metric-card"><div class="metric-label">Salud Energética (SOH)</div><div class="metric-value">${batterySOH.toFixed(1)}%</div></div>
                           <div class="metric-card"><div class="metric-label">Eficiencia Sistémica</div><div class="metric-value">${efficiency.toFixed(1)}%</div></div>
-                          <div class="metric-card"><div class="metric-label">Nivel de Riesgo</div><div class="metric-value" style="color: ${riskLevel === 'BAJO' ? '#10b981' : '#ef4444'}">${riskLevel}</div></div>
+                          <div class="metric-card"><div class="metric-label">Nivel de Riesgo</div><div class="metric-value" style="color: ${riskLevel === 'BAJO' ? '#047857' : '#dc2626'} !important;">${riskLevel}</div></div>
                         </div>
 
                         <div class="section-title">Diagnóstico del Sistema</div>
@@ -313,40 +315,38 @@ export default function AssetEngineeringReportModal({ isOpen, onClose, asset, al
                         </div>
 
                         <div class="section-title" style="margin-top: 30px;">Bitácora de Seguridad Pre-Viaje</div>
-                        <div style="font-size: 10px; color: #444; margin-bottom: 20px;">
+                        <div style="font-size: 11px; color: #000000 !important; margin-bottom: 20px; font-weight: 600;">
                           ${currentAsset.preTripInspections && currentAsset.preTripInspections.length > 0 ? `
-                            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                               <tr style="background: #f4f4f4; text-align: left;">
-                                  <th style="padding: 8px;">Fecha</th>
-                                  <th style="padding: 8px;">Resultado</th>
-                                  <th style="padding: 8px;">Observaciones</th>
+                            <table style="width: 100%; border-collapse: collapse; margin-top: 10px; color: #000000 !important;">
+                               <tr style="background: #f3f4f6; text-align: left; border-bottom: 2px solid #000000;">
+                                  <th style="padding: 8px; color: #000000 !important; font-weight: 900;">Fecha</th>
+                                  <th style="padding: 8px; color: #000000 !important; font-weight: 900;">Resultado</th>
+                                  <th style="padding: 8px; color: #000000 !important; font-weight: 900;">Observaciones</th>
                                </tr>
                                ${currentAsset.preTripInspections.slice(-5).reverse().map(i => `
-                                 <tr style="border-bottom: 1px solid #eee;">
-                                    <td style="padding: 8px;">${new Date(i.date).toLocaleDateString()} ${new Date(i.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}</td>
-                                    <td style="padding: 8px; font-weight: 800; color: ${i.result === 'safe' ? '#10b981' : '#ef4444'}">${i.result.toUpperCase()}</td>
-                                    <td style="padding: 8px;">${i.observations || '-'}</td>
+                                 <tr style="border-bottom: 1px solid #d1d5db;">
+                                    <td style="padding: 8px; color: #000000 !important; font-weight: 700;">${new Date(i.date).toLocaleDateString()} ${new Date(i.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}</td>
+                                    <td style="padding: 8px; font-weight: 900; color: ${i.result === 'safe' ? '#047857' : '#dc2626'} !important;">${i.result.toUpperCase()}</td>
+                                    <td style="padding: 8px; color: #000000 !important; font-weight: 600;">${i.observations || '-'}</td>
                                  </tr>
                                `).join('')}
                             </table>
-                          ` : '<p style="font-style: italic; opacity: 0.5;">No se han detectado inspecciones pre-viaje en el nodo.</p>'}
+                          ` : '<p style="font-style: italic; color: #000000 !important; font-weight: 700;">No se han detectado inspecciones pre-viaje en el nodo.</p>'}
                         </div>
 
                         <div class="footer">
                           <div>
                             <div class="metric-label">Hash de Seguridad</div>
-                            <div style="font-family: monospace; font-size: 9px; color: #5d3cfe;">UUID: ${currentAsset.id.toUpperCase()}<br>SIG: ${btoa(currentAsset.id).substring(0, 10).toUpperCase()}</div>
+                            <div style="font-family: monospace; font-size: 10px; color: #000000 !important; font-weight: 800;">UUID: ${currentAsset.id.toUpperCase()}<br>SIG: ${btoa(currentAsset.id).substring(0, 10).toUpperCase()}</div>
                           </div>
-                          <div class="seal">Auditado por Sistema Central<br><span style="font-size: 7px">Security Protocol V4.2</span></div>
+                          <div class="seal">Auditado por Sistema Central<br><span style="font-size: 8px; color: #5d3cfe !important;">Security Protocol V4.2</span></div>
                         </div>
                       </div>
                     </body>
                   </html>
                 `;
-                const win = window.open('', '_blank');
-                win?.document.write(printContent);
-                win?.document.close();
-                win?.print();
+                const fileName = `Auditoria_MDM-V4_${currentAsset.name.replace(/\s+/g, '_')}.pdf`;
+                downloadHtmlAsPdf(printContent, fileName);
              }}
              className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-[#5d3cfe] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#5d3cfe]/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2.5 shrink-0"
            >

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Clock, User, Shield, Info, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { downloadWorkbookAsExcel } from '../utils/pdfExport';
 
 interface AuditLog {
   id: string;
@@ -17,7 +18,7 @@ interface Props {
 }
 
 export default function AuditLogsModule({ logs }: Props) {
-  const exportLogs = () => {
+  const exportLogs = async () => {
     const data = logs.map(l => ({
       Fecha: l.timestamp?.toDate ? l.timestamp.toDate().toLocaleString() : (l.timestamp ? new Date(l.timestamp).toLocaleString() : 'N/A'),
       Usuario: l.userName || 'Sistema',
@@ -30,7 +31,7 @@ export default function AuditLogsModule({ logs }: Props) {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Audit Logs");
     const dateStr = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(wb, `MantechPro_Audit_Logs_${dateStr}.xlsx`);
+    await downloadWorkbookAsExcel(wb, `MantechPro_Audit_Logs_${dateStr}.xlsx`);
   };
 
   return (

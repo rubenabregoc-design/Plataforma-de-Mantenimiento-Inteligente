@@ -1,6 +1,7 @@
 import { QrCode, TrendingDown, TrendingUp, DollarSign, PenTool as Tool, Calendar, FileText, Download, ShieldCheck, Clock, ShieldAlert, BookOpen, BadgeCheck, Bike, Pencil, Trash2, Activity, MapPin, ClipboardList } from 'lucide-react';
 import { Asset, JobRequest } from '../types';
 import { toast } from 'react-hot-toast';
+import { downloadHtmlAsPdf } from '../utils/pdfExport';
 
 interface AssetIntelligentCardProps {
   asset: Asset;
@@ -175,27 +176,28 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
                 <head>
                   <style>
                     @page { size: A4; margin: 0; }
-                    body { font-family: 'Plus Jakarta Sans', sans-serif; color: #1a1a1a; padding: 0; margin: 0; line-height: 1.4; }
-                    .header { background: #0d0e12; color: white; padding: 25px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #5d3cfe; }
+                    *, *::before, *::after { box-sizing: border-box; }
+                    html, body { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #000000 !important; background-color: #ffffff !important; padding: 0; margin: 0; line-height: 1.4; width: 100%; overflow-x: hidden; }
+                    .header { background: #ffffff !important; color: #000000 !important; padding: 24px 36px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #5d3cfe; }
                     .header-logo { display: flex; align-items: center; gap: 12px; }
-                    .header-logo svg { width: 40px; height: 40px; filter: drop-shadow(0 0 8px rgba(93,60,254,0.4)); }
-                    .header-title { font-size: 24px; font-weight: 900; letter-spacing: -1.2px; }
-                    .header-title span { color: #5d3cfe; }
-                    .content { padding: 30px 50px; position: relative; }
-                    .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 100px; font-weight: 900; color: rgba(0,0,0,0.02); white-space: nowrap; pointer-events: none; z-index: -1; }
-                    .title { font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; margin-bottom: 4px; color: #0d0e12; }
-                    .protocol { font-size: 9px; font-weight: 800; color: #5d3cfe; text-transform: uppercase; letter-spacing: 2.5px; display: flex; align-items: center; gap: 8px; }
+                    .header-logo svg { width: 40px; height: 40px; }
+                    .header-title { font-size: 26px; font-weight: 900; letter-spacing: -1px; color: #000000 !important; }
+                    .header-title span { color: #5d3cfe !important; }
+                    .content { padding: 28px 40px; position: relative; background-color: #ffffff !important; color: #000000 !important; }
+                    .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 90px; font-weight: 900; color: rgba(0,0,0,0.03); white-space: nowrap; pointer-events: none; z-index: -1; }
+                    .title { font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; margin-bottom: 4px; color: #000000 !important; }
+                    .protocol { font-size: 10px; font-weight: 900; color: #5d3cfe !important; text-transform: uppercase; letter-spacing: 2.5px; display: flex; align-items: center; gap: 8px; }
                     .protocol::before { content: ''; width: 15px; height: 2px; background: #5d3cfe; }
                     .grid { display: grid; grid-template-cols: 1fr 1fr; gap: 20px; margin-top: 25px; }
-                    .data-box { border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; }
-                    .label { font-size: 8px; font-weight: 900; color: #a0a0a0; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 2px; }
-                    .value { font-size: 14px; font-weight: 800; color: #1a1a1a; }
-                    .status-box { margin-top: 25px; background: #fafafa; padding: 15px 20px; border-radius: 15px; border: 1px solid #eee; border-left: 6px solid #5d3cfe; display: flex; justify-content: space-between; align-items: center; }
-                    .footer { margin-top: 30px; border-top: 1px solid #f0f0f0; padding-top: 20px; display: flex; justify-content: space-between; align-items: center; }
-                    .seal-container { position: relative; width: 160px; height: 70px; }
+                    .data-box { border-bottom: 1.5px solid #000000; padding-bottom: 8px; }
+                    .label { font-size: 9px; font-weight: 900; color: #000000 !important; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+                    .value { font-size: 15px; font-weight: 900; color: #000000 !important; }
+                    .status-box { margin-top: 25px; background: #f8fafc !important; padding: 15px 20px; border-radius: 15px; border: 1.5px solid #000000; border-left: 6px solid #5d3cfe; display: flex; justify-content: space-between; align-items: center; }
+                    .footer { margin-top: 30px; border-top: 2px solid #000000; padding-top: 20px; display: flex; justify-content: space-between; align-items: center; }
+                    .seal-container { position: relative; width: 170px; height: 70px; }
                     .seal {
                       border: 2px double #5d3cfe;
-                      color: #5d3cfe;
+                      color: #000000 !important;
                       padding: 10px 15px;
                       border-radius: 10px;
                       font-weight: 900;
@@ -203,26 +205,8 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
                       transform: rotate(-3deg);
                       font-size: 10px;
                       text-align: center;
-                      background: rgba(93, 60, 254, 0.01);
+                      background: #ffffff;
                       position: relative;
-                    }
-                    .seal::after {
-                      content: 'ORIGINAL';
-                      position: absolute;
-                      font-size: 6px;
-                      bottom: 2px;
-                      right: 5px;
-                      opacity: 0.3;
-                    }
-                    .seal-bg {
-                      position: absolute;
-                      top: 50%;
-                      left: 50%;
-                      transform: translate(-50%, -50%);
-                      width: 100px;
-                      height: 100px;
-                      background: radial-gradient(circle, rgba(93, 60, 254, 0.1) 0%, transparent 70%);
-                      z-index: -1;
                     }
                   </style>
                 </head>
@@ -236,9 +220,9 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
                       </svg>
                       <div class="header-title">Mantech<span>Pro</span></div>
                     </div>
-                    <div style="text-align: right">
-                      <div style="font-size: 10px; font-weight: 800; color: #52ffac; text-transform: uppercase; margin-bottom: 5px;">Panamá Digital Node</div>
-                      <div style="font-weight: 900; font-size: 14px;">${new Date().toLocaleDateString('es-PA', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase()}</div>
+                    <div style="text-align: right; color: #000000 !important;">
+                      <div style="font-size: 10px; font-weight: 900; color: #000000 !important; text-transform: uppercase; margin-bottom: 4px;">Panamá Digital Node</div>
+                      <div style="font-weight: 900; font-size: 14px; color: #000000 !important;">${new Date().toLocaleDateString('es-PA', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase()}</div>
                     </div>
                   </div>
                   <div class="content">
@@ -264,55 +248,52 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
                     <div class="status-box">
                       <div>
                         <div class="label">Estado de Garantía</div>
-                        <div class="value" style="color: ${isUnderWarranty ? '#10b981' : '#ef4444'}">${isUnderWarranty ? 'PROTECCIÓN GLOBAL ACTIVA' : 'COBERTURA VENCIDA / AUDITORÍA REQUERIDA'}</div>
+                        <div class="value" style="color: ${isUnderWarranty ? '#047857' : '#dc2626'} !important;">${isUnderWarranty ? 'PROTECCIÓN GLOBAL ACTIVA' : 'COBERTURA VENCIDA / AUDITORÍA REQUERIDA'}</div>
                       </div>
                       <div style="text-align: right">
                          <div class="label">Nivel de Integridad</div>
-                         <div class="value" style="color: #5d3cfe">${usage < 1000 ? 'EXCELENTE' : (usage < 5000 ? 'ÓPTIMO' : 'OPERATIVO')}</div>
+                         <div class="value" style="color: #5d3cfe !important;">${usage < 1000 ? 'EXCELENTE' : (usage < 5000 ? 'ÓPTIMO' : 'OPERATIVO')}</div>
                       </div>
                     </div>
 
                     <div style="margin-top: 25px;">
-                       <div class="label" style="color: #5d3cfe">Historial de Auditoría (Últimos Movimientos)</div>
-                       <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10px;">
-                          <tr style="background: #0d0e12; color: white; text-align: left;">
-                             <th style="padding: 10px;">Fecha de Registro</th>
-                             <th style="padding: 10px;">Volumen (Gal)</th>
-                             <th style="padding: 10px;">Lectura Odómetro</th>
-                             <th style="padding: 10px;">Monto Transacción</th>
+                       <div class="label" style="color: #000000 !important;">Historial de Auditoría (Últimos Movimientos)</div>
+                       <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; color: #000000 !important;">
+                          <tr style="background: #f3f4f6; color: #000000 !important; text-align: left; border-bottom: 2px solid #000000;">
+                             <th style="padding: 10px; color: #000000 !important; font-weight: 900;">Fecha de Registro</th>
+                             <th style="padding: 10px; color: #000000 !important; font-weight: 900;">Volumen (Gal)</th>
+                             <th style="padding: 10px; color: #000000 !important; font-weight: 900;">Lectura Odómetro</th>
+                             <th style="padding: 10px; color: #000000 !important; font-weight: 900;">Monto Transacción</th>
                           </tr>
                           ${(asset.fuelLogs || []).slice(-4).reverse().map(l => `
-                            <tr style="border-bottom: 1px solid #eee;">
-                               <td style="padding: 8px; font-weight: 700;">${new Date(l.date).toLocaleDateString()}</td>
-                               <td style="padding: 8px;">${l.gallons.toFixed(2)}</td>
-                               <td style="padding: 8px;">${l.mileage.toLocaleString()} KM</td>
-                               <td style="padding: 8px; font-weight: 800;">B/. ${l.price.toFixed(2)}</td>
+                            <tr style="border-bottom: 1px solid #d1d5db; color: #000000 !important;">
+                               <td style="padding: 8px; font-weight: 800; color: #000000 !important;">${new Date(l.date).toLocaleDateString()}</td>
+                               <td style="padding: 8px; font-weight: 700; color: #000000 !important;">${l.gallons.toFixed(2)}</td>
+                               <td style="padding: 8px; font-weight: 700; color: #000000 !important;">${l.mileage.toLocaleString()} KM</td>
+                               <td style="padding: 8px; font-weight: 900; color: #000000 !important;">B/. ${l.price.toFixed(2)}</td>
                             </tr>
-                          `).join('') || '<tr><td colspan="4" style="padding: 15px; color: #888; text-align: center; font-style: italic;">No se detectaron registros de carga en el sistema.</td></tr>'}
+                          `).join('') || '<tr><td colspan="4" style="padding: 15px; color: #000000 !important; text-align: center; font-style: italic; font-weight: 700;">No se detectaron registros de carga en el sistema.</td></tr>'}
                        </table>
                     </div>
 
                     <div class="footer">
                       <div>
                         <div class="label">Validación Criptográfica</div>
-                        <div style="font-family: 'Courier New', monospace; font-size: 10px; margin-top: 5px; color: #5d3cfe; background: #f0f0ff; padding: 5px 10px; border-radius: 5px;">
+                        <div style="font-family: 'Courier New', monospace; font-size: 10px; margin-top: 5px; color: #000000 !important; font-weight: 800; background: #f3f4f6; padding: 6px 10px; border-radius: 5px; border: 1px solid #000000;">
                           UUID: ${asset.id.toUpperCase()}<br>
                           NODE-SIG: ${btoa(asset.id).substring(0, 10).toUpperCase()}
                         </div>
                       </div>
                       <div class="seal-container">
-                        <div class="seal-bg"></div>
-                        <div class="seal">Sistema Central Verificado<br><span style="font-size: 7px">MantechPro Security Layer</span></div>
+                        <div class="seal">Sistema Central Verificado<br><span style="font-size: 8px; color: #5d3cfe !important;">MantechPro Security Layer</span></div>
                       </div>
                     </div>
                   </div>
                 </body>
               </html>
             `;
-            const win = window.open('', '_blank');
-            win?.document.write(printContent);
-            win?.document.close();
-            win?.print();
+            const fileName = `Certificado_${asset.name.replace(/\s+/g, '_')}.pdf`;
+            downloadHtmlAsPdf(printContent, fileName);
           }}
           className="w-full py-4 bg-white/5 text-white border border-white/5 rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] hover:bg-[#52ffac] hover:text-black transition-all active:scale-95 flex items-center justify-center gap-2"
         >

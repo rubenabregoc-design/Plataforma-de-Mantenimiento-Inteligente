@@ -14,13 +14,14 @@ interface Message {
 
 interface ChatbotProps {
   isInline?: boolean;
+  onClose?: () => void;
   assets?: any[];
   requests?: any[];
   onScheduleService?: (techId: string, assetId: string) => void;
   initialMode?: 'general' | 'sales';
 }
 
-export default function Chatbot247({ isInline = false, assets = [], requests = [], onScheduleService, initialMode = 'general' }: ChatbotProps) {
+export default function Chatbot247({ isInline = false, onClose, assets = [], requests = [], onScheduleService, initialMode = 'general' }: ChatbotProps) {
   const { t } = useTranslation();
   const { modals, closeModal, openModal } = useUI();
   const [internalOpen, setInternalOpen] = useState(isInline);
@@ -184,7 +185,7 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
               botResponse = "El plan **Profesional** permite gestionar hasta **25 unidades** con auditoría de combustible e IA Predictiva. 🚚\n\n¿Le interesa coordinar una demostración de estas analíticas?";
               setLastQuestion('DEMO_ANALYTICS');
           } else {
-              botResponse = "Con gusto le presento nuestras opciones de inversión comercial:\n\n🏢 **EMPRESAS:**\n• **Emprendedor**: $29/mes (Hasta 5 activos)\n• **Profesional**: $89/mes (Hasta 25 activos + Auditoría)\n• **Enterprise**: $199/mes (Ilimitado + API)\n\n🛠 **TÉCNICOS:**\n• **Pro**: $45/mes\n• **Partner**: $99/mes\n\n¿Cuál de estos niveles se ajusta mejor a sus objetivos?";
+              botResponse = "Con gusto le presento nuestras opciones de inversión comercial:\n\n🏢 **EMPRESAS Y FLOTAS:**\n• **Gratis**: $0/mes (Hasta 5 activos / unidades de flota)\n• **Emprendedor**: $29/mes (Hasta 10 activos + Control de Flota + 2 Coordinadores)\n• **Profesional**: $89/mes (Hasta 25 activos + Flota GPS/Combustible + 5 Coordinadores)\n• **Enterprise**: $199/mes (Activos y Flotas Ilimitados + Coordinadores Ilimitados + API)\n\n🛠 **TÉCNICOS:**\n• **Pro**: $45/mes\n• **Partner**: $99/mes\n\n¿Cuál de estos niveles se ajusta mejor a sus objetivos?";
           }
         } else if (isGreeting) {
           botResponse = "¡Hola! Es un placer saludarle. 👋 Soy su **Asesor MantechPro** para Panamá.\n\nComo su gestor central, tengo potestad para verificar sus **contratos**, realizar **cambios de técnicos** o brindarle información sobre nuestros **planes**. ¿En qué puedo asistirle hoy?";
@@ -246,10 +247,10 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
               {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
           )}
-          {!isInline && (
+          {(onClose || !isInline) && (
             <button
-              onClick={handleClose}
-              className="p-2 rounded-xl bg-white/5 hover:bg-rose-500/20 text-white/50 hover:text-rose-400 transition-colors"
+              onClick={onClose || handleClose}
+              className="p-2 rounded-xl bg-white/5 hover:bg-rose-500/20 text-white/60 hover:text-rose-400 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -258,40 +259,38 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
       </div>
 
       {/* SELECTOR DE MODO COMPRIMIDO */}
-      <div className="px-4 py-2 bg-[#121317]/50 border-b border-white/5 flex flex-none">
+      <div className="px-4 py-2 bg-[#121317]/80 border-b border-white/5 flex flex-none">
          <div className="flex p-0.5 bg-[#0d0e12] rounded-xl border border-white/5 w-full">
             <button
               onClick={() => setMode('support')}
-              className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all ${mode === 'support' ? 'bg-[#1c1d21] text-white shadow-lg' : 'bg-transparent text-white/20'}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-wider transition-all ${mode === 'support' ? 'bg-[#1c1d21] text-white shadow-md' : 'bg-transparent text-white/30'}`}
             >
-              <Zap className={`w-2.5 h-2.5 ${mode === 'support' ? 'text-[#5d3cfe] fill-current' : 'opacity-20'}`} /> Soporte
+              <Zap className={`w-2.5 h-2.5 ${mode === 'support' ? 'text-[#5d3cfe] fill-current' : 'opacity-30'}`} /> Soporte
             </button>
             <button
               onClick={() => setMode('sales')}
-              className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all ${mode === 'sales' ? 'bg-[#52ffac] text-black shadow-lg' : 'bg-transparent text-white/20'}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-wider transition-all ${mode === 'sales' ? 'bg-[#52ffac] text-black shadow-md' : 'bg-transparent text-white/30'}`}
             >
-              <PieChart className={`w-2.5 h-2.5 ${mode === 'sales' ? 'text-black' : 'opacity-20'}`} /> Ventas
+              <PieChart className={`w-2.5 h-2.5 ${mode === 'sales' ? 'text-black' : 'opacity-30'}`} /> Ventas
             </button>
          </div>
       </div>
 
       {/* CHAT BODY - ESPACIO MAXIMIZADO */}
-      <div className="flex-1 overflow-y-auto relative p-6 space-y-6 custom-scrollbar bg-[#0d0e12] grid-bg min-h-0 pt-8">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#5d3cfe]/5 to-transparent pointer-events-none"></div>
-
+      <div className="flex-1 overflow-y-auto relative p-4 sm:p-6 space-y-4 sm:space-y-6 custom-scrollbar bg-[#0d0e12] min-h-0 pt-4">
         {messages.map((msg) => (
           <div key={msg.id} className={`flex relative z-10 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className={`max-w-[88%] p-4 rounded-[1.5rem] text-sm leading-relaxed shadow-2xl transition-all whitespace-pre-line border ${
+              className={`max-w-[88%] p-3.5 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed shadow-lg transition-all whitespace-pre-line border ${
                 msg.sender === 'user'
-                  ? "bg-[#5d3cfe] text-white rounded-tr-none border-white/20"
-                  : "bg-[#1c1d21]/90 backdrop-blur-md border-white/10 text-white rounded-tl-none"
+                  ? "bg-[#5d3cfe] text-white rounded-tr-none border-[#5d3cfe]/50"
+                  : "bg-[#16171d] border-white/10 text-white rounded-tl-none"
               }`}
             >
               {formatMessageText(msg.text)}
-              <div className={`text-[6px] mt-2.5 font-black uppercase tracking-[0.2em] opacity-30 ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}>
+              <div className={`text-[7px] mt-2 font-black uppercase tracking-wider opacity-40 ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}>
                 {msg.sender === 'user' ? 'Enviado' : 'MantechPro Core'} • {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
               </div>
             </motion.div>
@@ -299,11 +298,11 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
         ))}
         {isTyping && (
           <div className="flex justify-start">
-            <div className="bg-[#1c1d21] border border-white/10 p-3 rounded-xl rounded-tl-none">
-              <div className="flex gap-1">
-                <span className="w-1 h-1 bg-[#5d3cfe] rounded-full animate-bounce"></span>
-                <span className="w-1 h-1 bg-[#5d3cfe] rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                <span className="w-1 h-1 bg-[#5d3cfe] rounded-full animate-bounce [animation-delay:0.4s]"></span>
+            <div className="bg-[#16171d] border border-white/10 p-3 rounded-xl rounded-tl-none">
+              <div className="flex gap-1.5">
+                <span className="w-1.5 h-1.5 bg-[#5d3cfe] rounded-full animate-bounce"></span>
+                <span className="w-1.5 h-1.5 bg-[#5d3cfe] rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                <span className="w-1.5 h-1.5 bg-[#5d3cfe] rounded-full animate-bounce [animation-delay:0.4s]"></span>
               </div>
             </div>
           </div>
@@ -312,8 +311,8 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
       </div>
 
       {/* SUGERENCIAS Y PANEL DE ENTRADA UNIFICADOS */}
-      <div className="flex-none bg-[#1c1d21] border-t border-white/10 p-4 pb-[max(env(safe-area-inset-bottom),1rem)] space-y-3">
-         <div className="flex gap-2 overflow-x-auto no-scrollbar mask-fade-right">
+      <div className="flex-none bg-[#14151a] border-t border-white/10 p-3 sm:p-4 space-y-2.5">
+         <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
             {currentFaqs.map((faq, i) => (
                <button
                  key={i}
@@ -323,26 +322,26 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
                      setMessages(prev => [...prev, { id: (Date.now()+1).toString(), text: faq.a, sender: 'bot', timestamp: new Date() }]);
                    }, 500);
                  }}
-                 className="px-3 py-1.5 bg-[#0d0e12] border border-white/5 rounded-full whitespace-nowrap hover:bg-[#5d3cfe] transition-all"
+                 className="px-3 py-1.5 bg-[#1c1d22] border border-white/10 rounded-full whitespace-nowrap hover:bg-[#5d3cfe] hover:border-[#5d3cfe] transition-all shrink-0 active:scale-95"
                >
-                  <p className="text-[7px] font-black text-[#c8c4d9] uppercase">{faq.q}</p>
+                  <p className="text-[8px] sm:text-[9px] font-bold text-[#c8c4d9] hover:text-white uppercase">{faq.q}</p>
                </button>
             ))}
          </div>
 
-         <div className="flex gap-2 bg-[#0d0e12] p-1.5 rounded-xl border border-white/10 focus-within:border-[#5d3cfe]/50 transition-all shadow-inner">
+         <div className="flex gap-2 bg-[#0d0e12] p-1.5 rounded-xl border border-white/10 focus-within:border-[#5d3cfe]/70 transition-all shadow-inner">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Consultar..."
-              className="flex-1 bg-transparent px-3 py-1 text-xs text-white outline-none placeholder:text-[#474556] font-bold"
+              placeholder="Escribe tu consulta aquí..."
+              className="flex-1 bg-transparent px-3 py-1 text-xs text-white outline-none placeholder:text-[#525064] font-medium"
             />
             <button
               onClick={handleSend}
               disabled={!input.trim()}
-              className={`p-2.5 rounded-lg transition-all ${input.trim() ? 'bg-[#5d3cfe] text-white' : 'bg-white/5 text-[#474556]'}`}
+              className={`p-2.5 rounded-lg transition-all ${input.trim() ? 'bg-[#5d3cfe] text-white shadow-md' : 'bg-white/5 text-white/30'}`}
             >
               <Send className="w-3.5 h-3.5" />
             </button>
@@ -353,7 +352,7 @@ export default function Chatbot247({ isInline = false, assets = [], requests = [
 
   if (isInline) {
     return (
-      <div className="w-full h-full flex flex-col rounded-[2.5rem] overflow-hidden">
+      <div className="w-full h-full flex flex-col overflow-hidden bg-[#0d0e12]">
         {renderContent()}
       </div>
     );

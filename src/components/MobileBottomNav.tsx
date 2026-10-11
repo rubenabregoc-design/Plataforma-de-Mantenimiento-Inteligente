@@ -50,15 +50,15 @@ export default function MobileBottomNav({
   // Define left and right primary bottom tabs per role
   const clientLeftTabs: BottomNavTab[] = [
     { id: 'dashboard', label: 'Equipos', icon: LayoutDashboard },
-    { id: 'ai', label: 'IA Diag', icon: BrainCircuit, highlight: true },
+    { id: 'ai', label: 'Diagnóstico', icon: BrainCircuit, highlight: true },
   ];
   const clientRightTabs: BottomNavTab[] = [
-    { id: 'marketplace', label: 'Expertos', icon: Store },
+    { id: 'marketplace', label: 'Técnicos', icon: Store },
   ];
 
   const techLeftTabs: BottomNavTab[] = [
     { id: 'received', label: 'Bandeja', icon: Inbox },
-    { id: 'bidding_market', label: 'Bolsa', icon: Layers },
+    { id: 'bidding_market', label: 'Trabajos', icon: Layers },
   ];
   const techRightTabs: BottomNavTab[] = [
     { id: 'agenda', label: 'Agenda', icon: CalendarDays },
@@ -69,15 +69,15 @@ export default function MobileBottomNav({
     { id: 'routes', label: 'Ruta GPS', icon: Navigation },
   ];
   const driverRightTabs: BottomNavTab[] = [
-    { id: 'chat', label: 'Flota', icon: MessageSquare },
+    { id: 'chat', label: 'Despacho', icon: MessageSquare },
   ];
 
   const adminLeftTabs: BottomNavTab[] = [
     { id: 'finance', label: 'Finanzas', icon: DollarSign },
-    { id: 'validator', label: 'Validador', icon: ShieldCheck },
+    { id: 'validator', label: 'Validar', icon: ShieldCheck },
   ];
   const adminRightTabs: BottomNavTab[] = [
-    { id: 'tickets', label: 'Tickets', icon: MessageSquare },
+    { id: 'tickets', label: 'Soporte', icon: MessageSquare },
   ];
 
   const leftTabs = role === 'client' ? clientLeftTabs : role === 'tech' ? techLeftTabs : role === 'driver' ? driverLeftTabs : adminLeftTabs;

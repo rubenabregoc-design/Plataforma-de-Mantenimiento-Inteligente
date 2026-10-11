@@ -212,7 +212,7 @@ export default function MobileQuickActionsFAB({ role }: MobileQuickActionsFABPro
           {role === 'driver' && (
             <>
               <button
-                onClick={() => handleAction(() => openModal('preTrip', { asset: undefined }))}
+                onClick={() => handleAction(() => setTab('driver', 'inspection'))}
                 className="w-full flex items-center justify-between p-3.5 bg-[#1c1d21] border border-indigo-500/30 hover:border-indigo-500 rounded-2xl active:scale-98 transition-all group shadow-lg"
               >
                 <div className="flex items-center gap-3.5">
@@ -228,7 +228,7 @@ export default function MobileQuickActionsFAB({ role }: MobileQuickActionsFABPro
               </button>
 
               <button
-                onClick={() => handleAction(() => openModal('fuel', { asset: undefined }))}
+                onClick={() => handleAction(() => setTab('driver', 'fuel'))}
                 className="w-full flex items-center justify-between p-3.5 bg-[#1c1d21] border border-[#52ffac]/30 hover:border-[#52ffac] rounded-2xl active:scale-98 transition-all group shadow-lg"
               >
                 <div className="flex items-center gap-3.5">
@@ -238,6 +238,22 @@ export default function MobileQuickActionsFAB({ role }: MobileQuickActionsFABPro
                   <div className="text-left">
                     <h4 className="text-xs font-black text-white uppercase tracking-wider">Carga de Combustible</h4>
                     <p className="text-[10px] text-[#8e8d9a] font-bold">Registrar galones y factura</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#8e8d9a]" />
+              </button>
+
+              <button
+                onClick={() => handleAction(() => setTab('driver', 'routes'))}
+                className="w-full flex items-center justify-between p-3.5 bg-[#1c1d21] border border-amber-500/30 hover:border-amber-500 rounded-2xl active:scale-98 transition-all group shadow-lg"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 shadow-md">
+                    <Truck className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-xs font-black text-white uppercase tracking-wider">Hoja de Ruta & GPS</h4>
+                    <p className="text-[10px] text-[#8e8d9a] font-bold">Ver paradas asignadas y mapa en vivo</p>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-[#8e8d9a]" />

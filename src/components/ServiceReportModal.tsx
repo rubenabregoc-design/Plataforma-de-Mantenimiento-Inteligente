@@ -62,40 +62,96 @@ export default function ServiceReportModal({ isOpen, onClose, request }: Service
   const docDate = formatDate(request.visitFinishedAt || request.scheduledDate || request.createdAt);
 
   const handlePrint = () => {
-    const reportEl = document.getElementById('printable-report');
-    if (!reportEl) return;
+    const html = `
+      <html>
+        <head>
+          <style>
+            @page { size: A4; margin: 0; }
+            *, *::before, *::after { box-sizing: border-box; }
+            html, body { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #000000 !important; background-color: #ffffff !important; margin: 0; padding: 0; width: 100%; }
+            .wrap { padding: 30px 40px; border-top: 10px solid #0d0e12; background: #ffffff; color: #000000; }
+            .hdr { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000000; padding-bottom: 16px; margin-bottom: 22px; }
+            .logo-box { display: flex; align-items: center; gap: 14px; }
+            .grid6 { display: grid; grid-template-cols: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+            .card { padding: 12px; border-radius: 10px; border: 1.5px solid #000000; background: #f8fafc; }
+            .lbl { font-size: 9px; font-weight: 900; text-transform: uppercase; color: #000000 !important; margin-bottom: 4px; }
+            .val { font-size: 13px; font-weight: 900; text-transform: uppercase; color: #000000 !important; }
+            .sec-title { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: #5d3cfe !important; border-bottom: 2px solid #000000; padding-bottom: 6px; margin-bottom: 12px; margin-top: 20px; }
+            .desc-box { background: #f8fafc; padding: 16px; border-radius: 12px; border: 1.5px solid #000000; border-left: 5px solid #5d3cfe; font-size: 12px; font-weight: 700; color: #000000 !important; }
+            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+            td { padding: 8px 4px; border-bottom: 1px solid #d1d5db; font-size: 11px; font-weight: 800; color: #000000 !important; text-transform: uppercase; }
+            .ftr { margin-top: 32px; padding-top: 16px; border-top: 2px solid #000000; display: flex; justify-content: space-between; font-size: 10px; font-weight: 900; color: #000000 !important; text-transform: uppercase; }
+          </style>
+        </head>
+        <body>
+          <div class="wrap">
+            <div class="hdr">
+              <div class="logo-box">
+                <svg viewBox="0 0 100 100" style="width: 44px; height: 44px;">
+                  <rect width="100" height="100" rx="20" fill="#121317"/>
+                  <path d="M20 75V35L50 60L80 35V75" stroke="#5d3cfe" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  <circle cx="50" cy="20" r="6" fill="#52ffac"/>
+                </svg>
+                <div>
+                  <div style="font-size: 26px; font-weight: 900; color: #000000 !important; letter-spacing: -1px;">Mantech<span style="color: #5d3cfe !important;">Pro</span></div>
+                  <div style="font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 3px; color: #000000 !important;">Ingeniería Operativa Panamá</div>
+                </div>
+              </div>
+              <div style="text-align: right; color: #000000 !important;">
+                <div style="font-size: 9px; font-weight: 900; text-transform: uppercase; color: #000000 !important;">Número de Reporte</div>
+                <div style="font-size: 20px; font-weight: 900; color: #000000 !important;">#${request.id.substring(0,8).toUpperCase()}</div>
+                <div style="font-size: 11px; font-weight: 800; color: #000000 !important; margin-top: 4px;">${docDate}</div>
+              </div>
+            </div>
 
-    const pw = window.open('', '_blank', 'width=900,height=700');
-    if (!pw) { window.print(); return; }
+            <div class="grid6">
+              <div class="card"><div class="lbl">Activo</div><div class="val">${request.assetName || '---'}</div></div>
+              <div class="card"><div class="lbl">Especialista</div><div class="val">${request.techName || '---'}</div></div>
+              <div class="card"><div class="lbl">Empresa</div><div class="val">${request.techCompanyName || 'MantechPro Independent'}</div></div>
+              <div class="card"><div class="lbl">Modalidad</div><div class="val">${request.serviceType === 'remote' ? 'REMOTO' : 'PRESENCIAL'}</div></div>
+              <div class="card"><div class="lbl">Tiempo</div><div class="val">${getTimeDisplay()}</div></div>
+              <div class="card" style="border-color: #5d3cfe;"><div class="lbl">Inversión Total</div><div class="val">$${Number(request.price || 0).toFixed(2)}</div></div>
+            </div>
 
-    pw.document.write(`<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Certificado #${request.id.substring(0, 8).toUpperCase()} - MantechPro</title>
-  <script src="https://cdn.tailwindcss.com"><\/script>
-  <style>
-    @page { size: letter portrait; margin: 0.4in 0.5in; }
-    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    body { margin: 0; padding: 0; background: white; }
-    #printable-report { width: 100%; box-shadow: none !important; border-top: 10px solid #0d0e12; border-left: none; border-right: none; border-bottom: none; }
-    section, header, footer, table, tr { page-break-inside: avoid; }
-    footer { margin-top: auto; padding-top: 1.5rem; border-top: 2px solid #f4f4f5; display: flex; justify-content: space-between; align-items: center; color: #a1a1aa; }
-    .shadow-2xl { box-shadow: none !important; }
-    .rounded-2xl { border-radius: 0.75rem; }
-    .rounded-xl { border-radius: 0.5rem; }
-  <\/style>
-</head>
-<body>
-  ${reportEl.outerHTML}
-  <script>
-    window.addEventListener('load', function() {
-      setTimeout(function() { window.print(); window.close(); }, 400);
+            <div class="sec-title">Descripción de Intervención</div>
+            <div class="desc-box">"${request.description}"</div>
+
+            <div class="sec-title">Tareas Realizadas</div>
+            <table>
+              <tbody>
+                ${(request.checklist || []).slice(0, 8).map((task) => `
+                  <tr>
+                    <td>${task.description}</td>
+                    <td style="text-align: right; color: #047857 !important;">CERTIFICADO</td>
+                  </tr>
+                `).join('') || '<tr><td>Inspección y protocolo técnico general completado</td><td style="text-align: right; color: #047857 !important;">CERTIFICADO</td></tr>'}
+              </tbody>
+            </table>
+
+            <div style="display: grid; grid-template-cols: 1fr 1fr; gap: 24px; margin-top: 30px; padding-top: 20px; border-top: 2px solid #000000;">
+              <div>
+                <div class="lbl">Especialista Responsable</div>
+                <div class="val">${request.techName || 'Técnico Certificado'}</div>
+                <div style="font-size: 9px; font-weight: 800; color: #000000 !important; margin-top: 2px;">${request.techCompanyName || 'Técnico Certificado MantechPro'}</div>
+              </div>
+              <div>
+                <div class="lbl">Validación Cliente</div>
+                <div class="val">${request.clientName || 'Cliente Verificado'}</div>
+                <div style="font-size: 9px; font-weight: 800; color: #047857 !important; margin-top: 2px;">FIRMA DIGITAL AUDITADA MDM-V4</div>
+              </div>
+            </div>
+
+            <div class="ftr">
+              <span>MantechPro Industries Panama S.A.</span>
+              <span>ORIGINAL - COPIA FIEL</span>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    import('../utils/pdfExport').then(({ downloadHtmlAsPdf }) => {
+      downloadHtmlAsPdf(html, `Certificado_Servicio_${request.id.substring(0, 8).toUpperCase()}.pdf`);
     });
-  <\/script>
-</body>
-</html>`);
-    pw.document.close();
   };
 
   return (
@@ -115,7 +171,7 @@ export default function ServiceReportModal({ isOpen, onClose, request }: Service
         <div className="flex gap-4">
            <button
              onClick={handlePrint}
-             className="px-8 py-4 bg-[#52ffac] text-[#0d0e12] rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-105 transition-all flex items-center gap-3 border-none cursor-pointer"
+             className="px-6 sm:px-8 py-3.5 sm:py-4 bg-[#52ffac] text-[#0d0e12] rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-105 transition-all flex items-center gap-3 border-none cursor-pointer"
            >
              <Download className="w-4 h-4" /> Guardar PDF Oficial
            </button>
@@ -128,37 +184,37 @@ export default function ServiceReportModal({ isOpen, onClose, request }: Service
       {/* DOCUMENTO MAESTRO (RIGID LETTER) */}
       <article
         id="printable-report"
-        className="w-full max-w-[8.5in] bg-white text-zinc-900 shadow-2xl flex flex-col border-t-[12px] border-[#0d0e12] p-[0.4in] shrink-0"
-        style={{ height: '11in', boxSizing: 'border-box', overflow: 'hidden' }}
+        className="w-full max-w-[8.5in] bg-white text-black shadow-2xl flex flex-col border-t-[12px] border-[#0d0e12] p-[0.4in] shrink-0"
+        style={{ minHeight: '11in', boxSizing: 'border-box' }}
       >
 
         {/* HEADER CORPORATIVO */}
-        <header className="flex justify-between items-start border-b-2 border-zinc-100 pb-4 mb-6">
+        <header className="flex justify-between items-start border-b-2 border-black pb-4 mb-6">
           <div className="flex items-center gap-4">
              <div className="w-14 h-14 bg-[#0d0e12] rounded-2xl flex items-center justify-center p-2.5 shadow-xl">
                 <img src="/logo.svg" alt="Logo" className="w-full h-full object-contain" />
              </div>
              <div>
-                <h1 className="text-2xl font-black tracking-tighter leading-tight uppercase">
+                <h1 className="text-2xl font-black tracking-tighter leading-tight uppercase text-black">
                    Mantech<span className="text-[#5d3cfe]">Pro</span>
                 </h1>
-                <p className="text-[9px] font-bold uppercase tracking-[0.4em] text-zinc-400 mt-0.5">
+                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-black mt-0.5">
                    Ingeniería Operativa Panamá
                 </p>
              </div>
           </div>
 
           <div className="text-right">
-             <h3 className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-0.5">Número de Reporte</h3>
-             <p className="font-black text-xl text-[#0d0e12] leading-none tracking-tighter uppercase">
-                #{request.id.substring(0,8).toUpperCase()}
+             <h3 className="text-[9px] font-black uppercase tracking-widest text-black mb-0.5">Número de Reporte</h3>
+             <p className="font-black text-xl text-black leading-none tracking-tighter uppercase">
+                #${request.id.substring(0,8).toUpperCase()}
              </p>
              {request.cufe && (
                <p className="text-[7px] font-black text-[#5d3cfe] mt-1 uppercase tracking-tighter">
                  CUFE: {request.cufe}
                </p>
              )}
-             <p className="text-[10px] font-bold text-zinc-500 mt-2 uppercase tracking-widest">{docDate}</p>
+             <p className="text-[10px] font-black text-black mt-2 uppercase tracking-widest">{docDate}</p>
           </div>
         </header>
 

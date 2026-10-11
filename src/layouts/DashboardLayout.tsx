@@ -31,10 +31,14 @@ export default function DashboardLayout({
   handleUploadAvatar
 }: DashboardLayoutProps) {
   const { t } = useTranslation();
-  const { role, loggedInName, profileImage, logout, subscription } = useAuth();
+  const { role, userData, loggedInName, profileImage, logout, subscription } = useAuth();
   const { tabs, setTab, openModal } = useUI();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
+
+  const subRole: 'fleet_coordinator' | 'building_coordinator' | null = userData?.subRole || null;
+  const isFleetCoordinator = role === 'client' && subRole === 'fleet_coordinator';
+  const isBuildingCoordinator = role === 'client' && subRole === 'building_coordinator';
 
   const currentClientTab = tabs.client;
   const currentTechTab = tabs.tech;
@@ -56,20 +60,26 @@ export default function DashboardLayout({
 
   // --- Plan ---
   const activePlan = subscription.planId || (role === 'tech' ? 'plan-basic' : 'plan-free');
-  const isFree = activePlan === 'plan-free';
+  const isFree = activePlan === 'plan-free' && !subRole;
   const isEmprendedor = activePlan === 'plan-basic';
   const isPro = activePlan === 'plan-pro';
-  const isEnterprise = activePlan === 'plan-enterprise';
-  const canAccessFleet = !isFree;
+  const isEnterprise = activePlan === 'plan-enterprise' || !!subRole;
+  const canAccessFleet = !isFree && !isBuildingCoordinator;
   const canAccessAudit = isPro || isEnterprise;
-  const canAccessInventory = true;
+  const canAccessInventory = !isFleetCoordinator;
 
   const getPlanInfo = () => {
     if (role === 'admin') {
       return { label: 'Acceso Total', color: '#e11d48' };
     }
     if (role === 'driver') {
-      return { label: 'Conductor Flota', color: '#f59e0b' };
+      return { label: 'Flota Activa', color: '#f59e0b' };
+    }
+    if (isFleetCoordinator) {
+      return { label: 'Corporativo', color: '#f59e0b' };
+    }
+    if (isBuildingCoordinator) {
+      return { label: 'Corporativo', color: '#52ffac' };
     }
     if (role === 'tech') {
       if (activePlan === 'plan-enterprise') return { label: 'Partner Élite', color: '#f59e0b' };
@@ -77,42 +87,52 @@ export default function DashboardLayout({
       return { label: 'Estándar', color: '#52ffac' };
     }
     // client
-    if (activePlan === 'plan-enterprise') return { label: 'Enterprise', color: '#f59e0b' };
+    if (activePlan === 'plan-enterprise') return { label: 'Corporativo', color: '#f59e0b' };
     if (activePlan === 'plan-pro') return { label: 'Profesional', color: '#c7bfff' };
     if (activePlan === 'plan-basic') return { label: 'Emprendedor', color: '#52ffac' };
-    return { label: 'Plan Gratis', color: '#8e8d9a' };
+    return { label: 'Plan Básico', color: '#8e8d9a' };
   };
 
   const { label: planLabel, color: planColor } = getPlanInfo();
 
-  const roleConfig = {
-    admin: {
-      label: 'Admin',
-      badgeClass: 'bg-rose-500/10 border-rose-500/30 text-rose-400',
-    },
-    driver: {
-      label: 'Conductor',
-      badgeClass: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
-    },
-    tech: {
-      label: 'Técnico',
-      badgeClass: 'bg-[#52ffac]/10 border-[#52ffac]/30 text-[#52ffac]',
-    },
-    client: {
-      label: 'Cliente',
-      badgeClass: 'bg-[#5d3cfe]/10 border-[#5d3cfe]/30 text-[#c7bfff]',
-    }
-  }[role || 'client'] || {
-    label: 'Cliente',
-    badgeClass: 'bg-white/10 border-white/20 text-white',
-  };
+  const roleConfig = isFleetCoordinator
+    ? {
+        label: 'Jefe de Flota',
+        badgeClass: 'bg-amber-500/15 border-amber-500/40 text-amber-400',
+      }
+    : isBuildingCoordinator
+    ? {
+        label: 'Jefe Edificio',
+        badgeClass: 'bg-[#52ffac]/15 border-[#52ffac]/40 text-[#52ffac]',
+      }
+    : ({
+        admin: {
+          label: 'Administrador',
+          badgeClass: 'bg-rose-500/10 border-rose-500/30 text-rose-400',
+        },
+        driver: {
+          label: 'Conductor',
+          badgeClass: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
+        },
+        tech: {
+          label: 'Técnico',
+          badgeClass: 'bg-[#52ffac]/10 border-[#52ffac]/30 text-[#52ffac]',
+        },
+        client: {
+          label: 'Cliente',
+          badgeClass: 'bg-[#5d3cfe]/10 border-[#5d3cfe]/30 text-[#c7bfff]',
+        }
+      }[role || 'client'] || {
+        label: 'Cliente',
+        badgeClass: 'bg-white/10 border-white/20 text-white',
+      });
 
   // Reusable sidebar button
   const SBtn = ({ tab, icon: Icon, label, nav, cur, red = false }: any) => {
     const active = cur === tab;
     return (
-      <button onClick={() => nav(tab)} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-[10px] font-black uppercase tracking-wider ${ active ? (red ? 'bg-[#e11d48] text-white shadow-md shadow-[#e11d48]/20' : 'bg-[#5d3cfe] text-white shadow-md shadow-[#5d3cfe]/20') : 'text-[#8a879d] hover:text-white hover:bg-white/5' }`}>
-        <Icon className="w-4 h-4 shrink-0" />
+      <button onClick={() => nav(tab)} className={`w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all text-[10px] md:text-xs font-black uppercase tracking-wider ${ active ? (red ? 'bg-[#e11d48] text-white shadow-md shadow-[#e11d48]/20' : 'bg-[#5d3cfe] text-white shadow-md shadow-[#5d3cfe]/20') : 'text-[#8a879d] hover:text-white hover:bg-white/5' }`}>
+        <Icon className="w-4 h-4 md:w-4.5 md:h-4.5 shrink-0" />
         <span className="truncate">{label}</span>
       </button>
     );
@@ -137,83 +157,90 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-[#0d0e12] flex flex-col font-sans text-[#e3e2e8] overflow-hidden grid-bg">
 
       {/* TOP BAR */}
-      <nav className="h-[calc(4.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] bg-[#0d0e12]/90 backdrop-blur-md border-b border-[#2a2b2f]/60 flex items-center justify-between px-4 md:px-8 shrink-0 z-[100]">
-        <div className="flex items-center gap-3 md:gap-8">
-          <Logo size="sm" />
+      <nav className="h-[calc(4.25rem+env(safe-area-inset-top))] sm:h-[calc(4.5rem+env(safe-area-inset-top))] md:h-20 pt-[env(safe-area-inset-top)] md:pt-0 bg-[#0d0e12]/90 backdrop-blur-md border-b border-[#2a2b2f]/60 flex items-center justify-between px-3 sm:px-5 md:px-8 shrink-0 z-[100] gap-2">
+        <div className="flex items-center gap-2 sm:gap-4 md:gap-8 shrink-0">
+          <Logo size="md" />
           <div className="relative hidden md:block">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#474556]" />
-            <input type="text" placeholder={t('search_placeholder', 'Buscar...')} className="bg-[#121317] border border-[#2a2b2f] rounded-full py-2.5 pl-12 pr-6 text-xs text-white w-[260px] lg:w-[400px] focus:outline-none focus:border-[#5d3cfe]/50 transition-colors" value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8a879d]" />
+            <input type="text" placeholder={t('search_placeholder', 'Buscar...')} className="bg-[#121317] border border-[#2a2b2f] rounded-full py-2.5 pl-12 pr-6 text-xs md:text-sm text-white w-[260px] lg:w-[400px] focus:outline-none focus:border-[#5d3cfe]/50 transition-colors" value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />
           </div>
         </div>
-        <div className="flex items-center gap-2 md:gap-5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 md:gap-4 shrink-0">
           {role === 'client' ? (
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-wider" style={{ borderColor: `${planColor}30`, color: planColor, background: `${planColor}10` }}>
-              <Zap className="w-3 h-3 fill-current" />{planLabel}
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[9px] md:text-xs font-black uppercase tracking-wider" style={{ borderColor: `${planColor}30`, color: planColor, background: `${planColor}10` }}>
+              <Zap className="w-3 h-3 md:w-3.5 md:h-3.5 fill-current" />{planLabel}
             </div>
           ) : (
-            <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-wider ${roleConfig.badgeClass}`}>
-              <ShieldCheck className="w-3 h-3" />{roleConfig.label}
+            <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[9px] md:text-xs font-black uppercase tracking-wider ${roleConfig.badgeClass}`}>
+              <ShieldCheck className="w-3 h-3 md:w-3.5 md:h-3.5" />{roleConfig.label}
             </div>
           )}
           {role !== 'admin' && (
             <button
               onClick={() => openModal('chatbot')}
               aria-label="Asesor IA 24/7"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-[#5d3cfe]/20 to-[#52ffac]/15 border border-[#5d3cfe]/40 text-white hover:border-[#5d3cfe]/70 transition-all active:scale-95 shadow-sm"
+              className="flex items-center gap-1.5 px-2.5 md:px-3.5 py-2 sm:py-1.5 md:py-2 rounded-xl bg-gradient-to-r from-[#5d3cfe]/20 to-[#52ffac]/15 border border-[#5d3cfe]/40 text-white hover:border-[#5d3cfe]/70 transition-all active:scale-95 shadow-sm"
               title="Asesor MantechPro IA 24/7"
             >
               <div className="relative">
                 <Headset className="w-4 h-4 text-[#52ffac]" />
                 <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-[#52ffac] rounded-full animate-ping" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#c7bfff] hidden xs:inline">
+              <span className="text-[9px] sm:text-[10px] md:text-xs font-black uppercase tracking-wider text-[#c7bfff] hidden sm:inline">
                 Asesor IA
               </span>
             </button>
           )}
-          <button onClick={onShowNotifications} className="relative p-2.5 rounded-xl bg-white/5 border border-white/8 hover:bg-[#5d3cfe]/10 hover:border-[#5d3cfe]/30 transition-all">
-            <Bell className="w-5 h-5 text-[#c8c4d9]" />
+          <button onClick={onShowNotifications} className="relative p-2 sm:p-2.5 rounded-xl bg-white/5 border border-white/8 hover:bg-[#5d3cfe]/10 hover:border-[#5d3cfe]/30 transition-all">
+            <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-[#c8c4d9]" />
             {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#5d3cfe] text-white text-[9px] font-black flex items-center justify-center rounded-full border-2 border-[#0d0e12] animate-pulse">{unreadCount}</span>}
           </button>
-          <button onClick={onShowSupport} className="p-2.5 bg-white/5 border border-white/8 rounded-xl text-[#c8c4d9] hover:text-white transition-all"><HelpCircle className="w-5 h-5" /></button>
-          <button onClick={logout} className="flex items-center gap-2 text-[#8a879d] hover:text-white font-black text-[10px] uppercase tracking-widest transition-all p-2.5 rounded-xl hover:bg-white/5">
-            <LogOut className="w-5 h-5" /><span className="hidden sm:inline">{t('exit', 'Salir')}</span>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('mantech-open-logs'))}
+            className="p-2 sm:p-2.5 bg-[#52ffac]/10 border border-[#52ffac]/30 rounded-xl text-[#52ffac] hover:bg-[#52ffac]/20 transition-all"
+            title="Consola de Diagnóstico y Verificador de Módulos"
+          >
+            <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+          <button onClick={onShowSupport} className="hidden sm:flex p-2.5 bg-white/5 border border-white/8 rounded-xl text-[#c8c4d9] hover:text-white transition-all"><HelpCircle className="w-5 h-5" /></button>
+          <button onClick={logout} className="flex items-center gap-2 text-[#8a879d] hover:text-white font-black text-[10px] md:text-xs uppercase tracking-widest transition-all p-2 sm:p-2.5 rounded-xl hover:bg-white/5">
+            <LogOut className="w-4 h-4 sm:w-5 sm:h-5" /><span className="hidden sm:inline">{t('exit', 'Salir')}</span>
           </button>
         </div>
       </nav>
 
       <div className="flex flex-1 overflow-hidden relative">
         {/* DESKTOP SIDEBAR */}
-        <aside className="hidden md:flex w-52 bg-[#0d0e12] border-r border-[#2a2b2f]/60 py-4 px-3 flex-col shrink-0 overflow-y-auto custom-scrollbar">
+        <aside className="hidden md:flex w-60 lg:w-64 bg-[#0d0e12] border-r border-[#2a2b2f]/60 py-5 px-4 flex-col shrink-0 overflow-y-auto custom-scrollbar">
           {/* Avatar card */}
-          <div className="flex items-center gap-3 mb-5 p-3 rounded-2xl bg-[#121317] border border-white/5 group hover:border-white/10 transition-all">
-            <div className="w-10 h-10 rounded-xl bg-[#1c1d21] border border-white/10 flex items-center justify-center text-sm font-black text-white overflow-hidden relative shrink-0 cursor-pointer" onClick={() => document.getElementById('avatar-input')?.click()} title="Cambiar foto de perfil">
+          <div className="flex items-center gap-3 mb-5 p-3.5 rounded-2xl bg-[#121317] border border-white/5 group hover:border-white/10 transition-all">
+            <div className="w-11 h-11 rounded-xl bg-[#1c1d21] border border-white/10 flex items-center justify-center text-sm font-black text-white overflow-hidden relative shrink-0 cursor-pointer" onClick={() => document.getElementById('avatar-input')?.click()} title="Cambiar foto de perfil">
               {profileImage ? <img src={profileImage} className="w-full h-full object-cover" /> : (loggedInName?.[0] || 'U')}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Camera className="w-3 h-3 text-white" /></div>
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Camera className="w-3.5 h-3.5 text-white" /></div>
               <input type="file" id="avatar-input" className="hidden" accept="image/*" onChange={e => e.target.files?.[0] && handleUploadAvatar(e.target.files[0])} />
             </div>
             <div className="overflow-hidden flex-1 min-w-0">
               <div className="flex items-center justify-between gap-1">
                 <h4
                   onClick={() => role === 'tech' ? openModal('editTech') : openModal('editProfile')}
-                  className="font-black text-white text-[11px] tracking-tight truncate uppercase leading-tight cursor-pointer hover:text-[#5d3cfe] transition-colors"
+                  className="font-black text-white text-xs tracking-tight truncate uppercase leading-tight cursor-pointer hover:text-[#5d3cfe] transition-colors"
                   title="Editar Perfil"
                 >
                   {loggedInName || 'Usuario'}
                 </h4>
                 <button
                   onClick={() => role === 'tech' ? openModal('editTech') : openModal('editProfile')}
-                  className="text-[#6b697e] hover:text-[#5d3cfe] p-0.5 transition-colors shrink-0"
+                  className="text-[#8a879d] hover:text-[#5d3cfe] p-0.5 transition-colors shrink-0"
                   title="Editar Perfil"
                 >
-                  <Pencil className="w-3 h-3" />
+                  <Pencil className="w-3.5 h-3.5" />
                 </button>
               </div>
-              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border leading-none ${roleConfig.badgeClass}`}>
+              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border leading-none ${roleConfig.badgeClass}`}>
                   {roleConfig.label}
                 </span>
-                <span className="text-[8px] font-bold uppercase tracking-wider truncate" style={{ color: planColor }}>
+                <span className="text-[9px] font-bold uppercase tracking-wider truncate" style={{ color: planColor }}>
                   {planLabel}
                 </span>
               </div>
@@ -221,51 +248,80 @@ export default function DashboardLayout({
           </div>
 
           <nav className="space-y-0.5 flex-1">
-            {role === 'client' && (<>
-              <SBtn tab="dashboard" icon={LayoutDashboard} label={t('my_assets','Mis Equipos')} nav={navigateClient} cur={currentClientTab} />
-              {canAccessFleet && <SBtn tab="fleet" icon={Globe} label={t('fleet_b2b','Flota B2B')} nav={navigateClient} cur={currentClientTab} />}
-              <SBtn tab="ai" icon={BrainCircuit} label={t('self_diagnostic','Autodiagnóstico')} nav={navigateClient} cur={currentClientTab} />
-              <SBtn tab="warranties" icon={ShieldCheck} label={t('warranty_vault','Bóveda')} nav={navigateClient} cur={currentClientTab} />
-              <SBtn tab="marketplace" icon={Store} label={t('find_experts','Expertos')} nav={navigateClient} cur={currentClientTab} />
-              <SBtn tab="quotes" icon={FileCheck2} label={t('contracts','Contratos')} nav={navigateClient} cur={currentClientTab} />
-              {canAccessAudit && <SBtn tab="audit" icon={FileText} label={t('audit','Auditoría')} nav={navigateClient} cur={currentClientTab} />}
-              {canAccessInventory && <SBtn tab="inventory" icon={Package} label={t('spare_parts','Repuestos')} nav={navigateClient} cur={currentClientTab} />}
-              <SBtn tab="subscriptions" icon={Star} label={t('membership','Membresía')} nav={navigateClient} cur={currentClientTab} />
-              <SBtn tab="chat" icon={MessageSquare} label={t('chat','Chat')} nav={navigateClient} cur={currentClientTab} />
-              {isEnterprise && <SBtn tab="team" icon={Users} label="Equipo" nav={navigateClient} cur={currentClientTab} />}
-              <SBtn tab="settings" icon={Settings} label={t('settings','Config.')} nav={navigateClient} cur={currentClientTab} />
+            {role === 'client' && isFleetCoordinator && (<>
+              <SBtn tab="fleet" icon={Globe} label="Control de Flota" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="dashboard" icon={Truck} label="Mis Vehículos" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="team" icon={Users} label="Conductores" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="quotes" icon={FileCheck2} label="Rutas y Órdenes" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="audit" icon={FileText} label="Combustible" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="chat" icon={MessageSquare} label="Chat de Flota" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="settings" icon={Settings} label="Ajustes" nav={navigateClient} cur={currentClientTab} />
+            </>)}
+            {role === 'client' && isBuildingCoordinator && (<>
+              <SBtn tab="dashboard" icon={LayoutDashboard} label="Equipos Edificio" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="team" icon={Users} label="Técnicos Planta" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="ai" icon={BrainCircuit} label="Diagnóstico" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="quotes" icon={FileCheck2} label="Mantenimientos" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="inventory" icon={Package} label="Repuestos" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="warranties" icon={ShieldCheck} label="Garantías" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="audit" icon={FileText} label="Bitácora" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="chat" icon={MessageSquare} label="Chat Técnico" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="settings" icon={Settings} label="Ajustes" nav={navigateClient} cur={currentClientTab} />
+            </>)}
+            {role === 'client' && !isFleetCoordinator && !isBuildingCoordinator && (<>
+              <SBtn tab="dashboard" icon={LayoutDashboard} label="Mis Equipos" nav={navigateClient} cur={currentClientTab} />
+              {canAccessFleet && <SBtn tab="fleet" icon={Globe} label="Mi Flota" nav={navigateClient} cur={currentClientTab} />}
+              <SBtn tab="team" icon={Users} label="Mi Personal" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="ai" icon={BrainCircuit} label="Diagnóstico" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="warranties" icon={ShieldCheck} label="Garantías" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="marketplace" icon={Store} label="Técnicos" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="quotes" icon={FileCheck2} label="Contratos" nav={navigateClient} cur={currentClientTab} />
+              {canAccessAudit && <SBtn tab="audit" icon={FileText} label="Combustible" nav={navigateClient} cur={currentClientTab} />}
+              {canAccessInventory && <SBtn tab="inventory" icon={Package} label="Repuestos" nav={navigateClient} cur={currentClientTab} />}
+              <SBtn tab="subscriptions" icon={Star} label="Mi Plan" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="chat" icon={MessageSquare} label="Mensajes" nav={navigateClient} cur={currentClientTab} />
+              <SBtn tab="settings" icon={Settings} label="Ajustes" nav={navigateClient} cur={currentClientTab} />
             </>)}
             {role === 'tech' && (<>
-              <SBtn tab="received" icon={Inbox} label={t('inbox','Bandeja')} nav={navigateTech} cur={currentTechTab} />
-              <SBtn tab="bidding_market" icon={Layers} label={t('job_market','Bolsa')} nav={navigateTech} cur={currentTechTab} />
-              <SBtn tab="agenda" icon={CalendarDays} label={t('agenda','Agenda')} nav={navigateTech} cur={currentTechTab} />
-              <SBtn tab="wallet" icon={PieChart} label={t('wallet','Billetera')} nav={navigateTech} cur={currentTechTab} />
-              <SBtn tab="loyalty" icon={Star} label={t('loyalty_club','Fidelidad')} nav={navigateTech} cur={currentTechTab} />
-              <SBtn tab="inventory" icon={Package} label={t('my_inventory','Inventario')} nav={navigateTech} cur={currentTechTab} />
-              <SBtn tab="mantech_id" icon={ShieldCheck} label={t('mantech_id','Mantech ID')} nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="received" icon={Inbox} label="Bandeja" nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="bidding_market" icon={Layers} label="Trabajos" nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="agenda" icon={CalendarDays} label="Agenda" nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="wallet" icon={PieChart} label="Billetera" nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="loyalty" icon={Star} label="Beneficios" nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="inventory" icon={Package} label="Inventario" nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="mantech_id" icon={ShieldCheck} label="Carnet QR" nav={navigateTech} cur={currentTechTab} />
               <SBtn tab="community" icon={Users} label="Comunidad" nav={navigateTech} cur={currentTechTab} />
-              <SBtn tab="chat" icon={MessageSquare} label={t('chat','Chat')} nav={navigateTech} cur={currentTechTab} />
-              <SBtn tab="profile" icon={User} label={t('my_profile','Perfil')} nav={navigateTech} cur={currentTechTab} />
-              <SBtn tab="settings" icon={Settings} label={t('settings','Config.')} nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="chat" icon={MessageSquare} label="Mensajes" nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="subscriptions" icon={Zap} label="Mi Plan" nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="profile" icon={User} label="Mi Perfil" nav={navigateTech} cur={currentTechTab} />
+              <SBtn tab="settings" icon={Settings} label="Ajustes" nav={navigateTech} cur={currentTechTab} />
             </>)}
             {role === 'driver' && (<>
               <SBtn tab="cockpit" icon={Truck} label="Cabina" nav={navigateDriver} cur={currentDriverTab} />
-              <SBtn tab="routes" icon={Navigation} label="Ruta & GPS" nav={navigateDriver} cur={currentDriverTab} />
-              <SBtn tab="inspection" icon={ClipboardCheck} label="Pre-Viaje" nav={navigateDriver} cur={currentDriverTab} />
+              <SBtn tab="routes" icon={Navigation} label="Ruta GPS" nav={navigateDriver} cur={currentDriverTab} />
+              <SBtn tab="inspection" icon={ClipboardCheck} label="Inspección" nav={navigateDriver} cur={currentDriverTab} />
               <SBtn tab="fuel" icon={Fuel} label="Combustible" nav={navigateDriver} cur={currentDriverTab} />
-              <SBtn tab="chat" icon={MessageSquare} label="Chat Flota" nav={navigateDriver} cur={currentDriverTab} />
+              <SBtn tab="chat" icon={MessageSquare} label="Despacho" nav={navigateDriver} cur={currentDriverTab} />
+              <button onClick={() => openModal('editProfile')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-[10px] font-black uppercase tracking-wider text-[#8a879d] hover:text-white hover:bg-white/5">
+                <User className="w-4 h-4 shrink-0" />
+                <span className="truncate">Mi Perfil</span>
+              </button>
+              <button onClick={() => window.dispatchEvent(new CustomEvent('mantech-open-security'))} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-[10px] font-black uppercase tracking-wider text-[#52ffac] hover:bg-[#52ffac]/10">
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                <span className="truncate">Clave y PIN</span>
+              </button>
             </>)}
             {role === 'admin' && (<>
               <SBtn tab="finance" icon={DollarSign} label="Finanzas" nav={navigateAdmin} cur={currentAdminTab} red />
-              <SBtn tab="validator" icon={ShieldCheck} label="Validador" nav={navigateAdmin} cur={currentAdminTab} red />
-              <SBtn tab="audit" icon={FileText} label="Logs" nav={navigateAdmin} cur={currentAdminTab} red />
-              <SBtn tab="tickets" icon={MessageSquare} label="Tickets" nav={navigateAdmin} cur={currentAdminTab} red />
-              <SBtn tab="ads" icon={Zap} label="Marketing" nav={navigateAdmin} cur={currentAdminTab} red />
-              <SBtn tab="logistics" icon={Truck} label="Logística" nav={navigateAdmin} cur={currentAdminTab} red />
+              <SBtn tab="validator" icon={ShieldCheck} label="Validación" nav={navigateAdmin} cur={currentAdminTab} red />
+              <SBtn tab="audit" icon={FileText} label="Historial" nav={navigateAdmin} cur={currentAdminTab} red />
+              <SBtn tab="tickets" icon={MessageSquare} label="Soporte" nav={navigateAdmin} cur={currentAdminTab} red />
+              <SBtn tab="ads" icon={Zap} label="Anuncios" nav={navigateAdmin} cur={currentAdminTab} red />
+              <SBtn tab="logistics" icon={Truck} label="Flotas" nav={navigateAdmin} cur={currentAdminTab} red />
               <SBtn tab="users" icon={Users} label="Usuarios" nav={navigateAdmin} cur={currentAdminTab} red />
               <SBtn tab="inventory" icon={Package} label="Inventario" nav={navigateAdmin} cur={currentAdminTab} red />
               <SBtn tab="alerts" icon={BellRing} label="Alertas" nav={navigateAdmin} cur={currentAdminTab} red />
-              <SBtn tab="settings" icon={Settings} label="Config." nav={navigateAdmin} cur={currentAdminTab} red />
+              <SBtn tab="settings" icon={Settings} label="Ajustes" nav={navigateAdmin} cur={currentAdminTab} red />
             </>)}
           </nav>
         </aside>
@@ -322,6 +378,14 @@ export default function DashboardLayout({
                   <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: planColor }}>
                     {planLabel}
                   </span>
+                  {(role === 'driver' || !!userData?.companyId) && (
+                    <button
+                      onClick={() => { setIsMobileMenuOpen(false); window.dispatchEvent(new CustomEvent('mantech-open-security')); }}
+                      className="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-[#52ffac]/15 text-[#52ffac] border border-[#52ffac]/30"
+                    >
+                      Clave y PIN
+                    </button>
+                  )}
                 </div>
               </div>
               <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-xl bg-white/5 text-[#474556] hover:text-white transition-colors"><X className="w-4 h-4" /></button>
@@ -347,7 +411,7 @@ export default function DashboardLayout({
                           Asesor MantechPro 24/7
                         </h4>
                         <span className="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase bg-[#52ffac]/20 text-[#52ffac]">
-                          IA Activa
+                          En Línea
                         </span>
                       </div>
                       <p className="text-[10px] text-[#8e8d9a] font-bold mt-0.5">
@@ -362,25 +426,56 @@ export default function DashboardLayout({
 
             {/* Grid of tiles */}
             <div className="px-3 pt-2 pb-1">
-              {role === 'client' && (
+              {role === 'client' && isFleetCoordinator && (
+                <>
+                  <div className="grid grid-cols-4 gap-1.5 mb-1.5">
+                    <STile tab="fleet" icon={Globe} label="Mi Flota" nav={navigateClient} cur={currentClientTab} color="#f59e0b" />
+                    <STile tab="dashboard" icon={Truck} label="Vehículos" nav={navigateClient} cur={currentClientTab} />
+                    <STile tab="team" icon={Users} label="Conductores" nav={navigateClient} cur={currentClientTab} color="#52ffac" />
+                    <STile tab="quotes" icon={FileCheck2} label="Rutas" nav={navigateClient} cur={currentClientTab} />
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5 mb-1.5">
+                    <STile tab="audit" icon={FileText} label="Combustible" nav={navigateClient} cur={currentClientTab} />
+                    <STile tab="chat" icon={MessageSquare} label="Chat Flota" nav={navigateClient} cur={currentClientTab} />
+                    <STile tab="settings" icon={Settings} label="Ajustes" nav={navigateClient} cur={currentClientTab} />
+                  </div>
+                </>
+              )}
+              {role === 'client' && isBuildingCoordinator && (
                 <>
                   <div className="grid grid-cols-4 gap-1.5 mb-1.5">
                     <STile tab="dashboard" icon={LayoutDashboard} label="Equipos" nav={navigateClient} cur={currentClientTab} />
-                    <STile tab="ai" icon={BrainCircuit} label="IA Diag" nav={navigateClient} cur={currentClientTab} color="#52ffac" />
-                    <STile tab="warranties" icon={ShieldCheck} label="Bóveda" nav={navigateClient} cur={currentClientTab} />
-                    <STile tab="marketplace" icon={Store} label="Expertos" nav={navigateClient} cur={currentClientTab} />
+                    <STile tab="team" icon={Users} label="Técnicos" nav={navigateClient} cur={currentClientTab} color="#52ffac" />
+                    <STile tab="ai" icon={BrainCircuit} label="Diagnóstico" nav={navigateClient} cur={currentClientTab} color="#52ffac" />
+                    <STile tab="quotes" icon={FileCheck2} label="Preventivos" nav={navigateClient} cur={currentClientTab} />
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5 mb-1.5">
+                    <STile tab="inventory" icon={Package} label="Repuestos" nav={navigateClient} cur={currentClientTab} />
+                    <STile tab="warranties" icon={ShieldCheck} label="Garantías" nav={navigateClient} cur={currentClientTab} />
+                    <STile tab="audit" icon={FileText} label="Bitácora" nav={navigateClient} cur={currentClientTab} />
+                    <STile tab="chat" icon={MessageSquare} label="Mensajes" nav={navigateClient} cur={currentClientTab} />
+                  </div>
+                </>
+              )}
+              {role === 'client' && !isFleetCoordinator && !isBuildingCoordinator && (
+                <>
+                  <div className="grid grid-cols-4 gap-1.5 mb-1.5">
+                    <STile tab="dashboard" icon={LayoutDashboard} label="Equipos" nav={navigateClient} cur={currentClientTab} />
+                    <STile tab="team" icon={Users} label="Personal" nav={navigateClient} cur={currentClientTab} color="#52ffac" />
+                    <STile tab="ai" icon={BrainCircuit} label="Diagnóstico" nav={navigateClient} cur={currentClientTab} color="#52ffac" />
+                    <STile tab="warranties" icon={ShieldCheck} label="Garantías" nav={navigateClient} cur={currentClientTab} />
                   </div>
                   <div className="grid grid-cols-4 gap-1.5 mb-1.5">
                     <STile tab="quotes" icon={FileCheck2} label="Contratos" nav={navigateClient} cur={currentClientTab} />
                     {canAccessInventory && <STile tab="inventory" icon={Package} label="Repuestos" nav={navigateClient} cur={currentClientTab} />}
-                    <STile tab="subscriptions" icon={Star} label="Membresía" nav={navigateClient} cur={currentClientTab} color="#f59e0b" />
-                    <STile tab="chat" icon={MessageSquare} label="Chat" nav={navigateClient} cur={currentClientTab} />
+                    <STile tab="subscriptions" icon={Star} label="Mi Plan" nav={navigateClient} cur={currentClientTab} color="#f59e0b" />
+                    <STile tab="chat" icon={MessageSquare} label="Mensajes" nav={navigateClient} cur={currentClientTab} />
                   </div>
                   <div className="grid grid-cols-4 gap-1.5 mb-1.5">
-                    {canAccessFleet && <STile tab="fleet" icon={Globe} label="Flota B2B" nav={navigateClient} cur={currentClientTab} />}
-                    {canAccessAudit && <STile tab="audit" icon={FileText} label="Auditoría" nav={navigateClient} cur={currentClientTab} />}
-                    {isEnterprise && <STile tab="team" icon={Users} label="Equipo" nav={navigateClient} cur={currentClientTab} />}
-                    <STile tab="settings" icon={Settings} label="Config." nav={navigateClient} cur={currentClientTab} />
+                    {canAccessFleet && <STile tab="fleet" icon={Globe} label="Mi Flota" nav={navigateClient} cur={currentClientTab} />}
+                    {canAccessAudit && <STile tab="audit" icon={FileText} label="Combustible" nav={navigateClient} cur={currentClientTab} />}
+                    <STile tab="marketplace" icon={Store} label="Técnicos" nav={navigateClient} cur={currentClientTab} />
+                    <STile tab="settings" icon={Settings} label="Ajustes" nav={navigateClient} cur={currentClientTab} />
                   </div>
                 </>
               )}
@@ -388,20 +483,21 @@ export default function DashboardLayout({
                 <>
                   <div className="grid grid-cols-4 gap-1.5 mb-1.5">
                     <STile tab="received" icon={Inbox} label="Bandeja" nav={navigateTech} cur={currentTechTab} />
-                    <STile tab="bidding_market" icon={Layers} label="Bolsa" nav={navigateTech} cur={currentTechTab} />
+                    <STile tab="bidding_market" icon={Layers} label="Trabajos" nav={navigateTech} cur={currentTechTab} />
                     <STile tab="agenda" icon={CalendarDays} label="Agenda" nav={navigateTech} cur={currentTechTab} />
                     <STile tab="wallet" icon={PieChart} label="Billetera" nav={navigateTech} cur={currentTechTab} color="#52ffac" />
                   </div>
                   <div className="grid grid-cols-4 gap-1.5 mb-1.5">
-                    <STile tab="loyalty" icon={Star} label="Fidelidad" nav={navigateTech} cur={currentTechTab} color="#f59e0b" />
+                    <STile tab="loyalty" icon={Star} label="Beneficios" nav={navigateTech} cur={currentTechTab} color="#f59e0b" />
                     <STile tab="inventory" icon={Package} label="Inventario" nav={navigateTech} cur={currentTechTab} />
-                    <STile tab="mantech_id" icon={ShieldCheck} label="ID" nav={navigateTech} cur={currentTechTab} />
+                    <STile tab="mantech_id" icon={ShieldCheck} label="Carnet QR" nav={navigateTech} cur={currentTechTab} />
                     <STile tab="community" icon={Users} label="Comunidad" nav={navigateTech} cur={currentTechTab} />
                   </div>
                   <div className="grid grid-cols-4 gap-1.5 mb-1.5">
-                    <STile tab="chat" icon={MessageSquare} label="Chat" nav={navigateTech} cur={currentTechTab} />
+                    <STile tab="chat" icon={MessageSquare} label="Mensajes" nav={navigateTech} cur={currentTechTab} />
+                    <STile tab="subscriptions" icon={Zap} label="Mi Plan" nav={navigateTech} cur={currentTechTab} color="#f59e0b" />
                     <STile tab="profile" icon={User} label="Perfil" nav={navigateTech} cur={currentTechTab} />
-                    <STile tab="settings" icon={Settings} label="Config." nav={navigateTech} cur={currentTechTab} />
+                    <STile tab="settings" icon={Settings} label="Ajustes" nav={navigateTech} cur={currentTechTab} />
                   </div>
                 </>
               )}
@@ -410,9 +506,9 @@ export default function DashboardLayout({
                   <div className="grid grid-cols-5 gap-1.5 mb-1.5">
                     <STile tab="cockpit" icon={Truck} label="Cabina" nav={navigateDriver} cur={currentDriverTab} color="#f59e0b" />
                     <STile tab="routes" icon={Navigation} label="Ruta GPS" nav={navigateDriver} cur={currentDriverTab} color="#00d2ff" />
-                    <STile tab="inspection" icon={ClipboardCheck} label="Pre-Viaje" nav={navigateDriver} cur={currentDriverTab} color="#818cf8" />
+                    <STile tab="inspection" icon={ClipboardCheck} label="Inspección" nav={navigateDriver} cur={currentDriverTab} color="#818cf8" />
                     <STile tab="fuel" icon={Fuel} label="Combustible" nav={navigateDriver} cur={currentDriverTab} color="#52ffac" />
-                    <STile tab="chat" icon={MessageSquare} label="Chat" nav={navigateDriver} cur={currentDriverTab} />
+                    <STile tab="chat" icon={MessageSquare} label="Despacho" nav={navigateDriver} cur={currentDriverTab} />
                   </div>
                 </>
               )}
@@ -420,27 +516,31 @@ export default function DashboardLayout({
                 <>
                   <div className="grid grid-cols-4 gap-1.5 mb-1.5">
                     <STile tab="finance" icon={DollarSign} label="Finanzas" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
-                    <STile tab="validator" icon={ShieldCheck} label="Validador" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
-                    <STile tab="audit" icon={FileText} label="Logs" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
-                    <STile tab="tickets" icon={MessageSquare} label="Tickets" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
+                    <STile tab="validator" icon={ShieldCheck} label="Validación" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
+                    <STile tab="audit" icon={FileText} label="Historial" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
+                    <STile tab="tickets" icon={MessageSquare} label="Soporte" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
                   </div>
                   <div className="grid grid-cols-4 gap-1.5 mb-1.5">
-                    <STile tab="ads" icon={Zap} label="Marketing" nav={navigateAdmin} cur={currentAdminTab} color="#f59e0b" />
-                    <STile tab="logistics" icon={Truck} label="Logística" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
+                    <STile tab="ads" icon={Zap} label="Anuncios" nav={navigateAdmin} cur={currentAdminTab} color="#f59e0b" />
+                    <STile tab="logistics" icon={Truck} label="Flotas" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
                     <STile tab="users" icon={Users} label="Usuarios" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
                     <STile tab="inventory" icon={Package} label="Inventario" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
                   </div>
                   <div className="grid grid-cols-4 gap-1.5 mb-1.5">
                     <STile tab="alerts" icon={BellRing} label="Alertas" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
-                    <STile tab="settings" icon={Settings} label="Config." nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
+                    <STile tab="settings" icon={Settings} label="Ajustes" nav={navigateAdmin} cur={currentAdminTab} color="#e11d48" />
                   </div>
                 </>
               )}
             </div>
 
-            {/* Logout */}
-            <div className="mx-3 mb-2 mt-1 border-t border-white/5 pt-2" style={{ paddingBottom: 'max(env(safe-area-inset-bottom),1rem)' }}>
-              <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-[#474556] hover:text-rose-400 hover:bg-rose-500/5 transition-all">
+            {/* Support & Logout */}
+            <div className="mx-3 mb-2 mt-1 border-t border-white/5 pt-2 space-y-1" style={{ paddingBottom: 'max(env(safe-area-inset-bottom),1rem)' }}>
+              <button onClick={() => { setIsMobileMenuOpen(false); onShowSupport(); }} className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-[#8a879d] hover:text-white hover:bg-white/5 transition-all">
+                <div className="flex items-center gap-3"><HelpCircle className="w-4 h-4 text-[#5d3cfe]" /><span className="text-[11px] font-black uppercase tracking-widest">Centro de Ayuda y Soporte</span></div>
+                <ChevronRight className="w-4 h-4 opacity-30" />
+              </button>
+              <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-[#474556] hover:text-rose-400 hover:bg-rose-500/5 transition-all">
                 <div className="flex items-center gap-3"><LogOut className="w-4 h-4" /><span className="text-[11px] font-black uppercase tracking-widest">{t('exit', 'Cerrar Sesión')}</span></div>
                 <ChevronRight className="w-4 h-4 opacity-30" />
               </button>

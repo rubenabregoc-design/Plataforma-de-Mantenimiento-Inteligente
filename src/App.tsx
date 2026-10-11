@@ -14,6 +14,8 @@ import { verifyPaymentOrder } from './services/api';
 
 // Router & Components
 import AppRouter from './routes/AppRouter';
+import InAppLogConsole from './components/InAppLogConsole';
+import FirstLoginSecurityModal from './components/FirstLoginSecurityModal';
 import NotificationCenter from './components/NotificationCenter';
 import SupportModal from './components/SupportModal';
 import Chatbot247 from './components/Chatbot247';
@@ -70,7 +72,13 @@ export default function App() {
 
   const [ratingVal, setRatingVal] = useState(5);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [manualSecurityModalOpen, setManualSecurityModalOpen] = useState(false);
 
+  useEffect(() => {
+    const handleOpenSecurity = () => setManualSecurityModalOpen(true);
+    window.addEventListener('mantech-open-security', handleOpenSecurity);
+    return () => window.removeEventListener('mantech-open-security', handleOpenSecurity);
+  }, []);
 
   // Listen for notifications unread count
   useEffect(() => {
@@ -88,7 +96,7 @@ export default function App() {
     switch(planId) {
       case 'plan-enterprise': return { maxAssets: 9999, fleet: 'full', diag: 'auto', history: 'unlimited' };
       case 'plan-pro': return { maxAssets: 25, fleet: 'lite', diag: 'assisted', history: 50 };
-      case 'plan-basic': return { maxAssets: 5, fleet: 'none', diag: 'manual', history: 10 };
+      case 'plan-basic': return { maxAssets: 10, fleet: 'none', diag: 'manual', history: 10 };
       case 'plan-free':
       default: return { maxAssets: 5, fleet: 'none', diag: 'manual', history: 5 };
     }
@@ -109,6 +117,7 @@ export default function App() {
 
     // Limpieza profunda de datos para Firebase (Elimina undefined)
     const cleanData = cleanForFirebase(data);
+    const effectiveOwnerId = userData?.companyId || user.uid;
 
     try {
       let targetAssetId = activeData.asset ? activeData.asset.id : null;
@@ -116,7 +125,7 @@ export default function App() {
         await AssetService.updateAsset(activeData.asset.id, cleanData);
         toast.success("Equipo actualizado.");
       } else {
-        const docRef = await AssetService.createAsset({ ...cleanData, clientId: user.uid, registeredAt: new Date().toISOString() });
+        const docRef = await AssetService.createAsset({ ...cleanData, clientId: effectiveOwnerId, registeredAt: new Date().toISOString() });
         targetAssetId = docRef.id;
         toast.success("Equipo registrado.");
       }
@@ -127,7 +136,7 @@ export default function App() {
         await setDoc(doc(db, "reminders", `rem_${targetAssetId}`), {
           id: `rem_${targetAssetId}`,
           assetId: targetAssetId,
-          clientId: user.uid,
+          clientId: effectiveOwnerId,
           title: `Mantenimiento Preventivo: ${cleanData.name || 'Activo'}`,
           description: `Servicio programado para ${cleanData.name || 'unidad'} ${cleanData.licensePlate ? `(Placa: ${cleanData.licensePlate})` : ''}`,
           dueDate: cleanData.nextMaintenanceDate,
@@ -233,6 +242,19 @@ export default function App() {
         {...business}
         {...gps}
       />
+
+      <InAppLogConsole />
+
+      {isLoggedIn && user && (role === 'driver' || !!userData?.companyId || userData?.mustChangePassword === true) && (userData?.mustChangePassword === true || manualSecurityModalOpen) && (
+        <FirstLoginSecurityModal
+          userUid={user.uid}
+          userName={loggedInName || 'Usuario'}
+          userEmail={loggedInEmail || user.email || ''}
+          isMandatory={userData?.mustChangePassword === true}
+          onComplete={() => setManualSecurityModalOpen(false)}
+          onClose={() => setManualSecurityModalOpen(false)}
+        />
+      )}
 
       <AnimatePresence>
         {modals.asset && (
@@ -340,15 +362,15 @@ export default function App() {
         )}
 
         {modals.payment && (
-          <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl overflow-y-auto">
-             <div className="w-full max-w-[95%] sm:max-w-lg bg-[#121317] border border-[#2a2b2f] rounded-[1.5rem] sm:rounded-[3rem] p-6 sm:p-10 space-y-6 sm:space-y-8 shadow-2xl animate-fade-in-up relative my-auto">
-                <button onClick={() => closeModal('payment')} className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2.5 sm:p-3 bg-white/5 rounded-2xl hover:bg-rose-600/20 text-white transition-all z-50"><X className="w-4 h-4 sm:w-5 sm:h-5" /></button>
-                <div className="text-center space-y-3 pt-4 sm:pt-0">
-                   <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#52ffac]/10 rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto text-[#52ffac] border border-[#52ffac]/20 shadow-lg shadow-[#52ffac]/10">
+          <div className="fixed inset-0 z-[600] flex flex-col justify-end sm:justify-center sm:items-center p-0 sm:p-4 bg-black/90 backdrop-blur-xl overflow-y-auto">
+             <div className="w-full h-full sm:h-auto sm:max-w-lg sm:max-h-[92vh] bg-[#0d0e12] sm:bg-[#121317] sm:border border-[#2a2b2f] rounded-none sm:rounded-3xl p-5 sm:p-8 space-y-5 sm:space-y-6 shadow-2xl animate-fade-in-up relative my-auto pt-[max(env(safe-area-inset-top),1rem)] pb-[max(env(safe-area-inset-bottom),1.5rem)] overflow-y-auto">
+                <button onClick={() => closeModal('payment')} className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2.5 bg-white/5 rounded-xl hover:bg-rose-600 text-white transition-all z-50 active:scale-95"><X className="w-4 h-4 sm:w-5 sm:h-5" /></button>
+                <div className="text-center space-y-2.5 pt-4 sm:pt-0">
+                   <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#52ffac]/10 rounded-2xl flex items-center justify-center mx-auto text-[#52ffac] border border-[#52ffac]/20 shadow-lg shadow-[#52ffac]/10">
                       <CreditCard className="w-6 h-6 sm:w-8 sm:h-8" />
                    </div>
-                   <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tighter italic">Checkout Seguro</h3>
-                   <p className="text-[8px] sm:text-[10px] text-[#474556] font-black uppercase tracking-[0.3em]">Procesamiento Encriptado AES-256</p>
+                   <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">Checkout Seguro</h3>
+                   <p className="text-[8px] sm:text-[10px] text-[#8a879d] font-black uppercase tracking-[0.3em]">Procesamiento Encriptado AES-256</p>
                 </div>
 
                 <div className="bg-white/5 border border-white/10 p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] space-y-4">

@@ -294,146 +294,198 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
   return (
     <div className="min-h-screen bg-[#0d0e12] text-[#e3e2e8] font-sans selection:bg-[#5d3cfe] selection:text-white overflow-x-hidden">
 
-      {/* 1. NAVEGACIÓN FLOTANTE */}
-      <nav className="fixed top-0 left-0 right-0 z-[100] px-4 sm:px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between bg-[#121317]/80 backdrop-blur-xl border border-white/5 px-4 sm:px-8 py-2.5 sm:py-3 rounded-full shadow-2xl">
-          <Logo size="sm" />
+      {/* 1. NAVEGACIÓN SEPARADA MÓVIL vs WEB ESCRITORIO */}
+      <nav className="fixed top-0 md:top-6 left-0 md:left-1/2 md:-translate-x-1/2 w-full md:w-[calc(100%-3rem)] md:max-w-7xl z-[100] bg-[#0d0e12]/95 md:bg-[#121317]/90 backdrop-blur-2xl border-b md:border border-white/10 md:rounded-[2rem] px-4 sm:px-6 md:px-10 py-3 md:py-4 pt-[max(env(safe-area-inset-top),0.75rem)] md:pt-4 shadow-2xl transition-all">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Logo size="md" />
           <div className="hidden lg:flex items-center gap-10">
-            <button onClick={() => handleFooterLinkClick('Logística')} className="text-[10px] font-black uppercase tracking-widest text-[#c8c4d9] hover:text-[#5d3cfe] transition-all">Logística</button>
-            <button onClick={() => handleFooterLinkClick('Auditoría')} className="text-[10px] font-black uppercase tracking-widest text-[#c8c4d9] hover:text-[#5d3cfe] transition-all">Auditoría</button>
-            <button onClick={() => handleFooterLinkClick('B2B')} className="text-[10px] font-black uppercase tracking-widest text-[#c8c4d9] hover:text-[#5d3cfe] transition-all">B2B</button>
-            <button onClick={() => handleFooterLinkClick('Seguridad')} className="text-[10px] font-black uppercase tracking-widest text-[#c8c4d9] hover:text-[#5d3cfe] transition-all">Seguridad</button>
+            <button onClick={() => handleFooterLinkClick('Logística')} className="text-xs font-black uppercase tracking-widest text-[#c8c4d9] hover:text-[#5d3cfe] transition-all">Logística</button>
+            <button onClick={() => handleFooterLinkClick('Auditoría')} className="text-xs font-black uppercase tracking-widest text-[#c8c4d9] hover:text-[#5d3cfe] transition-all">Auditoría</button>
+            <button onClick={() => handleFooterLinkClick('B2B')} className="text-xs font-black uppercase tracking-widest text-[#c8c4d9] hover:text-[#5d3cfe] transition-all">B2B</button>
+            <button onClick={() => handleFooterLinkClick('Seguridad')} className="text-xs font-black uppercase tracking-widest text-[#c8c4d9] hover:text-[#5d3cfe] transition-all">Seguridad</button>
           </div>
           <button
             onClick={onStart}
-            className="px-5 sm:px-6 py-2 sm:py-2.5 bg-[#5d3cfe] text-white rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#5d3cfe]/20 hover:brightness-110 active:scale-95 transition-all"
+            className="px-4 py-2 md:px-7 md:py-3 bg-gradient-to-r from-[#5d3cfe] to-[#4c2bd6] text-white rounded-xl md:rounded-full text-[11px] md:text-xs font-black uppercase tracking-widest shadow-xl shadow-[#5d3cfe]/25 hover:brightness-110 active:scale-95 transition-all flex items-center gap-2"
           >
-            Ingresar ➔
+            <span>Ingresar</span>
+            <ArrowRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
           </button>
         </div>
       </nav>
 
-      {/* 2. HERO SECTION */}
-      <section className="relative pt-20 sm:pt-28 pb-16 sm:pb-24 px-6 sm:px-8 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none">
-           <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-[#5d3cfe]/10 rounded-full blur-[120px] animate-pulse"></div>
-        </div>
-
-        <div className="max-w-6xl mx-auto relative z-10 text-center space-y-4 sm:space-y-6">
-          <div className="inline-flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-full backdrop-blur-md">
-             <div className="w-2 h-2 rounded-full bg-[#52ffac] animate-pulse"></div>
-             <span className="text-[8px] sm:text-[9px] font-black text-white uppercase tracking-widest">Red de Mantenimiento #1 de Panamá</span>
+      {/* 2. HERO SECTION (COMPACTO EN MÓVIL, AMPLIO EN WEB) */}
+      <section className="relative pt-24 sm:pt-32 md:pt-40 pb-14 sm:pb-20 md:pb-28 px-4 sm:px-8 overflow-hidden">
+        <div className="max-w-6xl mx-auto relative z-10 text-center space-y-5 sm:space-y-7 md:space-y-8">
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 md:px-5 md:py-2 bg-white/[0.05] border border-white/10 rounded-full backdrop-blur-md">
+             <span className="w-2 h-2 rounded-full bg-[#52ffac] animate-pulse"></span>
+             <span className="text-[9px] sm:text-[10px] md:text-xs font-black text-white/90 uppercase tracking-widest">Infraestructura Industrial de Mantenimiento • Panamá</span>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white tracking-tighter leading-[1] sm:leading-[0.9] uppercase">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tight md:tracking-tighter leading-[1.05] md:leading-[0.95] uppercase">
             Todo Bajo Control <br />
-            <span className="text-[#5d3cfe] block mt-2">Casa, PH y Empresa.</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5d3cfe] via-[#7d61ff] to-[#52ffac] block mt-1 md:mt-2">Casa, PH y Flotas.</span>
           </h1>
 
-          <p className="max-w-3xl mx-auto text-[#c8c4d9] text-sm sm:text-base md:text-2xl font-medium leading-relaxed opacity-95">
-            La infraestructura de servicios #1 de Panamá para el hogar, la gran empresa y centros logísticos. Gestión inteligente de activos con respaldo certificado.
+          <p className="max-w-3xl mx-auto text-[#c8c4d9] text-xs sm:text-base md:text-xl lg:text-2xl font-medium leading-relaxed opacity-95">
+            La infraestructura de servicios #1 de Panamá para el hogar, la gran empresa y centros logísticos. Gestión inteligente de activos y flotas con respaldo certificado.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5">
-             <button onClick={onStart} className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-[#5d3cfe] text-white rounded-[1.5rem] sm:rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4">
-               Solicitar Soporte Ahora <ArrowRight className="w-4 h-4" />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5 pt-2">
+             <button onClick={onStart} className="w-full sm:w-auto px-8 md:px-10 py-3.5 sm:py-4 md:py-5 bg-gradient-to-r from-[#5d3cfe] to-[#4c2bd6] text-white rounded-xl sm:rounded-2xl md:rounded-[2rem] text-xs md:text-sm font-black uppercase tracking-widest shadow-2xl shadow-[#5d3cfe]/30 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3">
+               <span>Solicitar Soporte Ahora</span>
+               <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
              </button>
-             <button onClick={onWatchDemo} className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-[#121317] border border-white/10 text-white rounded-[1.5rem] sm:rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all flex items-center justify-center gap-4">
-               <PlayCircle className="w-4 h-4" /> Ver Demo
+             <button onClick={onWatchDemo} className="w-full sm:w-auto px-8 md:px-10 py-3.5 sm:py-4 md:py-5 bg-[#14151b] border border-white/10 text-white rounded-xl sm:rounded-2xl md:rounded-[2rem] text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all flex items-center justify-center gap-3">
+               <PlayCircle className="w-4 h-4 md:w-5 md:h-5" />
+               <span>Ver Demo Interactiva</span>
              </button>
           </div>
         </div>
       </section>
 
       {/* 2.5 BANNER PUBLICITARIO / PROMO */}
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 mb-16 sm:mb-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 mb-12 sm:mb-20">
          <MarketingBanner placement="landing" />
       </div>
 
-      {/* --- TÚNELES DE CONVERSIÓN INDUSTRIAL (V6.3.0) --- */}
-      <section className="py-32 px-8 bg-black/40">
-        <div className="max-w-7xl mx-auto mb-20 text-center space-y-6">
-           <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-[0.4em]">Optimización Activa</p>
-           <h2 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter leading-tight">Herramientas de <span className="text-[#52ffac]">Ingeniería Viva</span></h2>
-           <p className="max-w-3xl mx-auto text-[#c8c4d9] text-base md:text-xl font-medium leading-relaxed opacity-60">Utilice nuestros motores de lógica industrial para diagnosticar fallas, calcular su retorno de inversión y digitalizar la protección de sus activos en tiempo real.</p>
+      {/* --- TÚNELES DE CONVERSIÓN INDUSTRIAL ELEGANTE --- */}
+      <section className="py-14 sm:py-24 px-4 sm:px-8 bg-black/30 border-t border-white/[0.06]">
+        <div className="max-w-6xl mx-auto mb-10 sm:mb-16 text-center space-y-3">
+           <span className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-[0.3em] bg-[#5d3cfe]/10 px-3 py-1 rounded-full border border-[#5d3cfe]/20">Optimización Activa</span>
+           <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-white uppercase tracking-tight">Herramientas de <span className="text-[#52ffac]">Ingeniería Viva</span></h2>
+           <p className="max-w-2xl mx-auto text-[#c8c4d9] text-xs sm:text-sm font-medium leading-relaxed opacity-75">Diagnostique fallas técnicas, calcule su retorno de inversión y digitalice la protección de sus equipos en tiempo real.</p>
         </div>
 
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
 
            {/* TÚNEL 1: DIAGNÓSTICO LÓGICO */}
-           <div className="bg-[#121317] border border-white/5 rounded-[3rem] p-10 flex flex-col justify-between shadow-2xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#5d3cfe]/5 blur-2xl rounded-full -mr-10 -mt-10"></div>
-              <div className="space-y-6 relative z-10">
+           <div className="bg-[#131418] border border-white/[0.08] rounded-2xl sm:rounded-3xl p-5 sm:p-7 flex flex-col justify-between shadow-xl relative overflow-hidden group hover:border-white/20 transition-all">
+              <div className="space-y-5">
                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-[#5d3cfe]/10 rounded-2xl"><Search className="w-5 h-5 text-[#5d3cfe]" /></div>
-                    <h4 className="text-sm font-black text-white uppercase tracking-widest">Protocolo de Diagnóstico</h4>
-                 </div>
-                 <div className="space-y-4">
-                    <select value={diagCategory} onChange={(e) => setDiagCategory(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:border-[#5d3cfe]">
-                       <option value="tecnico_ac">Sistemas HVAC</option>
-                       <option value="plomero">Sistemas Hidráulicos</option>
-                    </select>
-                    <div className="space-y-2">
-                       {diagData[diagCategory].symptoms.map((s: any, i: number) => (
-                         <button key={i} onClick={() => setDiagSymptom(s.r)} className={`w-full text-left p-4 rounded-2xl border transition-all text-[10px] font-bold uppercase tracking-tight ${diagSymptom === s.r ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-lg' : 'bg-white/5 border-white/5 text-[#474556] hover:border-white/20'}`}>
-                           {s.s}
-                         </button>
-                       ))}
+                    <div className="p-2.5 bg-[#5d3cfe]/15 rounded-xl border border-[#5d3cfe]/20 text-[#5d3cfe]"><Search className="w-4 h-4" /></div>
+                    <div>
+                      <h4 className="text-xs font-black text-white uppercase tracking-wider">Protocolo de Diagnóstico</h4>
+                      <p className="text-[9px] text-[#8a879d] font-bold">Selección técnica asistida</p>
                     </div>
                  </div>
+
+                 {/* SELECTOR SEGMENTADO EN VEZ DE SELECT HTML NATIVO */}
+                 <div className="grid grid-cols-2 gap-1.5 p-1 bg-black/50 border border-white/10 rounded-xl">
+                   <button
+                     type="button"
+                     onClick={() => { setDiagCategory('tecnico_ac'); setDiagSymptom(''); }}
+                     className={`py-2 px-2 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                       diagCategory === 'tecnico_ac'
+                         ? 'bg-[#5d3cfe] text-white shadow-md'
+                         : 'text-[#8a879d] hover:text-white'
+                     }`}
+                   >
+                     <Wind className="w-3.5 h-3.5" />
+                     <span>HVAC</span>
+                   </button>
+                   <button
+                     type="button"
+                     onClick={() => { setDiagCategory('plomero'); setDiagSymptom(''); }}
+                     className={`py-2 px-2 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                       diagCategory === 'plomero'
+                         ? 'bg-[#5d3cfe] text-white shadow-md'
+                         : 'text-[#8a879d] hover:text-white'
+                     }`}
+                   >
+                     <Droplets className="w-3.5 h-3.5" />
+                     <span>Hidráulicos</span>
+                   </button>
+                 </div>
+
+                 <div className="space-y-2">
+                    <span className="text-[9px] font-black text-[#8a879d] uppercase tracking-wider">Síntoma reportado:</span>
+                    {diagData[diagCategory].symptoms.map((s: any, i: number) => (
+                      <button
+                        key={i}
+                        onClick={() => setDiagSymptom(s.r)}
+                        className={`w-full text-left p-3 rounded-xl border transition-all text-[11px] font-bold leading-snug ${
+                          diagSymptom === s.r
+                            ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-md shadow-[#5d3cfe]/25'
+                            : 'bg-white/[0.03] border-white/[0.08] text-[#c8c4d9] hover:border-white/20'
+                        }`}
+                      >
+                        {s.s}
+                      </button>
+                    ))}
+                 </div>
               </div>
-              <div className="mt-8 pt-8 border-t border-white/5 space-y-6">
-                 <p className="text-[10px] text-[#c8c4d9] font-medium leading-relaxed italic">{diagSymptom || 'Seleccione un síntoma para ver la recomendación técnica de ingeniería.'}</p>
-                 <button onClick={() => handleIntention('diag_request', { cat: diagCategory })} className="w-full py-4 bg-[#5d3cfe] text-white rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-xl hover:scale-105 transition-all">Solicitar Especialista Certificado</button>
+
+              <div className="mt-6 pt-5 border-t border-white/[0.08] space-y-4">
+                 <div className="p-3 bg-black/40 rounded-xl border border-white/5 min-h-[56px] flex items-center">
+                    <p className="text-[11px] text-[#52ffac] font-medium leading-relaxed">
+                      {diagSymptom ? `💡 ${diagSymptom}` : '👉 Seleccione un síntoma arriba para ver el diagnóstico técnico.'}
+                    </p>
+                 </div>
+                 <button onClick={() => handleIntention('diag_request', { cat: diagCategory })} className="w-full py-3.5 bg-gradient-to-r from-[#5d3cfe] to-[#4c2bd6] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#5d3cfe]/25 hover:brightness-110 active:scale-95 transition-all">
+                   Solicitar Especialista Certificado
+                 </button>
               </div>
            </div>
 
            {/* TÚNEL 2: CALCULADORA ROI */}
-           <div className="bg-[#121317] border border-white/5 rounded-[3rem] p-10 flex flex-col justify-between shadow-2xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#52ffac]/5 blur-2xl rounded-full -mr-10 -mt-10"></div>
-              <div className="space-y-8 relative z-10">
+           <div className="bg-[#131418] border border-white/[0.08] rounded-2xl sm:rounded-3xl p-5 sm:p-7 flex flex-col justify-between shadow-xl relative overflow-hidden group hover:border-white/20 transition-all">
+              <div className="space-y-6">
                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-[#52ffac]/10 rounded-2xl"><PieChart className="w-5 h-5 text-[#52ffac]" /></div>
-                    <h4 className="text-sm font-black text-white uppercase tracking-widest">Calculadora ROI 2026</h4>
-                 </div>
-                 <div className="space-y-6">
-                    <div className="space-y-3">
-                       <div className="flex justify-between text-[9px] font-black uppercase text-[#474556] tracking-widest">
-                          <span>Unidades / Activos</span>
-                          <span className="text-[#52ffac]">{numAssets}</span>
-                       </div>
-                       <input type="range" min="1" max="100" value={numAssets} onChange={(e) => setNumAssets(Number(e.target.value))} className="w-full h-1.5 bg-white/5 rounded-lg appearance-none cursor-pointer accent-[#52ffac]" />
+                    <div className="p-2.5 bg-[#52ffac]/15 rounded-xl border border-[#52ffac]/20 text-[#52ffac]"><PieChart className="w-4 h-4" /></div>
+                    <div>
+                      <h4 className="text-xs font-black text-white uppercase tracking-wider">Calculadora ROI 2026</h4>
+                      <p className="text-[9px] text-[#8a879d] font-bold">Retorno de inversión preventiva</p>
                     </div>
-                    <div className="p-6 bg-black/40 rounded-3xl border border-white/5 text-center">
-                       <p className="text-[8px] font-black text-[#474556] uppercase tracking-[0.4em] mb-2">Ahorro Anual Estimado</p>
-                       <p className="text-5xl font-black text-white tracking-tighter italic leading-none">${calculateROI().toLocaleString()}</p>
+                 </div>
+
+                 <div className="space-y-4">
+                    <div className="space-y-2">
+                       <div className="flex justify-between text-[10px] font-black uppercase tracking-wider">
+                          <span className="text-[#8a879d]">Unidades / Activos</span>
+                          <span className="text-[#52ffac] font-mono text-sm font-black">{numAssets}</span>
+                       </div>
+                       <input type="range" min="1" max="100" value={numAssets} onChange={(e) => setNumAssets(Number(e.target.value))} className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#52ffac]" />
+                    </div>
+
+                    <div className="p-5 bg-black/40 rounded-2xl border border-white/5 text-center">
+                       <p className="text-[8px] font-black text-[#8a879d] uppercase tracking-[0.3em] mb-1">Ahorro Anual Estimado</p>
+                       <p className="text-3xl sm:text-4xl font-black text-[#52ffac] font-mono tracking-tight leading-none">${calculateROI().toLocaleString()}</p>
                     </div>
                  </div>
               </div>
-              <div className="mt-8 space-y-4">
-                 <p className="text-[9px] text-[#8a879d] leading-relaxed text-center">Basado en la reducción de paros técnicos y costos de emergencia en Panamá.</p>
-                 <button onClick={() => handleIntention('plan_upgrade', {})} className="w-full py-4 bg-[#52ffac] text-black rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-xl hover:scale-105 transition-all">Activar Plan Enterprise</button>
+
+              <div className="mt-6 pt-5 border-t border-white/[0.08] space-y-4">
+                 <p className="text-[9px] text-[#8a879d] text-center leading-relaxed">Basado en la reducción de paros técnicos y costos de emergencia en Panamá.</p>
+                 <button onClick={() => handleIntention('plan_upgrade', {})} className="w-full py-3.5 bg-[#52ffac] text-[#0d0e12] rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#52ffac]/20 hover:brightness-110 active:scale-95 transition-all">
+                   Activar Plan Enterprise
+                 </button>
               </div>
            </div>
 
            {/* TÚNEL 3: BÓVEDA DE GARANTÍAS */}
-           <div className="bg-[#121317] border border-white/5 rounded-[3rem] p-10 flex flex-col justify-between shadow-2xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-2xl rounded-full -mr-10 -mt-10"></div>
-              <div className="space-y-6 relative z-10">
+           <div className="bg-[#131418] border border-white/[0.08] rounded-2xl sm:rounded-3xl p-5 sm:p-7 flex flex-col justify-between shadow-xl relative overflow-hidden group hover:border-white/20 transition-all">
+              <div className="space-y-5">
                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-amber-500/10 rounded-2xl"><ShieldCheck className="w-5 h-5 text-amber-500" /></div>
-                    <h4 className="text-sm font-black text-white uppercase tracking-widest">Bóveda de Garantías</h4>
-                 </div>
-                 <div className="bg-black/60 aspect-video rounded-3xl border border-white/5 flex items-center justify-center relative overflow-hidden">
-                    <div className="absolute inset-0 opacity-10 flex flex-wrap gap-2 p-4">
-                       {[...Array(20)].map((_, i) => <FileText key={i} className="w-4 h-4" />)}
+                    <div className="p-2.5 bg-amber-500/15 rounded-xl border border-amber-500/20 text-amber-500"><ShieldCheck className="w-4 h-4" /></div>
+                    <div>
+                      <h4 className="text-xs font-black text-white uppercase tracking-wider">Bóveda de Garantías</h4>
+                      <p className="text-[9px] text-[#8a879d] font-bold">Respaldo digital sin pérdidas</p>
                     </div>
-                    <Lock className="w-12 h-12 text-amber-500 relative z-10 animate-pulse" />
                  </div>
-                 <h3 className="text-xl font-black text-white uppercase tracking-tighter italic">¿Facturas perdidas? <br /><span className="text-amber-500">Nunca más.</span></h3>
-                 <p className="text-[10px] text-[#8a879d] leading-relaxed">Suba sus facturas de Do It Center, Cochez o Panafoto y reciba alertas antes de que expiren. Es gratis.</p>
+
+                 <div className="bg-black/50 py-6 px-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center text-center space-y-2">
+                    <Lock className="w-8 h-8 text-amber-400 animate-pulse" />
+                    <p className="text-xs font-black text-white uppercase tracking-wider">Cero Facturas Perdidas</p>
+                    <p className="text-[10px] text-[#8a879d] max-w-[200px] leading-relaxed">Suba facturas de comercios en Panamá y reciba avisos antes del vencimiento.</p>
+                 </div>
               </div>
-              <button onClick={() => handleIntention('warranty_vault', {})} className="w-full py-4 bg-white text-black rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-xl hover:scale-105 transition-all mt-8">Activar mi Bóveda Gratis</button>
+
+              <div className="mt-6 pt-5 border-t border-white/[0.08]">
+                 <button onClick={() => handleIntention('warranty_vault', {})} className="w-full py-3.5 bg-white text-black rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-[#e3e2e8] active:scale-95 transition-all">
+                   Activar Bóveda Gratis
+                 </button>
+              </div>
            </div>
 
         </div>
@@ -466,32 +518,32 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
       </section>
 
       {/* 4. CONSOLA DE SOLUCIONES (THE HOW) */}
-      <section id="soluciones" className="py-32 px-8 bg-gradient-to-b from-[#0d0e12] to-[#121317] scroll-mt-32">
-        <div className="max-w-7xl mx-auto space-y-20">
-          <div className="text-center space-y-6">
+      <section id="soluciones" className="py-16 sm:py-28 px-4 sm:px-8 bg-gradient-to-b from-[#0d0e12] to-[#121317] scroll-mt-24">
+        <div className="max-w-7xl mx-auto space-y-12 sm:space-y-20">
+          <div className="text-center space-y-4 sm:space-y-6">
              <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-[0.4em]">Ecosistema Maestro V4</p>
-             <h2 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter leading-tight">Ingeniería <span className="text-white/20">Aplicada</span></h2>
+             <h2 className="text-3xl sm:text-5xl md:text-7xl font-black text-white uppercase tracking-tighter leading-tight">Ingeniería <span className="text-white/20">Aplicada</span></h2>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-end">
-            <div className="lg:col-span-5 space-y-10 animate-fade-in" key={activeTab}>
-              <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 sm:gap-16 items-end">
+            <div className="lg:col-span-5 space-y-8 sm:space-y-10 animate-fade-in" key={activeTab}>
+              <div className="space-y-3 sm:space-y-4">
                 <div className="px-4 py-1.5 rounded-full border border-white/10 w-fit text-[9px] font-black uppercase tracking-widest" style={{ color: current.color, backgroundColor: `${current.color}10` }}>
                   {current.subtitle}
                 </div>
-                <h3 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter leading-none">{current.title}</h3>
-                <h4 className="text-sm font-black text-white uppercase tracking-[0.3em] opacity-40">{current.productiveMsg}</h4>
-                <p className="text-[#c8c4d9] text-xl font-medium leading-relaxed opacity-80">{current.description}</p>
+                <h3 className="text-3xl sm:text-4xl md:text-6xl font-black text-white uppercase tracking-tighter leading-none">{current.title}</h3>
+                <h4 className="text-xs sm:text-sm font-black text-white uppercase tracking-[0.3em] opacity-40">{current.productiveMsg}</h4>
+                <p className="text-[#c8c4d9] text-base sm:text-xl font-medium leading-relaxed opacity-80">{current.description}</p>
               </div>
-              <div className="space-y-6">
+              <div className="space-y-5 sm:space-y-6">
                  {current.features.map((f: any, i: number) => (
-                   <div key={i} className="flex gap-6 items-start group">
-                      <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                         <CheckCircle2 className="w-6 h-6" style={{ color: current.color }} />
+                   <div key={i} className="flex gap-4 sm:gap-6 items-start group">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                         <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: current.color }} />
                       </div>
                       <div>
-                         <h4 className="text-sm font-black text-white uppercase tracking-tight mb-1">{f.t}</h4>
-                         <p className="text-xs text-[#474556] font-bold leading-relaxed">{f.d}</p>
+                         <h4 className="text-xs sm:text-sm font-black text-white uppercase tracking-tight mb-1">{f.t}</h4>
+                         <p className="text-xs text-[#8a8799] sm:text-[#474556] font-medium sm:font-bold leading-relaxed">{f.d}</p>
                       </div>
                    </div>
                  ))}
@@ -499,24 +551,24 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
             </div>
 
             <div className="lg:col-span-7 relative animate-fade-in" key={`${activeTab}-img`}>
-               <div className="bg-[#121317] border border-white/5 rounded-[4rem] shadow-3xl overflow-hidden relative min-h-[500px] group/container">
+               <div className="bg-[#121317] border border-white/5 rounded-3xl sm:rounded-[3rem] shadow-2xl overflow-hidden relative min-h-[320px] sm:min-h-[500px] group/container">
                   <img
                     src={current.image}
-                    className="w-full h-full min-h-[500px] object-cover transition-all duration-1000 group-hover/container:scale-105"
+                    className="w-full h-full min-h-[320px] sm:min-h-[500px] object-cover transition-all duration-1000 group-hover/container:scale-105"
                     alt="Solution"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
 
-                  <div className="absolute bottom-8 left-8 bg-[#121317]/90 backdrop-blur-2xl p-6 rounded-[2.5rem] border border-white/10 space-y-3 max-w-[220px] shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all hover:scale-105 group/card z-20">
+                  <div className="absolute bottom-4 left-4 sm:bottom-8 sm:left-8 bg-[#121317]/90 backdrop-blur-2xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/10 space-y-2 sm:space-y-3 max-w-[200px] sm:max-w-[220px] shadow-2xl transition-all hover:scale-105 group/card z-20">
                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-[#52ffac]/10 flex items-center justify-center border border-[#52ffac]/20 group-hover/card:animate-pulse">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#52ffac]/10 flex items-center justify-center border border-[#52ffac]/20 group-hover/card:animate-pulse">
                            <ShieldCheck className="w-4 h-4 text-[#52ffac]" />
                         </div>
                         <span className="text-[9px] font-black text-white uppercase tracking-[0.2em]">Activo Protegido</span>
                      </div>
-                     <div className="space-y-1">
-                        <p className="text-[10px] font-black text-white/40 uppercase tracking-tight">Estatus en Red</p>
-                        <p className="text-[11px] font-black text-[#52ffac] uppercase tracking-widest flex items-center gap-2">
+                     <div className="space-y-0.5 sm:space-y-1">
+                        <p className="text-[9px] sm:text-[10px] font-black text-white/40 uppercase tracking-tight">Estatus en Red</p>
+                        <p className="text-[10px] sm:text-[11px] font-black text-[#52ffac] uppercase tracking-widest flex items-center gap-2">
                            <span className="w-1.5 h-1.5 bg-[#52ffac] rounded-full"></span>
                            Operativo • Blindado
                         </p>
@@ -535,106 +587,106 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
       <AppScreensShowcase onExplore={handleFooterLinkClick} />
 
       {/* SECCIÓN DETALLADA DE BENEFICIOS (ESTILO CORPORATIVO) */}
-      <section className="py-32 px-8 bg-black/20 border-y border-white/5">
-        <div className="max-w-7xl mx-auto space-y-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
+      <section className="py-16 sm:py-28 px-4 sm:px-8 bg-black/20 border-y border-white/5">
+        <div className="max-w-7xl mx-auto space-y-16 sm:space-y-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 sm:gap-20">
             {/* PARA CLIENTES */}
-            <div className="space-y-12">
-               <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                     <div className="p-3 bg-white/5 border border-white/10 rounded-2xl text-[#52ffac]">
-                        <Building2 className="w-6 h-6" />
+            <div className="space-y-8 sm:space-y-12">
+               <div className="space-y-3 sm:space-y-4">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                     <div className="p-2.5 sm:p-3 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl text-[#52ffac]">
+                        <Building2 className="w-5 h-5 sm:w-6 sm:h-6" />
                      </div>
-                     <h3 className="text-3xl font-black text-white uppercase tracking-tighter">MantechPro <br /><span className="text-[#52ffac]">para Empresas</span></h3>
+                     <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tighter">MantechPro <br /><span className="text-[#52ffac]">para Empresas</span></h3>
                   </div>
-                  <p className="text-[#c8c4d9] text-lg font-medium opacity-60">La plataforma líder en Panamá para la gestión de activos críticos y flotas industriales.</p>
+                  <p className="text-[#c8c4d9] text-base sm:text-lg font-medium opacity-60">La plataforma líder en Panamá para la gestión de activos críticos y flotas industriales.</p>
                </div>
-               <div className="space-y-8">
+               <div className="space-y-6 sm:space-y-8">
                   {[
                     { t: "Control Centralizado", d: "Gestione múltiples sedes, PHs o flotas desde un solo panel de control maestro.", i: LayoutDashboard },
                     { t: "Auditoría de Combustible", d: "Algoritmos de IA que detectan anomalías y optimizan el ROI operativo en tiempo real.", i: Fuel },
                     { t: "Blindaje de Garantías", d: "Certificados PDF automáticos con firma digital y ubicación GPS inalterable.", i: ShieldCheck }
                   ].map((b, i) => (
-                    <div key={i} className="flex gap-6 group">
-                       <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-[#52ffac]/10 transition-colors">
-                          <b.i className="w-6 h-6 text-[#52ffac]" />
+                    <div key={i} className="flex gap-4 sm:gap-6 group">
+                       <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-[#52ffac]/10 transition-colors">
+                          <b.i className="w-5 h-5 sm:w-6 sm:h-6 text-[#52ffac]" />
                        </div>
                        <div>
-                          <h4 className="text-sm font-black text-white uppercase tracking-tight mb-1">{b.t}</h4>
-                          <p className="text-xs text-[#474556] font-bold leading-relaxed">{b.d}</p>
+                          <h4 className="text-xs sm:text-sm font-black text-white uppercase tracking-tight mb-1">{b.t}</h4>
+                          <p className="text-xs text-[#8a8799] sm:text-[#474556] font-medium sm:font-bold leading-relaxed">{b.d}</p>
                        </div>
                     </div>
                   ))}
                </div>
-               <button onClick={onStart} className="px-10 py-5 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:scale-105 transition-all shadow-xl">Inscribir mi Empresa</button>
+               <button onClick={onStart} className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-white text-black rounded-xl sm:rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all shadow-xl">Inscribir mi Empresa</button>
             </div>
 
             {/* PARA TÉCNICOS */}
-            <div className="space-y-12">
-               <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                     <div className="p-3 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-2xl text-[#5d3cfe]">
-                        <Wrench className="w-6 h-6" />
+            <div className="space-y-8 sm:space-y-12">
+               <div className="space-y-3 sm:space-y-4">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                     <div className="p-2.5 sm:p-3 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-xl sm:rounded-2xl text-[#5d3cfe]">
+                        <Wrench className="w-5 h-5 sm:w-6 sm:h-6" />
                      </div>
-                     <h3 className="text-3xl font-black text-white uppercase tracking-tighter">MantechPro <br /><span className="text-[#5d3cfe]">para Especialistas</span></h3>
+                     <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tighter">MantechPro <br /><span className="text-[#5d3cfe]">para Especialistas</span></h3>
                   </div>
-                  <p className="text-[#c8c4d9] text-lg font-medium opacity-60">Potencie su carrera técnica con acceso a los contratos más importantes de Panamá.</p>
+                  <p className="text-[#c8c4d9] text-base sm:text-lg font-medium opacity-60">Potencie su carrera técnica con acceso a los contratos más importantes de Panamá.</p>
                </div>
-               <div className="space-y-8">
+               <div className="space-y-6 sm:space-y-8">
                   {[
                     { t: "Radar de Demanda Satelital", d: "Reciba solicitudes de servicio en tiempo real basadas en su ubicación exacta (Uber-Style).", i: Smartphone },
                     { t: "Billetera Digital Tech", d: "Cobros instantáneos y gestión de ingresos con comisiones transparentes y bajas.", i: CreditCard },
                     { t: "Sello de Ingeniería Gold", d: "Aumente su prestigio con certificaciones validadas por auditores de MantechPro.", i: Star }
                   ].map((b, i) => (
-                    <div key={i} className="flex gap-6 group">
-                       <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-[#5d3cfe]/10 transition-colors">
-                          <b.i className="w-6 h-6 text-[#5d3cfe]" />
+                    <div key={i} className="flex gap-4 sm:gap-6 group">
+                       <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-[#5d3cfe]/10 transition-colors">
+                          <b.i className="w-5 h-5 sm:w-6 sm:h-6 text-[#5d3cfe]" />
                        </div>
                        <div>
-                          <h4 className="text-sm font-black text-white uppercase tracking-tight mb-1">{b.t}</h4>
-                          <p className="text-xs text-[#474556] font-bold leading-relaxed">{b.d}</p>
+                          <h4 className="text-xs sm:text-sm font-black text-white uppercase tracking-tight mb-1">{b.t}</h4>
+                          <p className="text-xs text-[#8a8799] sm:text-[#474556] font-medium sm:font-bold leading-relaxed">{b.d}</p>
                        </div>
                     </div>
                   ))}
                </div>
-               <button onClick={onStart} className="px-10 py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:scale-105 transition-all shadow-xl">Registrarme como Técnico</button>
+               <button onClick={onStart} className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-[#5d3cfe] text-white rounded-xl sm:rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all shadow-xl">Registrarme como Técnico</button>
             </div>
           </div>
         </div>
       </section>
 
       {/* SECCIÓN UBER-STYLE RADAR PREVIEW */}
-      <section className="py-32 px-8">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-20">
-           <div className="lg:w-1/2 space-y-8 text-center lg:text-left">
-              <h2 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter leading-none">Despliegue de <br /><span className="text-[#5d3cfe]">Ingeniería en Vivo</span></h2>
-              <p className="text-[#c8c4d9] text-xl font-medium opacity-60 leading-relaxed">Nuestra red de técnicos se desplaza por todo el territorio nacional, listos para intervenir en minutos. Visualización satelital protegida.</p>
-              <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-                 <div className="px-5 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
+      <section className="py-16 sm:py-28 px-4 sm:px-8">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12 sm:gap-20">
+           <div className="lg:w-1/2 space-y-6 sm:space-y-8 text-center lg:text-left">
+              <h2 className="text-3xl sm:text-5xl md:text-6xl font-black text-white uppercase tracking-tighter leading-tight">Despliegue de <br /><span className="text-[#5d3cfe]">Ingeniería en Vivo</span></h2>
+              <p className="text-[#c8c4d9] text-base sm:text-xl font-medium opacity-60 leading-relaxed">Nuestra red de técnicos se desplaza por todo el territorio nacional, listos para intervenir en minutos. Visualización satelital protegida.</p>
+              <div className="flex flex-wrap justify-center lg:justify-start gap-3 sm:gap-4">
+                 <div className="px-4 sm:px-5 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-[#52ffac] animate-pulse"></div>
                     <span className="text-[10px] font-black text-white uppercase tracking-widest">128 Técnicos en Línea</span>
                  </div>
-                 <div className="px-5 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
+                 <div className="px-4 sm:px-5 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl flex items-center gap-3">
                     <Smartphone className="w-4 h-4 text-[#5d3cfe]" />
                     <span className="text-[10px] font-black text-white uppercase tracking-widest">App Nativa iOS/Android</span>
                  </div>
               </div>
            </div>
-           <div className="lg:w-1/2 relative">
-              <div className="bg-[#1c1d21] border border-white/5 rounded-[4rem] p-4 shadow-3xl overflow-hidden relative aspect-video">
-                 <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=1200" className="w-full h-full object-cover rounded-[3rem] opacity-40 grayscale" alt="Map" />
+           <div className="lg:w-1/2 w-full relative">
+              <div className="bg-[#1c1d21] border border-white/5 rounded-3xl sm:rounded-[3rem] p-2 sm:p-4 shadow-2xl overflow-hidden relative aspect-video">
+                 <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=1200" className="w-full h-full object-cover rounded-2xl sm:rounded-[2.5rem] opacity-40 grayscale" alt="Map" />
                  <div className="absolute inset-0 flex items-center justify-center">
                     <div className="relative">
-                       <div className="w-20 h-20 bg-[#5d3cfe]/20 rounded-full animate-ping absolute -inset-0"></div>
-                       <div className="w-20 h-20 bg-[#5d3cfe]/40 rounded-full animate-pulse flex items-center justify-center relative z-10">
-                          <Truck className="w-10 h-10 text-white" />
+                       <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#5d3cfe]/20 rounded-full animate-ping absolute -inset-0"></div>
+                       <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#5d3cfe]/40 rounded-full animate-pulse flex items-center justify-center relative z-10">
+                          <Truck className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                        </div>
                     </div>
                  </div>
                  {/* Flotante Tech Card */}
-                 <div className="absolute top-10 right-10 bg-black/80 backdrop-blur-xl p-4 rounded-3xl border border-white/10 space-y-3 shadow-2xl animate-fade-in-up">
+                 <div className="absolute top-4 right-4 sm:top-8 sm:right-8 bg-black/85 backdrop-blur-xl p-3 sm:p-4 rounded-2xl border border-white/10 space-y-2 shadow-2xl animate-fade-in-up">
                     <div className="flex items-center gap-3">
-                       <div className="w-10 h-10 bg-[#5d3cfe] rounded-xl flex items-center justify-center text-xs font-black text-white">RM</div>
+                       <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#5d3cfe] rounded-xl flex items-center justify-center text-xs font-black text-white">RM</div>
                        <div>
                           <p className="text-[10px] font-black text-white uppercase">Ricardo Mendoza</p>
                           <p className="text-[8px] font-bold text-[#52ffac] uppercase tracking-widest">En Camino • 8 min</p>
@@ -647,26 +699,26 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
       </section>
 
       {/* 5. SECTORES (THE WHO) */}
-      <section className="py-32 px-8">
-        <div className="max-w-7xl mx-auto space-y-20">
-          <div className="text-center space-y-4">
-             <h2 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter">Control <span className="text-white/20">Total</span></h2>
+      <section className="py-16 sm:py-28 px-4 sm:px-8">
+        <div className="max-w-7xl mx-auto space-y-12 sm:space-y-20">
+          <div className="text-center space-y-3 sm:space-y-4">
+             <h2 className="text-3xl sm:text-5xl md:text-7xl font-black text-white uppercase tracking-tighter">Control <span className="text-white/20">Total</span></h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {[
               { t: "Residencial / PH", i: Home, img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800" },
               { t: "Logística", i: Truck, img: "https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&q=80&w=800" },
               { t: "Planta Industrial", i: Zap, img: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800" },
               { t: "Infraestructura IT", i: Cpu, img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=800" }
             ].map((s, i) => (
-              <div key={i} className="group relative overflow-hidden rounded-[3rem] aspect-[4/5] border border-white/5 bg-[#1c1d21]">
+              <div key={i} className="group relative overflow-hidden rounded-2xl sm:rounded-3xl aspect-[4/5] border border-white/5 bg-[#1c1d21]">
                  <img src={s.img} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-70 group-hover:opacity-100" alt="" />
                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent z-10"></div>
-                 <div className="absolute bottom-8 left-8 right-8 flex items-center gap-4 z-20">
-                    <div className="p-3 bg-[#5d3cfe] rounded-2xl border border-white/10 text-white shadow-2xl">
-                       <s.i className="w-5 h-5" />
+                 <div className="absolute bottom-5 left-5 right-5 flex items-center gap-3 sm:gap-4 z-20">
+                    <div className="p-2.5 sm:p-3 bg-[#5d3cfe] rounded-xl sm:rounded-2xl border border-white/10 text-white shadow-2xl">
+                       <s.i className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
-                    <h4 className="text-lg font-black text-white uppercase tracking-tight shadow-black drop-shadow-2xl">{s.t}</h4>
+                    <h4 className="text-base sm:text-lg font-black text-white uppercase tracking-tight shadow-black drop-shadow-2xl">{s.t}</h4>
                  </div>
               </div>
             ))}
@@ -675,66 +727,67 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
       </section>
 
       {/* 6. ADVANTAGES & ROI */}
-      <section className="py-32 px-8 bg-[#121317]/50 border-y border-white/5">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-          <div className="space-y-12">
-             <div className="space-y-4">
-                <h2 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter">Blindaje <br /><span className="text-[#52ffac]">Operativo</span></h2>
-                <p className="text-[#c8c4d9] text-xl font-medium opacity-60">Reduzca hasta un 35% sus costos operativos anuales mediante la automatización de auditorías.</p>
+      <section className="py-16 sm:py-28 px-4 sm:px-8 bg-[#121317]/50 border-y border-white/5">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 sm:gap-20 items-center">
+          <div className="space-y-8 sm:space-y-12">
+             <div className="space-y-3 sm:space-y-4">
+                <h2 className="text-3xl sm:text-5xl md:text-6xl font-black text-white uppercase tracking-tighter">Blindaje <br /><span className="text-[#52ffac]">Operativo</span></h2>
+                <p className="text-[#c8c4d9] text-base sm:text-xl font-medium opacity-60">Reduzca hasta un 35% sus costos operativos anuales mediante la automatización de auditorías.</p>
              </div>
-             <div className="grid grid-cols-2 gap-6">
+             <div className="grid grid-cols-2 gap-4 sm:gap-6">
                 {[
                   { t: "Ahorro Combustible", i: Fuel },
                   { t: "Mantech ID", i: ShieldCheck },
                   { t: "Predictive IA", i: BrainCircuit },
                   { t: "SOS Central", i: AlertTriangle }
                 ].map((v, i) => (
-                  <div key={i} className="bg-black/40 border border-white/5 p-8 rounded-[2.5rem] space-y-4">
-                     <v.i className="w-8 h-8 text-[#52ffac]" />
-                     <h4 className="text-xs font-black text-white uppercase tracking-widest">{v.t}</h4>
+                  <div key={i} className="bg-black/40 border border-white/5 p-4 sm:p-8 rounded-2xl sm:rounded-3xl space-y-3 sm:space-y-4">
+                     <v.i className="w-6 h-6 sm:w-8 sm:h-8 text-[#52ffac]" />
+                     <h4 className="text-[10px] sm:text-xs font-black text-white uppercase tracking-widest">{v.t}</h4>
                   </div>
                 ))}
              </div>
           </div>
-          <div className="bg-gradient-to-br from-[#1c1d21] to-[#0d0e12] border border-white/10 rounded-[4rem] p-12 space-y-8">
-             <h3 className="text-2xl font-black text-white uppercase tracking-tight text-center">Retorno de Inversión</h3>
-             <div className="space-y-4">
-                <div className="flex justify-between items-center p-6 bg-rose-500/5 border border-rose-500/10 rounded-3xl">
+
+          <div className="bg-gradient-to-br from-[#1c1d21] to-[#0d0e12] border border-white/10 rounded-3xl sm:rounded-[3rem] p-6 sm:p-12 space-y-6 sm:space-y-8">
+             <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight text-center">Retorno de Inversión</h3>
+             <div className="space-y-3 sm:space-y-4">
+                <div className="flex justify-between items-center p-4 sm:p-6 bg-rose-500/5 border border-rose-500/10 rounded-2xl">
                    <span className="text-xs font-bold text-rose-500 uppercase">Sin MantechPro</span>
                    <X className="w-5 h-5 text-rose-500" />
                 </div>
-                <div className="flex justify-between items-center p-6 bg-[#52ffac]/5 border border-[#52ffac]/10 rounded-3xl">
+                <div className="flex justify-between items-center p-4 sm:p-6 bg-[#52ffac]/5 border border-[#52ffac]/10 rounded-2xl">
                    <span className="text-xs font-bold text-[#52ffac] uppercase">Con MantechPro</span>
                    <CheckCircle2 className="w-5 h-5 text-[#52ffac]" />
                 </div>
              </div>
-             <div className="pt-8 border-t border-white/5 text-center">
-                <p className="text-6xl font-black text-white tracking-tighter">35%</p>
-                <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.4em]">Ahorro Promedio Estimado</p>
+             <div className="pt-6 sm:pt-8 border-t border-white/5 text-center">
+                <p className="text-5xl sm:text-6xl font-black text-white tracking-tighter">35%</p>
+                <p className="text-[10px] text-[#8a8799] sm:text-[#474556] font-black uppercase tracking-[0.4em]">Ahorro Promedio Estimado</p>
              </div>
           </div>
         </div>
       </section>
 
       {/* 7. PRICING */}
-      <section className="py-32 px-8">
-        <div className="max-w-7xl mx-auto space-y-16">
-          <div className="text-center space-y-4">
-             <h2 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter text-center">Inversión <span className="text-white/20">Master</span></h2>
+      <section className="py-16 sm:py-28 px-4 sm:px-8">
+        <div className="max-w-7xl mx-auto space-y-12 sm:space-y-16">
+          <div className="text-center space-y-3 sm:space-y-4">
+             <h2 className="text-3xl sm:text-5xl md:text-7xl font-black text-white uppercase tracking-tighter text-center">Inversión <span className="text-white/20">Master</span></h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
              {[
-               { n: "Gratis", p: "0", f: ["Hasta 2 Unidades", "Alertas Básicas", "Diagnóstico Manual", "Soporte Chat Estándar", "Uso Personal"] },
-               { n: "Emprendedor", p: "29", f: ["Hasta 5 Unidades", "Rastreo Tiempo Real", "Chatbot de Soporte 24/7", "Alertas de Mantenimiento", "Panel Gestión de Activos"] },
-               { n: "Profesional", p: "89", f: ["Hasta 25 Unidades", "Auditoría de Combustible", "Diagnóstico IA Predictivo", "SOS Emergencia Ilimitado", "Reportes Full PDF"], pop: true },
-               { n: "Enterprise", p: "199", f: ["Unidades Ilimitadas", "Admin Multi-Edificio", "API para Software", "Seguro de Incidencias", "Prioridad Máxima"] }
+               { n: "Gratis", p: "0", f: ["Hasta 5 Activos (Equipos/Flota)", "Alertas de Mantenimiento", "Diagnóstico Manual Básico", "Técnicos Verificados Mantech ID", "Pagos Protegidos Escrow"] },
+               { n: "Emprendedor", p: "29", f: ["Hasta 10 Activos (Flota/Equipos)", "Control de Flota y GPS en Vivo", "Bitácora Pre-Viaje y Rutas", "Chatbot de Soporte IA 24/7", "Panel Gestión Global de Activos"] },
+               { n: "Profesional", p: "89", f: ["Hasta 25 Activos (Flota y PH)", "Flota Avanzada + Combustible IA", "Diagnóstico IA Predictivo MDM-V4", "Carga Masiva por Excel", "Reportes Oficiales PDF y Excel"], pop: true },
+               { n: "Enterprise", p: "199", f: ["Activos y Flotas ILIMITADOS", "Coordinadores Flota y Edificio (Lote)", "Multi-Administrador (Bodegas/PH)", "Garantía Mantech Protection", "SLA Prioritario < 1H + API ERP"] }
              ].map((plan, i) => (
-               <div key={i} className={`p-10 rounded-[3rem] border space-y-8 flex flex-col transition-all duration-500 hover:shadow-[0_40px_80px_rgba(0,0,0,0.4)] ${plan.pop ? 'bg-[#5d3cfe] border-[#5d3cfe] lg:scale-105 shadow-3xl' : 'bg-[#1c1d21] border-white/5 hover:border-[#5d3cfe]/30'}`}>
-                  <div className="space-y-3">
-                     <h4 className={`text-[10px] font-black uppercase tracking-widest ${plan.pop ? 'text-white/60' : 'text-[#474556]'}`}>{plan.n}</h4>
-                     <p className="text-4xl font-black text-white tracking-tighter">{plan.p === 'Custom' ? plan.p : `$${plan.p}`}<span className="text-lg opacity-40">/mes</span></p>
+               <div key={i} className={`p-6 sm:p-8 rounded-3xl border space-y-6 sm:space-y-8 flex flex-col transition-all duration-500 hover:shadow-2xl ${plan.pop ? 'bg-[#5d3cfe] border-[#5d3cfe] lg:scale-105 shadow-2xl' : 'bg-[#1c1d21] border-white/5 hover:border-[#5d3cfe]/30'}`}>
+                  <div className="space-y-2 sm:space-y-3">
+                     <h4 className={`text-[10px] font-black uppercase tracking-widest ${plan.pop ? 'text-white/60' : 'text-[#8a8799]'}`}>{plan.n}</h4>
+                     <p className="text-3xl sm:text-4xl font-black text-white tracking-tighter">{plan.p === 'Custom' ? plan.p : `$${plan.p}`}<span className="text-base sm:text-lg opacity-40">/mes</span></p>
                   </div>
-                  <ul className="space-y-3 flex-1">
+                  <ul className="space-y-2.5 sm:space-y-3 flex-1">
                      {plan.f.map((f, idx) => (
                        <li key={idx} className="flex items-start gap-2 text-[10px] font-bold text-white/90">
                           <CheckCircle2 className="w-3.5 h-3.5 text-[#52ffac] shrink-0 mt-0.5" />
@@ -742,7 +795,7 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
                        </li>
                      ))}
                   </ul>
-                  <button onClick={onStart} className={`w-full py-4 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all ${plan.pop ? 'bg-white text-[#5d3cfe] hover:scale-105 shadow-2xl' : 'bg-white/5 text-white hover:bg-white hover:text-black'}`}>Empezar Ahora</button>
+                  <button onClick={onStart} className={`w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all ${plan.pop ? 'bg-white text-[#5d3cfe] hover:scale-105 active:scale-95 shadow-xl' : 'bg-white/5 text-white hover:bg-white hover:text-black active:scale-95'}`}>Empezar Ahora</button>
                </div>
              ))}
           </div>
@@ -750,8 +803,8 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
       </section>
 
       {/* 8. PROMOCIONES */}
-      <section className="pb-32 px-8">
-        <div className="max-w-6xl mx-auto bg-black/60 border border-white/5 rounded-[4rem] overflow-hidden flex flex-col lg:flex-row items-center min-h-[450px] relative group">
+      <section className="pb-24 sm:pb-32 px-4 sm:px-8">
+        <div className="max-w-6xl mx-auto bg-black/60 border border-white/5 rounded-3xl sm:rounded-[3rem] overflow-hidden flex flex-col lg:flex-row items-center relative group">
            {(() => {
               const promos = [
                 {
@@ -784,21 +837,21 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
 
               return (
                 <>
-                  <div className="flex-1 p-12 md:p-20 space-y-8 animate-fade-in" key={currentPromo}>
+                  <div className="flex-1 p-6 sm:p-12 md:p-16 space-y-6 sm:space-y-8 animate-fade-in" key={currentPromo}>
                     <p className="text-[10px] font-black tracking-[0.4em] text-[#52ffac] uppercase">{p.tag}</p>
-                    <h3 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter leading-none">{p.title}</h3>
-                    <p className="text-4xl font-black text-white tracking-tighter">SOLO {p.price} <span className="text-sm opacity-40 uppercase tracking-widest">+ ITBMS</span></p>
-                    <button onClick={handlePromoClick} className="px-10 py-5 bg-[#52ffac] text-black rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:scale-105 shadow-[0_10px_30px_rgba(82,255,172,0.3)] transition-all">Reservar Ahora</button>
+                    <h3 className="text-2xl sm:text-4xl md:text-5xl font-black text-white uppercase tracking-tighter leading-tight">{p.title}</h3>
+                    <p className="text-2xl sm:text-4xl font-black text-white tracking-tighter">SOLO {p.price} <span className="text-xs sm:text-sm opacity-40 uppercase tracking-widest">+ ITBMS</span></p>
+                    <button onClick={handlePromoClick} className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-[#52ffac] text-black rounded-xl sm:rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:scale-105 active:scale-95 shadow-[0_10px_30px_rgba(82,255,172,0.3)] transition-all">Reservar Ahora</button>
                   </div>
 
-                  <div className="w-full lg:w-1/2 h-[500px] relative overflow-hidden">
+                  <div className="w-full lg:w-1/2 h-[260px] sm:h-[380px] lg:h-[500px] relative overflow-hidden">
                      <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent z-10 hidden lg:block"></div>
                      <img src={p.img} className="w-full h-full object-cover transition-all duration-700" alt="Promo" />
                   </div>
 
-                  <div className="absolute bottom-10 right-12 flex items-center gap-4 z-20">
-                    <button onClick={() => setCurrentPromo(0)} className={`p-4 rounded-full transition-all border ${currentPromo === 0 ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10'}`}><ChevronLeft className="w-5 h-5" /></button>
-                    <button onClick={() => setCurrentPromo(1)} className={`p-4 rounded-full transition-all border ${currentPromo === 1 ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10'}`}><ChevronRight className="w-5 h-5" /></button>
+                  <div className="absolute bottom-4 right-4 sm:bottom-8 sm:right-8 flex items-center gap-3 z-20">
+                    <button onClick={() => setCurrentPromo(0)} className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl transition-all border ${currentPromo === 0 ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10'}`}><ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" /></button>
+                    <button onClick={() => setCurrentPromo(1)} className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl transition-all border ${currentPromo === 1 ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10'}`}><ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" /></button>
                   </div>
                 </>
               );
@@ -806,99 +859,102 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
         </div>
       </section>
 
-      {/* WHATSAPP & CHATBOT Master */}
-      <div className="fixed bottom-6 right-4 sm:bottom-10 sm:right-10 z-[1000] flex flex-col gap-3 sm:gap-4 items-end pointer-events-none">
-         {/* Botón Chatbot AI */}
+      {/* ASISTOR FLOTANTE ELEGANTE UNIFICADO (COMPACTO EN MÓVIL, NO BLOQUEA BOTONES) */}
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100] flex items-center">
+         {/* Vista móvil: Botón circular elegante y compacto (48x48) */}
          <button
            onClick={() => { setChatbotMode('general'); setIsChatbotOpen(true); }}
-           className="w-12 h-12 sm:w-16 sm:h-16 bg-[#5d3cfe] text-white rounded-full flex items-center justify-center shadow-[0_15px_40px_rgba(93,60,254,0.4)] hover:scale-110 active:scale-95 transition-all group relative pointer-events-auto border-2 border-white/10"
+           className="sm:hidden w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-tr from-[#5d3cfe] to-[#7f62ff] text-white shadow-[0_8px_25px_rgba(93,60,254,0.5)] border border-white/20 active:scale-90 transition-all relative"
+           aria-label="Asesor IA 24/7"
          >
-            <MessageSquare className="w-5 h-5 sm:w-7 sm:h-7 fill-current" />
-            <div className="absolute -left-32 top-1/2 -translate-y-1/2 bg-white text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-2xl pointer-events-none hidden sm:block">Asistente IA 24/7</div>
+            <MessageSquare className="w-5 h-5 fill-current" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#52ffac] rounded-full ring-2 ring-[#0d0e12] animate-ping" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#52ffac] rounded-full ring-2 ring-[#0d0e12]" />
          </button>
 
-         {/* Botón Ventas / Cotización Automática */}
+         {/* Vista tablet / desktop: Botón píldora con texto */}
          <button
-           onClick={() => { setChatbotMode('sales'); setIsChatbotOpen(true); }}
-           className="w-12 h-12 sm:w-16 sm:h-16 bg-[#25d366] text-white rounded-full flex items-center justify-center shadow-[0_15px_40px_rgba(37,211,102,0.4)] hover:scale-110 active:scale-95 transition-all group relative pointer-events-auto border-2 border-white/10"
+           onClick={() => { setChatbotMode('general'); setIsChatbotOpen(true); }}
+           className="hidden sm:flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-[#5d3cfe] to-[#4c2bd6] text-white rounded-full shadow-[0_8px_25px_rgba(93,60,254,0.4)] border border-white/20 active:scale-95 hover:brightness-110 transition-all"
+           aria-label="Asesor IA 24/7"
          >
-            <DollarSign className="w-5 h-5 sm:w-7 sm:h-7" />
-            <div className="absolute -left-40 top-1/2 -translate-y-1/2 bg-white text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-2xl pointer-events-none hidden sm:block">Cotización Inmediata</div>
+            <div className="relative">
+              <MessageSquare className="w-4 h-4 fill-current" />
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#52ffac] rounded-full animate-ping"></span>
+            </div>
+            <span className="text-[11px] font-black uppercase tracking-wider">Asesor IA 24/7</span>
          </button>
       </div>
 
-      {/* MODAL CHATBOT AI */}
+      {/* MODAL CHATBOT AI RESPONSIVO (FULLSCREEN EN MÓVIL, ELEGANTE EN ESCRITORIO) */}
       {isChatbotOpen && (
-        <div className="fixed inset-0 z-[2000] bg-[#0d0e12]/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl h-[80vh] relative">
-             <button
-               onClick={() => setIsChatbotOpen(false)}
-               className="absolute top-6 right-6 z-[2100] p-3 bg-white/10 hover:bg-rose-600 text-white rounded-2xl border border-white/10 backdrop-blur-xl transition-all active:scale-90 group"
-             >
-               <X className="w-6 h-6 group-hover:rotate-90 transition-transform" />
-             </button>
-             <div className="w-full h-full bg-[#121317] border border-white/10 rounded-[4rem] overflow-hidden shadow-3xl">
-                <Chatbot247
-                  isInline={true}
-                  assets={assets}
-                  requests={requests}
-                  onScheduleService={(tech) => { onStart(); setIsChatbotOpen(false); }}
-                  initialMode={chatbotMode}
-                />
-             </div>
+        <div className="fixed inset-0 z-[2000] bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6">
+          <div className="w-full h-full sm:h-[85vh] sm:max-h-[750px] sm:max-w-xl bg-[#0d0e12] sm:border sm:border-white/10 sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+             <Chatbot247
+               isInline={true}
+               onClose={() => setIsChatbotOpen(false)}
+               assets={assets}
+               requests={requests}
+               onScheduleService={() => { onStart(); setIsChatbotOpen(false); }}
+               initialMode={chatbotMode}
+             />
           </div>
         </div>
       )}
 
-      {/* MODAL DE DETALLES DEL FOOTER (KNOWLEDGE BASE) */}
+      {/* MODAL DE DETALLES DEL FOOTER (KNOWLEDGE BASE) - BOTTOM SHEET EN MÓVIL */}
       <AnimatePresence>
         {footerDetail && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[3000] bg-[#0d0e12]/90 backdrop-blur-2xl flex items-center justify-center p-6"
+            className="fixed inset-0 z-[3000] bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6"
             onClick={() => setFooterDetail(null)}
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.9, y: 20, opacity: 0 }}
-              className="max-w-xl w-full max-h-[90vh] bg-[#121317] border border-white/10 rounded-[3.5rem] overflow-hidden shadow-[0_0_100px_rgba(93,60,254,0.15)] relative flex flex-col"
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="max-w-xl w-full max-h-[90vh] bg-[#121317] border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl relative flex flex-col pb-[env(safe-area-inset-bottom)]"
               onClick={e => e.stopPropagation()}
             >
-              {/* Header del Modal (Fijo) */}
-              <div className="bg-gradient-to-br from-[#1c1d21] to-[#121317] p-10 relative shrink-0">
+              {/* Header del Modal */}
+              <div className="bg-gradient-to-br from-[#1c1d21] to-[#121317] p-5 sm:p-8 relative shrink-0 border-b border-white/5">
                  <button
                    onClick={() => setFooterDetail(null)}
-                   className="absolute top-8 right-8 p-3 bg-white/5 hover:bg-rose-600 text-white rounded-2xl border border-white/10 transition-all active:scale-90"
+                   className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 bg-white/5 hover:bg-rose-600 text-white rounded-xl border border-white/10 transition-all active:scale-90"
                  >
-                   <X className="w-5 h-5" />
+                   <X className="w-4 h-4 sm:w-5 sm:h-5" />
                  </button>
 
-                 <div className="space-y-6">
-                    <div className="w-16 h-16 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-[1.5rem] flex items-center justify-center text-[#5d3cfe] shadow-2xl">
-                       <footerDetail.icon className="w-8 h-8" />
+                 <div className="flex items-center gap-3 sm:gap-4 pr-10">
+                    <div className="w-10 h-10 sm:w-14 sm:h-14 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-xl sm:rounded-2xl flex items-center justify-center text-[#5d3cfe] shadow-xl shrink-0">
+                       <footerDetail.icon className="w-5 h-5 sm:w-7 sm:h-7" />
                     </div>
-                    <h3 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">
-                       {footerDetail.title}
-                    </h3>
+                    <div>
+                       <span className="text-[9px] font-black text-[#5d3cfe] uppercase tracking-widest block">MantechPro Knowledge</span>
+                       <h3 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight leading-tight">
+                          {footerDetail.title}
+                       </h3>
+                    </div>
                  </div>
               </div>
 
               {/* Contenido Scrolleable */}
-              <div className="p-10 pt-0 space-y-10 overflow-y-auto custom-scrollbar flex-1">
-                 <p className="text-[#c8c4d9] text-lg font-medium leading-relaxed opacity-80">
+              <div className="p-5 sm:p-8 space-y-6 sm:space-y-8 overflow-y-auto no-scrollbar flex-1">
+                 <p className="text-[#c8c4d9] text-sm sm:text-base font-medium leading-relaxed opacity-80">
                     {footerDetail.desc}
                  </p>
 
-                 <div className="space-y-4">
-                    <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-[0.4em]">Especificaciones Técnicas</p>
-                    <div className="grid grid-cols-1 gap-3">
+                 <div className="space-y-3 sm:space-y-4">
+                    <p className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-[0.3em]">Especificaciones Técnicas</p>
+                    <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
                        {footerDetail.points.map((p: string, i: number) => (
-                         <div key={i} className="flex items-center gap-4 p-4 bg-white/5 border border-white/5 rounded-2xl">
-                            <CheckCircle2 className="w-4 h-4 text-[#52ffac]" />
-                            <span className="text-[11px] font-black text-white uppercase tracking-widest">{p}</span>
+                         <div key={i} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white/5 border border-white/5 rounded-xl sm:rounded-2xl">
+                            <CheckCircle2 className="w-4 h-4 text-[#52ffac] shrink-0" />
+                            <span className="text-[10px] sm:text-[11px] font-black text-white uppercase tracking-widest">{p}</span>
                          </div>
                        ))}
                     </div>
@@ -906,7 +962,7 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
 
                  <button
                    onClick={() => { setFooterDetail(null); onStart(); }}
-                   className="w-full py-5 bg-[#5d3cfe] text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-4"
+                   className="w-full py-4 sm:py-5 bg-gradient-to-r from-[#5d3cfe] to-[#4c2bd6] text-white rounded-xl sm:rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
                  >
                    Acceder al Centro Control <ArrowRight className="w-4 h-4" />
                  </button>

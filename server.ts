@@ -46,18 +46,35 @@ const mailTransporter = nodemailer.createTransport({
   auth: { user: SMTP_USER, pass: SMTP_PASS }
 });
 
-async function sendEmail({ to, subject, html, replyTo }: any) {
+async function sendEmail({ to, subject, html, replyTo, text }: any) {
   if (!SMTP_PASS) return;
   const sender = process.env.SENDER_EMAIL || 'info@mantech-pro.com';
+  // VersiÃ³n texto plano: los filtros anti-spam penalizan correos solo-HTML
+  const plainText = text || (html
+    ? String(html)
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/(p|div|h[1-6]|tr|li)>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n\s*\n+/g, '\n\n')
+        .trim()
+    : '');
   try {
     await mailTransporter.sendMail({
-      from: `"Mantech Pro Global" <${sender}>`,
-      sender: sender, replyTo: replyTo || sender,
-      to, subject, html,
-      headers: { 'X-Mailer': 'MantechPro Master Node V4' }
+      from: { name: 'MantechPro', address: sender },
+      replyTo: replyTo || sender,
+      to,
+      subject,
+      text: plainText,
+      html,
+      headers: {
+        'List-Unsubscribe': `<mailto:${sender}?subject=unsubscribe>`
+      }
     });
-    console.log(`ðŸ“§ [CORREO] Enviado a: ${to}`);
-  } catch (e: any) { console.error("âŒ [SMTP ERROR]", e.message); }
+    console.log(`[CORREO] Enviado a: ${to}`);
+  } catch (e: any) { console.error('[SMTP ERROR]', e.message); }
 }
 
 // 3. MIDDLEWARES & SEGURIDAD PROFESIONAL
@@ -124,11 +141,11 @@ app.use("/api/send-report", strictLimiter);
 app.use("/api/push-notification", strictLimiter);
 app.use("/api/payments/verify-order", strictLimiter);
 
-// 3.1 MIDDLEWARES DE SEGURIDAD Y AUTENTICACIÓN FIREBASE
+// 3.1 MIDDLEWARES DE SEGURIDAD Y AUTENTICACIï¿½N FIREBASE
 const authenticateToken = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, error: "Autenticación requerida. Token no proporcionado." });
+    return res.status(401).json({ success: false, error: "Autenticaciï¿½n requerida. Token no proporcionado." });
   }
   const token = authHeader.split('Bearer ')[1];
   try {
@@ -136,7 +153,7 @@ const authenticateToken = async (req: express.Request, res: express.Response, ne
     (req as any).user = decoded;
     next();
   } catch (err: any) {
-    return res.status(403).json({ success: false, error: "Token de acceso inválido o expirado." });
+    return res.status(403).json({ success: false, error: "Token de acceso invï¿½lido o expirado." });
   }
 };
 

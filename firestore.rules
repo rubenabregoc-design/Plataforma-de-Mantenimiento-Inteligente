@@ -99,6 +99,19 @@ service cloud.firestore {
     // 14. audit_logs/{logId}:
     //     - Immutable system and transaction audit logs.
     //
+    // 15. company_members/{memberId}:
+    //     - companyId: string (owning company clientId)
+    //     - companyName?: string
+    //     - name: string (staff/coordinator full name)
+    //     - email: string (staff/coordinator email)
+    //     - cedula?: string
+    //     - role?: 'client' | 'tech' | 'driver'
+    //     - subRole?: 'fleet_coordinator' | 'building_coordinator' | null
+    //     - targetType?: 'driver' | 'tech' | 'fleet_coordinator' | 'building_coordinator'
+    //     - status?: 'pending_activation' | 'active'
+    //     - mustChangePassword?: bool
+    //     - securityPinConfigured?: bool
+    //
     // ===============================================================
 
     // ===============================================================
@@ -129,13 +142,21 @@ service cloud.firestore {
       );
     }
 
+    // Validates if the authenticated user belongs to the specified corporate companyId / clientId
+    function isSameCompany(targetCompanyId) {
+      return isSignedIn() &&
+             targetCompanyId is string &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == targetCompanyId;
+    }
+
     // String length boundary validation to block Resource Exhaustion / 1MB DoS attacks
     function isValidString(val, minLen, maxLen) {
       return val is string && val.size() >= minLen && val.size() <= maxLen;
     }
 
     function isValidOptionalString(data, field, minLen, maxLen) {
-      return !(field in data) || (data[field] is string && data[field].size() >= minLen && data[field].size() <= maxLen);
+      return !(field in data) || data[field] == null || (data[field] is string && data[field].size() >= minLen && data[field].size() <= maxLen);
     }
 
     // ===============================================================
@@ -150,7 +171,20 @@ service cloud.firestore {
              isValidOptionalString(data, 'cedula', 0, 50) &&
              isValidOptionalString(data, 'phone', 0, 30) &&
              isValidOptionalString(data, 'profileImage', 0, 1000) &&
-             isValidOptionalString(data, 'companyId', 0, 100);
+             isValidOptionalString(data, 'companyId', 0, 100) &&
+             isValidOptionalString(data, 'subRole', 0, 60);
+    }
+
+    function isValidCompanyMember(data) {
+      return data.companyId is string && isValidString(data.companyId, 1, 120) &&
+             data.name is string && isValidString(data.name, 1, 150) &&
+             data.email is string && isValidString(data.email, 3, 150) &&
+             isValidOptionalString(data, 'companyName', 0, 150) &&
+             isValidOptionalString(data, 'cedula', 0, 50) &&
+             isValidOptionalString(data, 'role', 0, 40) &&
+             isValidOptionalString(data, 'subRole', 0, 50) &&
+             isValidOptionalString(data, 'targetType', 0, 50) &&
+             isValidOptionalString(data, 'status', 0, 40);
     }
 
     function isValidTechnician(data) {
@@ -181,9 +215,9 @@ service cloud.firestore {
       return data.clientId is string &&
              isValidString(data.name, 1, 150) &&
              data.type is string && data.type.size() <= 60 &&
-             data.category is string && data.category.size() <= 60 &&
-             (!('mileage' in data) || (data.mileage is number && data.mileage >= 0)) &&
-             (!('usageHours' in data) || (data.usageHours is number && data.usageHours >= 0)) &&
+             isValidOptionalString(data, 'category', 0, 60) &&
+             (!('mileage' in data) || data.mileage == null || (data.mileage is number && data.mileage >= 0)) &&
+             (!('usageHours' in data) || data.usageHours == null || (data.usageHours is number && data.usageHours >= 0)) &&
              isValidOptionalString(data, 'licensePlate', 0, 30) &&
              isValidOptionalString(data, 'details', 0, 500);
     }
@@ -266,7 +300,7 @@ service cloud.firestore {
                      isAdmin() ||
                      (isSignedIn() && resource.data.role in ['tech', 'driver']);
 
-      // Creación: Solo el propio usuario con rol no-admin y plan base, o un admin verificado
+      // Creación: Solo el propio usuario con rol no-admin y plan base (o corporativo si pertenece a companyId), o un admin verificado
       allow create: if isSignedIn() && (
         isAdmin() ||
         (
@@ -275,7 +309,8 @@ service cloud.firestore {
           request.resource.data.role in ['client', 'tech', 'driver'] &&
           request.resource.data.role != 'admin' &&
           (!('subscription' in request.resource.data) ||
-           request.resource.data.subscription.planId in ['plan-free', 'plan-basic']) &&
+           request.resource.data.subscription.planId in ['plan-free', 'plan-basic'] ||
+           (request.resource.data.companyId is string && request.resource.data.subscription.planId == 'plan-enterprise')) &&
           isValidUser(request.resource.data)
         )
       );
@@ -311,8 +346,10 @@ service cloud.firestore {
       allow create: if isSignedIn() && (
         isAdmin() ||
         (
-          request.resource.data.userId == request.auth.uid &&
-          request.resource.data.plan == 'basic' &&
+          (
+            (request.resource.data.userId == request.auth.uid && request.resource.data.plan == 'basic') ||
+            (request.resource.data.companyId is string && request.resource.data.isBuildingInternal == true)
+          ) &&
           (!('wallet' in request.resource.data) ||
            (request.resource.data.wallet.balance == 0 && request.resource.data.wallet.pendingBalance == 0)) &&
           isValidTechnician(request.resource.data)
@@ -326,6 +363,13 @@ service cloud.firestore {
           request.resource.data.userId == resource.data.userId &&
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['wallet', 'plan', 'userId', 'id', 'isVerified']) &&
           isValidTechnician(request.resource.data)
+        ) ||
+        (
+          // Vinculación inicial de userId para técnicos internos de edificio pre-creados en lote
+          resource.data.isBuildingInternal == true &&
+          request.resource.data.userId == request.auth.uid &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['wallet', 'plan', 'id', 'isVerified']) &&
+          isValidTechnician(request.resource.data)
         )
       );
 
@@ -337,6 +381,7 @@ service cloud.firestore {
       allow read: if isSignedIn() && (
         isAdmin() ||
         resource.data.clientId == request.auth.uid ||
+        isSameCompany(resource.data.clientId) ||
         resource.data.techUserId == request.auth.uid ||
         resource.data.isPublic == true ||
         resource.data.status == 'open_bidding'
@@ -345,7 +390,10 @@ service cloud.firestore {
       allow create: if isSignedIn() && (
         isAdmin() ||
         (
-          request.resource.data.clientId == request.auth.uid &&
+          (
+            request.resource.data.clientId == request.auth.uid ||
+            isSameCompany(request.resource.data.clientId)
+          ) &&
           request.resource.data.status in ['pending', 'open_bidding', 'quoted'] &&
           (!('amountPaid' in request.resource.data) || request.resource.data.amountPaid == 0) &&
           (!('escrowStatus' in request.resource.data) || request.resource.data.escrowStatus == 'pending') &&
@@ -353,11 +401,15 @@ service cloud.firestore {
         )
       );
 
-      // Actualización: Solo cliente o técnico asignado. Prohibir cambio directo a 'completed' y campos financieros
+      // Actualización: Solo cliente, coordinador corporativo o técnico asignado. Prohibir cambio directo a 'completed' y campos financieros
       allow update: if isSignedIn() && (
         isAdmin() ||
         (
-          (resource.data.clientId == request.auth.uid || resource.data.techUserId == request.auth.uid) &&
+          (
+            resource.data.clientId == request.auth.uid ||
+            isSameCompany(resource.data.clientId) ||
+            resource.data.techUserId == request.auth.uid
+          ) &&
           request.resource.data.clientId == resource.data.clientId &&
           request.resource.data.status != 'completed' &&
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['escrowStatus', 'amountPaid']) &&
@@ -368,23 +420,35 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // 5. Activos de Clientes / Flota
+    // 5. Activos de Clientes / Flota y Edificios Corporativos
     match /assets/{assetId} {
       allow read: if isSignedIn() && (
         isAdmin() ||
         resource.data.clientId == request.auth.uid ||
         resource.data.assignedDriverId == request.auth.uid ||
+        resource.data.assignedTechId == request.auth.uid ||
         (
-          resource.data.companyId != null &&
           exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == resource.data.companyId
+          (
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == resource.data.clientId ||
+            (
+              resource.data.companyId != null &&
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == resource.data.companyId
+            )
+          )
         )
       );
 
       allow create: if isSignedIn() && (
         isAdmin() ||
         (
-          request.resource.data.clientId == request.auth.uid &&
+          (
+            request.resource.data.clientId == request.auth.uid ||
+            (
+              exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == request.resource.data.clientId
+            )
+          ) &&
           isValidAsset(request.resource.data)
         )
       );
@@ -392,8 +456,17 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         isAdmin() ||
         (
-          // Dueño del equipo
-          resource.data.clientId == request.auth.uid &&
+          // Dueño del equipo o Coordinador de Flota / Edificio (companyId == clientId)
+          (
+            resource.data.clientId == request.auth.uid ||
+            (
+              exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+              (
+                get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == resource.data.clientId ||
+                get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == request.resource.data.clientId
+              )
+            )
+          ) &&
           request.resource.data.clientId == resource.data.clientId &&
           isValidAsset(request.resource.data)
         ) ||
@@ -408,7 +481,8 @@ service cloud.firestore {
 
       allow delete: if isSignedIn() && (
         isAdmin() ||
-        resource.data.clientId == request.auth.uid
+        resource.data.clientId == request.auth.uid ||
+        isSameCompany(resource.data.clientId)
       );
     }
 
@@ -495,27 +569,31 @@ service cloud.firestore {
 
     // 10. Recordatorios de Mantenimiento
     match /reminders/{reminderId} {
-      allow read, update, delete: if isSignedIn() && (
+      allow read, delete: if isSignedIn() && (
         resource.data.clientId == request.auth.uid ||
+        isSameCompany(resource.data.clientId) ||
         isAdmin()
       );
 
-      allow create: if isSignedIn() && (
+      allow create, update: if isSignedIn() && (
         request.resource.data.clientId == request.auth.uid ||
+        isSameCompany(request.resource.data.clientId) ||
         isAdmin()
       ) && isValidReminder(request.resource.data);
     }
 
     // 11. Agenda de Citas / Mantenimiento
     match /agenda/{agendaId} {
-      allow read, update, delete: if isSignedIn() && (
+      allow read, delete: if isSignedIn() && (
         resource.data.clientId == request.auth.uid ||
+        isSameCompany(resource.data.clientId) ||
         resource.data.techUserId == request.auth.uid ||
         isAdmin()
       );
 
-      allow create: if isSignedIn() && (
+      allow create, update: if isSignedIn() && (
         request.resource.data.clientId == request.auth.uid ||
+        isSameCompany(request.resource.data.clientId) ||
         request.resource.data.techUserId == request.auth.uid ||
         isAdmin()
       ) && isValidAgenda(request.resource.data);
@@ -597,6 +675,29 @@ service cloud.firestore {
       );
       allow create: if isSignedIn() && request.resource.data.techId != null;
       allow update, delete: if isAdmin();
+    }
+
+    // 17. Gestión de Equipos Corporativos (Coordinadores de Flota/Edificio, Conductores y Técnicos de Edificio)
+    match /company_members/{memberId} {
+      // Permite lectura de documento individual (get) por docId durante el primer ingreso / activación por PIN,
+      // y lectura completa (read) para usuarios autenticados (dueños, coordinadores y personal en ingreso).
+      allow get: if true;
+      allow read: if isSignedIn();
+
+      // Creación y actualización por dueños/coordinadores (alta en lote, asignación de unidad, reseteo de clave)
+      // y por el propio colaborador al configurar su PIN de 4 dígitos, pregunta de seguridad y clave definitiva.
+      allow create, update: if isSignedIn() &&
+                               request.resource.data.companyId is string &&
+                               request.resource.data.name is string &&
+                               request.resource.data.email is string &&
+                               isValidCompanyMember(request.resource.data);
+
+      // Eliminación restringida al dueño de la empresa, coordinador corporativo o administrador.
+      allow delete: if isSignedIn() && (
+        resource.data.companyId == request.auth.uid ||
+        isSameCompany(resource.data.companyId) ||
+        isAdmin()
+      );
     }
 
     // Fallback: Denegar todo por defecto para documentos no contemplados excepto admin

@@ -8,21 +8,21 @@ interface LogoProps {
 
 export default function Logo({ className = '', showText = true, size = 'md' }: LogoProps) {
   const iconSizes = {
-    sm: 'w-6 h-6',
-    md: 'w-10 h-10',
-    lg: 'w-14 h-14',
-    xl: 'w-20 h-20'
+    sm: 'w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8',
+    md: 'w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10',
+    lg: 'w-12 h-12 md:w-14 md:h-14',
+    xl: 'w-16 h-16 md:w-20 md:h-20'
   };
 
   const textSizes = {
-    sm: 'text-lg',
-    md: 'text-2xl',
-    lg: 'text-4xl',
-    xl: 'text-6xl'
+    sm: 'text-base sm:text-lg md:text-xl',
+    md: 'text-lg sm:text-xl md:text-2xl',
+    lg: 'text-3xl md:text-4xl',
+    xl: 'text-5xl md:text-6xl'
   };
 
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
+    <div className={`flex items-center gap-2 sm:gap-3 shrink-0 ${className}`}>
       {/* Carga del Logo desde la carpeta public */}
       <div className={`${iconSizes[size]} relative shrink-0`}>
         <img
@@ -38,10 +38,10 @@ export default function Logo({ className = '', showText = true, size = 'md' }: L
 
       {showText && (
         <div className="flex items-center gap-2 sm:gap-3">
-          <span className={`${textSizes[size]} font-black tracking-tighter text-white`}>
+          <span className={`${textSizes[size]} font-black tracking-tighter text-white whitespace-nowrap`}>
             Mantech<span className="text-[#5d3cfe]">Pro</span>
           </span>
-          <div className="hidden xs:block bg-[#52ffac]/10 border border-[#52ffac]/20 px-2 sm:px-3 py-1 rounded-lg shadow-[0_0_10px_rgba(82,255,172,0.1)]">
+          <div className="hidden md:block bg-[#52ffac]/10 border border-[#52ffac]/20 px-2 sm:px-3 py-1 rounded-lg shadow-[0_0_10px_rgba(82,255,172,0.1)]">
             <span className="text-[8px] sm:text-[10px] font-black text-[#52ffac] uppercase tracking-[0.2em]">PANAMÁ</span>
           </div>
         </div>

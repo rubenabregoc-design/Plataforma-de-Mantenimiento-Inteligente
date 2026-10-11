@@ -17,77 +17,74 @@ body {
 
 
 /* ============================================================
-   INDUSTRIAL MODERN CARD SYSTEM
+   INDUSTRIAL MODERN CARD SYSTEM (MOBILE RESPONSIVE)
    ============================================================ */
 .modern-card {
   background-color: #121317;
-  border: 1px solid #2a2b2f;
-  border-radius: 2.5rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.25rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 640px) {
+  .modern-card {
+    border-radius: 2rem;
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+  }
 }
 
 .modern-card:hover {
   border-color: rgba(93, 60, 254, 0.4);
   transform: translateY(-2px);
-  box-shadow: 0 30px 60px -12px rgba(93, 60, 254, 0.15);
+  box-shadow: 0 15px 35px -8px rgba(93, 60, 254, 0.2);
 }
 
 .grid-bg {
-  background-image: radial-gradient(circle at 2px 2px, #2a2b2f 1px, transparent 0);
-  background-size: 40px 40px;
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.04) 1px, transparent 0);
+  background-size: 28px 28px;
 }
 
 /* ============================================================
-   ULTRA-MODERN INDUSTRIAL SCROLLBAR SYSTEM
+   ULTRA-CLEAN INDUSTRIAL SCROLLBAR SYSTEM
    ============================================================ */
-/* Global Scrollbar */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+/* Hide scrollbars globally on touch/mobile devices */
+@media (pointer: coarse), (max-width: 768px) {
+  ::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
 }
 
-::-webkit-scrollbar-track {
-  background: #0d0e12;
-  border-radius: 10px;
+/* Subtle dark desktop scrollbar */
+@media (min-width: 769px) {
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(93, 60, 254, 0.5);
+  }
 }
 
-::-webkit-scrollbar-thumb {
-  background: #2a2b2f; /* Color base neutral industrial */
-  border-radius: 10px;
-  border: 1px solid #0d0e12;
-  transition: all 0.3s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #5d3cfe; /* Cambia a morado al interactuar */
-  box-shadow: 0 0 15px rgba(93, 60, 254, 0.4);
-}
-
-/* Scrollbar para contenedores específicos con clase .custom-scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
+  display: none;
 }
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
-  margin: 10px 0;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #5d3cfe;
-  border-radius: 10px;
-  border: none;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #c7bfff;
-}
-
-/* Firefox Support */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #2a2b2f #0d0e12;
+.custom-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 /* Modal Open - Prevent Body Scroll */
@@ -188,5 +185,36 @@ input, textarea {
   animation: sheet-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* ============================================================
+   SEPARACIÓN ESTRICTA WEB ESCRITORIO vs MÓVIL (ZOOM 100% NÍTIDO)
+   ============================================================ */
+@media (max-width: 767px) {
+  html {
+    font-size: 15px;
+  }
+}
 
+@media (min-width: 1024px) {
+  html {
+    font-size: 17px;
+  }
 
+  /* Escalar micro-textos exclusivamente en Web de Escritorio para lectura cómoda al 100% de zoom sin afectar móvil */
+  .text-\[6px\],
+  .text-\[7px\],
+  .text-\[8px\] {
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+
+  .text-\[9px\],
+  .text-\[10px\] {
+    font-size: 12.5px !important;
+    line-height: 1.4 !important;
+  }
+
+  .text-\[11px\] {
+    font-size: 13.5px !important;
+    line-height: 1.45 !important;
+  }
+}

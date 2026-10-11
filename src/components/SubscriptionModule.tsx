@@ -18,10 +18,10 @@ export default function SubscriptionModule({ subscription, onUpgrade, onNavigate
       name: 'Gratis',
       price: '0',
       features: [
-        'Hasta 2 activos registrados',
+        'Hasta 5 activos registrados (Equipos o Vehículos)',
         'Diagnóstico manual básico',
-        'Uso personal básico',
-        'Alertas de mantenimiento básicas'
+        'Alertas de mantenimiento preventivo',
+        'Acceso a Técnicos Verificados Mantech ID'
       ],
       icon: Inbox
     },
@@ -31,8 +31,9 @@ export default function SubscriptionModule({ subscription, onUpgrade, onNavigate
       price: '29',
       features: [
         'Incluye todo de Gratis +',
-        'Hasta 5 activos registrados',
-        'Rastreo Satelital Tiempo Real',
+        'Hasta 10 activos registrados (Flota o Equipos)',
+        'Módulo Control de Flota y GPS en Tiempo Real',
+        'Bitácora Pre-Viaje y Hoja de Ruta Digital',
         'Panel de Gestión Global de Activos',
         'Prioridad estándar de despacho'
       ],
@@ -44,12 +45,12 @@ export default function SubscriptionModule({ subscription, onUpgrade, onNavigate
       price: '89',
       features: [
         'Incluye todo de Emprendedor +',
-        'Hasta 25 activos registrados',
-        'Auditoría de Combustible',
-        'Diagnóstico IA Predictivo',
-        'Carga masiva por Excel',
+        'Hasta 25 activos registrados (Flota y Edificios)',
+        'Flota Avanzada + Auditoría de Combustible IA',
+        'Diagnóstico IA Predictivo (MDM-V4)',
+        'Carga masiva de Flota y Equipos por Excel',
         'Sello de Ingeniería Verificada',
-        'Reportes PDF/Excel Full'
+        'Reportes Oficiales PDF y Excel Full'
       ],
       icon: Zap,
       highlight: true
@@ -60,12 +61,12 @@ export default function SubscriptionModule({ subscription, onUpgrade, onNavigate
       price: '199',
       features: [
         'Incluye todo de Profesional +',
-        'Unidades ILIMITADAS',
-        'Multi-Administrador (Bodegas/PH)',
+        'Activos, Flotas y Conductores ILIMITADOS',
+        'Coordinadores de Flota y Edificio (Creación en Lote)',
+        'Multi-Administrador (Bodegas / PH / Sedes)',
         'SLA Prioritario < 1 Hora',
-        'Seguro Mantech Protection',
-        'API de Sincronización ERP',
-        'Auditoría Mensual Firmada'
+        'Garantía Mantech Protection (Escrow + Respaldo)',
+        'Auditoría Mensual Firmada & API ERP'
       ],
       icon: Building2
     }
@@ -118,14 +119,14 @@ export default function SubscriptionModule({ subscription, onUpgrade, onNavigate
   const plans = role === 'tech' ? techPlans : clientPlans;
 
   const clientTable = [
-    { f: "Capacidad de Activos", b: "Hasta 5", p: "Hasta 25", e: "ILIMITADOS", cat: "Operación", icon: LayoutDashboard },
-    { f: "Rastreo Satelital", b: "✅", p: "✅", e: "PREMIUM", cat: "Ingeniería", icon: Globe },
-    { f: "Prioridad de Despacho", b: "ESTÁNDAR", p: "ALTA", e: "MÁXIMA", cat: "Soporte", icon: ShieldAlert },
-    { f: "Auditoría de Combustible", b: "❌", p: "✅", e: "✅ + SENSORES", cat: "Finanzas", icon: Fuel },
-    { f: "Diagnóstico Predictivo", b: "MANUAL", p: "IA BÁSICA", e: "IA AUTOMÁTICA", cat: "Ingeniería", icon: BrainCircuit },
-    { f: "Auditoría & Cumplimiento", b: "❌", p: "BÁSICO", e: "FULL (Excel/PDF)", cat: "Herramientas", icon: FileText },
-    { f: "Gestión Multi-Sede", b: "❌", p: "HASTA 5", e: "ILIMITADAS", cat: "Gestión", icon: Globe },
-    { f: "API & Integraciones", b: "❌", p: "❌", e: "✅ DISPONIBLE", cat: "Seguridad", icon: Pencil }
+    { f: "Capacidad de Activos / Flota", g: "Hasta 5", b: "Hasta 10", p: "Hasta 25", e: "ILIMITADOS", cat: "Operación", icon: LayoutDashboard },
+    { f: "Control de Flota & Conductores", g: "REGISTRO BASE", b: "✅ GPS + RUTAS", p: "✅ + COMBUSTIBLE IA", e: "ILIMITADO + LOTE", cat: "Flota", icon: Globe },
+    { f: "Coordinadores (Flota / Edificio)", g: "❌", b: "❌", p: "1 SUPERVISOR", e: "✅ CREACIÓN EN LOTE", cat: "Personal", icon: Users },
+    { f: "Prioridad de Despacho", g: "BÁSICA", b: "ESTÁNDAR", p: "ALTA", e: "MÁXIMA (< 1H)", cat: "Soporte", icon: ShieldAlert },
+    { f: "Auditoría de Combustible", g: "❌", b: "❌", p: "✅ IA ACTIVA", e: "✅ + TELEMETRÍA", cat: "Finanzas", icon: Fuel },
+    { f: "Diagnóstico Predictivo", g: "MANUAL", b: "MANUAL", p: "IA MDM-V4", e: "IA AUTOMÁTICA", cat: "Ingeniería", icon: BrainCircuit },
+    { f: "Reportes PDF / Excel", g: "BÁSICO", b: "ESTÁNDAR", p: "FULL (Excel/PDF)", e: "AUDITORÍA FIRMADA", cat: "Herramientas", icon: FileText },
+    { f: "Mantech Protection (Garantía)", g: "ESCROW BASE", b: "ESCROW + ID", p: "GARANTÍA EXTENDIDA", e: "✅ COBERTURA TOTAL", cat: "Seguridad", icon: ShieldCheck }
   ];
 
   const techTable = [
@@ -286,42 +287,61 @@ export default function SubscriptionModule({ subscription, onUpgrade, onNavigate
         ))}
       </div>
 
-      <div className="pt-20 space-y-12 pb-20">
+      <div className="pt-14 space-y-10 pb-20">
+         {role === 'client' && (
+           <div className="bg-gradient-to-br from-[#1c1d21] to-[#121317] border border-[#52ffac]/25 rounded-[2rem] p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center gap-6 shadow-2xl">
+             <div className="w-14 h-14 rounded-2xl bg-[#52ffac]/10 border border-[#52ffac]/30 flex items-center justify-center text-[#52ffac] shrink-0">
+               <ShieldCheck className="w-8 h-8" />
+             </div>
+             <div className="space-y-2 flex-1">
+               <div className="flex items-center gap-2">
+                 <span className="px-2.5 py-0.5 rounded-full bg-[#52ffac]/15 text-[#52ffac] text-[9px] font-black uppercase tracking-widest">Respaldo Corporativo</span>
+                 <h4 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">¿En qué consiste la Garantía Mantech Protection?</h4>
+               </div>
+               <p className="text-xs text-[#c8c4d9] leading-relaxed">
+                 <strong>1. Custodia de Pago (Escrow):</strong> Tu dinero se retiene de forma segura y solo se libera al técnico cuando apruebas las fotos del Antes/Después y firmas de conformidad.{' '}
+                 <strong>2. Garantía de Retrabajo Sin Costo:</strong> Si un activo o unidad de flota intervenida reincide en la falla dentro del periodo de garantía, enviamos un especialista certificado de respaldo sin costo adicional de mano de obra.{' '}
+                 <strong>3. Blindaje Mantech ID:</strong> Todo el personal cuenta con cédula verificada, récord policivo vigente y bitácora GPS auditable.
+               </p>
+             </div>
+           </div>
+         )}
+
          <div className="text-center md:text-left space-y-2">
             <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Comparativa de <span className="text-[#52ffac]">Alto Nivel</span></h3>
-            <p className="text-[10px] text-[#474556] font-black uppercase tracking-[0.3em]">Exigencia técnica y herramientas destacadas para {role === 'tech' ? 'Especialistas' : 'Empresas'}</p>
+            <p className="text-[10px] text-[#8a879d] font-black uppercase tracking-[0.3em]">Exigencia técnica y herramientas destacadas para {role === 'tech' ? 'Especialistas' : 'Empresas y Flotas'}</p>
          </div>
-         <div className="bg-[#121317] border border-[#2a2b2f] rounded-[3rem] shadow-2xl overflow-x-auto">
+         <div className="bg-[#121317] border border-[#2a2b2f] rounded-[2rem] sm:rounded-[3rem] shadow-2xl overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[900px]">
                <thead>
                   <tr className="bg-[#1c1d21] border-b border-[#2a2b2f]">
-                     <th className="p-8 text-[10px] font-black text-white uppercase tracking-widest">Herramienta / Funcionalidad</th>
-                     <th className="p-8 text-center text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest">Gratis</th>
-                     <th className="p-8 text-center text-[10px] font-black text-white uppercase tracking-widest bg-white/5">Emprendedor</th>
-                     <th className="p-8 text-center text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest bg-[#5d3cfe]/5">Profesional</th>
-                     <th className="p-8 text-center text-[10px] font-black text-amber-500 uppercase tracking-widest">Enterprise</th>
+                     <th className="p-6 sm:p-8 text-[10px] font-black text-white uppercase tracking-widest">Herramienta / Funcionalidad</th>
+                     <th className="p-6 sm:p-8 text-center text-[10px] font-black text-[#c8c4d9] uppercase tracking-widest">Gratis</th>
+                     <th className="p-6 sm:p-8 text-center text-[10px] font-black text-white uppercase tracking-widest bg-white/5">Emprendedor</th>
+                     <th className="p-6 sm:p-8 text-center text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest bg-[#5d3cfe]/5">Profesional</th>
+                     <th className="p-6 sm:p-8 text-center text-[10px] font-black text-amber-500 uppercase tracking-widest">Enterprise</th>
                   </tr>
                </thead>
                <tbody className="text-xs font-bold text-[#e3e2e8]">
-                  {tableRows.map((row, i) => (
+                  {tableRows.map((row: any, i: number) => (
                     <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                       <td className="p-8">
+                       <td className="p-6 sm:p-8">
                           <div className="flex items-center gap-3">
                              <div className="p-2 bg-white/5 rounded-lg">
                                <row.icon className="w-4 h-4 text-[#5d3cfe]" />
                              </div>
                              <div>
-                                <span className="block text-[8px] text-[#474556] font-black uppercase mb-1 tracking-widest">{row.cat}</span>
+                                <span className="block text-[8px] text-[#8a879d] font-black uppercase mb-1 tracking-widest">{row.cat}</span>
                                 <span className="text-white font-bold">{row.f}</span>
                              </div>
                           </div>
                        </td>
-                       <td className="p-8 text-center opacity-60 font-black">
-                         {role === 'client' ? (row.f === 'Capacidad de Activos' ? 'Hasta 2' : 'BÁSICO') : '---'}
+                       <td className="p-6 sm:p-8 text-center opacity-80 font-black">
+                         {role === 'client' ? (row.g || 'Hasta 5') : '---'}
                        </td>
-                       <td className="p-8 text-center text-white bg-white/5 font-black">{row.b}</td>
-                       <td className="p-8 text-center text-white bg-[#5d3cfe]/5 font-black">{row.p}</td>
-                       <td className="p-8 text-center text-amber-400 font-black">{row.e}</td>
+                       <td className="p-6 sm:p-8 text-center text-white bg-white/5 font-black">{row.b}</td>
+                       <td className="p-6 sm:p-8 text-center text-white bg-[#5d3cfe]/5 font-black">{row.p}</td>
+                       <td className="p-6 sm:p-8 text-center text-amber-400 font-black">{row.e}</td>
                     </tr>
                   ))}
                </tbody>

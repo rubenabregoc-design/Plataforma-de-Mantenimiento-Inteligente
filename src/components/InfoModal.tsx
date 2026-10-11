@@ -357,30 +357,36 @@ export default function InfoModal({ isOpen, onClose, slug }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-[#0d0e12]/95 backdrop-blur-xl flex items-center justify-center p-4 sm:p-6">
+    <div className="fixed inset-0 z-[1000] bg-[#0d0e12] sm:bg-black/85 sm:backdrop-blur-xl flex flex-col justify-end sm:justify-center sm:items-center p-0 sm:p-6">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="w-full max-w-3xl bg-[#121317] border border-white/5 rounded-[2rem] sm:rounded-[3rem] overflow-hidden shadow-2xl relative flex flex-col max-h-[90vh]"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full h-full sm:h-auto sm:max-w-3xl sm:max-h-[88vh] bg-[#0d0e12] sm:bg-[#121317] sm:border border-white/10 sm:rounded-3xl overflow-hidden shadow-2xl relative flex flex-col pt-[max(env(safe-area-inset-top),0.75rem)] pb-[max(env(safe-area-inset-bottom),1rem)]"
       >
         {/* HEADER */}
-        <div className="p-6 sm:p-8 border-b border-white/5 flex justify-between items-center bg-[#1c1d21]/50 shrink-0">
-           <div className="flex items-center gap-4 sm:gap-5">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shadow-xl shrink-0" style={{ backgroundColor: `${content.color}20`, color: content.color }}>
-                 <content.icon className="w-6 h-6 sm:w-7 sm:h-7" />
+        <div className="px-5 py-4 sm:px-8 sm:py-6 border-b border-white/10 flex justify-between items-center bg-[#16171d] shrink-0">
+           <div className="flex items-center gap-3 sm:gap-4 pr-2 overflow-hidden flex-1">
+              <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shrink-0" style={{ backgroundColor: `${content.color}20`, color: content.color }}>
+                 <content.icon className="w-5 h-5 sm:w-7 sm:h-7" />
               </div>
-              <div className="overflow-hidden">
-                 <h2 className="text-xl sm:text-3xl font-black text-white uppercase tracking-tighter italic leading-none truncate">{content.title}</h2>
-                 <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-40 mt-1 truncate">{content.subtitle}</p>
+              <div className="overflow-hidden min-w-0">
+                 <h2 className="text-base sm:text-2xl font-black text-white uppercase tracking-tight leading-tight truncate">{content.title}</h2>
+                 <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#8a879d] mt-0.5 truncate">{content.subtitle}</p>
               </div>
            </div>
-           <button onClick={() => { setShowForm(false); onClose(); }} className="p-3 bg-white/5 hover:bg-rose-600/20 text-white rounded-xl transition-all active:scale-95 shrink-0"><X className="w-5 h-5 sm:w-6 sm:h-6" /></button>
+           <button
+             onClick={() => { setShowForm(false); onClose(); }}
+             className="p-2.5 sm:p-3 bg-white/5 hover:bg-rose-600 text-white rounded-xl transition-all active:scale-95 shrink-0 ml-2"
+             aria-label="Cerrar Ventana"
+           >
+             <X className="w-4 h-4 sm:w-5 sm:h-5" />
+           </button>
         </div>
 
         {/* CONTENT */}
         <div
           ref={scrollRef}
-          className="p-6 sm:p-10 space-y-10 overflow-y-auto custom-scrollbar flex-1 scroll-smooth"
+          className="p-5 sm:p-8 space-y-6 sm:space-y-8 overflow-y-auto no-scrollbar flex-1 scroll-smooth"
         >
            <AnimatePresence mode="wait">
              {!showForm ? (
@@ -389,44 +395,44 @@ export default function InfoModal({ isOpen, onClose, slug }: Props) {
                  initial={{ opacity: 0, x: -20 }}
                  animate={{ opacity: 1, x: 0 }}
                  exit={{ opacity: 0, x: 20 }}
-                 className="space-y-10"
+                 className="space-y-6 sm:space-y-8"
                >
-                 <div className="space-y-6">
-                    <p className="text-[#c8c4d9] text-base sm:text-xl font-medium leading-relaxed italic border-l-4 pl-6 text-justify" style={{ borderColor: content.color }}>
+                 <div className="space-y-4 sm:space-y-6">
+                    <p className="text-[#c8c4d9] text-sm sm:text-lg font-medium leading-relaxed italic border-l-4 pl-4 sm:pl-6 text-left" style={{ borderColor: content.color }}>
                        "{content.description}"
                     </p>
-                    <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 sm:p-8">
-                      <p className="text-[#8a879d] text-sm sm:text-base leading-relaxed font-medium text-justify">
+                    <div className="bg-white/[0.03] border border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6">
+                      <p className="text-[#8a879d] text-xs sm:text-sm leading-relaxed font-medium text-left">
                         {content.longDesc}
                       </p>
                     </div>
                  </div>
 
-                 <div className="space-y-6">
-                    <h3 className="text-[10px] font-black text-[#474556] uppercase tracking-[0.4em] ml-1">Puntos de Protocolo</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                 <div className="space-y-4">
+                    <h3 className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-[0.3em] ml-1">Puntos de Protocolo</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                        {content.points.map((p, i) => (
-                         <div key={i} className="p-6 bg-[#0d0e12] rounded-3xl border border-white/5 space-y-4 group hover:border-white/10 transition-all">
-                            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#5d3cfe] group-hover:scale-110 transition-transform duration-500">
-                               <p.icon className="w-5 h-5" style={{ color: content.color }} />
+                         <div key={i} className="p-4 sm:p-5 bg-white/[0.03] rounded-2xl border border-white/5 space-y-2.5 group hover:border-white/10 transition-all">
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#5d3cfe] shrink-0">
+                               <p.icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: content.color }} />
                             </div>
-                            <div className="space-y-1">
-                               <h4 className="text-[11px] font-black text-white uppercase tracking-widest">{p.title}</h4>
-                               <p className="text-[10px] text-[#474556] font-bold leading-relaxed">{p.desc}</p>
+                            <div className="space-y-0.5">
+                               <h4 className="text-[11px] sm:text-xs font-black text-white uppercase tracking-wider">{p.title}</h4>
+                               <p className="text-[10px] text-[#8a879d] font-medium leading-relaxed">{p.desc}</p>
                             </div>
                          </div>
                        ))}
                     </div>
                  </div>
 
-                 <div className="bg-gradient-to-r from-[#5d3cfe]/10 to-transparent p-8 rounded-[2rem] border border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6">
+                 <div className="bg-gradient-to-r from-[#5d3cfe]/10 to-transparent p-5 sm:p-8 rounded-2xl border border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="space-y-1 text-center sm:text-left">
                        <h4 className="text-sm font-black text-white uppercase tracking-tight">¿Necesita más información?</h4>
-                       <p className="text-[10px] text-[#c8c4d9] font-bold uppercase tracking-widest opacity-60">Póngase en contacto con nuestro equipo estratégico.</p>
+                       <p className="text-[10px] text-[#8a879d] font-bold uppercase tracking-wider">Póngase en contacto con nuestro equipo estratégico.</p>
                     </div>
                     <button
                       onClick={() => setShowForm(true)}
-                      className="px-8 py-3 bg-[#5d3cfe] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#5d3cfe]/20 hover:scale-105 transition-all flex items-center gap-3"
+                      className="w-full sm:w-auto px-6 py-3 bg-[#5d3cfe] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#5d3cfe]/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
                     >
                        <Mail className="w-4 h-4" /> Contactar Ahora
                     </button>
@@ -438,35 +444,35 @@ export default function InfoModal({ isOpen, onClose, slug }: Props) {
                  initial={{ opacity: 0, x: 20 }}
                  animate={{ opacity: 1, x: 0 }}
                  exit={{ opacity: 0, x: -20 }}
-                 className="space-y-8"
+                 className="space-y-6"
                >
                  <button
                    onClick={() => setShowForm(false)}
-                   className="text-[9px] font-black text-[#5d3cfe] uppercase tracking-widest flex items-center gap-2 hover:underline mb-4"
+                   className="text-[10px] font-black text-[#5d3cfe] uppercase tracking-widest flex items-center gap-2 hover:underline mb-2"
                  >
                     ← Volver a la información
                  </button>
 
-                 <form onSubmit={handleSendEmail} className="space-y-6 bg-[#0d0e12] p-8 rounded-[2.5rem] border border-white/5 shadow-inner">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                       <div className="space-y-1.5">
-                          <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Nombre Completo</label>
-                          <input required type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-[#121317] border border-white/5 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#5d3cfe]" placeholder="Ej: Rubén Abrego" />
+                 <form onSubmit={handleSendEmail} className="space-y-4 sm:space-y-5 bg-[#16171d] p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-white/5 shadow-inner">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       <div className="space-y-1.5 text-left">
+                          <label className="text-[10px] font-black text-[#8a879d] uppercase ml-1">Nombre Completo</label>
+                          <input required type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-[#0d0e12] border border-white/10 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#5d3cfe]" placeholder="Ej: Rubén Abrego" />
                        </div>
-                       <div className="space-y-1.5">
-                          <label className="text-[9px] font-black text-[#474556] uppercase ml-1">WhatsApp</label>
-                          <input required type="tel" value={form.whatsapp} onChange={e => setForm({...form, whatsapp: e.target.value})} className="w-full bg-[#121317] border border-white/5 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#52ffac]" placeholder="+507 6000-0000" />
+                       <div className="space-y-1.5 text-left">
+                          <label className="text-[10px] font-black text-[#8a879d] uppercase ml-1">WhatsApp</label>
+                          <input required type="tel" value={form.whatsapp} onChange={e => setForm({...form, whatsapp: e.target.value})} className="w-full bg-[#0d0e12] border border-white/10 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#52ffac]" placeholder="+507 6000-0000" />
                        </div>
-                       <div className="space-y-1.5">
-                          <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Correo Electrónico</label>
-                          <input required type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full bg-[#121317] border border-white/5 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#5d3cfe]" placeholder="email@ejemplo.com" />
+                       <div className="space-y-1.5 text-left">
+                          <label className="text-[10px] font-black text-[#8a879d] uppercase ml-1">Correo Electrónico</label>
+                          <input required type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full bg-[#0d0e12] border border-white/10 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#5d3cfe]" placeholder="email@ejemplo.com" />
                        </div>
                     </div>
-                    <div className="space-y-1.5">
-                       <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Mensaje o Consulta</label>
-                       <textarea required rows={4} value={form.message} onChange={e => setForm({...form, message: e.target.value})} className="w-full bg-[#121317] border border-white/5 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#5d3cfe] resize-none" placeholder="Escriba aquí los detalles industriales de su solicitud..." />
+                    <div className="space-y-1.5 text-left">
+                       <label className="text-[10px] font-black text-[#8a879d] uppercase ml-1">Mensaje o Consulta</label>
+                       <textarea required rows={4} value={form.message} onChange={e => setForm({...form, message: e.target.value})} className="w-full bg-[#0d0e12] border border-white/10 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-[#5d3cfe] resize-none" placeholder="Escriba aquí los detalles de su consulta..." />
                     </div>
-                    <button type="submit" disabled={isSending} className="w-full py-4 bg-[#5d3cfe] text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[#5d3cfe]/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3">
+                    <button type="submit" disabled={isSending} className="w-full py-4 bg-[#5d3cfe] text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-xl shadow-[#5d3cfe]/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2">
                        {isSending ? "PROCESANDO..." : <><Send className="w-4 h-4" /> Enviar Solicitud Oficial</>}
                     </button>
                  </form>
@@ -474,14 +480,14 @@ export default function InfoModal({ isOpen, onClose, slug }: Props) {
              )}
            </AnimatePresence>
 
-           <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-6">
-              <div className="flex items-center gap-3 order-2 sm:order-1">
+           <div className="pt-4 sm:pt-6 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="flex items-center gap-2.5 order-2 sm:order-1">
                  <div className="w-2 h-2 rounded-full bg-[#52ffac] animate-pulse"></div>
-                 <span className="text-[9px] font-black text-[#474556] uppercase tracking-widest italic">Protocolo Actualizado v4.7 PA • 2026</span>
+                 <span className="text-[9px] font-black text-[#8a879d] uppercase tracking-widest">Protocolo Mantech V4 Activo</span>
               </div>
               <button
                 onClick={onClose}
-                className="w-full sm:w-fit px-10 py-4 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all order-1 sm:order-2 active:scale-95 shadow-xl"
+                className="w-full sm:w-fit px-8 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all order-1 sm:order-2 active:scale-95 shadow-lg"
               >
                 Cerrar Ventana
               </button>

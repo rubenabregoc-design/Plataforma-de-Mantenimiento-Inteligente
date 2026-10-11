@@ -14,6 +14,7 @@ import { storage, db } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot, limit, orderBy, deleteDoc } from 'firebase/firestore';
 import { useUI } from '../context/UIContext';
+import { downloadWorkbookAsExcel } from '../utils/pdfExport';
 
 interface FleetDashboardProps {
   assets: Asset[];
@@ -319,7 +320,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Bitácora GPS");
     const dateStr = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(wb, `Ruta_${asset.name}_${dateStr}.xlsx`);
+    downloadWorkbookAsExcel(wb, `Ruta_${asset.name}_${dateStr}.xlsx`);
     toast.success("Reporte de ruta descargado.");
   };
 
@@ -443,34 +444,34 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
     <div className="space-y-6">
       {/* Fleet Navigation Tabs */}
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <div className="flex bg-[#1a1b20] p-1.5 rounded-2xl w-fit border border-[#474556]/30 shadow-inner">
+        <div className="flex overflow-x-auto max-w-full no-scrollbar bg-[#1a1b20] p-1.5 rounded-2xl w-full sm:w-fit border border-[#474556]/30 shadow-inner gap-1">
           <button
             onClick={() => setActiveSubTab('fleet')}
-            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${activeSubTab === 'fleet' ? 'bg-[#5d3cfe] text-white shadow-sm' : 'text-[#c8c4d9] hover:text-white'}`}
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all ${activeSubTab === 'fleet' ? 'bg-[#5d3cfe] text-white shadow-sm' : 'text-[#c8c4d9] hover:text-white'}`}
           >
             Monitor de Flota
           </button>
           <button
             onClick={() => setActiveSubTab('fuel')}
-            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 ${activeSubTab === 'fuel' ? 'bg-[#5d3cfe] text-white shadow-sm' : 'text-[#c8c4d9] hover:text-white'}`}
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 ${activeSubTab === 'fuel' ? 'bg-[#5d3cfe] text-white shadow-sm' : 'text-[#c8c4d9] hover:text-white'}`}
           >
             Control Combustible
           </button>
           <button
             onClick={() => setActiveSubTab('radio')}
-            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 ${activeSubTab === 'radio' ? 'bg-[#5d3cfe] text-white shadow-sm' : 'text-[#c8c4d9] hover:text-white'}`}
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 ${activeSubTab === 'radio' ? 'bg-[#5d3cfe] text-white shadow-sm' : 'text-[#c8c4d9] hover:text-white'}`}
           >
             Walkie-Talkie
           </button>
           <button
             onClick={() => mode === 'full' ? setActiveSubTab('api') : toast.error("⚠️ Plan Corporativo Requerido para acceso a API.")}
-            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 ${activeSubTab === 'api' ? 'bg-[#5d3cfe] text-white shadow-sm' : 'text-[#c8c4d9] hover:text-white'}`}
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 ${activeSubTab === 'api' ? 'bg-[#5d3cfe] text-white shadow-sm' : 'text-[#c8c4d9] hover:text-white'}`}
           >
             API Integración {mode !== 'full' && <Zap className="w-3 h-3 fill-amber-500 text-amber-500" />}
           </button>
           <button
             onClick={() => mode === 'full' ? setActiveSubTab('support') : toast.error("⚠️ Plan Corporativo Requerido para Gerente Dedicado.")}
-            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 ${activeSubTab === 'support' ? 'bg-[#5d3cfe] text-white shadow-sm' : 'text-[#c8c4d9] hover:text-white'}`}
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 ${activeSubTab === 'support' ? 'bg-[#5d3cfe] text-white shadow-sm' : 'text-[#c8c4d9] hover:text-white'}`}
           >
             Gerente Dedicado {mode !== 'full' && <Star className="w-3 h-3 fill-amber-500 text-amber-500" />}
           </button>
@@ -536,7 +537,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                       const ws = XLSX.utils.json_to_sheet(data);
                       const wb = XLSX.utils.book_new();
                       XLSX.utils.book_append_sheet(wb, ws, "Auditoria");
-                      XLSX.writeFile(wb, "Reporte_Flota.xlsx");
+                      downloadWorkbookAsExcel(wb, "Reporte_Flota.xlsx");
                     }}
                     className="flex-1 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-[8px] font-black uppercase flex items-center justify-center gap-1 transition-all"
                  >
@@ -606,7 +607,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                         const ws = XLSX.utils.json_to_sheet(templateData);
                         const wb = XLSX.utils.book_new();
                         XLSX.utils.book_append_sheet(wb, ws, "Plantilla");
-                        XLSX.writeFile(wb, "PLANTILLA_CARGA_MASIVA.xlsx");
+                        downloadWorkbookAsExcel(wb, "PLANTILLA_CARGA_MASIVA.xlsx");
                         toast.success("Plantilla descargada.");
                       }}
                       className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl text-[8px] font-black uppercase hover:bg-white/10 transition-all flex items-center gap-2"
@@ -1605,10 +1606,10 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
               </div>
            </div>
 
-           <div className="bg-[#121317] border border-[#2a2b2f] p-10 rounded-[3rem] shadow-2xl space-y-8">
-              <header className="flex justify-between items-center">
+           <div className="bg-[#121317] border border-[#2a2b2f] p-4 sm:p-8 md:p-10 rounded-3xl sm:rounded-[3rem] shadow-2xl space-y-5 sm:space-y-8">
+              <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                  <div>
-                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Desglose por <span className="text-[#5d3cfe]">Unidad</span></h3>
+                    <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tighter">Desglose por <span className="text-[#5d3cfe]">Unidad</span></h3>
                     <p className="text-[10px] text-[#474556] font-bold uppercase tracking-widest mt-2">Cálculos auditados según tipo de combustible individual</p>
                  </div>
                  <div className="flex items-center gap-3">
@@ -1626,15 +1627,15 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                     const price = asset.fuelType === 'gas91' ? fuelPrices.gas91 : asset.fuelType === 'gas95' ? fuelPrices.gas95 : fuelPrices.diesel;
                     const cost = gallons * price;
                     return (
-                       <div key={asset.id} className="bg-[#1c1d21] p-6 rounded-3xl border border-[#2a2b2f] flex justify-between items-center hover:border-[#52ffac]/30 transition-all group">
-                          <div className="flex gap-6 items-center">
+                       <div key={asset.id} className="bg-[#1c1d21] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-[#2a2b2f] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-6 hover:border-[#52ffac]/30 transition-all group">
+                          <div className="flex gap-3 sm:gap-5 items-center min-w-0 w-full sm:w-auto">
                              <div className="w-12 h-12 rounded-2xl bg-[#0d0e12] border border-[#2a2b2f] flex items-center justify-center text-white font-black group-hover:text-[#52ffac] transition-colors">{asset.name.split('-')[1] || '00'}</div>
                              <div>
                                 <h4 className="text-sm font-black text-white uppercase">{asset.name}</h4>
                                 <p className="text-[9px] font-bold text-[#474556] uppercase">{asset.licensePlate || 'Sin Placa'}</p>
                              </div>
                           </div>
-                          <div className="flex gap-12 items-center">
+                          <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-8 w-full sm:w-auto pt-2.5 sm:pt-0 border-t sm:border-t-0 border-white/5">
                              <div className="text-right">
                                 <p className="text-[8px] font-black text-[#474556] uppercase tracking-widest">Consumo</p>
                                 <p className="text-xs font-black text-white">{gallons.toFixed(1)} <span className="text-[9px] opacity-40 uppercase">Gal.</span></p>
@@ -1649,7 +1650,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                                    Valor sincronizado con el odómetro del monitor de flota.
                                 </div>
                              </div>
-                             <div className="w-24 bg-[#0d0e12] h-1.5 rounded-full overflow-hidden border border-white/5">
+                             <div className="hidden md:block w-24 bg-[#0d0e12] h-1.5 rounded-full overflow-hidden border border-white/5">
                                 <div className="bg-[#5d3cfe] h-full" style={{ width: `${Math.min(100, (gallons / 500) * 100)}%` }}></div>
                              </div>
                           </div>
@@ -1662,7 +1663,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
       )}
 
       {activeSubTab === 'radio' && (
-        <div className="bg-[#121317] border border-[#2a2b2f] rounded-[3rem] p-12 shadow-2xl space-y-10 animate-fade-in relative overflow-hidden">
+        <div className="bg-[#121317] border border-[#2a2b2f] rounded-3xl sm:rounded-[3rem] p-5 sm:p-12 shadow-2xl space-y-6 sm:space-y-10 animate-fade-in relative overflow-hidden">
            <div className="absolute top-0 right-0 p-12 opacity-5"><Radio className="w-64 h-64 text-[#5d3cfe]" /></div>
 
            <header className="text-center space-y-3 relative z-10">

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, limit } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from './AuthContext';
 import { Asset, MaintenanceReminder, TechProfile, JobRequest, InventoryItem, AgendaEvent } from '../types';
@@ -17,7 +17,7 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, role, isLoggedIn, loggedInName, userData } = useAuth();
+  const { user, role, isLoggedIn, loggedInName, userData, selectedTechProfileId } = useAuth();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [requests, setRequests] = useState<JobRequest[]>([]);
   const [technicians, setTechnicians] = useState<TechProfile[]>([]);
@@ -32,87 +32,159 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const unsubTechs = onSnapshot(collection(db, "technicians"), (snap) => {
-      const techs = snap.docs.map(d => ({ id: d.id, ...d.data() })) as TechProfile[];
-      setTechnicians(techs);
-    },
-    (err) => console.error("Tech Snapshot Error:", err)
+    // 1. Especialistas (Limitado a 150 para proteger lecturas de Firebase)
+    const unsubTechs = onSnapshot(
+      query(collection(db, "technicians"), limit(150)),
+      (snap) => {
+        const techs = snap.docs.map(d => ({ id: d.id, ...d.data() })) as TechProfile[];
+        setTechnicians(techs);
+      },
+      (err) => console.error("Tech Snapshot Error:", err)
     );
 
-    const qReq = role === 'admin'
-      ? query(collection(db, "requests"), orderBy("createdAt", "desc"))
-      : query(collection(db, "requests"), where(role === 'client' ? 'clientId' : 'techUserId', "==", user.uid));
+    // 2. Solicitudes / Órdenes de Trabajo por Rol
+    let unsubReqs = () => {};
+    let unsubOpenMarket = () => {};
+    let unsubTechIdReqs = () => {};
 
-    const unsubReqs = onSnapshot(qReq, (snap) => {
-      setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })) as JobRequest[]);
-    }, (err) => console.warn("Req Snapshot Error:", err));
+    const effectiveClientId = userData?.companyId || user.uid;
+    const subRole = userData?.subRole || null;
 
-    let unsubAssets = () => {};
-    if (role === 'client' || role === 'admin' || role === 'driver') {
-      let qAssets;
-      if (role === 'admin') {
-        qAssets = collection(db, "assets");
-      } else if (role === 'driver') {
-        // BLINDAJE DE PRIVACIDAD: El conductor NUNCA ve activos privados de clientes.
-        // Solo ve camiones de su empresa o donde fue asignado por su coordinador.
-        const nameVariants = Array.from(new Set([
-          loggedInName?.trim(),
-          user.displayName?.trim(),
-          user.email?.trim()
-        ].filter(Boolean) as string[]));
+    if (role === 'admin') {
+      const qAdminReq = query(collection(db, "requests"), orderBy("createdAt", "desc"), limit(200));
+      unsubReqs = onSnapshot(qAdminReq, (snap) => {
+        setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })) as JobRequest[]);
+      }, (err) => console.warn("Admin Req Snapshot Error:", err));
+    } else if (role === 'client') {
+      const qClientReq = query(collection(db, "requests"), where("clientId", "==", effectiveClientId), limit(100));
+      unsubReqs = onSnapshot(qClientReq, (snap) => {
+        setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })) as JobRequest[]);
+      }, (err) => console.warn("Client Req Snapshot Error:", err));
+    } else if (role === 'tech') {
+      // Un técnico necesita ver:
+      // A) Órdenes asignadas por techUserId
+      // B) Órdenes asignadas por techId (perfil del marketplace)
+      // C) Licitaciones abiertas en la Bolsa (status == 'open_bidding')
+      let byUserMap: Record<string, JobRequest> = {};
+      let byTechIdMap: Record<string, JobRequest> = {};
+      let openBiddingMap: Record<string, JobRequest> = {};
 
-        if (userData?.companyId) {
-          qAssets = query(collection(db, "assets"), where("companyId", "==", userData.companyId));
-        } else if (nameVariants.length > 0) {
-          qAssets = query(collection(db, "assets"), where("driverName", "in", nameVariants.slice(0, 10)));
-        } else {
-          qAssets = query(collection(db, "assets"), where("assignedDriverId", "==", user.uid));
-        }
-      } else {
-        // Clientes regulares: blindaje estricto, solo sus propios equipos
-        qAssets = query(collection(db, "assets"), where("clientId", "==", user.uid));
+      const mergeTechRequests = () => {
+        const merged = { ...openBiddingMap, ...byTechIdMap, ...byUserMap };
+        const sorted = Object.values(merged).sort((a, b) => {
+          const da = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dbTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dbTime - da;
+        });
+        setRequests(sorted);
+      };
+
+      const qByUser = query(collection(db, "requests"), where("techUserId", "==", user.uid), limit(100));
+      unsubReqs = onSnapshot(qByUser, (snap) => {
+        byUserMap = {};
+        snap.docs.forEach(d => { byUserMap[d.id] = { id: d.id, ...d.data() } as JobRequest; });
+        mergeTechRequests();
+      }, (err) => console.warn("Tech user req error:", err));
+
+      const resolvedTechId = userData?.techId || selectedTechProfileId;
+      if (resolvedTechId) {
+        const qByTechId = query(collection(db, "requests"), where("techId", "==", resolvedTechId), limit(100));
+        unsubTechIdReqs = onSnapshot(qByTechId, (snap) => {
+          byTechIdMap = {};
+          snap.docs.forEach(d => { byTechIdMap[d.id] = { id: d.id, ...d.data() } as JobRequest; });
+          mergeTechRequests();
+        }, (err) => console.warn("Tech id req error:", err));
       }
 
-      unsubAssets = onSnapshot(qAssets, (snap) => {
-        const loadedAssets = (snap.docs.map(d => ({ id: d.id, ...d.data() })) as Asset[])
-          .filter(a => a.status !== 'deleted');
-        setAssets(loadedAssets);
-        setIsDataLoading(false);
-      }, (err) => {
-        console.warn("Asset Snapshot Error:", err);
-        setIsDataLoading(false);
-      });
+      const qOpenMarket = query(collection(db, "requests"), where("status", "==", "open_bidding"), limit(50));
+      unsubOpenMarket = onSnapshot(qOpenMarket, (snap) => {
+        openBiddingMap = {};
+        snap.docs.forEach(d => { openBiddingMap[d.id] = { id: d.id, ...d.data() } as JobRequest; });
+        mergeTechRequests();
+      }, (err) => console.warn("Open bidding req error:", err));
     }
 
-    const unsubInven = onSnapshot(collection(db, "inventory"), (snap) =>
-      setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })) as InventoryItem[]),
+    // 3. Activos / Equipos aislados por Rol y Sub-Rol (Coordinador de Flota vs Coordinador de Edificio)
+    let unsubAssets = () => {};
+    let qAssets;
+    if (role === 'admin') {
+      qAssets = query(collection(db, "assets"), limit(300));
+    } else if (role === 'driver') {
+      // BLINDAJE DE PRIVACIDAD: El conductor solo ve unidades de su empresa o asignadas a su nombre
+      const nameVariants = Array.from(new Set([
+        loggedInName?.trim(),
+        user.displayName?.trim(),
+        user.email?.trim()
+      ].filter(Boolean) as string[]));
+
+      if (userData?.companyId) {
+        qAssets = query(collection(db, "assets"), where("clientId", "==", userData.companyId), limit(100));
+      } else if (nameVariants.length > 0) {
+        qAssets = query(collection(db, "assets"), where("driverName", "in", nameVariants.slice(0, 10)), limit(50));
+      } else {
+        qAssets = query(collection(db, "assets"), where("assignedDriverId", "==", user.uid), limit(50));
+      }
+    } else if (role === 'tech') {
+      // El técnico solo carga activos si pertenece a una empresa/edificio o tiene unidad asignada
+      if (userData?.companyId) {
+        qAssets = query(collection(db, "assets"), where("clientId", "==", userData.companyId), limit(100));
+      } else {
+        qAssets = query(collection(db, "assets"), where("assignedTechId", "==", user.uid), limit(50));
+      }
+    } else {
+      // Clientes regulares y Coordinadores (Flota / Edificio)
+      qAssets = query(collection(db, "assets"), where("clientId", "==", effectiveClientId), limit(100));
+    }
+
+    unsubAssets = onSnapshot(qAssets, (snap) => {
+      let loadedAssets = (snap.docs.map(d => ({ id: d.id, ...d.data() })) as Asset[])
+        .filter(a => a.status !== 'deleted');
+
+      if (role === 'client' && subRole === 'fleet_coordinator') {
+        loadedAssets = loadedAssets.filter(a => a.type === 'car' || a.type === 'moto');
+      } else if (role === 'client' && subRole === 'building_coordinator') {
+        loadedAssets = loadedAssets.filter(a => a.type !== 'car' && a.type !== 'moto');
+      }
+
+      setAssets(loadedAssets);
+      setIsDataLoading(false);
+    }, (err) => {
+      console.warn("Asset Snapshot Error:", err);
+      setIsDataLoading(false);
+    });
+
+    // 4. Inventario (Filtrado o limitado para eficiencia)
+    const unsubInven = onSnapshot(
+      query(collection(db, "inventory"), limit(150)),
+      (snap) => setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })) as InventoryItem[]),
       (err) => console.warn("Inv Snapshot Error:", err)
     );
 
+    // 5. Recordatorios de Mantenimiento
     let unsubReminders = () => {};
     if (role === 'client' || role === 'admin') {
       const qRem = role === 'admin'
-        ? collection(db, "reminders")
-        : query(collection(db, "reminders"), where("clientId", "==", user.uid));
+        ? query(collection(db, "reminders"), limit(200))
+        : query(collection(db, "reminders"), where("clientId", "==", effectiveClientId), limit(100));
       unsubReminders = onSnapshot(qRem, (snap) =>
         setReminders(snap.docs.map(d => ({ id: d.id, ...d.data() })) as MaintenanceReminder[]),
         (err) => console.warn("Rem Snapshot Error:", err)
       );
     }
 
-    // --- AGENDA LISTENER BLINDADO ---
+    // 6. Agenda por Rol
     let unsubAgenda = () => {};
     try {
       const qAgenda = role === 'admin'
-        ? collection(db, "agenda")
+        ? query(collection(db, "agenda"), limit(200))
         : (role === 'tech'
-          ? query(collection(db, "agenda"), where("techUserId", "==", user.uid))
-          : query(collection(db, "agenda"), where("clientId", "==", user.uid)));
+          ? query(collection(db, "agenda"), where("techUserId", "==", user.uid), limit(100))
+          : query(collection(db, "agenda"), where("clientId", "==", effectiveClientId), limit(100)));
 
       unsubAgenda = onSnapshot(qAgenda, (snap) => {
         setAgenda(snap.docs.map(d => ({ id: d.id, ...d.data() })) as AgendaEvent[]);
       }, (err) => {
-        console.warn("Agenda Snapshot Error (Permission Denied):", err);
+        console.warn("Agenda Snapshot Error:", err);
       });
     } catch (e) {
       console.error("Critical Agenda Error:", e);
@@ -121,12 +193,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       unsubTechs();
       unsubReqs();
+      unsubOpenMarket();
+      unsubTechIdReqs();
       unsubAssets();
       unsubInven();
       unsubReminders();
       unsubAgenda();
     };
-  }, [isLoggedIn, user, role, loggedInName, userData?.companyId]);
+  }, [isLoggedIn, user, role, loggedInName, userData?.companyId, userData?.subRole, userData?.techId, selectedTechProfileId]);
 
   return (
     <DataContext.Provider value={{

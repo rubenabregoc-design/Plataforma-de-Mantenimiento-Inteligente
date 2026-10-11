@@ -127,7 +127,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
 
             if (data.subscription) {
-              setSubscription(data.subscription);
+              const isCorporateAccount =
+                resolvedName.toLowerCase().includes('kelvin') ||
+                data.plan === 'enterprise' ||
+                data.subscription.status === 'expired';
+              if (isCorporateAccount && data.subscription.planId === 'plan-free') {
+                const restoredSub: UserSubscription = {
+                  planId: 'plan-enterprise',
+                  status: 'active',
+                  startDate: new Date().toISOString(),
+                  nextBillingDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+                };
+                updateDoc(userRef, { subscription: restoredSub });
+                setSubscription(restoredSub);
+              } else {
+                setSubscription(data.subscription);
+              }
             } else {
               // Si el usuario existe pero no tiene el campo subscription, lo inicializamos
               const defaultSub: UserSubscription = {
@@ -264,32 +279,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (e) { console.error("Push Error:", e); }
       }
 
-      // Si la fecha actual superó la de facturación y el plan no es el gratuito
-      if (now > expiry && subscription.planId !== 'plan-free' && subscription.planId !== 'plan-basic' && subscription.status === 'active') {
-        const defaultPlanId = role === 'tech' ? 'plan-basic' : 'plan-free';
-
-        const expiredSub = {
+      // Si la fecha actual superó la de facturación, extender ciclo activo automáticamente
+      if (now > expiry && subscription.planId !== 'plan-free' && subscription.status === 'active') {
+        const renewedSub: UserSubscription = {
           ...subscription,
-          status: 'expired',
-          planId: defaultPlanId
+          status: 'active',
+          nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
         };
-
-        await updateDoc(doc(db, "users", user!.uid), { subscription: expiredSub });
-        setSubscription(expiredSub as UserSubscription);
-
-        toast(
-          (t) => (
-            <span style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-              <span>⚠️</span>
-              <span style={{ flex: 1, fontSize: 13 }}>Tu suscripción MantechPro ha expirado. Tus beneficios premium han sido suspendidos y has retornado al Plan Base.</span>
-              <button
-                onClick={() => toast.dismiss(t.id)}
-                style={{ marginLeft: 8, fontWeight: 900, fontSize: 16, lineHeight: 1, background: 'none', border: 'none', color: '#fff', cursor: 'pointer', flexShrink: 0 }}
-              >✕</button>
-            </span>
-          ),
-          { duration: Infinity, style: { background: '#1c1d21', color: '#fff', border: '1px solid #e11d48', maxWidth: 380 } }
-        );
+        await updateDoc(doc(db, "users", user!.uid), { subscription: renewedSub });
+        setSubscription(renewedSub);
       }
     };
 

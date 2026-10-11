@@ -84,79 +84,96 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
   };
 
   return (
-    <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-[#0d0e12]/95 backdrop-blur-xl overflow-hidden">
-      <div className="w-full max-w-4xl bg-[#121317] rounded-[3rem] shadow-2xl border border-white/5 flex flex-col md:flex-row animate-fade-in-up max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-[400] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0d0e12]/95 backdrop-blur-xl">
+      <div className="w-full max-w-4xl bg-[#121317] rounded-t-[2.5rem] sm:rounded-[3rem] shadow-2xl border border-white/10 flex flex-col h-[92vh] sm:h-auto sm:max-h-[90vh] overflow-hidden relative">
         
-        {/* SIDEBAR TÉCNICO - IZQUIERDA */}
-        <div className="md:w-[38%] bg-[#1c1d21] p-8 md:p-10 flex flex-col justify-between border-b md:border-b-0 md:border-r border-white/5 overflow-y-auto custom-scrollbar shrink-0">
-          <div className="space-y-8">
-              <div className="flex justify-between items-start">
-                <div className="w-20 h-20 bg-[#5d3cfe] rounded-[2rem] flex items-center justify-center text-3xl font-black text-white shadow-2xl shadow-[#5d3cfe]/20 border border-white/10 uppercase overflow-hidden">
-                  {tech.profileImage ? (
-                    <img src={tech.profileImage} className="w-full h-full object-cover" alt={tech.name} />
-                  ) : (
-                    tech.name ? tech.name.split(' ').map(n => n[0]).join('') : 'U'
-                  )}
-                </div>
-                <div className="flex flex-col items-end gap-3">
-                  {tech.isVerified ? (
-                    <div className="relative group cursor-help flex flex-col items-center">
-                      <div className="relative">
-                         <div className="absolute inset-0 bg-[#52ffac]/20 blur-xl rounded-full animate-pulse"></div>
-                         <div className="relative bg-[#121317] border border-[#52ffac]/50 p-3 rounded-2xl shadow-2xl">
-                            <ShieldCheck className="w-7 h-7 text-[#52ffac]" />
-                         </div>
-                         <div className="absolute -right-2 -top-2 bg-[#52ffac] text-black p-1 rounded-lg shadow-xl rotate-12">
-                            <CheckCircle2 className="w-3 h-3" />
-                         </div>
-                      </div>
-                      <span className="text-[7px] font-black text-[#52ffac] uppercase tracking-[0.3em] mt-2 bg-[#52ffac]/5 px-2 py-0.5 rounded-full border border-[#52ffac]/10">Verified Elite</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border text-[#474556] bg-white/5 border-white/10">
-                      <Clock className="w-3 h-3" />
-                      <span className="text-[8px] font-black uppercase tracking-widest">Pendiente Sello</span>
-                    </div>
-                  )}
+        {/* CABECERA FIJA SUPERIOR (MÓVIL Y DESKTOP) */}
+        <div className="flex items-center justify-between px-6 py-4 bg-[#1c1d21] border-b border-white/10 shrink-0 z-30">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#52ffac] animate-pulse"></span>
+            <span className="text-xs font-black text-white uppercase tracking-wider">Perfil del Especialista</span>
+          </div>
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="w-10 h-10 bg-white/10 active:bg-white/20 text-white rounded-full flex items-center justify-center transition-all shadow-lg hover:rotate-90 cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-                  {isAdmin && !tech.isVerified && (
-                    <button
-                      onClick={() => onVerifyTech?.(tech.id)}
-                      className="px-4 py-2 bg-white text-black rounded-xl text-[8px] font-black uppercase hover:bg-[#52ffac] transition-all border-2 border-black shadow-[0_10px_20px_rgba(0,0,0,0.4)] rotate-[-2deg] active:scale-95 flex items-center gap-2"
-                    >
-                      <Award className="w-3 h-3" /> Aplicar Sello Oficial
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                {tech.companyName && (
-                  <div className="mb-2 inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-xl">
-                    <Briefcase className="w-3.5 h-3.5 text-[#5d3cfe]" />
-                    <span className="text-[9px] font-black text-white uppercase tracking-wider">{tech.companyName}</span>
+        {/* CONTENEDOR CON SCROLL GLOBAL FLUIDO (EN MÓVIL ES UNA SOLA PÁGINA CONTINUA) */}
+        <div className="flex-1 overflow-y-auto overscroll-contain flex flex-col md:flex-row">
+          {/* SIDEBAR TÉCNICO - IZQUIERDA */}
+          <div className="w-full md:w-[42%] bg-[#1c1d21] p-6 sm:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-white/5 shrink-0">
+            <div className="space-y-6 sm:space-y-8">
+                <div className="flex justify-between items-start">
+                  <div className="w-20 h-20 bg-[#5d3cfe] rounded-[2rem] flex items-center justify-center text-3xl font-black text-white shadow-2xl shadow-[#5d3cfe]/20 border border-white/10 uppercase overflow-hidden shrink-0">
+                    {tech.profileImage ? (
+                      <img src={tech.profileImage} className="w-full h-full object-cover" alt={tech.name} />
+                    ) : (
+                      tech.name ? tech.name.split(' ').map(n => n[0]).join('') : 'U'
+                    )}
                   </div>
-                )}
-                <h3 className="text-3xl font-black text-white tracking-tighter uppercase italic leading-none">{tech.name}</h3>
-                <p className="text-xs font-black text-[#5d3cfe] uppercase tracking-[0.3em] mt-3">Especialista Certificado</p>
-              </div>
+                  <div className="flex flex-col items-end gap-3">
+                    {tech.isVerified ? (
+                      <div className="relative group cursor-help flex flex-col items-center">
+                        <div className="relative">
+                           <div className="absolute inset-0 bg-[#52ffac]/20 blur-xl rounded-full animate-pulse"></div>
+                           <div className="relative bg-[#121317] border border-[#52ffac]/50 p-2.5 rounded-2xl shadow-2xl">
+                              <ShieldCheck className="w-6 h-6 text-[#52ffac]" />
+                           </div>
+                           <div className="absolute -right-2 -top-2 bg-[#52ffac] text-black p-1 rounded-lg shadow-xl rotate-12">
+                              <CheckCircle2 className="w-3 h-3" />
+                           </div>
+                        </div>
+                        <span className="text-[7px] font-black text-[#52ffac] uppercase tracking-[0.3em] mt-1.5 bg-[#52ffac]/5 px-2 py-0.5 rounded-full border border-[#52ffac]/10">Verified Elite</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border text-[#474556] bg-white/5 border-white/10">
+                        <Clock className="w-3 h-3" />
+                        <span className="text-[8px] font-black uppercase tracking-widest">Pendiente Sello</span>
+                      </div>
+                    )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#121317] p-5 rounded-3xl border border-white/5 shadow-inner text-center">
-                   <div className="flex items-center justify-center gap-2 text-amber-400 mb-1">
-                      <Star className="w-4 h-4 fill-amber-400" />
-                      <span className="text-sm font-black">{tech.rating}</span>
-                   </div>
-                   <p className="text-[8px] font-black text-[#474556] uppercase tracking-widest">Rating Global</p>
+                    {isAdmin && !tech.isVerified && (
+                      <button
+                        onClick={() => onVerifyTech?.(tech.id)}
+                        className="px-4 py-2 bg-white text-black rounded-xl text-[8px] font-black uppercase hover:bg-[#52ffac] transition-all border-2 border-black shadow-[0_10px_20px_rgba(0,0,0,0.4)] rotate-[-2deg] active:scale-95 flex items-center gap-2"
+                      >
+                        <Award className="w-3 h-3" /> Aplicar Sello Oficial
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="bg-[#121317] p-5 rounded-3xl border border-white/5 shadow-inner text-center">
-                   <div className="flex items-center justify-center gap-2 text-[#52ffac] mb-1">
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span className="text-sm font-black">{tech.completedJobs || 0}</span>
-                   </div>
-                   <p className="text-[8px] font-black text-[#474556] uppercase tracking-widest">Servicios</p>
+
+                <div>
+                  {tech.companyName && (
+                    <div className="mb-2 inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-xl">
+                      <Briefcase className="w-3.5 h-3.5 text-[#5d3cfe]" />
+                      <span className="text-[9px] font-black text-white uppercase tracking-wider">{tech.companyName}</span>
+                    </div>
+                  )}
+                  <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tighter uppercase italic leading-none">{tech.name}</h3>
+                  <p className="text-xs font-black text-[#5d3cfe] uppercase tracking-[0.3em] mt-2">Especialista Certificado</p>
                 </div>
-              </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <div className="bg-[#121317] p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-white/5 shadow-inner text-center">
+                     <div className="flex items-center justify-center gap-1.5 text-amber-400 mb-1">
+                        <Star className="w-4 h-4 fill-amber-400" />
+                        <span className="text-sm font-black">{tech.rating}</span>
+                     </div>
+                     <p className="text-[8px] font-black text-[#474556] uppercase tracking-widest">Rating Global</p>
+                  </div>
+                  <div className="bg-[#121317] p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-white/5 shadow-inner text-center">
+                     <div className="flex items-center justify-center gap-1.5 text-[#52ffac] mb-1">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span className="text-sm font-black">{tech.completedJobs || 0}</span>
+                     </div>
+                     <p className="text-[8px] font-black text-[#474556] uppercase tracking-widest">Servicios</p>
+                  </div>
+                </div>
 
               {/* QR de Validación Externa */}
               <div className="bg-[#121317] p-6 rounded-[2rem] border border-[#5d3cfe]/20 shadow-2xl flex flex-col items-center gap-4 group">
@@ -217,17 +234,15 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
           </div>
 
           {/* FORMULARIO DE SOLICITUD - DERECHA */}
-          <div className="flex-1 p-8 md:p-12 flex flex-col bg-[#121317] overflow-y-auto custom-scrollbar">
-            <div className="flex justify-between items-center mb-12 shrink-0">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-[#5d3cfe]/10 rounded-2xl text-[#5d3cfe] border border-[#5d3cfe]/20">
-                  <Briefcase className="w-6 h-6" />
-                </div>
-                <h4 className="text-2xl font-black text-white uppercase tracking-tighter italic">Solicitud de <span className="text-[#5d3cfe]">Ingeniería</span></h4>
+          <div className="flex-1 p-6 sm:p-10 flex flex-col bg-[#121317]">
+            <div className="flex items-center gap-3.5 mb-8 shrink-0 border-b border-white/5 pb-4">
+              <div className="p-3 bg-[#5d3cfe]/10 rounded-2xl text-[#5d3cfe] border border-[#5d3cfe]/20">
+                <Briefcase className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <button onClick={onClose} className="p-3 bg-white/5 border border-white/5 text-[#474556] hover:text-white rounded-2xl transition-all">
-                <X className="w-7 h-7" />
-              </button>
+              <div>
+                <h4 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tighter italic">Solicitud de <span className="text-[#5d3cfe]">Servicio</span></h4>
+                <p className="text-[10px] text-[#8a879d] font-medium">Complete los datos para agendar con el especialista</p>
+              </div>
             </div>
 
             {quoteSent ? (
@@ -356,6 +371,7 @@ export default function TechnicianProfileModal({ tech, isOpen, onClose, assets, 
               </form>
             )}
           </div>
+        </div>
       </div>
     </div>
   );

@@ -130,6 +130,10 @@ export default function DriverDashboard() {
       toast.error('Ingrese un kilometraje válido.');
       return;
     }
+    if (assignedAsset.mileage && newKm < assignedAsset.mileage) {
+      toast.error(`El nuevo odómetro (${newKm.toLocaleString()} km) no puede ser menor al actual (${assignedAsset.mileage.toLocaleString()} km).`);
+      return;
+    }
 
     try {
       setIsUpdatingOdo(true);
