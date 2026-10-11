@@ -374,6 +374,52 @@ export default function TechDashboard() {
                        </div>
                     )}
 
+                    {req.warrantyClaim && (
+                      <div className={`p-5 rounded-2xl border space-y-4 ${req.warrantyClaim.active ? 'bg-amber-500/10 border-amber-500/40 shadow-xl' : 'bg-[#52ffac]/10 border-[#52ffac]/30'}`}>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <ShieldCheck className={`w-5 h-5 ${req.warrantyClaim.active ? 'text-amber-400' : 'text-[#52ffac]'}`} />
+                            <h5 className="text-xs font-black text-white uppercase tracking-wider">
+                              {req.warrantyClaim.active
+                                ? '🛡️ ORDEN DE GARANTÍA POS-SERVICIO (RETRABAJO SIN COSTO B/. 0.00)'
+                                : '✅ GARANTÍA POS-SERVICIO RESUELTA'}
+                            </h5>
+                          </div>
+                          <span className="text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-black/40 text-amber-400 border border-amber-500/30 self-start sm:self-auto">
+                            {req.warrantyClaim.status === 'pending_rework' ? '⏳ Pendiente Confirmar Visita' : req.warrantyClaim.status === 'in_rework' ? '🛠️ En Atención Técnica' : '✓ Completada'}
+                          </span>
+                        </div>
+                        <div className="p-3.5 bg-black/50 rounded-xl border border-white/5 text-xs text-white/90">
+                          <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest block mb-1">Falla reincidente reportada por {req.clientName}:</span>
+                          "{req.warrantyClaim.reason}"
+                        </div>
+                        {req.warrantyClaim.active && (
+                          <div className="flex flex-wrap gap-3">
+                            {req.warrantyClaim.status === 'pending_rework' && (
+                              <button
+                                onClick={() => business.handleUpdateWarrantyStatus(req.id, 'in_rework')}
+                                className="flex-1 py-3 px-4 bg-amber-500 text-black rounded-xl text-[9px] font-black uppercase tracking-widest hover:brightness-110 transition-all"
+                              >
+                                🛠️ Confirmar Visita de Garantía (Notificar Cliente)
+                              </button>
+                            )}
+                            <button
+                              onClick={() => business.handleUpdateWarrantyStatus(req.id, 'resolved')}
+                              className="flex-1 py-3 px-4 bg-[#52ffac] text-black rounded-xl text-[9px] font-black uppercase tracking-widest hover:brightness-110 transition-all"
+                            >
+                              ✓ Certificar Garantía Resuelta
+                            </button>
+                            <button
+                              onClick={() => { setActiveChatRequestId(req.id); setTab('tech', 'chat'); }}
+                              className="py-3 px-4 bg-[#5d3cfe] text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:brightness-110 transition-all"
+                            >
+                              Abrir Chat
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <div className="p-5 bg-[#0d0e12] rounded-2xl border border-[#2a2b2f] italic text-xs text-[#c8c4d9]">"{req.description}"</div>
 
                     {req.status === 'pending' && (

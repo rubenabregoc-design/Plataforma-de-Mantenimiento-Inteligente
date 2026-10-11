@@ -15,3 +15,4 @@ temp_app.tsx
 temp_out.txt
 final_target.txt
 target_clean.txt
+*.apk

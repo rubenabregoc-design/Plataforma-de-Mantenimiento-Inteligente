@@ -297,6 +297,15 @@ export interface JobRequest {
   // Punto #6 & #21: Garantías y Responsabilidad
   warrantyDays?: number;
   warrantyCoverage?: string;
+  warrantyExpiresAt?: string;
+  warrantyClaim?: {
+    active: boolean;
+    reason: string;
+    claimedAt: string;
+    status: 'pending_rework' | 'in_rework' | 'resolved';
+    techConfirmedAt?: string;
+    resolvedAt?: string;
+  };
   contractAccepted?: boolean; // Confirmación de relación independiente
 
   // Punto #7: Protocolo de Daños

@@ -218,3 +218,38 @@ input, textarea {
     line-height: 1.45 !important;
   }
 }
+
+/* ============================================================
+   ELIMINAR BORDES BLANCOS EN BOTONES DE GOOGLE PAY Y PAYPAL
+   ============================================================ */
+.gpay-button,
+button.gpay-button,
+button.gpay-button.black,
+.gpay-card-info-container,
+.gpay-button-fill > .gpay-button,
+.gpay-button-fill {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: #1c1d21 !important;
+}
+
+button.gpay-button.black:hover,
+button.gpay-button.black:focus,
+button.gpay-button.black:active {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: #25262c !important;
+}
+
+.paypal-buttons,
+.paypal-buttons iframe,
+.paypal-button-container {
+  color-scheme: normal !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+}
+
+

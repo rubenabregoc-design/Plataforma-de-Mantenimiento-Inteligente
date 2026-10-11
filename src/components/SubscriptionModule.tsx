@@ -293,15 +293,18 @@ export default function SubscriptionModule({ subscription, onUpgrade, onNavigate
              <div className="w-14 h-14 rounded-2xl bg-[#52ffac]/10 border border-[#52ffac]/30 flex items-center justify-center text-[#52ffac] shrink-0">
                <ShieldCheck className="w-8 h-8" />
              </div>
-             <div className="space-y-2 flex-1">
-               <div className="flex items-center gap-2">
-                 <span className="px-2.5 py-0.5 rounded-full bg-[#52ffac]/15 text-[#52ffac] text-[9px] font-black uppercase tracking-widest">Respaldo Corporativo</span>
-                 <h4 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">¿En qué consiste la Garantía Mantech Protection?</h4>
+             <div className="space-y-2.5 flex-1">
+               <div className="flex flex-wrap items-center gap-2">
+                 <span className="px-2.5 py-0.5 rounded-full bg-[#52ffac]/15 text-[#52ffac] text-[9px] font-black uppercase tracking-widest">Póliza Posservicio</span>
+                 <h4 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">¿En qué consiste el Seguro / Garantía Mantech Protection?</h4>
                </div>
+               <p className="text-[11px] text-[#52ffac] font-bold">
+                 ✓ Nota: El Pago Protegido en Custodia (Escrow) y el Respaldo Mantech ID + Trazabilidad GPS están incluidos en TODOS los planes desde Gratis.
+               </p>
                <p className="text-xs text-[#c8c4d9] leading-relaxed">
-                 <strong>1. Custodia de Pago (Escrow):</strong> Tu dinero se retiene de forma segura y solo se libera al técnico cuando apruebas las fotos del Antes/Después y firmas de conformidad.{' '}
-                 <strong>2. Garantía de Retrabajo Sin Costo:</strong> Si un activo o unidad de flota intervenida reincide en la falla dentro del periodo de garantía, enviamos un especialista certificado de respaldo sin costo adicional de mano de obra.{' '}
-                 <strong>3. Blindaje Mantech ID:</strong> Todo el personal cuenta con cédula verificada, récord policivo vigente y bitácora GPS auditable.
+                 <strong>1. Orden Directa de Retrabajo sin Costo (Alerta al Técnico):</strong> Durante los 30 días posservicio, si el equipo presenta la misma falla, presionas <em>"Solicitar Retrabajo por Garantía"</em> en tu panel y el sistema notifica de inmediato al técnico en su celular, reactiva el chat directo y genera la orden correctiva a <strong>B/. 0.00 en mano de obra</strong>.{' '}
+                 <strong>2. Rescate con 2.º Especialista en 24h:</strong> Si el técnico original no confirma o no acude en menos de 24 horas, el Centro de Control MantechPro despacha un segundo especialista certificado de respaldo sin costo de mano de obra.{' '}
+                 <strong>3. Arbitraje Prioritario y Cobertura en Sitio:</strong> Respaldo y mediación prioritaria ante desperfectos derivados de la intervención técnica documentados en el acta fotográfica Antes/Después.
                </p>
              </div>
            </div>

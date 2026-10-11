@@ -198,22 +198,28 @@ export function useBusinessLogic() {
       const req = requests.find(r => r.id === requestId);
       if (!req) return;
       const newStatus = req.status === 'executing' ? 'completed' : 'rated';
+      const warrantyExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
       await updateDoc(doc(db, "requests", requestId), {
         status: newStatus,
         visitFinishedAt: new Date().toISOString(),
         clientSignature: signature,
         rating: ratingVal,
-        comment: ratingComment
+        comment: ratingComment,
+        escrowStatus: 'released',
+        warrantyDays: 30,
+        warrantyExpiresAt: warrantyExpires
       });
 
       await purgeChatMessages(requestId);
 
-      if (newStatus === 'completed') {
+      if (newStatus === 'completed' || newStatus === 'rated') {
         const tech = technicians.find(t => t.id === req.techId);
         if (tech) {
+          const currentRating = Number(tech.rating || 5);
+          const currentReviews = Number(tech.reviewCount || 0);
           const finalR = Math.max(1, ratingVal - ((req.rescheduleCount || 0) * 0.2));
-          const nRating = ((tech.rating * tech.reviewCount) + finalR) / (tech.reviewCount + 1);
+          const nRating = ((currentRating * currentReviews) + finalR) / (currentReviews + 1);
           const earnings = Number(req.technicianEarnings || 0);
           const currentBalance = Number(tech.wallet?.balance || 0);
           const newBalance = currentBalance + earnings;
@@ -235,15 +241,26 @@ export function useBusinessLogic() {
 
           await updateDoc(doc(db, "technicians", tech.id), {
             completedJobs: (tech.completedJobs || 0) + 1,
-            reviewCount: tech.reviewCount + 1,
+            reviewCount: currentReviews + 1,
             rating: Number(nRating.toFixed(1)),
             'wallet.balance': newBalance,
             'wallet.transactions': updatedTransactions,
             loyaltyPoints: newPoints
           });
 
+          if (req.techUserId) {
+            await addDoc(collection(db, "notifications"), {
+              userId: req.techUserId,
+              title: `⭐ Nueva Calificación (${ratingVal}/5) y Pago Liberado`,
+              body: `El cliente firmó conformidad para ${req.assetName}. Se acreditaron B/. ${earnings.toFixed(2)} a tu billetera y comenzó el periodo de garantía de 30 días.`,
+              type: 'system',
+              createdAt: serverTimestamp(),
+              read: false
+            });
+          }
+
           // Notificar al Técnico sobre los puntos
-          if (pointsEarned > 0) {
+          if (pointsEarned > 0 && req.techUserId) {
             await addDoc(collection(db, "notifications"), {
               userId: req.techUserId,
               title: "🌟 Puntos Mantech Ganados",
@@ -255,8 +272,101 @@ export function useBusinessLogic() {
           }
         }
       }
-      toast.success("¡Servicio finalizado exitosamente!");
+      toast.success("¡Servicio finalizado, calificación aplicada y Garantía de 30 días activada!");
     } catch (err) { console.error(err); }
+  };
+
+  const handleClaimWarranty = async (requestId: string, reason: string) => {
+    try {
+      const req = requests.find(r => r.id === requestId);
+      if (!req) return;
+
+      const claimData = {
+        active: true,
+        reason,
+        claimedAt: new Date().toISOString(),
+        status: 'pending_rework' as const
+      };
+
+      await updateDoc(doc(db, "requests", requestId), {
+        warrantyClaim: claimData
+      });
+
+      // 1. Notificación directa al Técnico asignado
+      if (req.techUserId) {
+        await addDoc(collection(db, "notifications"), {
+          userId: req.techUserId,
+          title: "🛡️ ORDEN DE GARANTÍA: RETRABAJO SIN COSTO",
+          body: `El cliente ${req.clientName} activó la Garantía Mantech Protection en "${req.assetName}". Falla reportada: "${reason}". Debes coordinar visita de revisión correctiva sin costo de mano de obra (SLA 24h).`,
+          type: 'system',
+          createdAt: serverTimestamp(),
+          read: false
+        });
+      }
+
+      // 2. Mensaje directo en el Chat Técnico-Cliente (reactiva el canal de comunicación)
+      await addDoc(collection(db, "messages"), {
+        requestId,
+        sender: 'client',
+        text: `🛡️ [GARANTÍA MANTECH PROTECTION ACTIVADA - RETRABAJO SIN COSTO]\nEquipo: ${req.assetName}\nFalla reincidente reportada: "${reason}"\n\nPor favor confirme su horario de visita prioritaria para revisión correctiva bajo cobertura de garantía (B/. 0.00 mano de obra).`,
+        timestamp: serverTimestamp()
+      });
+
+      // 3. Notificación al Centro de Control (Admin) para monitoreo de póliza y respaldo 24h
+      await notifyAdmin(
+        "🛡️ GARANTÍA MANTECH PROTECTION ACTIVADA",
+        `Cliente ${req.clientName} solicitó retrabajo sin costo al técnico ${req.techName} para ${req.assetName}. Motivo: ${reason}`
+      );
+
+      toast.success("¡Garantía activada! El técnico y el Centro de Control fueron notificados para el retrabajo sin costo.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al activar el reclamo de garantía.");
+    }
+  };
+
+  const handleUpdateWarrantyStatus = async (requestId: string, status: 'in_rework' | 'resolved') => {
+    try {
+      const req = requests.find(r => r.id === requestId);
+      if (!req || !req.warrantyClaim) return;
+
+      const updates: any = {
+        'warrantyClaim.status': status,
+        'warrantyClaim.active': status !== 'resolved'
+      };
+      if (status === 'in_rework') {
+        updates['warrantyClaim.techConfirmedAt'] = new Date().toISOString();
+      } else {
+        updates['warrantyClaim.resolvedAt'] = new Date().toISOString();
+      }
+
+      await updateDoc(doc(db, "requests", requestId), updates);
+
+      await addDoc(collection(db, "notifications"), {
+        userId: req.clientId,
+        title: status === 'in_rework' ? "🛠️ Técnico en Camino por Garantía" : "✅ Garantía Posservicio Concluida",
+        body: status === 'in_rework'
+          ? `El especialista ${req.techName} confirmó la orden de retrabajo sin costo para ${req.assetName} y coordinará la atención.`
+          : `El especialista ${req.techName} certificó la resolución del retrabajo por garantía en ${req.assetName}.`,
+        type: 'system',
+        createdAt: serverTimestamp(),
+        read: false
+      });
+
+      await addDoc(collection(db, "messages"), {
+        requestId,
+        sender: 'tech',
+        text: status === 'in_rework'
+          ? `🛠️ [GARANTÍA CONFIRMADA] He recibido tu notificación de garantía para ${req.assetName}. Procedo a atender la revisión correctiva sin costo de mano de obra.`
+          : `✅ [GARANTÍA RESUELTA] He completado el retrabajo correctivo bajo Garantía Mantech Protection para ${req.assetName}.`,
+        timestamp: serverTimestamp()
+      });
+
+      toast.success(status === 'in_rework' ? "Visita de garantía confirmada al cliente." : "Retrabajo por garantía marcado como resuelto.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al actualizar el estado de la garantía.");
+    }
   };
 
   const handleRedeemPoints = async (techId: string, cost: number, rewardLabel: string) => {
@@ -920,6 +1030,8 @@ export function useBusinessLogic() {
     handlePostOpenMarket,
     handleAcceptQuote,
     handleCompleteJob,
+    handleClaimWarranty,
+    handleUpdateWarrantyStatus,
     handleConfirmPayment,
     handleSaveMaterial,
     handleTriggerUnforeseen,

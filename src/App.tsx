@@ -433,14 +433,14 @@ export default function App() {
                       <Building2 className="w-4 h-4 text-[#5d3cfe]" /> Transferencia ACH (Conciliación Automática)
                    </button>
 
-                   <div className="rounded-2xl overflow-hidden shadow-none hover:brightness-110 active:scale-[0.98] transition-all h-[64px] bg-black border-0">
+                   <div className="rounded-2xl overflow-hidden shadow-none hover:border-[#5d3cfe] active:scale-[0.98] transition-all h-[54px] bg-[#1c1d21] border border-[#2a2b2f]">
                       <GooglePayButton
-                        environment="TEST"
+                        environment={import.meta.env.VITE_GOOGLE_PAY_ENV === 'PRODUCTION' ? 'PRODUCTION' : 'TEST'}
                         buttonColor="black"
                         buttonType="pay"
                         buttonSizeMode="fill"
                         buttonRadius={16}
-                        style={{ width: '100%', height: '64px', border: 'none', outline: 'none' }}
+                        style={{ width: '100%', height: '52px', border: 'none', outline: 'none' }}
                         paymentRequest={{
                           apiVersion: 2,
                           apiVersionMinor: 0,
@@ -454,14 +454,14 @@ export default function App() {
                               tokenizationSpecification: {
                                 type: 'PAYMENT_GATEWAY',
                                 parameters: {
-                                  gateway: 'example',
-                                  gatewayMerchantId: 'exampleGatewayMerchantId',
+                                  gateway: import.meta.env.VITE_GOOGLE_PAY_GATEWAY || 'example',
+                                  gatewayMerchantId: import.meta.env.VITE_GOOGLE_PAY_GATEWAY_MERCHANT_ID || 'exampleGatewayMerchantId',
                                 },
                               },
                             },
                           ],
                           merchantInfo: {
-                            merchantId: '12345678901234567890',
+                            merchantId: import.meta.env.VITE_GOOGLE_PAY_MERCHANT_ID || '12345678901234567890',
                             merchantName: 'MantechPro PA',
                           },
                           transactionInfo: {
@@ -505,9 +505,9 @@ export default function App() {
                       />
                    </div>
 
-                   <div className="p-1">
+                   <div className="pt-1 [color-scheme:normal]">
                       <PayPalButtons
-                        style={{ layout: "vertical", shape: "pill", color: "blue", height: 50 }}
+                        style={{ layout: "vertical", shape: "rect", color: "blue", height: 50 }}
                         createOrder={(data, actions) => {
                           const price = activeData.plan
                             ? (role === 'tech'

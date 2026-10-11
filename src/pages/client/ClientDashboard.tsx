@@ -111,7 +111,7 @@ export default function ClientDashboard() {
     setTab('client', 'marketplace');
   };
 
-  const requestsWithChat = requests.filter(r => ['quoted', 'accepted', 'executing', 'completed'].includes(r.status));
+  const requestsWithChat = requests.filter(r => ['quoted', 'accepted', 'executing', 'completed', 'rated'].includes(r.status));
 
   React.useEffect(() => {
     if (!activeChatRequestId && requestsWithChat.length > 0) {
@@ -1193,6 +1193,85 @@ export default function ClientDashboard() {
                               </button>
                            </div>
                          )}
+                      </div>
+                    )}
+
+                    {req.status === 'rated' && (
+                      <div className={`p-6 md:p-8 rounded-[2rem] border space-y-5 shadow-2xl relative overflow-hidden ${req.warrantyClaim?.active ? 'bg-amber-500/10 border-amber-500/30' : 'bg-[#5d3cfe]/10 border-[#5d3cfe]/30'}`}>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${req.warrantyClaim?.active ? 'bg-amber-500 text-black' : 'bg-[#5d3cfe] text-white'}`}>
+                              <ShieldCheck className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h4 className="text-base md:text-lg font-black text-white uppercase tracking-tight italic">
+                                {req.warrantyClaim?.active
+                                  ? '🛡️ Reclamo de Garantía Activo (Retrabajo sin Costo)'
+                                  : req.warrantyClaim?.status === 'resolved'
+                                  ? '✅ Garantía Mantech Protection Atendida'
+                                  : '🛡️ Cobertura Mantech Protection Activa (30 Días)'}
+                              </h4>
+                              <p className="text-[9px] font-black uppercase tracking-widest text-[#52ffac] mt-0.5">
+                                Especialista Asignado: {req.techName} • Mano de Obra Correctiva B/. 0.00
+                              </p>
+                            </div>
+                          </div>
+                          {req.rating && (
+                            <div className="px-4 py-2 bg-black/40 border border-white/10 rounded-xl text-[10px] font-black text-amber-400 uppercase tracking-widest self-start sm:self-auto">
+                              ★ {req.rating}/5 Calificado
+                            </div>
+                          )}
+                        </div>
+
+                        {req.warrantyClaim?.active ? (
+                          <div className="bg-black/50 p-5 rounded-2xl border border-amber-500/20 space-y-3 relative z-10">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-black uppercase tracking-widest text-amber-400">
+                                Estado: {req.warrantyClaim.status === 'in_rework' ? '🛠️ Técnico Confirmado / En Atención' : '⏳ Técnico Notificado (SLA 24h)'}
+                              </span>
+                              <span className="text-[9px] font-bold text-[#c8c4d9]">
+                                {new Date(req.warrantyClaim.claimedAt).toLocaleDateString('es-PA')}
+                              </span>
+                            </div>
+                            <p className="text-xs text-white/90 italic">
+                              Motivo reportado al técnico: "{req.warrantyClaim.reason}"
+                            </p>
+                            <div className="flex flex-wrap gap-3 pt-2">
+                              <button
+                                onClick={() => { setActiveChatRequestId(req.id); setTab('client', 'chat'); }}
+                                className="px-5 py-3 bg-[#5d3cfe] text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:brightness-110 transition-all"
+                              >
+                                Abrir Chat de Garantía con {req.techName}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-4 relative z-10">
+                            <p className="text-xs text-[#c8c4d9] leading-relaxed">
+                              Si el equipo <strong className="text-white">{req.assetName}</strong> presenta nuevamente la misma falla reportada dentro de los 30 días posservicio, activa la orden de <strong className="text-[#52ffac]">Retrabajo sin Costo</strong>. El sistema notificará de inmediato a <strong className="text-white">{req.techName}</strong> en su celular, reactivará el chat directo y alertará al Centro de Control (con respaldo de segundo especialista si no atiende en 24h).
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                              <button
+                                onClick={() => {
+                                  openModal('reason', {
+                                    reasonTitle: '🛡️ Activar Garantía (Retrabajo sin Costo)',
+                                    reasonPlaceholder: `Describe qué falla reincidente presenta ${req.assetName} para notificar de inmediato al técnico ${req.techName}...`,
+                                    onReasonConfirm: (reason: string) => business.handleClaimWarranty(req.id, reason)
+                                  });
+                                }}
+                                className="flex-1 py-4 bg-amber-500 text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] shadow-xl shadow-amber-500/20 hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                              >
+                                <ShieldCheck className="w-4 h-4" /> Solicitar Retrabajo por Garantía (Notificar al Técnico)
+                              </button>
+                              <button
+                                onClick={() => openModal('serviceReport', { request: req })}
+                                className="px-6 py-4 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+                              >
+                                Ver Acta / PDF
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
