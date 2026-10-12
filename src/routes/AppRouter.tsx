@@ -1,12 +1,11 @@
-import React, { Suspense, lazy, useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AuthPage from '../pages/AuthPage';
 import DashboardLayout from '../layouts/DashboardLayout';
-
-const ClientDashboard = lazy(() => import('../pages/client/ClientDashboard'));
-const TechDashboard = lazy(() => import('../pages/tech/TechDashboard'));
-const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard'));
-const DriverDashboard = lazy(() => import('../pages/driver/DriverDashboard'));
+import ClientDashboard from '../pages/client/ClientDashboard';
+import TechDashboard from '../pages/tech/TechDashboard';
+import AdminDashboard from '../pages/admin/AdminDashboard';
+import DriverDashboard from '../pages/driver/DriverDashboard';
 
 export default function AppRouter(props: any) {
   const { isLoggedIn, role, isAuthResolving } = useAuth();

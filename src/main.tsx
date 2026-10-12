@@ -8,13 +8,35 @@ import {AuthProvider} from './context/AuthContext';
 import {DataProvider} from './context/DataContext';
 import {UIProvider} from './context/UIContext';
 
-// Silenciar advertencia benigna de IndexedDB de Firebase Auth cuando la pestaña se oculta o recarga
+// Auto-recuperación si el navegador tenía una versión en caché previa a un despliegue
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  if (!sessionStorage.getItem('mantech_chunk_reloaded')) {
+    sessionStorage.setItem('mantech_chunk_reloaded', 'true');
+    window.location.reload();
+  }
+});
+
+// Silenciar advertencia benigna de IndexedDB de Firebase Auth y auto-recargar si falla un chunk antiguo
 window.addEventListener('unhandledrejection', (event) => {
+  const msg = event.reason?.message || String(event.reason || '');
   if (
-    event.reason?.message?.includes('Database is closing') ||
-    event.reason?.message?.includes('Database is closing/hidden')
+    msg.includes('Database is closing') ||
+    msg.includes('Database is closing/hidden')
   ) {
     event.preventDefault();
+    return;
+  }
+  if (
+    msg.includes('Failed to fetch dynamically imported module') ||
+    msg.includes('Importing a module script failed') ||
+    msg.includes('Expected a JavaScript-or-Wasm module script')
+  ) {
+    event.preventDefault();
+    if (!sessionStorage.getItem('mantech_chunk_reloaded')) {
+      sessionStorage.setItem('mantech_chunk_reloaded', 'true');
+      window.location.reload();
+    }
   }
 });
 
