@@ -162,10 +162,10 @@ export default function Footer() {
 
             <div className="flex gap-4">
               <a href="#" className="hover:opacity-80 transition-opacity grayscale hover:grayscale-0">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Get it on Google Play" className="h-10" />
+                <img src="/offline-img/google-play-badge.svg" alt="Get it on Google Play" className="h-10" />
               </a>
               <a href="#" className="hover:opacity-80 transition-opacity grayscale hover:grayscale-0">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="Download on the App Store" className="h-10" />
+                <img src="/offline-img/app-store-badge.svg" alt="Download on the App Store" className="h-10" />
               </a>
             </div>
           </div>

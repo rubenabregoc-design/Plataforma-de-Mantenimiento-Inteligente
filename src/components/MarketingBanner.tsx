@@ -60,13 +60,13 @@ export default function MarketingBanner({ placement }: Props) {
 
             {/* Zona de Imagen con Overlay Dinámico */}
             <div className="w-full md:w-1/3 h-48 md:h-full relative overflow-hidden bg-[#1c1d21]">
-               {current.image && current.image.startsWith('http') ? (
+               {current.image && (current.image.startsWith('http') || current.image.startsWith('/')) ? (
                  <img
                    src={current.image}
                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                    alt={current.title}
                    onError={(e) => {
-                     (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800';
+                     (e.target as HTMLImageElement).src = '/offline-img/industrial.jpg';
                    }}
                  />
                ) : (

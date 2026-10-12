@@ -5,10 +5,10 @@ import { Save, Image as ImageIcon, Layout, Search, Shield, Wallet, Trash2, Plus,
 import { toast } from 'react-hot-toast';
 
 const initialScreens = [
-  { id: 'dashboard', title: 'Monitor de Activos', subtitle: 'Todo bajo control', desc: 'Visualice el estado de salud de todos sus activos en una sola vista.', iconName: 'Layout', color: '#52ffac', image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1000' },
-  { id: 'market', title: 'Marketplace de Subasta', subtitle: 'El mejor precio, siempre', desc: 'Publique su necesidad técnica y deje que los especialistas certificados compitan.', iconName: 'Search', color: '#5d3cfe', image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1000' },
-  { id: 'security', title: 'Centro de Seguridad ID', subtitle: 'Confianza Master V4', desc: 'Cada profesional cuenta con un Mantech ID validado.', iconName: 'Shield', color: '#e11d48', image: 'https://images.unsplash.com/photo-1557597774-9d2739f85a76?auto=format&fit=crop&q=80&w=1000' },
-  { id: 'wallet', title: 'Billetera & Escrow', subtitle: 'Pagos Blindados', desc: 'Los fondos se mantienen en custodia segura.', iconName: 'Wallet', color: '#f59e0b', image: 'https://images.unsplash.com/photo-1556742044-3c52d6e88c62?auto=format&fit=crop&q=80&w=1000' }
+  { id: 'dashboard', title: 'Monitor de Activos', subtitle: 'Todo bajo control', desc: 'Visualice el estado de salud de todos sus activos en una sola vista.', iconName: 'Layout', color: '#52ffac', image: '/offline-img/dashboard.jpg' },
+  { id: 'market', title: 'Marketplace de Subasta', subtitle: 'El mejor precio, siempre', desc: 'Publique su necesidad técnica y deje que los especialistas certificados compitan.', iconName: 'Search', color: '#5d3cfe', image: '/offline-img/market.jpg' },
+  { id: 'security', title: 'Centro de Seguridad ID', subtitle: 'Confianza Master V4', desc: 'Cada profesional cuenta con un Mantech ID validado.', iconName: 'Shield', color: '#e11d48', image: '/offline-img/security.jpg' },
+  { id: 'wallet', title: 'Billetera & Escrow', subtitle: 'Pagos Blindados', desc: 'Los fondos se mantienen en custodia segura.', iconName: 'Wallet', color: '#f59e0b', image: '/offline-img/wallet.jpg' }
 ];
 
 export default function LandingCMS() {
@@ -63,7 +63,7 @@ export default function LandingCMS() {
       date: new Date().toISOString().split('T')[0],
       summary: 'Breve descripción del hito...',
       category: 'Blog',
-      image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800'
+      image: '/offline-img/industrial.jpg'
     }, ...news]);
   };
 

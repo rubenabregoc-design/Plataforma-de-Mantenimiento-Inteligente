@@ -18,6 +18,37 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 });
 
+// Respaldo global para imágenes cuando el APK o navegador no tiene datos ni Wi-Fi (Offline)
+window.addEventListener(
+  'error',
+  (event) => {
+    const target = event.target as HTMLElement | null;
+    if (target && target.tagName === 'IMG') {
+      const img = target as HTMLImageElement;
+      if (img.dataset.offlineFallbackApplied === 'true') return;
+      img.dataset.offlineFallbackApplied = 'true';
+
+      const src = img.src || '';
+      if (src.includes('1551288049')) img.src = '/offline-img/dashboard.jpg';
+      else if (src.includes('1460925895917')) img.src = '/offline-img/market.jpg';
+      else if (src.includes('1557597774')) img.src = '/offline-img/security.jpg';
+      else if (src.includes('1556742044')) img.src = '/offline-img/wallet.jpg';
+      else if (src.includes('1519003722824')) img.src = '/offline-img/logistics.jpg';
+      else if (src.includes('1581092160562')) img.src = '/offline-img/audit.jpg';
+      else if (src.includes('1486406146926')) img.src = '/offline-img/b2b-ph.jpg';
+      else if (src.includes('1550751827')) img.src = '/offline-img/cyber-it.jpg';
+      else if (src.includes('1524661135')) img.src = '/offline-img/map-bg.jpg';
+      else if (src.includes('1621905251918')) img.src = '/offline-img/hvac-service.jpg';
+      else if (src.includes('1599256621730')) img.src = '/offline-img/fleet-service.jpg';
+      else if (src.includes('Google_Play')) img.src = '/offline-img/google-play-badge.svg';
+      else if (src.includes('App_Store')) img.src = '/offline-img/app-store-badge.svg';
+      else if (src.includes('qrserver.com')) img.src = '/logo.png';
+      else img.src = '/offline-img/industrial.jpg';
+    }
+  },
+  true
+);
+
 const rootElement = document.getElementById('root');
 if (rootElement) {
   try {

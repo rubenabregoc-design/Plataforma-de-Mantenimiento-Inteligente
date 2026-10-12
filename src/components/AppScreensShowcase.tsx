@@ -12,7 +12,7 @@ const initialScreens = [
     desc: 'Visualice el estado de salud de todos sus activos en una sola vista. Reciba alertas preventivas automáticas y acceda a expedientes digitales mediante códigos QR.',
     icon: Layout,
     color: '#52ffac',
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1000'
+    image: '/offline-img/dashboard.jpg'
   },
   {
     id: 'market',
@@ -21,7 +21,7 @@ const initialScreens = [
     desc: 'Publique su necesidad técnica y deje que los especialistas certificados compitan enviando sus mejores propuestas. Usted elige al técnico por reputación, precio o cercanía.',
     icon: Search,
     color: '#5d3cfe',
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1000'
+    image: '/offline-img/market.jpg'
   },
   {
     id: 'security',
@@ -30,7 +30,7 @@ const initialScreens = [
     desc: 'Cada profesional cuenta con un Mantech ID validado. Generamos el Récord Policivo desde la plataforma y verificamos Cédulas biométricamente.',
     icon: Shield,
     color: '#e11d48',
-    image: 'https://images.unsplash.com/photo-1557597774-9d2739f85a76?auto=format&fit=crop&q=80&w=1000'
+    image: '/offline-img/security.jpg'
   },
   {
     id: 'wallet',
@@ -39,7 +39,7 @@ const initialScreens = [
     desc: 'Los fondos se mantienen en custodia segura y solo se liberan al técnico cuando usted firma la conformidad del servicio. Transparencia total en cada transacción.',
     icon: Wallet,
     color: '#f59e0b',
-    image: 'https://images.unsplash.com/photo-1556742044-3c52d6e88c62?auto=format&fit=crop&q=80&w=1000'
+    image: '/offline-img/wallet.jpg'
   }
 ];
 
@@ -59,9 +59,19 @@ export default function AppScreensShowcase({ onExplore }: AppScreensShowcaseProp
         const data = doc.data().screens;
         if (data && Array.isArray(data)) {
           const iconMap: Record<string, any> = { Layout, Search, Shield, Wallet };
+          const defaultOfflineMap: Record<string, string> = {
+            dashboard: '/offline-img/dashboard.jpg',
+            market: '/offline-img/market.jpg',
+            security: '/offline-img/security.jpg',
+            wallet: '/offline-img/wallet.jpg',
+          };
           const mapped = data.map((s: any) => ({
             ...s,
-            icon: iconMap[s.iconName] || Layout
+            icon: iconMap[s.iconName] || Layout,
+            image:
+              !s.image || s.image.includes('images.unsplash.com') || (!navigator.onLine && s.image.startsWith('http'))
+                ? defaultOfflineMap[s.id] || '/offline-img/dashboard.jpg'
+                : s.image,
           }));
           setScreens(mapped);
           if (!mapped.find(s => s.id === activeId)) {

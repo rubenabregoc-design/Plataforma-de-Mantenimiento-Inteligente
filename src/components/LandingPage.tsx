@@ -72,7 +72,7 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
         { t: t('obd_diag', 'Salud del Vehículo'), d: t('obd_diag_desc', "Detectamos fallos de motor antes de que se conviertan en reparaciones costosas.") },
         { t: t('prevent_alerts', 'Rutas Seguras'), d: t('prevent_alerts_desc', "Optimice sus tiempos de entrega con conductores calificados y vehículos certificados.") }
       ],
-      image: "https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&q=80&w=1200",
+      image: "/offline-img/logistics.jpg",
       stats: [
         { v: "100%", l: t('reliability', "Confiabilidad") },
         { v: "24/7", l: t('support', "Soporte") },
@@ -90,7 +90,7 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
         { t: t('plumbing_pro', 'Ahorro Energético'), d: t('plumbing_pro_desc', "Reduzca costos operativos mediante auditorías de consumo y eficiencia de activos.") },
         { t: t('energy_eff', 'Cero Interrupciones'), d: t('energy_eff_desc', "Evite paros técnicos inesperados que afecten su producción o la comodidad de su PH.") }
       ],
-      image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&q=80&w=1200",
+      image: "/offline-img/audit.jpg",
       stats: [
         { v: "-25%", l: t('savings', "Ahorro") },
         { v: "IA", l: t('predictive', "IA") },
@@ -108,7 +108,7 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
         { t: t('bulk_excel', 'Informes Ejecutivos'), d: t('bulk_excel_desc', "Reportes financieros y de cumplimiento listos para juntas directivas o auditorías.") },
         { t: t('audit_reports', 'Transparencia Total'), d: t('audit_reports_desc', "Historial inalterable de cada trabajo realizado con fotos y marcas de tiempo GPS.") }
       ],
-      image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=1200",
+      image: "/offline-img/b2b-ph.jpg",
       stats: [
         { v: "Multi", l: t('locations', "Sedes") },
         { v: "Admin+", l: t('control', "Control") },
@@ -126,7 +126,7 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
         { t: t('tech_security', 'Personal Verificado'), d: t('tech_security_desc', "Validamos antecedentes penales e identidad de cada profesional en nuestra red.") },
         { t: t('mantech_id_val', 'Garantía MantechPro'), d: t('mantech_id_val_desc', "Respaldo total en cada servicio contratado a través de nuestra plataforma.") }
       ],
-      image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1200",
+      image: "/offline-img/cyber-it.jpg",
       stats: [
         { v: "100%", l: t('secure', "Seguro") },
         { v: "Bio", l: t('verified', "Verificado") },
@@ -674,7 +674,7 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
            </div>
            <div className="lg:w-1/2 w-full relative">
               <div className="bg-[#1c1d21] border border-white/5 rounded-3xl sm:rounded-[3rem] p-2 sm:p-4 shadow-2xl overflow-hidden relative aspect-video">
-                 <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=1200" className="w-full h-full object-cover rounded-2xl sm:rounded-[2.5rem] opacity-40 grayscale" alt="Map" />
+                 <img src="/offline-img/map-bg.jpg" className="w-full h-full object-cover rounded-2xl sm:rounded-[2.5rem] opacity-40 grayscale" alt="Map" />
                  <div className="absolute inset-0 flex items-center justify-center">
                     <div className="relative">
                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#5d3cfe]/20 rounded-full animate-ping absolute -inset-0"></div>
@@ -706,10 +706,10 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {[
-              { t: "Residencial / PH", i: Home, img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800" },
-              { t: "Logística", i: Truck, img: "https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&q=80&w=800" },
-              { t: "Planta Industrial", i: Zap, img: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800" },
-              { t: "Infraestructura IT", i: Cpu, img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=800" }
+              { t: "Residencial / PH", i: Home, img: "/offline-img/b2b-ph.jpg" },
+              { t: "Logística", i: Truck, img: "/offline-img/logistics.jpg" },
+              { t: "Planta Industrial", i: Zap, img: "/offline-img/industrial.jpg" },
+              { t: "Infraestructura IT", i: Cpu, img: "/offline-img/cyber-it.jpg" }
             ].map((s, i) => (
               <div key={i} className="group relative overflow-hidden rounded-2xl sm:rounded-3xl aspect-[4/5] border border-white/5 bg-[#1c1d21]">
                  <img src={s.img} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-70 group-hover:opacity-100" alt="" />
@@ -811,14 +811,14 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
                   tag: "Promoción Especial",
                   title: "RESERVA TU CUPO MANTENIMIENTO HVAC",
                   price: "$75.00",
-                  img: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?auto=format&fit=crop&q=80&w=800",
+                  img: "/offline-img/hvac-service.jpg",
                   slug: 'hvac_promo'
                 },
                 {
                   tag: "Oferta Logística",
                   title: "DIAGNÓSTICO COMPUTARIZADO DE FLOTA",
                   price: "$49.99",
-                  img: "https://images.unsplash.com/photo-1599256621730-535171e28e50?auto=format&fit=crop&q=80&w=800",
+                  img: "/offline-img/fleet-service.jpg",
                   slug: 'fleet_diag'
                 }
               ];
