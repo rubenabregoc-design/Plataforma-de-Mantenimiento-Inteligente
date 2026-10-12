@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import LandingPage from '../components/LandingPage';
 import Logo from '../components/Logo';
-import { X } from 'lucide-react';
+import { X, Lock, ShieldCheck } from 'lucide-react';
 import { useUI } from '../context/UIContext';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -468,10 +468,13 @@ export default function AuthPage() {
             </div>
 
             {/* Bottom Security Footer */}
-            <div className="pt-3 border-t border-white/5 text-center shrink-0">
-              <p className="text-[9px] text-[#8a879d] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5">
-                <span>🔒</span> Conexión Cifrada SSL • Ley 81 de Protección de Datos
-              </p>
+            <div className="pt-3.5 border-t border-white/5 flex items-center justify-center shrink-0">
+              <div className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/10">
+                <Lock className="w-3.5 h-3.5 text-[#52ffac] shrink-0" />
+                <span className="text-[9px] text-[#c8c4d9] font-black uppercase tracking-wider whitespace-nowrap">
+                  Conexión Cifrada SSL • Ley 81 Protección de Datos
+                </span>
+              </div>
             </div>
 
           </div>
