@@ -28,8 +28,15 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
   const usage = asset.mileage || asset.usageHours || 1;
   const costPerUnit = totalSpend / usage;
 
-  const isUnderWarranty = asset.purchaseDate && asset.warrantyMonths &&
-    (new Date(asset.purchaseDate).setMonth(new Date(asset.purchaseDate).getMonth() + asset.warrantyMonths) > Date.now());
+  const hasPurchaseWarranty = Boolean(
+    asset.purchaseDate &&
+    asset.warrantyMonths &&
+    new Date(asset.purchaseDate).setMonth(new Date(asset.purchaseDate).getMonth() + asset.warrantyMonths) > Date.now()
+  );
+  const isMaintenanceUpToDate = asset.nextMaintenanceDate
+    ? new Date(`${asset.nextMaintenanceDate}T23:59:59`).getTime() >= Date.now()
+    : true;
+  const isUnderWarranty = hasPurchaseWarranty || isMaintenanceUpToDate;
 
   const qrData = `https://mantechpro.pa/asset/${asset.id}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}&bgcolor=121317&color=ffffff`;

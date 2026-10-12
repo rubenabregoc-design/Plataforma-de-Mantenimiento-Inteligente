@@ -24,7 +24,7 @@ export async function downloadHtmlAsPdf(htmlString: string, fileName: string = '
     iframe.style.left = '-9999px';
     iframe.style.top = '0';
     iframe.style.width = '794px'; // Ancho A4 exacto a 96 DPI
-    iframe.style.height = '1123px';
+    iframe.style.height = '100px';
     iframe.style.border = '0';
     iframe.style.zIndex = '-9999';
     document.body.appendChild(iframe);
@@ -43,6 +43,8 @@ export async function downloadHtmlAsPdf(htmlString: string, fileName: string = '
           margin: 0 !important;
           padding: 0 !important;
           width: 794px !important;
+          height: auto !important;
+          min-height: 0 !important;
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
@@ -62,8 +64,8 @@ export async function downloadHtmlAsPdf(htmlString: string, fileName: string = '
     await new Promise((resolve) => setTimeout(resolve, 350));
 
     const targetBody = iframeDoc.body;
-    const contentHeight = Math.max(targetBody.scrollHeight, targetBody.offsetHeight, 600);
-    iframe.style.height = `${contentHeight + 40}px`;
+    const contentHeight = Math.max(targetBody.scrollHeight, targetBody.offsetHeight, 400);
+    iframe.style.height = `${contentHeight}px`;
 
     // 2. Renderizar a Canvas con html2canvas dentro del documento aislado del iframe
     const canvas = await html2canvas(targetBody, {
@@ -73,13 +75,15 @@ export async function downloadHtmlAsPdf(htmlString: string, fileName: string = '
       backgroundColor: '#ffffff',
       logging: false,
       width: 794,
+      height: contentHeight,
       windowWidth: 794,
+      windowHeight: contentHeight,
     });
 
     document.body.removeChild(iframe);
     iframe = null;
 
-    // 3. Crear el documento PDF con jsPDF (soporte multipágina si el informe es largo)
+    // 3. Crear el documento PDF con jsPDF (evitando páginas en blanco)
     const imgData = canvas.toDataURL('image/jpeg', 0.98);
     const pdf = new jsPDF({
       orientation: 'portrait',
@@ -91,17 +95,23 @@ export async function downloadHtmlAsPdf(htmlString: string, fileName: string = '
     const pdfPageHeight = pdf.internal.pageSize.getHeight();
     const imgHeightMm = (canvas.height * pdfWidth) / canvas.width;
 
-    let heightLeft = imgHeightMm;
-    let position = 0;
+    // Si cabe en 1 página (o se pasa por un pequeño margen inferior), ajustarlo a 1 sola página sin crear hoja vacía
+    if (imgHeightMm <= pdfPageHeight * 1.15) {
+      const renderHeight = Math.min(imgHeightMm, pdfPageHeight);
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, renderHeight);
+    } else {
+      let heightLeft = imgHeightMm;
+      let position = 0;
 
-    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeightMm);
-    heightLeft -= pdfPageHeight;
-
-    while (heightLeft > 5) {
-      position = heightLeft - imgHeightMm;
-      pdf.addPage();
       pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeightMm);
       heightLeft -= pdfPageHeight;
+
+      while (heightLeft > 25) {
+        position = heightLeft - imgHeightMm;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeightMm);
+        heightLeft -= pdfPageHeight;
+      }
     }
 
     // 4. Manejo según plataforma (Android Nativo vs Móvil Web vs Web Desktop)
