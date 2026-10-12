@@ -18,13 +18,28 @@
         0%, 100% { filter: drop-shadow(0 0 8px rgba(0, 245, 212, 0.8)); transform: scale(1); }
         50% { filter: drop-shadow(0 0 16px rgba(0, 245, 212, 1)); transform: scale(1.06); }
       }
+      /* En móvil / APK se muestra la imagen original splash-welcome.png intacta */
+      .mp-splash-mobile { display: block; }
+      .mp-splash-desktop { display: none; }
+      @media (min-width: 769px) {
+        .mp-splash-mobile { display: none !important; }
+        .mp-splash-desktop { display: flex !important; }
+      }
     </style>
   </head>
   <body style="margin: 0; background-color: #02051d; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;">
     <div id="root">
-      <div style="position: fixed; inset: 0; width: 100vw; height: 100vh; background: radial-gradient(circle at 50% 45%, #07113a 0%, #02051d 70%); display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; user-select: none;">
-        
-        <!-- Ondas de luz vectoriales de pantalla completa (Web 16:9 y Móvil) -->
+      <!-- 1. SPLASH SCREEN MÓVIL / APK (Original intacto) -->
+      <div class="mp-splash-mobile" style="position: fixed; inset: 0; width: 100vw; height: 100vh; background-color: #020521; overflow: hidden;">
+        <img
+          src="/splash-welcome.png"
+          alt="MantechPro Bienvenida"
+          style="width: 100%; height: 100%; object-fit: cover; object-position: center;"
+        />
+      </div>
+
+      <!-- 2. SPLASH SCREEN WEB ESCRITORIO (Vectorial 16:9 de pantalla completa) -->
+      <div class="mp-splash-desktop" style="position: fixed; inset: 0; width: 100vw; height: 100vh; background: radial-gradient(circle at 50% 45%, #07113a 0%, #02051d 70%); flex-direction: column; align-items: center; justify-content: center; overflow: hidden; user-select: none;">
         <svg viewBox="0 0 1440 900" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;">
           <defs>
             <radialGradient id="topLeftOrb" cx="0%" cy="0%" r="55%">
@@ -45,17 +60,12 @@
           </defs>
           <rect width="1440" height="900" fill="url(#topLeftOrb)" />
           <rect width="1440" height="900" fill="url(#bottomRightOrb)" />
-          <!-- Arco superior izquierdo -->
           <path d="M -80,260 Q 220,160 360,-60" fill="none" stroke="url(#waveLineGrad)" stroke-width="2.5" opacity="0.55" />
-          <!-- Curva luminosa inferior derecha -->
           <path d="M -100,880 Q 650,740 1520,460" fill="none" stroke="url(#waveLineGrad)" stroke-width="3" opacity="0.75" />
           <path d="M 150,940 Q 760,680 1380,940" fill="none" stroke="#1e40af" stroke-width="1.5" opacity="0.35" />
         </svg>
 
-        <!-- Contenido Central Nítido Vectorial -->
         <div style="position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 24px;">
-          
-          <!-- Icono Oficial M + Punto Superior -->
           <svg width="112" height="104" viewBox="0 0 120 110" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 18px; filter: drop-shadow(0 12px 30px rgba(0, 187, 249, 0.28));">
             <defs>
               <linearGradient id="mpIconGrad" x1="16" y1="88" x2="104" y2="24" gradientUnits="userSpaceOnUse">
@@ -68,27 +78,22 @@
             <path d="M 24 86 V 38 L 60 66 L 96 38 V 86" stroke="url(#mpIconGrad)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
 
-          <!-- Logotipo Tipográfico MantechPro -->
           <h1 style="margin: 0; font-size: clamp(36px, 5vw, 54px); font-weight: 900; letter-spacing: -0.03em; line-height: 1.05;">
             <span style="color: #ffffff;">Mantech</span><span style="background: linear-gradient(90deg, #1d8cf8 0%, #00f5d4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Pro</span>
           </h1>
 
-          <!-- Subtítulo Corporativo -->
           <p style="margin: 12px 0 0 0; font-size: clamp(10px, 1.2vw, 13px); font-weight: 700; color: #dbeafe; text-transform: uppercase; letter-spacing: 0.28em;">
             TU ALIADO EN SERVICIOS TÉCNICOS
           </p>
 
-          <!-- Barra de Carga Animada -->
           <div style="margin-top: 28px; width: 150px; height: 4px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; position: relative;">
             <div style="width: 100%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #6c3bff 0%, #00bbf9 50%, #00f5d4 100%); animation: mpBarPulse 2s ease-in-out infinite;"></div>
           </div>
 
-          <!-- Firma Abrego Tech Solutions -->
           <div style="margin-top: 26px; font-size: clamp(13px, 1.5vw, 16px); font-weight: 800; letter-spacing: -0.01em;">
             <span style="color: #ffffff;">Abrego </span>
             <span style="background: linear-gradient(90deg, #1d8cf8 0%, #00f5d4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Tech Solutions</span>
           </div>
-
         </div>
       </div>
     </div>

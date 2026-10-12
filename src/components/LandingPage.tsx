@@ -295,7 +295,7 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
     <div className="min-h-screen bg-[#0d0e12] text-[#e3e2e8] font-sans selection:bg-[#5d3cfe] selection:text-white overflow-x-hidden">
 
       {/* 1. NAVEGACIÓN SEPARADA MÓVIL vs WEB ESCRITORIO */}
-      <nav className="fixed top-0 md:top-6 left-0 md:left-1/2 md:-translate-x-1/2 w-full md:w-[calc(100%-3rem)] md:max-w-7xl z-[100] bg-[#0d0e12]/95 md:bg-[#121317]/90 backdrop-blur-2xl border-b md:border border-white/10 md:rounded-[2rem] px-4 sm:px-6 md:px-10 py-3 md:py-4 pt-[max(env(safe-area-inset-top),0.75rem)] md:pt-4 shadow-2xl transition-all">
+      <nav className="fixed top-0 md:top-4 left-0 md:left-1/2 md:-translate-x-1/2 w-full md:w-[calc(100%-3rem)] md:max-w-7xl z-[100] bg-[#0d0e12]/95 md:bg-[#121317]/90 backdrop-blur-2xl border-b md:border border-white/10 md:rounded-[2rem] px-4 sm:px-6 md:px-10 py-3 md:py-3.5 pt-[max(env(safe-area-inset-top),0.75rem)] md:pt-3.5 shadow-2xl transition-all">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Logo size="md" />
           <div className="hidden lg:flex items-center gap-10">
@@ -314,29 +314,29 @@ export default function LandingPage({ onStart, onWatchDemo, assets = [], request
         </div>
       </nav>
 
-      {/* 2. HERO SECTION (COMPACTO EN MÓVIL, AMPLIO EN WEB) */}
-      <section className="relative pt-24 sm:pt-32 md:pt-40 pb-14 sm:pb-20 md:pb-28 px-4 sm:px-8 overflow-hidden">
-        <div className="max-w-6xl mx-auto relative z-10 text-center space-y-5 sm:space-y-7 md:space-y-8">
+      {/* 2. HERO SECTION (COMPACTO EN MÓVIL, PRIMERA VISTA EN WEB) */}
+      <section className="relative pt-20 sm:pt-24 md:pt-28 pb-10 sm:pb-14 md:pb-16 px-4 sm:px-8 overflow-hidden">
+        <div className="max-w-6xl mx-auto relative z-10 text-center space-y-4 sm:space-y-5 md:space-y-5">
           <div className="inline-flex items-center gap-2.5 px-4 py-1.5 md:px-5 md:py-2 bg-white/[0.05] border border-white/10 rounded-full backdrop-blur-md">
              <span className="w-2 h-2 rounded-full bg-[#52ffac] animate-pulse"></span>
              <span className="text-[9px] sm:text-[10px] md:text-xs font-black text-white/90 uppercase tracking-widest">Infraestructura Industrial de Mantenimiento • Panamá</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tight md:tracking-tighter leading-[1.05] md:leading-[0.95] uppercase">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tight md:tracking-tighter leading-[1.05] md:leading-[0.95] uppercase">
             Todo Bajo Control <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5d3cfe] via-[#7d61ff] to-[#52ffac] block mt-1 md:mt-2">Casa, PH y Flotas.</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5d3cfe] via-[#7d61ff] to-[#52ffac] block mt-1 md:mt-1.5">Casa, PH y Flotas.</span>
           </h1>
 
-          <p className="max-w-3xl mx-auto text-[#c8c4d9] text-xs sm:text-base md:text-xl lg:text-2xl font-medium leading-relaxed opacity-95">
+          <p className="max-w-3xl mx-auto text-[#c8c4d9] text-xs sm:text-base md:text-lg lg:text-xl font-medium leading-relaxed opacity-95">
             La infraestructura de servicios #1 de Panamá para el hogar, la gran empresa y centros logísticos. Gestión inteligente de activos y flotas con respaldo certificado.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5 pt-2">
-             <button onClick={onStart} className="w-full sm:w-auto px-8 md:px-10 py-3.5 sm:py-4 md:py-5 bg-gradient-to-r from-[#5d3cfe] to-[#4c2bd6] text-white rounded-xl sm:rounded-2xl md:rounded-[2rem] text-xs md:text-sm font-black uppercase tracking-widest shadow-2xl shadow-[#5d3cfe]/30 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5 pt-1">
+             <button onClick={onStart} className="w-full sm:w-auto px-8 md:px-10 py-3.5 sm:py-4 md:py-4.5 bg-gradient-to-r from-[#5d3cfe] to-[#4c2bd6] text-white rounded-xl sm:rounded-2xl md:rounded-[2rem] text-xs md:text-sm font-black uppercase tracking-widest shadow-2xl shadow-[#5d3cfe]/30 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3">
                <span>Solicitar Soporte Ahora</span>
                <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
              </button>
-             <button onClick={onWatchDemo} className="w-full sm:w-auto px-8 md:px-10 py-3.5 sm:py-4 md:py-5 bg-[#14151b] border border-white/10 text-white rounded-xl sm:rounded-2xl md:rounded-[2rem] text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all flex items-center justify-center gap-3">
+             <button onClick={onWatchDemo} className="w-full sm:w-auto px-8 md:px-10 py-3.5 sm:py-4 md:py-4.5 bg-[#14151b] border border-white/10 text-white rounded-xl sm:rounded-2xl md:rounded-[2rem] text-xs md:text-sm font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all flex items-center justify-center gap-3">
                <PlayCircle className="w-4 h-4 md:w-5 md:h-5" />
                <span>Ver Demo Interactiva</span>
              </button>
