@@ -406,46 +406,29 @@ export default function ClientDashboard() {
                   assets.filter(a =>
                     a.name.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
                     a.licensePlate?.toLowerCase().includes(assetSearchQuery.toLowerCase())
-                  ).slice((assetCurrentPage - 1) * assetPageSize, assetCurrentPage * assetPageSize).map(a => {
-                    const isSelected = selectedDashboardIds.includes(a.id);
-                    return (
-                      <div key={a.id} className="relative group/select">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedDashboardIds(prev =>
-                              prev.includes(a.id) ? prev.filter(id => id !== a.id) : [...prev, a.id]
-                            );
-                          }}
-                          title={isSelected ? "Quitar de selección en lote" : "Seleccionar para eliminar en lote"}
-                          className={`absolute top-4 left-4 z-30 w-8 h-8 rounded-xl flex items-center justify-center border transition-all shadow-lg ${
-                            isSelected
-                              ? 'bg-[#5d3cfe] border-[#52ffac] text-white scale-105'
-                              : 'bg-black/70 border-white/20 text-white/50 hover:text-white hover:border-white/50'
-                          }`}
-                        >
-                          <Check className={`w-4 h-4 ${isSelected ? 'opacity-100' : 'opacity-40'}`} />
-                        </button>
-                        <div className={isSelected ? 'ring-2 ring-[#5d3cfe] rounded-[2.5rem] transition-all' : ''}>
-                          <AssetIntelligentCard
-                            asset={a}
-                            requests={requests}
-                            onOpenDetails={(asset) => openModal('fuel', { asset })}
-                            onOpenPreTrip={(asset) => openModal('preTrip', { asset })}
-                            onFindExpert={handleFindExpertForAsset}
-                            onEdit={(asset) => openModal('asset', { asset })}
-                            onDelete={(id) => openModal('confirmation', {
-                              confTitle: "Eliminar Activo",
-                              confMessage: "¿Estás seguro de eliminar este activo permanentemente?",
-                              confType: 'danger',
-                              onConfConfirm: () => business.handleDeleteAsset(id)
-                            })}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })
+                  ).slice((assetCurrentPage - 1) * assetPageSize, assetCurrentPage * assetPageSize).map(a => (
+                    <AssetIntelligentCard
+                      key={a.id}
+                      asset={a}
+                      requests={requests}
+                      isSelected={selectedDashboardIds.includes(a.id)}
+                      onToggleSelect={(id) => {
+                        setSelectedDashboardIds(prev =>
+                          prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+                        );
+                      }}
+                      onOpenDetails={(asset) => openModal('fuel', { asset })}
+                      onOpenPreTrip={(asset) => openModal('preTrip', { asset })}
+                      onFindExpert={handleFindExpertForAsset}
+                      onEdit={(asset) => openModal('asset', { asset })}
+                      onDelete={(id) => openModal('confirmation', {
+                        confTitle: "Eliminar Activo",
+                        confMessage: "¿Estás seguro de eliminar este activo permanentemente?",
+                        confType: 'danger',
+                        onConfConfirm: () => business.handleDeleteAsset(id)
+                      })}
+                    />
+                  ))
                 ) : (
                   <div className="col-span-full py-24 bg-[#121317] border border-dashed border-white/5 rounded-[3rem] text-center space-y-6">
                     <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto opacity-20">

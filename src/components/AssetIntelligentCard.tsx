@@ -1,4 +1,4 @@
-import { QrCode, TrendingDown, TrendingUp, DollarSign, PenTool as Tool, Calendar, FileText, Download, ShieldCheck, Clock, ShieldAlert, BookOpen, BadgeCheck, Bike, Pencil, Trash2, Activity, MapPin, ClipboardList } from 'lucide-react';
+import { QrCode, TrendingDown, TrendingUp, DollarSign, PenTool as Tool, Calendar, FileText, Download, ShieldCheck, Clock, ShieldAlert, BookOpen, BadgeCheck, Bike, Pencil, Trash2, Activity, MapPin, ClipboardList, Check } from 'lucide-react';
 import { Asset, JobRequest } from '../types';
 import { toast } from 'react-hot-toast';
 import { downloadHtmlAsPdf } from '../utils/pdfExport';
@@ -11,10 +11,12 @@ interface AssetIntelligentCardProps {
   onFindExpert?: (asset: Asset) => void;
   onEdit?: (asset: Asset) => void;
   onDelete?: (id: string) => void;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
   key?: any;
 }
 
-export default function AssetIntelligentCard({ asset, requests, onOpenDetails, onOpenPreTrip, onFindExpert, onEdit, onDelete }: AssetIntelligentCardProps) {
+export default function AssetIntelligentCard({ asset, requests, onOpenDetails, onOpenPreTrip, onFindExpert, onEdit, onDelete, isSelected, onToggleSelect }: AssetIntelligentCardProps) {
   // --- MOTOR FINANCIERO INTEGRAL (GASOLINA + SERVICIOS) ---
   const assetRequests = requests.filter(r => r.assetId === asset.id && r.status === 'completed');
   const maintenanceSpend = assetRequests.reduce((sum, r) => sum + (r.price || 0), 0);
@@ -53,14 +55,14 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
   const isRealEstate = asset.type === 'house' || asset.category === 'PH';
 
   return (
-    <div className="bg-[#121317] border border-white/5 rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden group hover:border-[#5d3cfe]/50 transition-all shadow-2xl">
+    <div className={`bg-[#121317] border rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden group transition-all shadow-2xl ${isSelected ? 'border-[#5d3cfe] ring-2 ring-[#5d3cfe]/60' : 'border-white/5 hover:border-[#5d3cfe]/50'}`}>
       {/* Visual Header */}
-      <div className="h-20 sm:h-24 bg-gradient-to-br from-[#1c1d21] to-[#0d0e12] p-4 sm:p-5 flex justify-between items-start relative overflow-hidden">
-        <div className="relative z-10">
+      <div className="h-20 sm:h-24 bg-gradient-to-br from-[#1c1d21] to-[#0d0e12] p-4 sm:p-5 flex justify-between items-start gap-2 relative overflow-hidden">
+        <div className="relative z-10 min-w-0 flex-1">
           <div className="flex items-center gap-2">
-             <h4 className="text-sm sm:text-base font-black text-white uppercase tracking-tight leading-none">{asset.name}</h4>
+             <h4 className="text-sm sm:text-base font-black text-white uppercase tracking-tight leading-none truncate">{asset.name}</h4>
              {(assetRequests.length > 0 || totalSpend > 0) && (
-               <div className="p-1 bg-[#52ffac] rounded-md shadow-[0_0_10px_rgba(82,255,172,0.3)]" title="Unidad con Historial Verificado">
+               <div className="p-1 bg-[#52ffac] rounded-md shadow-[0_0_10px_rgba(82,255,172,0.3)] shrink-0" title="Unidad con Historial Verificado">
                   <ShieldCheck className="w-3 h-3 text-black" />
                </div>
              )}
@@ -73,7 +75,21 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 relative z-10">
+        <div className="flex items-center gap-1.5 sm:gap-2 relative z-10 shrink-0">
+          {onToggleSelect && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onToggleSelect(asset.id); }}
+              title={isSelected ? "Quitar de selección en lote" : "Seleccionar en lote"}
+              className={`p-1.5 sm:p-2 rounded-xl border transition-all ${
+                isSelected
+                  ? 'bg-[#5d3cfe] border-[#52ffac] text-white shadow-[0_0_12px_rgba(93,60,254,0.6)]'
+                  : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:border-white/30'
+              }`}
+            >
+              <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            </button>
+          )}
           <button onClick={(e) => { e.stopPropagation(); onEdit?.(asset); }} className="p-1.5 sm:p-2 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-[#5d3cfe] transition-all"><Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" /></button>
           <button onClick={(e) => { e.stopPropagation(); onDelete?.(asset.id); }} className="p-1.5 sm:p-2 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-rose-600 transition-all"><Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /></button>
           <button onClick={(e) => { e.stopPropagation(); window.open(qrUrl, '_blank'); }} className="p-1.5 sm:p-2 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-[#5d3cfe] transition-all group/qr"><QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
