@@ -405,8 +405,39 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
                    />
                 </div>
                 <div className="space-y-2">
-                   <label className={`text-[9px] font-black uppercase ml-2 flex items-center gap-2 ${formErrors.includes('nextMaintenance') ? 'text-rose-500' : 'text-[#474556]'}`}><Calendar className="w-3.5 h-3.5 text-[#5d3cfe]" /> Próximo Mantenimiento *</label>
+                   <div className="flex items-center justify-between ml-2">
+                     <label className={`text-[9px] font-black uppercase flex items-center gap-2 ${formErrors.includes('nextMaintenance') ? 'text-rose-500' : 'text-[#474556]'}`}><Calendar className="w-3.5 h-3.5 text-[#5d3cfe]" /> Próximo Mantenimiento *</label>
+                     <div className="flex items-center gap-1">
+                       <button
+                         type="button"
+                         onClick={() => {
+                           const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+                           setNextMaintenance(d.toISOString().split('T')[0]);
+                           setFormErrors(prev => prev.filter(err => err !== 'nextMaintenance'));
+                         }}
+                         className="px-2 py-0.5 bg-[#5d3cfe]/20 text-[#c7bfff] hover:bg-[#5d3cfe] hover:text-white rounded-md text-[8px] font-black uppercase tracking-wider transition-colors cursor-pointer"
+                       >
+                         Mañana
+                       </button>
+                       <button
+                         type="button"
+                         onClick={() => {
+                           const d = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+                           setNextMaintenance(d.toISOString().split('T')[0]);
+                           setFormErrors(prev => prev.filter(err => err !== 'nextMaintenance'));
+                         }}
+                         className="px-2 py-0.5 bg-white/5 text-[#8e8d9f] hover:bg-white/10 hover:text-white rounded-md text-[8px] font-black uppercase tracking-wider transition-colors cursor-pointer"
+                       >
+                         +1 Semana
+                       </button>
+                     </div>
+                   </div>
                    <input required type="date" value={nextMaintenance} onChange={e => { setNextMaintenance(e.target.value); setFormErrors(prev => prev.filter(err => err !== 'nextMaintenance')); }} className={`w-full bg-[#0d0e12] border rounded-2xl py-4 px-6 text-sm font-black text-[#5d3cfe] outline-none [color-scheme:dark] ${formErrors.includes('nextMaintenance') ? 'border-rose-500' : 'border-white/5 focus:border-[#5d3cfe]'}`} />
+                   {nextMaintenance && (
+                     <p className="text-[10px] font-bold text-[#52ffac] ml-2">
+                       📅 Programado: {new Date(`${nextMaintenance}T12:00:00`).toLocaleDateString('es-PA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                     </p>
+                   )}
                 </div>
              </div>
 

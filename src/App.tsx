@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import GooglePayButton from '@google-pay/button-react';
 import { AnimatePresence } from 'framer-motion';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { useAuth } from './context/AuthContext';
 import { useData } from './context/DataContext';
 import { useUI } from './context/UIContext';
@@ -92,7 +93,7 @@ export default function App() {
     );
   }, [isLoggedIn, user]);
 
-  // Motor de Alerta Preventiva Automática (1 Semana / 7 Días antes del Próximo Mantenimiento)
+  // Motor de Alerta Preventiva Automática (Notificación Nativa en Celular + Web + Centro de Notificaciones)
   useEffect(() => {
     if (!isLoggedIn || !user || assets.length === 0) return;
     const now = Date.now();
@@ -104,33 +105,77 @@ export default function App() {
       if (isNaN(dueTime)) return;
       const diffMs = dueTime - now;
 
-      // Si falta 1 semana (7 días) o menos para la fecha de próximo mantenimiento
+      // Si falta 1 semana (7 días) o menos, es mañana, es hoy, o venció en los últimos 30 días
       if (diffMs <= sevenDaysMs && diffMs >= -30 * 24 * 60 * 60 * 1000) {
         const daysLeft = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
-        const notifId = `maint7d_${asset.id}_${asset.nextMaintenanceDate}`;
+        const notifId = `maint_${asset.id}_${asset.nextMaintenanceDate}_d${daysLeft}`;
         const sessionKey = `mantech_alerted_${notifId}`;
         if (sessionStorage.getItem(sessionKey)) return;
         sessionStorage.setItem(sessionKey, 'true');
 
+        const msgTitle = daysLeft === 1
+          ? `⚠️ Mantenimiento Mañana: ${asset.name}`
+          : daysLeft === 0
+            ? `🚨 Mantenimiento Hoy: ${asset.name}`
+            : daysLeft < 0
+              ? `🔴 Mantenimiento Vencido: ${asset.name}`
+              : `⚠️ Alerta Preventiva: ${asset.name}`;
+
+        const msgBody = daysLeft > 1
+          ? `Faltan ${daysLeft} días para el mantenimiento programado de ${asset.name} (${asset.nextMaintenanceDate}).`
+          : daysLeft === 1
+            ? `Mañana es la fecha programada de mantenimiento para ${asset.name} (${asset.nextMaintenanceDate}).`
+            : daysLeft === 0
+              ? `Hoy corresponde el mantenimiento preventivo de ${asset.name}.`
+              : `El mantenimiento preventivo de ${asset.name} (${asset.nextMaintenanceDate}) requiere atención.`;
+
+        // 1. Notificación Nativa Push al Celular (Capacitor)
+        try {
+          const perm = await LocalNotifications.requestPermissions();
+          if (perm.display === 'granted') {
+            const numericId = Math.abs(
+              notifId.split('').reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)
+            ) % 100000;
+            await LocalNotifications.schedule({
+              notifications: [
+                {
+                  title: msgTitle,
+                  body: msgBody,
+                  id: numericId || 101,
+                  schedule: { at: new Date(Date.now() + 1000) },
+                  sound: 'beep.wav'
+                }
+              ]
+            });
+          }
+        } catch (localErr) {
+          console.warn("LocalNotifications error:", localErr);
+        }
+
+        // 2. Notificación en Navegador Web
+        try {
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(msgTitle, { body: msgBody, icon: '/favicon.ico' });
+          }
+        } catch {}
+
+        // 3. Registro en Firestore & Toast
         try {
           const notifRef = doc(db, "notifications", notifId);
           const existing = await getDoc(notifRef);
           if (!existing.exists()) {
-            const msgBody = daysLeft > 0
-              ? `Faltan ${daysLeft} día(s) para el mantenimiento preventivo de ${asset.name} (${asset.nextMaintenanceDate}).`
-              : `El mantenimiento preventivo de ${asset.name} (${asset.nextMaintenanceDate}) requiere atención inmediata.`;
             await setDoc(notifRef, {
               userId: user.uid,
-              title: `⚠️ Alerta de Mantenimiento: ${asset.name}`,
+              title: msgTitle,
               body: msgBody,
               type: 'system',
               createdAt: serverTimestamp(),
               read: false
             });
-            toast(msgBody, { icon: '🛠️', duration: 6000 });
+            toast(msgBody, { icon: '🛠️', duration: 7000 });
           }
         } catch {
-          // Ignorar si ya existe o no tiene permisos
+          // Ignorar si ya existe
         }
       }
     });

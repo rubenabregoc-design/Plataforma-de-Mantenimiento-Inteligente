@@ -64,45 +64,50 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
   return (
     <div className={`bg-[#121317] border rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden group transition-all shadow-2xl ${isSelected ? 'border-[#5d3cfe] ring-2 ring-[#5d3cfe]/60' : 'border-white/5 hover:border-[#5d3cfe]/50'}`}>
       {/* Visual Header */}
-      <div className="min-h-[5.5rem] bg-gradient-to-br from-[#1c1d21] to-[#0d0e12] p-4 sm:p-5 flex justify-between items-start gap-3 relative overflow-hidden">
-        <div className="relative z-10 min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-             <h4 className="text-sm sm:text-base font-black text-white uppercase tracking-tight leading-snug break-words">{asset.name}</h4>
-             {(assetRequests.length > 0 || totalSpend > 0) && (
-               <div className="p-1 bg-[#52ffac] rounded-md shadow-[0_0_10px_rgba(82,255,172,0.3)] shrink-0" title="Unidad con Historial Verificado">
-                  <ShieldCheck className="w-3 h-3 text-black" />
-               </div>
-             )}
+      <div className="bg-gradient-to-br from-[#1c1d21] to-[#0d0e12] p-4 sm:p-5 relative overflow-hidden">
+        {/* Fila Superior: Badges y Botones de Acción */}
+        <div className="flex items-center justify-between gap-2 relative z-10">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-lg">
+              <BadgeCheck className="w-3 h-3 text-[#5d3cfe]" />
+              <span className="text-[8px] sm:text-[9px] font-black text-[#c7bfff] uppercase tracking-widest">
+                {asset.licensePlate || asset.serialNumber || 'SN: N/A'}
+              </span>
+            </div>
+            {onToggleSelect && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onToggleSelect(asset.id); }}
+                title={isSelected ? "Quitar de selección en lote" : "Seleccionar en lote"}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[8px] sm:text-[9px] font-black uppercase tracking-wider border transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-[#5d3cfe] border-[#52ffac] text-white shadow-[0_0_10px_rgba(93,60,254,0.5)]'
+                    : 'bg-white/5 border-white/10 text-[#8a879d] hover:text-white hover:border-white/30'
+                }`}
+              >
+                <Check className={`w-3 h-3 ${isSelected ? 'text-[#52ffac]' : 'text-white/40'}`} />
+                <span>{isSelected ? 'Marcado' : 'Lote'}</span>
+              </button>
+            )}
           </div>
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#5d3cfe]/10 border border-[#5d3cfe]/20 rounded-lg">
-                <BadgeCheck className="w-3 h-3 text-[#5d3cfe]" />
-                <span className="text-[8px] sm:text-[9px] font-black text-[#c7bfff] uppercase tracking-widest">
-                   {asset.licensePlate || asset.serialNumber || 'SN: N/A'}
-                </span>
-             </div>
-             {onToggleSelect && (
-               <button
-                 type="button"
-                 onClick={(e) => { e.stopPropagation(); onToggleSelect(asset.id); }}
-                 title={isSelected ? "Quitar de selección en lote" : "Seleccionar en lote"}
-                 className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[8px] sm:text-[9px] font-black uppercase tracking-wider border transition-all ${
-                   isSelected
-                     ? 'bg-[#5d3cfe] border-[#52ffac] text-white shadow-[0_0_10px_rgba(93,60,254,0.5)]'
-                     : 'bg-white/5 border-white/10 text-[#8a879d] hover:text-white hover:border-white/30'
-                 }`}
-               >
-                 <Check className={`w-3 h-3 ${isSelected ? 'text-[#52ffac]' : 'text-white/40'}`} />
-                 <span>{isSelected ? 'Marcado' : 'Lote'}</span>
-               </button>
-             )}
+
+          <div className="flex items-center gap-1.5 sm:gap-2 relative z-10 shrink-0">
+            <button onClick={(e) => { e.stopPropagation(); onEdit?.(asset); }} title="Editar activo" className="p-1.5 sm:p-2 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-[#5d3cfe] transition-all cursor-pointer"><Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" /></button>
+            <button onClick={(e) => { e.stopPropagation(); onDelete?.(asset.id); }} title="Eliminar activo" className="p-1.5 sm:p-2 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-rose-600 transition-all cursor-pointer"><Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /></button>
+            <button onClick={(e) => { e.stopPropagation(); window.open(qrUrl, '_blank'); }} title="Código QR" className="p-1.5 sm:p-2 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-[#5d3cfe] transition-all group/qr cursor-pointer"><QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 relative z-10 shrink-0">
-          <button onClick={(e) => { e.stopPropagation(); onEdit?.(asset); }} title="Editar activo" className="p-1.5 sm:p-2 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-[#5d3cfe] transition-all"><Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" /></button>
-          <button onClick={(e) => { e.stopPropagation(); onDelete?.(asset.id); }} title="Eliminar activo" className="p-1.5 sm:p-2 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-rose-600 transition-all"><Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /></button>
-          <button onClick={(e) => { e.stopPropagation(); window.open(qrUrl, '_blank'); }} title="Código QR" className="p-1.5 sm:p-2 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-[#5d3cfe] transition-all group/qr"><QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
+        {/* Fila Inferior: Nombre Completo del Activo - 100% de Ancho Sin Truncamiento */}
+        <div className="mt-3 relative z-10 flex items-center gap-2">
+          <h4 className="text-base sm:text-lg font-black text-white uppercase tracking-tight leading-snug break-words">
+            {asset.name}
+          </h4>
+          {(assetRequests.length > 0 || totalSpend > 0) && (
+            <div className="p-1 bg-[#52ffac] rounded-md shadow-[0_0_10px_rgba(82,255,172,0.3)] shrink-0" title="Unidad con Historial Verificado">
+              <ShieldCheck className="w-3 h-3 text-black" />
+            </div>
+          )}
         </div>
 
         <div className="absolute -right-2 -bottom-2 opacity-5 group-hover:opacity-10 transition-opacity transform rotate-12">
