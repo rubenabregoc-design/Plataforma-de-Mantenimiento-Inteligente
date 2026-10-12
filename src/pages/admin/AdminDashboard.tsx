@@ -72,10 +72,53 @@ export default function AdminDashboard() {
   const handleSaveAds = async (updatedAds: any[]) => {
     try {
       await setDoc(doc(db, "config", "marketing"), { banners: updatedAds });
+      try {
+        localStorage.setItem('mantech_cached_marketing_ads', JSON.stringify(updatedAds));
+      } catch {
+        // Ignore storage quota errors
+      }
       toast.success("Ecosistema de Marketing Sincronizado");
     } catch (e) {
       toast.error("Fallo en sincronización");
     }
+  };
+
+  const handleAdImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxWidth = 900;
+        const maxHeight = 450;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.78);
+          setNewAd((prev) => ({ ...prev, image: compressedDataUrl }));
+          toast.success("Imagen comprimida y lista para Modo Offline");
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   const addAd = () => {
@@ -481,9 +524,37 @@ export default function AdminDashboard() {
                       <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Título de Campaña</label>
                       <input type="text" value={newAd.title} onChange={e => setNewAd({...newAd, title: e.target.value})} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-4 px-6 text-sm text-white focus:border-amber-500 outline-none transition-all" placeholder="Ej: Especial Inverter 2026" />
                    </div>
-                   <div className="space-y-2">
-                      <label className="text-[9px] font-black text-[#474556] uppercase ml-1">URL de Imagen (1200x300)</label>
-                      <input type="text" value={newAd.image} onChange={e => setNewAd({...newAd, image: e.target.value})} className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-4 px-6 text-sm text-white focus:border-amber-500 outline-none transition-all font-mono" placeholder="https://..." />
+                   <div className="space-y-3">
+                      <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Imagen del Anuncio (Disponible con o sin Internet)</label>
+                      <label className="w-full flex items-center justify-center gap-3 py-4 px-5 bg-amber-500/10 hover:bg-amber-500/20 border border-dashed border-amber-500/40 rounded-xl cursor-pointer transition-all group">
+                         <ImageIcon className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
+                         <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">
+                            {newAd.image?.startsWith('data:image') ? 'Cambiar Imagen Subida (Offline Activo)' : 'Subir Imagen del Anuncio'}
+                         </span>
+                         <input type="file" accept="image/*" onChange={handleAdImageUpload} className="hidden" />
+                      </label>
+                      {newAd.image && (
+                        <div className="relative rounded-xl overflow-hidden border border-white/10 bg-[#0d0e12] h-24">
+                           <img src={newAd.image} alt="Vista previa" className="w-full h-full object-cover" />
+                           <div className="absolute top-2 left-2 px-2.5 py-1 rounded-md bg-black/80 backdrop-blur-md border border-white/10 text-[8px] font-black uppercase tracking-widest text-[#52ffac]">
+                              {newAd.image.startsWith('data:image') || newAd.image.startsWith('/') ? '✓ Guardada en Memoria Offline' : 'URL Externa'}
+                           </div>
+                           <button
+                             type="button"
+                             onClick={() => setNewAd({ ...newAd, image: '' })}
+                             className="absolute top-2 right-2 px-2.5 py-1 rounded-md bg-rose-600/90 text-white text-[8px] font-black uppercase tracking-widest hover:bg-rose-500"
+                           >
+                             Quitar
+                           </button>
+                        </div>
+                      )}
+                      <input
+                        type="text"
+                        value={newAd.image?.startsWith('data:image') ? '' : newAd.image}
+                        onChange={e => setNewAd({...newAd, image: e.target.value})}
+                        className="w-full bg-[#0d0e12] border border-white/5 rounded-xl py-3.5 px-5 text-xs text-white focus:border-amber-500 outline-none transition-all font-mono"
+                        placeholder={newAd.image?.startsWith('data:image') ? 'Imagen cargada en memoria interna (o pegue otra URL aquí)...' : 'O pegue una URL externa (https://...)'}
+                      />
                    </div>
                    <div className="space-y-2">
                       <label className="text-[9px] font-black text-[#474556] uppercase ml-1">Enlace de Destino (Link)</label>

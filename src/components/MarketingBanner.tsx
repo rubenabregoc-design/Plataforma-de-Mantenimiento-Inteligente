@@ -18,7 +18,20 @@ interface Props {
 }
 
 export default function MarketingBanner({ placement }: Props) {
-  const [ads, setAds] = useState<Ad[]>([]);
+  const [ads, setAds] = useState<Ad[]>(() => {
+    try {
+      const cached = localStorage.getItem('mantech_cached_marketing_ads');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((a: Ad) => a.placement === placement);
+        }
+      }
+    } catch {
+      // Ignore storage read errors
+    }
+    return [];
+  });
   const [currentIdx, setCurrentPromo] = useState(0);
   const [visible, setVisible] = useState(true);
 
@@ -26,6 +39,11 @@ export default function MarketingBanner({ placement }: Props) {
     const unsub = onSnapshot(doc(db, "config", "marketing"), (docSnap) => {
       if (docSnap.exists()) {
         const allAds = docSnap.data().banners || [];
+        try {
+          localStorage.setItem('mantech_cached_marketing_ads', JSON.stringify(allAds));
+        } catch {
+          // Ignore quota errors
+        }
         setAds(allAds.filter((a: Ad) => a.placement === placement));
       }
     });
@@ -42,7 +60,7 @@ export default function MarketingBanner({ placement }: Props) {
 
   if (!visible || ads.length === 0) return null;
 
-  const current = ads[currentIdx];
+  const current = ads[currentIdx] || ads[0];
 
   return (
     <AnimatePresence mode="wait">
@@ -60,7 +78,7 @@ export default function MarketingBanner({ placement }: Props) {
 
             {/* Zona de Imagen con Overlay Dinámico */}
             <div className="w-full md:w-1/3 h-48 md:h-full relative overflow-hidden bg-[#1c1d21]">
-               {current.image && (current.image.startsWith('http') || current.image.startsWith('/')) ? (
+               {current.image && (current.image.startsWith('http') || current.image.startsWith('/') || current.image.startsWith('data:image')) ? (
                  <img
                    src={current.image}
                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
