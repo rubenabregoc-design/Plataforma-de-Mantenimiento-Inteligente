@@ -198,7 +198,7 @@ export default function InAppLogConsole() {
     <>
       {isOpen && (
         <div className="fixed inset-0 z-[500] bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-[#121317] border-t sm:border border-[#5d3cfe]/40 rounded-t-3xl sm:rounded-3xl w-full max-w-xl max-h-[88vh] flex flex-col shadow-[0_0_50px_rgba(93,60,254,0.25)] overflow-hidden">
+          <div className="bg-[#121317] border-t sm:border border-[#5d3cfe]/40 rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[86vh] flex flex-col shadow-[0_0_50px_rgba(93,60,254,0.25)] overflow-hidden">
             {/* Header */}
             <div className="px-4 py-3.5 sm:p-5 border-b border-white/10 flex items-center justify-between gap-3 bg-[#16171d] shrink-0">
               <div className="flex items-center gap-3 min-w-0">
@@ -256,7 +256,7 @@ export default function InAppLogConsole() {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-3.5 sm:p-4 pb-8 space-y-3 custom-scrollbar">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3.5 sm:p-4 pb-8 space-y-3 custom-scrollbar">
               {activeSection === 'modules' ? (
                 <div className="space-y-3">
                   {/* Summary Cards */}
