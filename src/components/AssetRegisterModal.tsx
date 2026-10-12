@@ -405,20 +405,36 @@ export default function AssetRegisterModal({ isOpen, onClose, onAdd, assetToEdit
                    />
                 </div>
                 <div className="space-y-2">
-                   <label className={`text-[9px] font-black uppercase ml-2 flex items-center gap-2 ${formErrors.includes('nextMaintenance') ? 'text-rose-500' : 'text-[#474556]'}`}><ShieldAlert className="w-3.5 h-3.5" /> Próxima Alerta *</label>
+                   <label className={`text-[9px] font-black uppercase ml-2 flex items-center gap-2 ${formErrors.includes('nextMaintenance') ? 'text-rose-500' : 'text-[#474556]'}`}><Calendar className="w-3.5 h-3.5 text-[#5d3cfe]" /> Próximo Mantenimiento *</label>
                    <input required type="date" value={nextMaintenance} onChange={e => { setNextMaintenance(e.target.value); setFormErrors(prev => prev.filter(err => err !== 'nextMaintenance')); }} className={`w-full bg-[#0d0e12] border rounded-2xl py-4 px-6 text-sm font-black text-[#5d3cfe] outline-none [color-scheme:dark] ${formErrors.includes('nextMaintenance') ? 'border-rose-500' : 'border-white/5 focus:border-[#5d3cfe]'}`} />
                 </div>
              </div>
 
-             {lastMaintenance && (
-               <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center gap-4 animate-fade-in">
-                  <Calendar className="w-5 h-5 text-amber-500" />
-                  <div>
-                     <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Recomendación Sugerida</p>
-                     <p className="text-[10px] font-bold text-white/80">+{recommendation.months} meses para {recommendation.reason}.</p>
-                  </div>
-               </div>
-             )}
+             {nextMaintenance && (() => {
+               const due = new Date(`${nextMaintenance}T12:00:00`);
+               const alertDate = new Date(due.getTime() - 7 * 24 * 60 * 60 * 1000);
+               const formattedAlert = !isNaN(alertDate.getTime())
+                 ? alertDate.toLocaleDateString('es-PA', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                 : '';
+               return (
+                 <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+                    <div className="flex items-center gap-3">
+                       <ShieldAlert className="w-5 h-5 text-amber-500 shrink-0" />
+                       <div>
+                          <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Alerta Preventiva Automática (1 Semana Antes)</p>
+                          <p className="text-[10px] font-bold text-white/90">
+                            El sistema te avisará el <span className="text-[#52ffac] font-black">{formattedAlert}</span> (7 días antes de tu próximo mantenimiento).
+                          </p>
+                       </div>
+                    </div>
+                    {lastMaintenance && (
+                      <span className="text-[8px] font-black text-amber-400/80 uppercase tracking-wider bg-black/30 px-3 py-1.5 rounded-xl shrink-0">
+                        Ciclo sugerido: +{recommendation.months} meses
+                      </span>
+                    )}
+                 </div>
+               );
+             })()}
           </div>
 
           <button type="submit" className="w-full py-5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] shadow-xl hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3">

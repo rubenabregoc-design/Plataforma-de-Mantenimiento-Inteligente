@@ -91,6 +91,50 @@ export default function App() {
     );
   }, [isLoggedIn, user]);
 
+  // Motor de Alerta Preventiva Automática (1 Semana / 7 Días antes del Próximo Mantenimiento)
+  useEffect(() => {
+    if (!isLoggedIn || !user || assets.length === 0) return;
+    const now = Date.now();
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+
+    assets.forEach(async (asset) => {
+      if (!asset.nextMaintenanceDate) return;
+      const dueTime = new Date(`${asset.nextMaintenanceDate}T12:00:00`).getTime();
+      if (isNaN(dueTime)) return;
+      const diffMs = dueTime - now;
+
+      // Si falta 1 semana (7 días) o menos para la fecha de próximo mantenimiento
+      if (diffMs <= sevenDaysMs && diffMs >= -30 * 24 * 60 * 60 * 1000) {
+        const daysLeft = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
+        const notifId = `maint7d_${asset.id}_${asset.nextMaintenanceDate}`;
+        const sessionKey = `mantech_alerted_${notifId}`;
+        if (sessionStorage.getItem(sessionKey)) return;
+        sessionStorage.setItem(sessionKey, 'true');
+
+        try {
+          const notifRef = doc(db, "notifications", notifId);
+          const existing = await getDoc(notifRef);
+          if (!existing.exists()) {
+            const msgBody = daysLeft > 0
+              ? `Faltan ${daysLeft} día(s) para el mantenimiento preventivo de ${asset.name} (${asset.nextMaintenanceDate}).`
+              : `El mantenimiento preventivo de ${asset.name} (${asset.nextMaintenanceDate}) requiere atención inmediata.`;
+            await setDoc(notifRef, {
+              userId: user.uid,
+              title: `⚠️ Alerta de Mantenimiento: ${asset.name}`,
+              body: msgBody,
+              type: 'system',
+              createdAt: serverTimestamp(),
+              read: false
+            });
+            toast(msgBody, { icon: '🛠️', duration: 6000 });
+          }
+        } catch {
+          // Ignorar si ya existe o no tiene permisos
+        }
+      }
+    });
+  }, [isLoggedIn, user, assets]);
+
   // --- PLAN LIMITS LOGIC ---
   const getPlanLimits = (planId: string) => {
     switch(planId) {
@@ -130,16 +174,20 @@ export default function App() {
         toast.success("Equipo registrado.");
       }
 
-      // Sincronización automática de recordatorios de mantenimiento
+      // Sincronización automática de recordatorios de mantenimiento (Alerta 7 días antes)
       if (targetAssetId && cleanData.nextMaintenanceDate) {
-        const isUrgent = new Date(cleanData.nextMaintenanceDate).getTime() - Date.now() <= 7 * 24 * 60 * 60 * 1000;
+        const dueMs = new Date(`${cleanData.nextMaintenanceDate}T09:00:00`).getTime();
+        const alertMs = dueMs - 7 * 24 * 60 * 60 * 1000;
+        const alertDateIso = !isNaN(alertMs) ? new Date(alertMs).toISOString().split('T')[0] : cleanData.nextMaintenanceDate;
+        const isUrgent = dueMs - Date.now() <= 7 * 24 * 60 * 60 * 1000;
         await setDoc(doc(db, "reminders", `rem_${targetAssetId}`), {
           id: `rem_${targetAssetId}`,
           assetId: targetAssetId,
           clientId: effectiveOwnerId,
           title: `Mantenimiento Preventivo: ${cleanData.name || 'Activo'}`,
-          description: `Servicio programado para ${cleanData.name || 'unidad'} ${cleanData.licensePlate ? `(Placa: ${cleanData.licensePlate})` : ''}`,
+          description: `Servicio programado para ${cleanData.name || 'unidad'} ${cleanData.licensePlate ? `(Placa: ${cleanData.licensePlate})` : ''} — Alerta 7 días antes (${alertDateIso})`,
           dueDate: cleanData.nextMaintenanceDate,
+          alertDate: alertDateIso,
           status: isUrgent ? 'urgent' : 'pending',
           type: 'general',
           updatedAt: serverTimestamp()
