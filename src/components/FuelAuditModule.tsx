@@ -75,69 +75,80 @@ export default function FuelAuditModule({ assets, onSaveLog }: FuelAuditModulePr
   }
 
   return (
-    <div className="bg-[#121317] border border-white/5 rounded-[2.5rem] p-5 sm:p-8 space-y-6 sm:space-y-8 shadow-2xl w-full max-w-full">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5 min-w-0">
-          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
-            <Fuel className="w-5 h-5 sm:w-6 sm:h-6" />
+    <div className="bg-[#121317] border border-white/10 rounded-3xl p-5 sm:p-6 space-y-5 shadow-2xl w-full">
+      {/* CABECERA RESPONSIVA: Título + Selector sin apretarse */}
+      <div className="space-y-3.5">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+            <Fuel className="w-5 h-5" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-base sm:text-xl font-black text-white uppercase tracking-tight leading-tight">
+            <h3 className="text-base font-black text-white uppercase tracking-tight">
               Auditoría de Combustible
             </h3>
-            <p className="text-[9px] sm:text-[10px] text-[#8a879d] font-black uppercase tracking-widest mt-0.5">
+            <p className="text-[10px] text-[#8a879d] font-bold uppercase tracking-wider">
               Control de Gasto y Rendimiento
             </p>
           </div>
         </div>
 
-        <div className="w-full sm:w-72 shrink-0">
+        {/* Buscador de Camión 100% ancho */}
+        <div className="w-full">
           <VehicleSearchSelect
             vehicles={assets}
             selectedId={selectedAssetId}
             onSelect={(id) => setSelectedAssetId(id)}
-            placeholder="Seleccionar Vehículo"
+            placeholder="Seleccionar Vehículo a Auditar"
             allowEmpty={false}
             compact
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="space-y-2">
-          <label className="text-[10px] font-black text-[#474556] uppercase ml-1">Galones</label>
+      {/* 3 CAMPOS DE CARGA */}
+      <div className="grid grid-cols-3 gap-2.5 sm:gap-3 pt-1">
+        <div className="space-y-1.5">
+          <label className="text-[9px] sm:text-[10px] font-black text-[#8a879d] uppercase tracking-wider block truncate">
+            Galones
+          </label>
           <input
             type="number"
             value={gallons}
             onChange={e => setGallons(e.target.value)}
-            className="w-full bg-[#0d0e12] border border-white/5 rounded-2xl py-4 px-5 text-white font-black"
+            className="w-full bg-[#0d0e12] border border-white/10 focus:border-amber-400 rounded-xl py-2.5 sm:py-3 px-3 text-xs sm:text-sm text-white font-black outline-none transition-all"
             placeholder="0.00"
           />
         </div>
-        <div className="space-y-2">
-          <label className="text-[10px] font-black text-[#474556] uppercase ml-1">Total ($)</label>
+        <div className="space-y-1.5">
+          <label className="text-[9px] sm:text-[10px] font-black text-[#8a879d] uppercase tracking-wider block truncate">
+            Total ($)
+          </label>
           <input
             type="number"
             value={price}
             onChange={e => setPrice(e.target.value)}
-            className="w-full bg-[#0d0e12] border border-white/5 rounded-2xl py-4 px-5 text-white font-black"
+            className="w-full bg-[#0d0e12] border border-white/10 focus:border-amber-400 rounded-xl py-2.5 sm:py-3 px-3 text-xs sm:text-sm text-white font-black outline-none transition-all"
             placeholder="0.00"
           />
         </div>
-        <div className="space-y-2">
-          <label className="text-[10px] font-black text-[#474556] uppercase ml-1">Odómetro (KM)</label>
+        <div className="space-y-1.5">
+          <label className="text-[9px] sm:text-[10px] font-black text-[#8a879d] uppercase tracking-wider block truncate" title="Odómetro en Kilómetros">
+            KM Odómetro
+          </label>
           <input
             type="number"
             value={mileage}
             onChange={e => setMileage(e.target.value)}
-            className="w-full bg-[#0d0e12] border border-white/5 rounded-2xl py-4 px-5 text-white font-black"
+            className="w-full bg-[#0d0e12] border border-white/10 focus:border-amber-400 rounded-xl py-2.5 sm:py-3 px-3 text-xs sm:text-sm text-white font-black outline-none transition-all"
+            placeholder="KM"
           />
         </div>
       </div>
 
       <button
+        type="button"
         onClick={handleCalculate}
-        className="w-full py-5 bg-[#52ffac] text-[#0d0e12] rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[#52ffac]/20 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
+        className="w-full py-3.5 bg-[#52ffac] hover:brightness-110 active:scale-[0.98] text-black rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-40 disabled:hover:brightness-100 shadow-lg shadow-[#52ffac]/15"
         disabled={!selectedAssetId}
       >
         Validar y Guardar Registro
