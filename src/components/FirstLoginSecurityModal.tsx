@@ -4,6 +4,7 @@ import { updatePassword } from 'firebase/auth';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { toast } from 'react-hot-toast';
+import { encryptField } from '../utils/cryptoVault';
 
 interface FirstLoginSecurityModalProps {
   userUid: string;
@@ -70,10 +71,10 @@ export default function FirstLoginSecurityModal({
         }
       }
 
-      // 2. Actualizar documento del usuario en Firestore
+      // 2. Actualizar documento del usuario en Firestore (PIN encriptado)
       await updateDoc(doc(db, 'users', userUid), {
         mustChangePassword: false,
-        securityPin: securityPin.trim(),
+        securityPin: encryptField(securityPin.trim()),
         securityQuestion,
         securityAnswer: securityAnswer.trim().toLowerCase(),
         securityConfiguredAt: serverTimestamp()

@@ -7,6 +7,7 @@ import { useData } from "../context/DataContext";
 import { Asset, TechProfile, JobRequest, InventoryItem } from "../types";
 import api from '../services/api';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { encryptTransaction } from '../utils/cryptoVault';
 
 export function useBusinessLogic() {
   const { user, loggedInName, userData, subscription, updateUserSubscription } = useAuth();
@@ -233,7 +234,7 @@ export function useBusinessLogic() {
             status: 'completed'
           };
 
-          const updatedTransactions = [newTransaction, ...(tech.wallet?.transactions || [])];
+          const updatedTransactions = [newTransaction, ...(tech.wallet?.transactions || [])].map(encryptTransaction);
 
           // Lógica de Fidelidad: 1 punto por cada $10 facturados
           const pointsEarned = Math.floor(earnings / 10);
@@ -662,20 +663,37 @@ export function useBusinessLogic() {
 
   const handleDeleteAsset = async (id: string) => {
     try {
-      const assetRef = doc(db, "assets", id);
-      await updateDoc(assetRef, {
-        status: 'deleted',
-        deletedAt: serverTimestamp()
-      });
+      await deleteDoc(doc(db, "assets", id));
       try {
         await deleteDoc(doc(db, "reminders", `rem_${id}`));
       } catch (e) {
         // Ignorar si no existe recordatorio
       }
-      toast.success("Activo eliminado correctamente.");
+      toast.success("Activo eliminado permanentemente.");
     } catch (err) {
       console.error(err);
       toast.error("Error al eliminar el activo.");
+    }
+  };
+
+  const handleBulkDeleteAssets = async (ids: string[]) => {
+    if (!ids || ids.length === 0) return;
+    const loadingToast = toast.loading(`Eliminando ${ids.length} activo(s) en lote...`);
+    try {
+      await Promise.all(
+        ids.map(async (id) => {
+          await deleteDoc(doc(db, "assets", id));
+          try {
+            await deleteDoc(doc(db, "reminders", `rem_${id}`));
+          } catch {
+            // Ignorar si no existe recordatorio
+          }
+        })
+      );
+      toast.success(`Se eliminaron ${ids.length} activos permanentemente.`, { id: loadingToast });
+    } catch (err) {
+      console.error("Bulk delete error:", err);
+      toast.error("Error al eliminar activos en lote.", { id: loadingToast });
     }
   };
 
@@ -1044,6 +1062,7 @@ export function useBusinessLogic() {
     handleRequestQuote,
     handleRedeemPoints,
     handleDeleteAsset,
+    handleBulkDeleteAssets,
     handleUpdateAsset,
     handleAddFuelLog,
     handleAddPreTrip,

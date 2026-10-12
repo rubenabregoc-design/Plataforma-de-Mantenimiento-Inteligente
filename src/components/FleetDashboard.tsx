@@ -12,7 +12,7 @@ import 'leaflet/dist/leaflet.css';
 import { Geolocation } from '@capacitor/geolocation';
 import { storage, db } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp, query, where, onSnapshot, limit, orderBy, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, setDoc, doc, serverTimestamp, query, where, onSnapshot, limit, orderBy, deleteDoc } from 'firebase/firestore';
 import { useUI } from '../context/UIContext';
 import { downloadWorkbookAsExcel } from '../utils/pdfExport';
 
@@ -172,8 +172,9 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
 
             try {
               const targetAsset = assets.find(a => a.id === assetId);
-              // TRANSMISIÓN EFÍMERA AL SISTEMA CLOUD (DATO PURO EN MEMORIA)
-              await addDoc(collection(db, "radio_signals"), {
+              const volatileDocRef = doc(db, "radio_signals", "live_ptt_signal");
+              // TRANSMISIÓN EFÍMERA AL SISTEMA CLOUD (CERO ALMACENAMIENTO)
+              await setDoc(volatileDocRef, {
                 senderId: 'admin-control',
                 senderName: 'CONTROL CENTRAL',
                 status: 'broadcast',
@@ -182,7 +183,10 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                 channelId: targetAsset?.ownerId || (assetId !== 'all' ? assetId : 'all'),
                 timestamp: serverTimestamp()
               });
-              console.log("🛰️ Sat-Link: Ráfaga de voz transmitida (Stream Volátil).");
+              setTimeout(() => {
+                deleteDoc(volatileDocRef).catch(() => {});
+              }, 4000);
+              console.log("🛰️ Sat-Link: Ráfaga de voz transmitida (Stream Volátil - Cero Registro).");
             } catch (err) {
               console.error("Radio Signal Fail:", err);
               toast.error("Fallo en ráfaga satelital.");
@@ -194,7 +198,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
       }
 
       const targetAsset = assets.find(a => a.id === assetId);
-      await addDoc(collection(db, "radio_signals"), {
+      await setDoc(doc(db, "radio_signals", "live_ptt_signal"), {
         senderId: 'admin-control',
         senderName: 'CONTROL CENTRAL',
         status: 'talking',
@@ -215,15 +219,6 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
       setTransmittingId(null);
       setIsRadioActive(false);
       playRadioSignal('end');
-
-      const targetAsset = assets.find(a => a.id === assetId);
-      await addDoc(collection(db, "radio_signals"), {
-        senderId: 'admin-control',
-        status: 'idle',
-        assetId: assetId,
-        channelId: targetAsset?.ownerId || (assetId !== 'all' ? assetId : 'all'),
-        timestamp: serverTimestamp()
-      });
     }
   };
 
@@ -558,7 +553,28 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
               />
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {filteredAssets.length > 0 && (
+                <button
+                  onClick={() => {
+                    const allIds = filteredAssets.map(a => a.id);
+                    if (selectedIds.length === allIds.length && allIds.length > 0) {
+                      setSelectedIds([]);
+                    } else {
+                      setSelectedIds(allIds);
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-2 ${
+                    selectedIds.length > 0
+                      ? 'bg-[#5d3cfe]/20 border-[#5d3cfe] text-white'
+                      : 'bg-[#1a1b20] border-[#474556]/40 text-[#c8c4d9] hover:border-white/30'
+                  }`}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#52ffac]" />
+                  {selectedIds.length > 0 ? `Deseleccionar (${selectedIds.length})` : `Seleccionar Lote (${filteredAssets.length})`}
+                </button>
+              )}
+
               {selectedIds.length > 0 && (
                 <div className="flex items-center gap-2 animate-fade-in">
                   <button

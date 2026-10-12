@@ -1,8 +1,9 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { collection, query, where, onSnapshot, orderBy, limit } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, limit, doc, updateDoc, deleteDoc, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from './AuthContext';
 import { Asset, MaintenanceReminder, TechProfile, JobRequest, InventoryItem, AgendaEvent } from '../types';
+import { getTechEncryptionPatch, decryptTechProfile } from '../utils/cryptoVault';
 
 interface DataContextType {
   assets: Asset[];
@@ -32,11 +33,27 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    // 1. Especialistas (Limitado a 150 para proteger lecturas de Firebase)
+    // 0. Purga automática de señales de radio antiguas (Cero Almacenamiento en radio_signals)
+    getDocs(collection(db, "radio_signals"))
+      .then((snap) => {
+        snap.docs.forEach((d) => {
+          deleteDoc(doc(db, "radio_signals", d.id)).catch(() => {});
+        });
+      })
+      .catch(() => {});
+
+    // 1. Especialistas (Con cifrado a nivel de campo ENCv1 para Yappy, Cuentas y Transacciones)
     const unsubTechs = onSnapshot(
       query(collection(db, "technicians"), limit(150)),
       (snap) => {
-        const techs = snap.docs.map(d => ({ id: d.id, ...d.data() })) as TechProfile[];
+        const techs = snap.docs.map(d => {
+          const raw = d.data();
+          const encPatch = getTechEncryptionPatch(raw);
+          if (encPatch) {
+            updateDoc(doc(db, "technicians", d.id), encPatch).catch(() => {});
+          }
+          return decryptTechProfile({ id: d.id, ...raw });
+        }) as TechProfile[];
         setTechnicians(techs);
       },
       (err) => console.error("Tech Snapshot Error:", err)
@@ -137,8 +154,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     unsubAssets = onSnapshot(qAssets, (snap) => {
-      let loadedAssets = (snap.docs.map(d => ({ id: d.id, ...d.data() })) as Asset[])
-        .filter(a => a.status !== 'deleted');
+      const allDocs = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Asset[];
+      allDocs.forEach(a => {
+        if (a.status === 'deleted') {
+          deleteDoc(doc(db, "assets", a.id)).catch(() => {});
+        }
+      });
+      let loadedAssets = allDocs.filter(a => a.status !== 'deleted');
 
       if (role === 'client' && subRole === 'fleet_coordinator') {
         loadedAssets = loadedAssets.filter(a => a.type === 'car' || a.type === 'moto');

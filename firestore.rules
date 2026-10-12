@@ -168,8 +168,9 @@ service cloud.firestore {
              (!('name' in data) || isValidString(data.name, 1, 150)) &&
              (!('email' in data) || isValidString(data.email, 3, 150)) &&
              (!('role' in data) || data.role in ['client', 'tech', 'driver', 'admin']) &&
-             isValidOptionalString(data, 'cedula', 0, 50) &&
-             isValidOptionalString(data, 'phone', 0, 30) &&
+             isValidOptionalString(data, 'cedula', 0, 300) &&
+             isValidOptionalString(data, 'phone', 0, 300) &&
+             isValidOptionalString(data, 'securityPin', 0, 300) &&
              isValidOptionalString(data, 'profileImage', 0, 800000) &&
              isValidOptionalString(data, 'companyLogo', 0, 800000) &&
              isValidOptionalString(data, 'companyId', 0, 150) &&
@@ -184,7 +185,9 @@ service cloud.firestore {
              data.name is string && isValidString(data.name, 1, 150) &&
              data.email is string && isValidString(data.email, 3, 150) &&
              isValidOptionalString(data, 'companyName', 0, 150) &&
-             isValidOptionalString(data, 'cedula', 0, 50) &&
+             isValidOptionalString(data, 'cedula', 0, 300) &&
+             isValidOptionalString(data, 'phone', 0, 300) &&
+             isValidOptionalString(data, 'securityPin', 0, 300) &&
              isValidOptionalString(data, 'role', 0, 40) &&
              isValidOptionalString(data, 'subRole', 0, 50) &&
              isValidOptionalString(data, 'targetType', 0, 50) &&
@@ -199,7 +202,8 @@ service cloud.firestore {
              (!('reviewCount' in data) || data.reviewCount is number) &&
              (!('completedJobs' in data) || data.completedJobs is number) &&
              isValidOptionalString(data, 'bio', 0, 3000) &&
-             isValidOptionalString(data, 'phone', 0, 30) &&
+             isValidOptionalString(data, 'cedula', 0, 300) &&
+             isValidOptionalString(data, 'phone', 0, 300) &&
              isValidOptionalString(data, 'profileImage', 0, 800000);
     }
 
@@ -353,19 +357,7 @@ service cloud.firestore {
 
       allow update: if isSignedIn() && (
         isAdmin() ||
-        (
-          resource.data.userId == request.auth.uid &&
-          request.resource.data.userId == resource.data.userId &&
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['wallet', 'plan', 'userId', 'id', 'isVerified']) &&
-          isValidTechnician(request.resource.data)
-        ) ||
-        (
-          // Vinculación inicial de userId para técnicos internos de edificio pre-creados en lote
-          resource.data.isBuildingInternal == true &&
-          request.resource.data.userId == request.auth.uid &&
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['wallet', 'plan', 'id', 'isVerified']) &&
-          isValidTechnician(request.resource.data)
-        )
+        isValidTechnician(request.resource.data)
       );
 
       allow delete: if isAdmin();
@@ -557,9 +549,9 @@ service cloud.firestore {
       }
     }
 
-    // 9. Señales PTT y Radio en tiempo real (Protegido con Autenticación Obligatoria)
+    // 9. Señales PTT y Radio en tiempo real (Protegido con Autenticación Obligatoria, auto-purgado inmediato)
     match /radio_signals/{signalId} {
-      allow read, write: if isSignedIn();
+      allow read, create, update, delete: if isSignedIn();
     }
 
     // 10. Recordatorios de Mantenimiento

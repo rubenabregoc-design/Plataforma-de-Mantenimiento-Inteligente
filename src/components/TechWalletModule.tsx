@@ -5,6 +5,7 @@ import { Wallet, TrendingUp, TrendingDown, Download, CreditCard, Landmark, Smart
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { downloadHtmlAsPdf } from '../utils/pdfExport';
+import { encryptField } from '../utils/cryptoVault';
 
 interface TechWalletModuleProps {
   wallet: TechWallet;
@@ -51,14 +52,14 @@ export default function TechWalletModule({ wallet, techId, onWithdraw, plan = 'b
     setIsSaving(true);
     try {
       await updateDoc(doc(db, "technicians", techId), {
-        'wallet.bankName': bankInfo.bankName,
-        'wallet.accountType': bankInfo.accountType,
-        'wallet.accountNumber': bankInfo.accountNumber,
-        'wallet.ownerName': bankInfo.ownerName,
-        'wallet.yappyNumber': bankInfo.yappyNumber
+        'wallet.bankName': encryptField(bankInfo.bankName),
+        'wallet.accountType': encryptField(bankInfo.accountType),
+        'wallet.accountNumber': encryptField(bankInfo.accountNumber),
+        'wallet.ownerName': encryptField(bankInfo.ownerName),
+        'wallet.yappyNumber': encryptField(bankInfo.yappyNumber)
       });
       setIsEditingBank(false);
-      toast.success("Datos de pago actualizados correctamente.");
+      toast.success("Datos de pago cifrados y actualizados (Ley 81).");
     } catch (err) {
       console.error(err);
       toast.error("Error al guardar los datos. Intenta de nuevo.");

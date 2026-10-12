@@ -25,6 +25,7 @@ import { logActivity } from '../services/auditService';
 import { toast } from 'react-hot-toast';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { registerPushToken } from '../services/pushNotifications';
+import { getUserEncryptionPatch, decryptUserProfile } from '../utils/cryptoVault';
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -92,7 +93,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Listener en tiempo real para los datos del usuario con manejo de error de red
         unsubscribeDoc = onSnapshot(userRef, async (docSnap) => {
           if (docSnap.exists()) {
-            const data = docSnap.data();
+            const rawData = docSnap.data();
+            const encPatch = getUserEncryptionPatch(rawData);
+            if (encPatch) {
+              updateDoc(userRef, encPatch).catch(() => {});
+            }
+            const data = decryptUserProfile(rawData);
             setUserData(data);
 
             // Lógica de Rol

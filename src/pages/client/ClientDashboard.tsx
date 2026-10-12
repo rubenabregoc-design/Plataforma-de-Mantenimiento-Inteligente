@@ -322,7 +322,7 @@ export default function ClientDashboard() {
                 <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Mi <span className="text-[#5d3cfe]">Portafolio</span></h1>
                 <p className="text-[#c8c4d9] font-medium mt-3 italic opacity-60">Gestión activa de activos en Panamá.</p>
              </div>
-             <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                 <div className="relative flex-1 md:w-64">
                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#474556]" />
                    <input
@@ -333,6 +333,44 @@ export default function ClientDashboard() {
                      className="w-full bg-[#121317] border border-[#2a2b2f] rounded-2xl py-3 pl-12 pr-6 text-xs text-white focus:border-[#5d3cfe] outline-none transition-all"
                    />
                 </div>
+                {assets.length > 0 && (
+                  <button
+                    onClick={() => {
+                      const visibleIds = assets
+                        .filter(a => a.name.toLowerCase().includes(assetSearchQuery.toLowerCase()) || a.licensePlate?.toLowerCase().includes(assetSearchQuery.toLowerCase()))
+                        .map(a => a.id);
+                      if (selectedDashboardIds.length === visibleIds.length && visibleIds.length > 0) {
+                        setSelectedDashboardIds([]);
+                      } else {
+                        setSelectedDashboardIds(visibleIds);
+                      }
+                    }}
+                    className={`px-5 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center gap-2 shrink-0 ${
+                      selectedDashboardIds.length > 0
+                        ? 'bg-[#5d3cfe]/20 border-[#5d3cfe] text-white'
+                        : 'bg-[#121317] border-[#2a2b2f] text-[#c8c4d9] hover:border-white/20'
+                    }`}
+                  >
+                    <ListChecks className="w-4 h-4 text-[#52ffac]" />
+                    {selectedDashboardIds.length > 0 ? `Deseleccionar (${selectedDashboardIds.length})` : 'Seleccionar Lote'}
+                  </button>
+                )}
+                {selectedDashboardIds.length > 0 && (
+                  <button
+                    onClick={() => openModal('confirmation', {
+                      confTitle: "Eliminar Activos en Lote",
+                      confMessage: `¿Estás seguro de eliminar permanentemente ${selectedDashboardIds.length} activo(s) seleccionados? Esta acción borrará los registros de la base de datos.`,
+                      confType: 'danger',
+                      onConfConfirm: async () => {
+                        await business.handleBulkDeleteAssets(selectedDashboardIds);
+                        setSelectedDashboardIds([]);
+                      }
+                    })}
+                    className="px-6 py-3.5 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-rose-600/30 transition-all flex items-center gap-2 shrink-0 animate-fade-in"
+                  >
+                    <Trash2 className="w-4 h-4" /> Eliminar Lote ({selectedDashboardIds.length})
+                  </button>
+                )}
                 <button onClick={() => openModal('asset')} className="px-8 py-3.5 bg-[#5d3cfe] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[#5d3cfe]/20 transition-all hover:scale-105 active:scale-95 shrink-0">+ Registrar</button>
              </div>
           </header>
@@ -368,23 +406,46 @@ export default function ClientDashboard() {
                   assets.filter(a =>
                     a.name.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
                     a.licensePlate?.toLowerCase().includes(assetSearchQuery.toLowerCase())
-                  ).slice((assetCurrentPage - 1) * assetPageSize, assetCurrentPage * assetPageSize).map(a => (
-                    <AssetIntelligentCard
-                      key={a.id}
-                      asset={a}
-                      requests={requests}
-                      onOpenDetails={(asset) => openModal('fuel', { asset })}
-                      onOpenPreTrip={(asset) => openModal('preTrip', { asset })}
-                      onFindExpert={handleFindExpertForAsset}
-                      onEdit={(asset) => openModal('asset', { asset })}
-                      onDelete={(id) => openModal('confirmation', {
-                        confTitle: "Eliminar Activo",
-                        confMessage: "¿Estás seguro de eliminar este activo? Esta acción no se puede deshacer de forma sencilla.",
-                        confType: 'danger',
-                        onConfConfirm: () => business.handleDeleteAsset(id)
-                      })}
-                    />
-                  ))
+                  ).slice((assetCurrentPage - 1) * assetPageSize, assetCurrentPage * assetPageSize).map(a => {
+                    const isSelected = selectedDashboardIds.includes(a.id);
+                    return (
+                      <div key={a.id} className="relative group/select">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedDashboardIds(prev =>
+                              prev.includes(a.id) ? prev.filter(id => id !== a.id) : [...prev, a.id]
+                            );
+                          }}
+                          title={isSelected ? "Quitar de selección en lote" : "Seleccionar para eliminar en lote"}
+                          className={`absolute top-4 left-4 z-30 w-8 h-8 rounded-xl flex items-center justify-center border transition-all shadow-lg ${
+                            isSelected
+                              ? 'bg-[#5d3cfe] border-[#52ffac] text-white scale-105'
+                              : 'bg-black/70 border-white/20 text-white/50 hover:text-white hover:border-white/50'
+                          }`}
+                        >
+                          <Check className={`w-4 h-4 ${isSelected ? 'opacity-100' : 'opacity-40'}`} />
+                        </button>
+                        <div className={isSelected ? 'ring-2 ring-[#5d3cfe] rounded-[2.5rem] transition-all' : ''}>
+                          <AssetIntelligentCard
+                            asset={a}
+                            requests={requests}
+                            onOpenDetails={(asset) => openModal('fuel', { asset })}
+                            onOpenPreTrip={(asset) => openModal('preTrip', { asset })}
+                            onFindExpert={handleFindExpertForAsset}
+                            onEdit={(asset) => openModal('asset', { asset })}
+                            onDelete={(id) => openModal('confirmation', {
+                              confTitle: "Eliminar Activo",
+                              confMessage: "¿Estás seguro de eliminar este activo permanentemente?",
+                              confType: 'danger',
+                              onConfConfirm: () => business.handleDeleteAsset(id)
+                            })}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })
                 ) : (
                   <div className="col-span-full py-24 bg-[#121317] border border-dashed border-white/5 rounded-[3rem] text-center space-y-6">
                     <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto opacity-20">
@@ -459,15 +520,7 @@ export default function ClientDashboard() {
             }
           }}
           onBulkDelete={async (assetIds: string[]) => {
-            try {
-              for (const id of assetIds) {
-                await business.handleDeleteAsset(id);
-              }
-              toast.success(`Se eliminaron ${assetIds.length} activos.`);
-            } catch (err) {
-              console.error("Bulk delete error:", err);
-              toast.error("Error al eliminar activos.");
-            }
+            await business.handleBulkDeleteAssets(assetIds);
           }}
           onBulkRegister={async (newAssets: any[]) => {
             try {

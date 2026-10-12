@@ -633,15 +633,7 @@ export default function AdminDashboard() {
             assets={assets}
             reminders={reminders}
             onBulkUpdate={(ids, update) => ids.forEach(id => business.handleUpdateAsset(id, update))}
-            onBulkDelete={(ids) => {
-
-              openModal('confirmation', {
-                confTitle: "Eliminación Masiva",
-                confMessage: `¿Estás seguro de eliminar ${ids.length} activos permanentemente? Esta acción es irreversible.`,
-                confType: 'danger',
-                onConfConfirm: () => ids.forEach(id => business.handleDeleteAsset(id))
-              });
-            }}
+            onBulkDelete={(ids) => business.handleBulkDeleteAssets(ids)}
             mode="full"
           />
         </div>

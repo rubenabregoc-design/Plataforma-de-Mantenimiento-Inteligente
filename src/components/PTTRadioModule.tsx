@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+import { collection, setDoc, getDocs, query, orderBy, limit, onSnapshot, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Radio, Mic, Volume2, ShieldCheck, Zap } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -33,9 +33,16 @@ export default function PTTRadioModule({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const pttStreamRef = useRef<MediaStream | null>(null);
+  const volatileDocRef = doc(db, 'radio_signals', 'live_ptt_signal');
 
-  // Inicializar micrófono para PTT instantáneo
+  // Inicializar micrófono para PTT instantáneo y purgar residuos antiguos
   useEffect(() => {
+    getDocs(collection(db, 'radio_signals'))
+      .then((snap) => {
+        snap.docs.forEach((d) => deleteDoc(doc(db, 'radio_signals', d.id)).catch(() => {}));
+      })
+      .catch(() => {});
+
     const initMic = async () => {
       try {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -85,17 +92,26 @@ export default function PTTRadioModule({
 
     const q = query(collection(db, 'radio_signals'), orderBy('timestamp', 'desc'), limit(1));
     const unsub = onSnapshot(q, (snap) => {
-      if (snap.empty) return;
+      if (snap.empty) {
+        setReceivingFrom(null);
+        return;
+      }
       const signalDoc = snap.docs[0];
       const data = signalDoc.data();
       const now = Date.now();
       const msgTime = data.timestamp?.toMillis ? data.timestamp.toMillis() : now;
 
-      // Descartar mis propias transmisiones o mensajes de más de 12 segundos
+      // Descartar mis propias transmisiones o mensajes de más de 10 segundos
       const isTargetChannel = !channelId || channelId === 'all' || !data.channelId || data.channelId === 'all' || data.channelId === channelId;
       const isTargetAsset = !assetId || assetId === 'all' || !data.assetId || data.assetId === 'all' || data.assetId === assetId;
 
-      if (data.senderId !== userId && isTargetChannel && isTargetAsset && now - msgTime < 12000) {
+      if (now - msgTime >= 10000) {
+        deleteDoc(signalDoc.ref).catch(() => {});
+        setReceivingFrom(null);
+        return;
+      }
+
+      if (data.senderId !== userId && isTargetChannel && isTargetAsset) {
         if (data.status === 'talking') {
           setReceivingFrom(data.senderName || 'Operador');
           triggerHaptic('light');
@@ -103,24 +119,14 @@ export default function PTTRadioModule({
           setReceivingFrom(null);
           triggerHaptic('medium');
 
-          // Reproducir en memoria pura
+          // Reproducir en memoria pura y borrar inmediatamente de Firestore (0 almacenamiento)
           const audio = new Audio(data.audioData);
           audio.volume = 1.0;
 
-          // AUTO-PURGA INMEDIATA: Borrar documento tan pronto termine de sonar
-          audio.onended = async () => {
-            try {
-              await deleteDoc(signalDoc.ref);
-              console.log('🧹 [RADIO] Señal consumida y eliminada de la base de datos (0 bytes guardados).');
-            } catch (err) {
-              console.warn('Error purgando señal de radio:', err);
-            }
-          };
+          deleteDoc(signalDoc.ref).catch(() => {});
 
           audio.play().catch(e => {
             console.warn('Audio bloqueado por navegador:', e);
-            // Si el navegador bloqueó la reproducción automática, purgar igualmente tras 10 segundos
-            setTimeout(() => deleteDoc(signalDoc.ref).catch(() => {}), 10000);
           });
         }
       } else {
@@ -157,8 +163,8 @@ export default function PTTRadioModule({
           reader.onloadend = async () => {
             const base64Audio = reader.result as string;
             try {
-              // Transmitir ráfaga volátil a Firestore en canal privado
-              const docRef = await addDoc(collection(db, 'radio_signals'), {
+              // Transmitir ráfaga efímera y borrarla automáticamente a los 4 segundos
+              await setDoc(volatileDocRef, {
                 senderId: userId,
                 senderName: userName || 'Técnico Móvil',
                 role,
@@ -169,12 +175,9 @@ export default function PTTRadioModule({
                 timestamp: serverTimestamp()
               });
 
-              // Salvaguarda: si por alguna razón nadie escucha el audio, auto-eliminar a los 25 segundos
-              setTimeout(async () => {
-                try {
-                  await deleteDoc(doc(db, 'radio_signals', docRef.id));
-                } catch (e) {}
-              }, 25000);
+              setTimeout(() => {
+                deleteDoc(volatileDocRef).catch(() => {});
+              }, 4000);
             } catch (err) {
               console.error('Error transmitiendo radio:', err);
               toast.error('Fallo al transmitir voz.');
@@ -185,8 +188,8 @@ export default function PTTRadioModule({
         mediaRecorderRef.current.start();
       }
 
-      // Notificar a los demás que se está abriendo el canal
-      await addDoc(collection(db, 'radio_signals'), {
+      // Señal efímera de canal abierto (sobrescribe el único documento volátil)
+      await setDoc(volatileDocRef, {
         senderId: userId,
         senderName: userName || 'Técnico Móvil',
         status: 'talking',
@@ -210,17 +213,9 @@ export default function PTTRadioModule({
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current = null;
+    } else {
+      deleteDoc(volatileDocRef).catch(() => {});
     }
-
-    try {
-      await addDoc(collection(db, 'radio_signals'), {
-        senderId: userId,
-        status: 'idle',
-        assetId,
-        channelId,
-        timestamp: serverTimestamp()
-      });
-    } catch (e) {}
   };
 
   return (
