@@ -186,7 +186,7 @@ export default function App() {
 
   return (
     <PayPalScriptProvider options={{
-      clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || "EPZC1jPh713cikT0wKUmJod_RdX-RA3hMHX1sQJ5VpEKvbqMYbNiiuFP4zR5jR2FHdNH6BAV868Xi6Sr",
+      clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || "AQlNSkeKwqDGOMyXc_ehPacJUlyAmzF3BCsb7i0wlyGU-XNy01E99EbMen-Ue5I1tiOs2BlbMkM9shiY",
       currency: "USD",
       intent: "capture",
       components: "buttons,googlepay",
