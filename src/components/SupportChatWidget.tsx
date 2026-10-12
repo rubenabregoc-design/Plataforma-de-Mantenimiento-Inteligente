@@ -1,4 +1,4 @@
-﻿import { toast } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage, JobRequest } from '../types';
 import { Send, MapPin, Paperclip, CheckCheck, User, Wrench, Image as ImageIcon, FileText, Maximize2, Minimize2, Video, Phone, QrCode, X, Download, ShieldCheck } from 'lucide-react';
@@ -168,6 +168,32 @@ export default function SupportChatWidget({
                 }`}
               >
                 {msg.text && <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>}
+
+                {msg.callRoom && onStartVideoCall && (
+                  <div className="mt-3 p-3 bg-black/40 border border-white/10 rounded-2xl flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`p-2 rounded-xl ${msg.isVoiceOnly ? 'bg-[#5d3cfe]/30 text-[#c7bfff]' : 'bg-[#52ffac]/20 text-[#52ffac]'}`}>
+                        {msg.isVoiceOnly ? <Phone className="w-4 h-4 animate-bounce" /> : <Video className="w-4 h-4 animate-pulse" />}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-white">{msg.isVoiceOnly ? 'Llamada de Voz' : 'Videollamada'}</p>
+                        <p className="text-[10px] text-[#8e8d9f]">Sala en vivo</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onStartVideoCall(msg.callRoom!, msg.isVoiceOnly)}
+                      className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-1.5 cursor-pointer ${
+                        msg.isVoiceOnly 
+                          ? 'bg-[#5d3cfe] hover:bg-[#7254ff] text-white' 
+                          : 'bg-[#52ffac] hover:bg-[#34d399] text-black'
+                      }`}
+                    >
+                      {msg.isVoiceOnly ? <Phone className="w-3.5 h-3.5" /> : <Video className="w-3.5 h-3.5" />}
+                      <span>Unirme</span>
+                    </button>
+                  </div>
+                )}
 
                 {msg.image && (
                   <div

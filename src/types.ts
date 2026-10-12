@@ -364,6 +364,8 @@ export interface ChatMessage {
   text: string;
   timestamp: string;
   image?: string;
+  callRoom?: string;
+  isVoiceOnly?: boolean;
 }
 
 export interface InventoryItem {

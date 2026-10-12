@@ -108,6 +108,11 @@ export async function registerPushToken(userId: string): Promise<void> {
     const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
     await navigator.serviceWorker.ready;
 
+    if (Notification.permission === 'denied') {
+      console.log('🔕 Notificaciones bloqueadas en los permisos del navegador.');
+      return;
+    }
+
     const messaging = getMessaging(app);
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') return;

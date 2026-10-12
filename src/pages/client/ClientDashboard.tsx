@@ -1580,7 +1580,19 @@ export default function ClientDashboard() {
                     timestamp: serverTimestamp()
                   });
                 }}
-                onStartVideoCall={(room, voice) => openModal('videoCall', { videoRoom: room, isVoiceOnly: voice })}
+                onStartVideoCall={(room, voice) => {
+                  openModal('videoCall', { videoRoom: room, isVoiceOnly: voice });
+                  if (activeChatRequestId) {
+                    addDoc(collection(db, "messages"), {
+                      requestId: activeChatRequestId,
+                      sender: 'client',
+                      text: voice ? '📞 [Llamada de voz iniciada]' : '📹 [Videollamada iniciada]',
+                      callRoom: room,
+                      isVoiceOnly: Boolean(voice),
+                      timestamp: serverTimestamp()
+                    });
+                  }
+                }}
               />
            </div>
         </div>

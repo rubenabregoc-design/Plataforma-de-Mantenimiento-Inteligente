@@ -34,6 +34,7 @@ import PriceAdjustmentModal from './components/PriceAdjustmentModal';
 import ReasonModal from './components/ReasonModal';
 import ConfirmationModal from './components/ConfirmationModal';
 import InfoModal from './components/InfoModal';
+import VideoCallModal from './components/VideoCallModal';
 import Star from 'lucide-react/dist/esm/icons/star';
 import X from 'lucide-react/dist/esm/icons/x';
 import Globe from 'lucide-react/dist/esm/icons/globe';
@@ -746,6 +747,16 @@ export default function App() {
             isOpen={modals.info}
             onClose={() => closeModal('info')}
             slug={activeData.infoSlug}
+          />
+        )}
+
+        {modals.videoCall && (
+          <VideoCallModal
+            isOpen={modals.videoCall}
+            onClose={() => closeModal('videoCall')}
+            roomName={activeData.videoRoom || 'MantechPro_Room_General'}
+            userName={loggedInName || 'Usuario'}
+            isVoiceOnly={Boolean(activeData.isVoiceOnly)}
           />
         )}
       </AnimatePresence>
