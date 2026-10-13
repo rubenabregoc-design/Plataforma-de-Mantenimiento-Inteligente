@@ -85,11 +85,16 @@ export default function App() {
   // Listen for notifications unread count
   useEffect(() => {
     if (!isLoggedIn || !user) return;
-    const qNotif = query(collection(db, "notifications"), where("userId", "==", user.uid), where("read", "==", false));
+    const targetIds = Array.from(new Set([user.uid, user.email].filter(Boolean) as string[]));
+    const qNotif = query(collection(db, "notifications"), where("userId", "in", targetIds), where("read", "==", false));
     return onSnapshot(
       qNotif,
       (snap) => setUnreadCount(snap.size),
-      (err) => console.warn("Notifications count snapshot error:", err)
+      (err) => {
+        console.warn("Notifications count snapshot error, falling back to simple query:", err);
+        const fallbackQ = query(collection(db, "notifications"), where("userId", "==", user.uid), where("read", "==", false));
+        return onSnapshot(fallbackQ, (snap) => setUnreadCount(snap.size));
+      }
     );
   }, [isLoggedIn, user]);
 

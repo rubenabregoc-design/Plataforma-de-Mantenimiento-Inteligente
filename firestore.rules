@@ -527,6 +527,7 @@ service cloud.firestore {
       allow read: if isSignedIn() && (
         isAdmin() ||
         resource.data.userId == request.auth.uid ||
+        resource.data.userId == request.auth.token.email ||
         (resource.data.email != null && resource.data.email == request.auth.token.email)
       );
 
@@ -535,10 +536,15 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         isAdmin() ||
         resource.data.userId == request.auth.uid ||
+        resource.data.userId == request.auth.token.email ||
         (resource.data.email != null && resource.data.email == request.auth.token.email)
-      ) && isValidNotification(request.resource.data);
+      );
 
-      allow delete: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
+      allow delete: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.userId == request.auth.uid ||
+        resource.data.userId == request.auth.token.email
+      );
     }
 
     // 8. Videollamadas WebRTC (Señalización temporal)
