@@ -41,20 +41,16 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
   const qrData = `https://mantechpro.pa/asset/${asset.id}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}&bgcolor=121317&color=ffffff`;
 
-  // --- LÓGICA DE DOBLE FECHA (RECOMENDADA VS MANUAL) ---
-  const calculateRecommendedDate = () => {
-    if (!asset.lastMaintenanceDate) return null;
-    const date = new Date(asset.lastMaintenanceDate);
-    let monthsToAdd = 12;
-    if (asset.type === 'ac') monthsToAdd = 4;
-    else if (['car', 'moto', 'generator', 'fire_system'].includes(asset.type)) monthsToAdd = 6;
-    else if (['elevator', 'pool', 'garden'].includes(asset.type)) monthsToAdd = 1;
-
-    date.setMonth(date.getMonth() + monthsToAdd);
-    return date.toISOString().split('T')[0];
+  // --- LÓGICA DE FECHAS DE MANTENIMIENTO Y ALERTA (7 DÍAS ANTES) ---
+  const calculateAlertDate = () => {
+    if (!asset.nextMaintenanceDate) return null;
+    const due = new Date(`${asset.nextMaintenanceDate}T12:00:00`);
+    if (isNaN(due.getTime())) return null;
+    const alert = new Date(due.getTime() - 7 * 24 * 60 * 60 * 1000);
+    return alert.toISOString().split('T')[0];
   };
 
-  const recommendedDate = calculateRecommendedDate();
+  const alertDate = calculateAlertDate();
   const manualDate = asset.nextMaintenanceDate;
 
   // Filtro de botones según tipo de activo
@@ -131,22 +127,30 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
           </div>
         </div>
 
-        {/* Panel de Fechas (Doble Fecha) */}
-        <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-3 relative overflow-hidden">
+        {/* Panel de Fechas de Mantenimiento y Alerta */}
+        <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-2.5 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-3 opacity-5"><Calendar className="w-12 h-12 text-white" /></div>
 
             <div className="space-y-2 relative z-10">
                <div className="flex justify-between items-center">
-                  <p className="text-[7px] font-black text-[#c7bfff] uppercase tracking-[0.2em] flex items-center gap-2"><Clock className="w-2.5 h-2.5" /> Recomendada</p>
-                  <span className="text-[10px] font-black text-[#52ffac]">{recommendedDate}</span>
+                  <p className="text-[7px] font-black text-white/50 uppercase tracking-[0.15em] flex items-center gap-1.5"><Clock className="w-2.5 h-2.5 text-[#c7bfff]" /> Último Mantenimiento</p>
+                  <span className="text-[10px] font-black text-white">{asset.lastMaintenanceDate || 'N/A'}</span>
                </div>
                <div className="h-px bg-white/5 w-full"></div>
                <div className="flex justify-between items-center">
-                  <p className="text-[7px] font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2"><Activity className="w-2.5 h-2.5" /> Fecha Manual</p>
-                  <span className="text-[10px] font-black text-amber-500/80">{manualDate}</span>
+                  <p className="text-[7px] font-black text-[#52ffac] uppercase tracking-[0.15em] flex items-center gap-1.5"><Calendar className="w-2.5 h-2.5 text-[#52ffac]" /> Próximo Mantenimiento</p>
+                  <span className="text-[10px] font-black text-[#52ffac]">{manualDate || 'N/A'}</span>
                </div>
+               {alertDate && (
+                 <>
+                   <div className="h-px bg-white/5 w-full"></div>
+                   <div className="flex justify-between items-center">
+                      <p className="text-[7px] font-black text-amber-400 uppercase tracking-[0.15em] flex items-center gap-1.5"><Activity className="w-2.5 h-2.5 text-amber-400" /> Alerta (7 días antes)</p>
+                      <span className="text-[10px] font-black text-amber-400">{alertDate}</span>
+                   </div>
+                 </>
+               )}
             </div>
-            <p className="text-[6px] text-[#474556] font-bold uppercase tracking-widest text-center mt-1 italic">Diferencia auditada por protocolo industrial</p>
         </div>
 
         {/* Botones Contextuales Inteligentes */}
@@ -326,10 +330,10 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
             const fileName = `Certificado_${asset.name.replace(/\s+/g, '_')}.pdf`;
             downloadHtmlAsPdf(printContent, fileName);
           }}
-          className="w-full py-3.5 px-4 bg-white/5 text-white border border-white/5 rounded-2xl text-[9px] font-black uppercase tracking-wider hover:bg-[#52ffac] hover:text-black transition-all active:scale-95 flex items-center justify-center gap-2"
+          className="w-full py-3.5 px-3 bg-white/5 text-white border border-white/5 rounded-2xl text-[8.5px] sm:text-[9px] font-black uppercase tracking-wide hover:bg-[#52ffac] hover:text-black transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
         >
           <FileText className="w-4 h-4 shrink-0 text-[#52ffac] group-hover:text-black transition-colors" />
-          <span className="truncate">Generar Certificado PDF</span>
+          <span className="whitespace-nowrap">Generar Certificado PDF</span>
         </button>
       </div>
     </div>
