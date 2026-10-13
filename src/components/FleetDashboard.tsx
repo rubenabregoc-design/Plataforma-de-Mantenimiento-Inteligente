@@ -714,7 +714,10 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                   style={{ height: '100%', width: '100%', background: '#0d0e12' }}
                   zoomControl={false}
                >
-                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  <TileLayer
+                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                  />
                   {showTraffic && (
                     <TileLayer url="https://mt1.google.com/vt?lyrs=h@159000000,traffic|seconds_into_week:-1&style=3&x={x}&y={y}&z={z}" opacity={0.8} zIndex={1000} />
                   )}
@@ -1031,8 +1034,8 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                           zoomControl={false}
                         >
                           <TileLayer
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            attribution='&copy; OpenStreetMap contributors'
+                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                           />
 
                           {showTraffic && (
