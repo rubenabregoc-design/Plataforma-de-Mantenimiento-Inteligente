@@ -719,7 +719,9 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                   zoom={12}
                   style={{ height: '100%', width: '100%', background: '#0d0e12' }}
                   zoomControl={false}
+                  attributionControl={false}
                >
+                  <MapResizer />
                   <TileLayer
                     url={MAPBOX_DARK_URL}
                     attribution={MAPBOX_ATTRIBUTION}
@@ -1041,7 +1043,9 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                           scrollWheelZoom={true}
                           style={{ height: '100%', width: '100%', background: '#0d0e12' }}
                           zoomControl={false}
+                          attributionControl={false}
                         >
+                          <MapResizer />
                           <TileLayer
                             url={MAPBOX_DARK_URL}
                             attribution={MAPBOX_ATTRIBUTION}
@@ -1874,6 +1878,22 @@ function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number
   return null;
 }
 
+function MapResizer() {
+  const map = useMap();
+  useEffect(() => {
+    map.invalidateSize();
+    const t1 = setTimeout(() => map.invalidateSize(), 150);
+    const t2 = setTimeout(() => map.invalidateSize(), 400);
+    const t3 = setTimeout(() => map.invalidateSize(), 800);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [map]);
+  return null;
+}
+
 function RecenterMap({ coords }: { coords: [number, number] }) {
   const map = useMap();
   useEffect(() => {
@@ -1974,18 +1994,21 @@ const getFlagIcon = (label: string, isSelected: boolean) => L.divIcon({
 const getTruckIcon = (name: string, plate: string, street: string) => L.divIcon({
   className: 'custom-div-icon',
   html: `
-    <div class="flex flex-col items-center">
-       <div class="bg-white/90 backdrop-blur-md px-3 py-1 rounded-lg border-2 border-[#5d3cfe] shadow-2xl mb-1 scale-90">
-          <p class="text-[8px] font-black text-black uppercase leading-tight">${name}</p>
-          <p class="text-[6px] font-bold text-[#5d3cfe] uppercase tracking-tighter">${plate}</p>
+    <div class="flex flex-col items-center select-none cursor-pointer">
+       <div class="bg-[#18191f]/95 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/20 shadow-2xl mb-1 flex flex-col items-center whitespace-nowrap min-w-[70px]">
+          <p class="text-[9px] font-black text-white uppercase tracking-tight leading-tight">${name}</p>
+          <p class="text-[8px] font-mono font-bold text-[#52ffac] tracking-wider leading-none mt-0.5">${plate}</p>
        </div>
-       <div class="w-10 h-10 bg-[#5d3cfe] rounded-2xl border-4 border-white shadow-2xl flex items-center justify-center text-white transform rotate-45">
-          <svg class="transform -rotate-45" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17h4V5H2v12h3m10 0h2l3-3v-4h-5v7Z"></path><circle cx="7.5" cy="17.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>
+       <div class="relative flex items-center justify-center">
+          <span class="absolute w-10 h-10 rounded-full bg-[#5d3cfe]/40 animate-ping"></span>
+          <div class="w-9 h-9 bg-gradient-to-tr from-[#5d3cfe] to-[#7952ff] rounded-2xl border-2 border-white shadow-2xl flex items-center justify-center text-white z-10">
+             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17h4V5H2v12h3m10 0h2l3-3v-4h-5v7Z"></path><circle cx="7.5" cy="17.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>
+          </div>
        </div>
     </div>
   `,
-  iconSize: [40, 40],
-  iconAnchor: [20, 40]
+  iconSize: [90, 70],
+  iconAnchor: [45, 65]
 });
 
 const getUserIcon = () => L.divIcon({

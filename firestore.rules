@@ -527,6 +527,7 @@ service cloud.firestore {
       allow read: if isSignedIn() && (
         isAdmin() ||
         resource.data.userId == request.auth.uid ||
+        resource.data.userId in [request.auth.uid, request.auth.token.email] ||
         resource.data.userId == request.auth.token.email ||
         (resource.data.email != null && resource.data.email == request.auth.token.email)
       );

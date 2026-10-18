@@ -29,6 +29,22 @@ function MapRecenter({ coords, zoom }: { coords: [number, number]; zoom?: number
   return null;
 }
 
+function MapResizer() {
+  const map = useMap();
+  useEffect(() => {
+    map.invalidateSize();
+    const t1 = setTimeout(() => map.invalidateSize(), 150);
+    const t2 = setTimeout(() => map.invalidateSize(), 400);
+    const t3 = setTimeout(() => map.invalidateSize(), 800);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [map]);
+  return null;
+}
+
 const DEFAULT_MAPBOX_TOKEN = typeof atob === 'function' ? atob('cGsuZXlKMUlqb2ljbUZpY21WbmJ6STBJaXdpWVNJNkltTnRkbVEyYW5oaVp6Qmxlbk15ZUhFd05HUXllV2hqTVRnaWZRLmoxRXd1bFNhNHh6ampnZThGcDRyQmc=') : '';
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || DEFAULT_MAPBOX_TOKEN;
 const MAPBOX_STYLE_ID = import.meta.env.VITE_MAPBOX_STYLE_ID || 'mapbox/dark-v11';
@@ -478,8 +494,10 @@ export default function DriverRouteMap({ asset, driverName, userId, onBackToCock
             scrollWheelZoom={true}
             style={{ height: '100%', width: '100%', background: '#0d0e12' }}
             zoomControl={false}
+            attributionControl={false}
           >
             <MapRecenter coords={mapCenter} zoom={mapZoom} />
+            <MapResizer />
 
             <TileLayer
               url={MAPBOX_DARK_URL}

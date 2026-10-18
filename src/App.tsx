@@ -85,8 +85,10 @@ export default function App() {
   // Listen for notifications unread count
   useEffect(() => {
     if (!isLoggedIn || !user) return;
-    const targetIds = Array.from(new Set([user.uid, user.email].filter(Boolean) as string[]));
-    const qNotif = query(collection(db, "notifications"), where("userId", "in", targetIds), where("read", "==", false));
+    const isAdminUser = user.email === 'admin@mantech.com';
+    const qNotif = isAdminUser
+      ? query(collection(db, "notifications"), where("userId", "in", [user.uid, 'admin@mantech.com']), where("read", "==", false))
+      : query(collection(db, "notifications"), where("userId", "==", user.uid), where("read", "==", false));
     return onSnapshot(
       qNotif,
       (snap) => setUnreadCount(snap.size),

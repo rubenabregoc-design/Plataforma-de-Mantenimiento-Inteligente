@@ -132,21 +132,21 @@ export default function AssetIntelligentCard({ asset, requests, onOpenDetails, o
             <div className="absolute top-0 right-0 p-3 opacity-5"><Calendar className="w-12 h-12 text-white" /></div>
 
             <div className="space-y-2 relative z-10">
-               <div className="flex justify-between items-center">
-                  <p className="text-[7px] font-black text-white/50 uppercase tracking-[0.15em] flex items-center gap-1.5"><Clock className="w-2.5 h-2.5 text-[#c7bfff]" /> Último Mantenimiento</p>
-                  <span className="text-[10px] font-black text-white">{asset.lastMaintenanceDate || 'N/A'}</span>
+               <div className="flex justify-between items-center gap-2">
+                  <p className="text-[7px] font-black text-white/50 uppercase tracking-[0.15em] flex items-center gap-1.5 truncate"><Clock className="w-2.5 h-2.5 text-[#c7bfff] shrink-0" /> Último Mantenimiento</p>
+                  <span className="text-[10px] font-black text-white shrink-0 whitespace-nowrap font-mono">{asset.lastMaintenanceDate || 'N/A'}</span>
                </div>
                <div className="h-px bg-white/5 w-full"></div>
-               <div className="flex justify-between items-center">
-                  <p className="text-[7px] font-black text-[#52ffac] uppercase tracking-[0.15em] flex items-center gap-1.5"><Calendar className="w-2.5 h-2.5 text-[#52ffac]" /> Próximo Mantenimiento</p>
-                  <span className="text-[10px] font-black text-[#52ffac]">{manualDate || 'N/A'}</span>
+               <div className="flex justify-between items-center gap-2">
+                  <p className="text-[7px] font-black text-[#52ffac] uppercase tracking-[0.15em] flex items-center gap-1.5 truncate"><Calendar className="w-2.5 h-2.5 text-[#52ffac] shrink-0" /> Próximo Mantenimiento</p>
+                  <span className="text-[10px] font-black text-[#52ffac] shrink-0 whitespace-nowrap font-mono">{manualDate || 'N/A'}</span>
                </div>
                {alertDate && (
                  <>
                    <div className="h-px bg-white/5 w-full"></div>
-                   <div className="flex justify-between items-center">
-                      <p className="text-[7px] font-black text-amber-400 uppercase tracking-[0.15em] flex items-center gap-1.5"><Activity className="w-2.5 h-2.5 text-amber-400" /> Alerta (7 días antes)</p>
-                      <span className="text-[10px] font-black text-amber-400">{alertDate}</span>
+                   <div className="flex justify-between items-center gap-2">
+                      <p className="text-[7px] font-black text-amber-400 uppercase tracking-[0.15em] flex items-center gap-1.5 truncate"><Activity className="w-2.5 h-2.5 text-amber-400 shrink-0" /> Alerta (7 días antes)</p>
+                      <span className="text-[10px] font-black text-amber-400 shrink-0 whitespace-nowrap font-mono">{alertDate}</span>
                    </div>
                  </>
                )}
