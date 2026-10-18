@@ -474,7 +474,26 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
     }
   };
 
+  const handleClearPlannedRoute = () => {
+    setPlannedRoute([]);
+    setRouteSteps([]);
+    setEtaInfo(null);
+    setUserCoords(null);
+    setSelectedPointIndex(null);
+  };
+
+  useEffect(() => {
+    handleClearPlannedRoute();
+  }, [historyAssetId, viewMode]);
+
   const handleShowRouteToPoint = async (point: {lat: number, lng: number, timestamp: string}) => {
+    // Si ya hay una ruta activa trazada hacia este punto, permitir alternar/quitarla
+    if (plannedRoute.length > 0 && selectedPointIndex === -2) {
+      handleClearPlannedRoute();
+      toast.success("Guía de ruta desactivada.");
+      return;
+    }
+
     const loadingToast = toast.loading("Estableciendo enlace de navegación...");
     try {
       // 1. Obtener tu ubicación real con Timeout extendido y respaldo
@@ -580,6 +599,9 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
       if (asset?.latitude && point.lat !== 0) {
         setPlannedRoute([[asset.latitude, asset.longitude || 0], [point.lat, point.lng]]);
         setSelectedPointIndex(-2);
+        const distM = L.latLng(asset.latitude, asset.longitude || 0).distanceTo(L.latLng(point.lat, point.lng));
+        const kmVal = (distM / 1000).toFixed(1);
+        setEtaInfo({ duration: "Conexión Directa", distance: `${kmVal} km`, fuelCost: ((parseFloat(kmVal) / 12) * 3.85).toFixed(2) });
       }
     }
   };
@@ -1936,15 +1958,20 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
 
                         <MapActionButtons
                            onAdjust={() => setSelectedPointIndex(-1)}
+                           hasPlannedRoute={plannedRoute.length > 0}
+                           onClearPlannedRoute={() => {
+                              handleClearPlannedRoute();
+                              toast.success("Guía de ruta eliminada.");
+                           }}
                            onClear={() => {
                               openModal('confirmation', {
-                                confTitle: "Purgar Historial",
-                                confMessage: "¿Deseas eliminar todo el historial de esta ruta? Esta acción es irreversible y afectará el análisis de ROI de la flota.",
+                                confTitle: "Purgar Historial y Rutas",
+                                confMessage: "¿Deseas eliminar todo el historial y limpiar los trazados de esta ruta? Esta acción es irreversible y afectará el análisis de ROI de la flota.",
                                 confType: 'danger',
                                 onConfConfirm: () => {
                                    onBulkUpdate?.([historyAssetId!], { routeHistory: [] });
-                                   setSelectedPointIndex(null);
-                                   toast.success("Historial purgado.");
+                                   handleClearPlannedRoute();
+                                   toast.success("Historial purgado y trazados limpiados.");
                                 }
                               });
                            }}
@@ -2016,7 +2043,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                              </div>
 
                              <button
-                                onClick={() => { setPlannedRoute([]); setEtaInfo(null); setUserCoords(null); }}
+                                onClick={handleClearPlannedRoute}
                                 className="w-full py-2 bg-black text-white rounded-xl text-[8px] font-black uppercase hover:bg-gray-900 transition-all mt-1"
                              >
                                 Limpiar Guía
@@ -2045,7 +2072,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                <div className="w-full lg:w-[450px] bg-[#1a1b20] border-l border-[#474556]/30 flex flex-col shadow-2xl">
                   <header className="p-8 border-b border-[#474556]/30 flex justify-between items-center bg-[#1c1d24]">
                      <div className="flex items-center gap-4">
-                        <button onClick={() => setViewMode('table')} className="p-3 hover:bg-white/5 rounded-xl text-[#c8c4d9] transition-all"><ChevronLeft className="w-5 h-5" /></button>
+                        <button onClick={() => { handleClearPlannedRoute(); setViewMode('table'); }} className="p-3 hover:bg-white/5 rounded-xl text-[#c8c4d9] transition-all"><ChevronLeft className="w-5 h-5" /></button>
                         <div>
                            <h4 className="text-sm font-black text-white uppercase tracking-tight">Timeline Logístico</h4>
                            <div className="flex flex-wrap items-center gap-3 mt-1">
@@ -2100,7 +2127,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                                <Navigation className="w-4 h-4 fill-current" /> Instrucciones de Manejo
                             </h5>
                             <button
-                              onClick={() => { setPlannedRoute([]); setRouteSteps([]); setEtaInfo(null); }}
+                              onClick={handleClearPlannedRoute}
                               className="text-[9px] font-black text-white/40 hover:text-white uppercase"
                             >
                                Volver al Timeline
@@ -2642,7 +2669,7 @@ function CustomZoomControl({ showTraffic, onToggleTraffic, onPanic }: any) {
   );
 }
 
-function MapActionButtons({ onAdjust, onClear, hasPoints }: any) {
+function MapActionButtons({ onAdjust, onClear, hasPoints, hasPlannedRoute, onClearPlannedRoute }: any) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -2652,13 +2679,21 @@ function MapActionButtons({ onAdjust, onClear, hasPoints }: any) {
   }, []);
 
   return (
-    <div ref={containerRef} className="absolute bottom-8 right-8 flex flex-col gap-4 z-[400]">
+    <div ref={containerRef} className="absolute bottom-8 right-8 flex flex-col gap-3 z-[400]">
        <button
          onClick={onAdjust}
          className="p-5 bg-white text-black rounded-[1.5rem] shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3 font-black text-[11px] uppercase border-4 border-[#0d0e12] min-w-[160px]"
        >
           <Maximize className="w-5 h-5" /> Ajustar Vista
        </button>
+       {hasPlannedRoute && (
+         <button
+           onClick={onClearPlannedRoute}
+           className="p-5 bg-[#00d2ff] hover:bg-[#00b8e6] text-black rounded-[1.5rem] shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3 font-black text-[11px] uppercase border-4 border-[#0d0e12] min-w-[160px] animate-pulse"
+         >
+            <X className="w-5 h-5" /> Quitar Guía
+         </button>
+       )}
        {hasPoints && (
          <button
            onClick={onClear}
