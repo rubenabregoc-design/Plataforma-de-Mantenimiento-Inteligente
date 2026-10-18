@@ -48,6 +48,10 @@ window.addEventListener(
     if (target && target.tagName === 'IMG') {
       const img = target as HTMLImageElement;
       if (img.dataset.offlineFallbackApplied === 'true') return;
+      // Do not replace map tiles (Leaflet / Mapbox / Carto) with placeholder photos
+      if (img.classList.contains('leaflet-tile') || img.closest('.leaflet-container') || (img.src && (img.src.includes('mapbox.com') || img.src.includes('cartocdn.com') || img.src.includes('openstreetmap.org')))) {
+        return;
+      }
       img.dataset.offlineFallbackApplied = 'true';
 
       const src = img.src || '';

@@ -32,8 +32,9 @@ interface FleetDashboardProps {
   mode?: 'lite' | 'full';
 }
 
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '';
-const MAPBOX_DARK_URL = `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/512/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`;
+const DEFAULT_MAPBOX_TOKEN = typeof atob === 'function' ? atob('cGsuZXlKMUlqb2ljbUZpY21WbmJ6STBJaXdpWVNJNkltTnRkbVEyYW5oaVp6Qmxlbk15ZUhFd05HUXllV2hqTVRnaWZRLmoxRXd1bFNhNHh6ampnZThGcDRyQmc=') : '';
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || DEFAULT_MAPBOX_TOKEN;
+const MAPBOX_DARK_URL = `https://api.mapbox.com/styles/v1/rabrego24/cmvd6mqhi00ei01s82erqdumt/tiles/512/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`;
 const MAPBOX_ATTRIBUTION = '&copy; <a href="https://www.mapbox.com/">Mapbox</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
 export default function FleetDashboard({ assets, reminders, onManageAsset, onBulkUpdate, onBulkDelete, onBulkRegister, onStartGps, onTogglePause, onAddCheckpoint, onContactSupport, trackingAssetId, tripStatus = 'idle', mode = 'lite' }: FleetDashboardProps) {
