@@ -19,9 +19,18 @@ interface ChatbotProps {
   requests?: any[];
   onScheduleService?: (techId: string, assetId: string) => void;
   initialMode?: 'general' | 'sales';
+  hideFloatingLauncher?: boolean;
 }
 
-export default function Chatbot247({ isInline = false, onClose, assets = [], requests = [], onScheduleService, initialMode = 'general' }: ChatbotProps) {
+export default function Chatbot247({
+  isInline = false,
+  onClose,
+  assets = [],
+  requests = [],
+  onScheduleService,
+  initialMode = 'general',
+  hideFloatingLauncher = false,
+}: ChatbotProps) {
   const { t } = useTranslation();
   const { modals, closeModal, openModal } = useUI();
   const [internalOpen, setInternalOpen] = useState(isInline);
@@ -360,32 +369,34 @@ export default function Chatbot247({ isInline = false, onClose, assets = [], req
 
   return (
     <>
-      {/* Desktop Floating Launcher Button (Bottom-right on desktop only, never blocks mobile cards) */}
-      <div className="hidden md:flex fixed bottom-8 right-8 z-[100] flex-col items-end">
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => {
-            if (isOpen) {
-              handleClose();
-            } else {
-              setInternalOpen(true);
-              openModal('chatbot');
-            }
-          }}
-          aria-label="Asesor Virtual MantechPro"
-          className="group relative flex items-center gap-2.5 px-4 py-3 bg-gradient-to-tr from-[#5d3cfe] to-[#7f62ff] text-white rounded-2xl shadow-[0_10px_35px_rgba(93,60,254,0.45)] border border-white/20 hover:border-white/40 transition-all duration-300 active:scale-95"
-        >
-          <div className="relative">
-            <Headset className="w-5 h-5 text-[#52ffac]" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#52ffac] rounded-full animate-ping" />
-          </div>
-          <div className="text-left hidden lg:block">
-            <p className="text-[10px] font-black uppercase tracking-wider leading-tight">Asesor IA 24/7</p>
-            <p className="text-[8px] text-[#c7bfff] font-bold">En línea</p>
-          </div>
-        </motion.button>
-      </div>
+      {/* Desktop Floating Launcher Button (Bottom-right on desktop only, suppressed when inside dashboard) */}
+      {!hideFloatingLauncher && (
+        <div className="hidden md:flex fixed bottom-8 right-8 z-[1050] flex-col items-end">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              if (isOpen) {
+                handleClose();
+              } else {
+                setInternalOpen(true);
+                openModal('chatbot');
+              }
+            }}
+            aria-label="Asesor Virtual MantechPro"
+            className="group relative flex items-center gap-2.5 px-4 py-3 bg-gradient-to-tr from-[#5d3cfe] to-[#7f62ff] text-white rounded-2xl shadow-[0_10px_35px_rgba(93,60,254,0.45)] border border-white/20 hover:border-white/40 transition-all duration-300 active:scale-95"
+          >
+            <div className="relative">
+              <Headset className="w-5 h-5 text-[#52ffac]" />
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#52ffac] rounded-full animate-ping" />
+            </div>
+            <div className="text-left hidden lg:block">
+              <p className="text-[10px] font-black uppercase tracking-wider leading-tight">Asesor IA 24/7</p>
+              <p className="text-[8px] text-[#c7bfff] font-bold">En línea</p>
+            </div>
+          </motion.button>
+        </div>
+      )}
 
       {/* Unified Mobile Bottom Sheet & Desktop Chat Modal Window */}
       <AnimatePresence>

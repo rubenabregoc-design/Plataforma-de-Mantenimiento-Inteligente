@@ -817,6 +817,7 @@ export default function App() {
         <Chatbot247
           assets={assets}
           requests={requests}
+          hideFloatingLauncher
           onScheduleService={(techId, assetId) => {
             business.handleRequestQuote(techId, assetId, "Solicitud vía Asistente IA");
           }}
