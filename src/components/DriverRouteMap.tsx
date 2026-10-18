@@ -31,7 +31,8 @@ function MapRecenter({ coords, zoom }: { coords: [number, number]; zoom?: number
 
 const DEFAULT_MAPBOX_TOKEN = typeof atob === 'function' ? atob('cGsuZXlKMUlqb2ljbUZpY21WbmJ6STBJaXdpWVNJNkltTnRkbVEyYW5oaVp6Qmxlbk15ZUhFd05HUXllV2hqTVRnaWZRLmoxRXd1bFNhNHh6ampnZThGcDRyQmc=') : '';
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || DEFAULT_MAPBOX_TOKEN;
-const MAPBOX_DARK_URL = `https://api.mapbox.com/styles/v1/rabrego24/cmvd6mqhi00ei01s82erqdumt/tiles/512/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`;
+const MAPBOX_STYLE_ID = import.meta.env.VITE_MAPBOX_STYLE_ID || 'mapbox/dark-v11';
+const MAPBOX_DARK_URL = `https://api.mapbox.com/styles/v1/${MAPBOX_STYLE_ID}/tiles/512/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`;
 const MAPBOX_ATTRIBUTION = '&copy; <a href="https://www.mapbox.com/">Mapbox</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
 // Coordenadas conocidas en Panamá para destinos habituales
