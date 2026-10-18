@@ -306,10 +306,14 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
     })
     .sort((a, b) => {
       let comp = 0;
-      if (sortBy === 'name') comp = (a.name || '').localeCompare(b.name || '');
+      if (sortBy === 'name') comp = (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' });
       else if (sortBy === 'mileage') comp = (a.mileage || 0) - (b.mileage || 0);
       else if (sortBy === 'rol') comp = getAssetRol(a) - getAssetRol(b);
-      else if (sortBy === 'plate') comp = (a.licensePlate || '').localeCompare(b.licensePlate || '');
+      else if (sortBy === 'plate') {
+        const plateA = (a.licensePlate || a.serialNumber || 'ZZZ').trim();
+        const plateB = (b.licensePlate || b.serialNumber || 'ZZZ').trim();
+        comp = plateA.localeCompare(plateB, undefined, { numeric: true, sensitivity: 'base' });
+      }
       return sortDir === 'asc' ? comp : -comp;
     });
 
@@ -838,13 +842,16 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
               {/* Sorter and View Modes */}
               <div className="flex items-center gap-2 self-end lg:self-auto">
                 <div className="flex items-center bg-[#121317] border border-[#474556]/40 rounded-xl px-2.5 py-1 gap-1.5 shadow-sm" title="Ordenar lista de unidades">
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-[#5d3cfe] shrink-0" />
-                  <span className="text-[8px] font-black text-white/40 uppercase hidden sm:inline tracking-wider">Ordenar:</span>
+                  <ArrowUpDown className="w-3.5 h-3.5 text-[#5d3cfe] shrink-0" />
+                  <span className="text-[8px] font-black text-white/50 uppercase tracking-wider">Orden:</span>
                   <select
                     value={sortBy}
                     onChange={(e) => {
-                      setSortBy(e.target.value as any);
+                      const newSort = e.target.value as any;
+                      setSortBy(newSort);
                       setCurrentPage(1);
+                      const labels: any = { name: 'Nombre', mileage: 'Kilometraje', rol: 'Sensor ROL', plate: 'Placa' };
+                      toast(`Ordenado por ${labels[newSort] || newSort}`, { icon: '↕️', duration: 1500 });
                     }}
                     className="bg-transparent text-white text-[9px] font-black uppercase outline-none py-1 pr-1 cursor-pointer hover:text-[#52ffac] transition-colors"
                   >
@@ -855,13 +862,17 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                   </select>
                   <button
                     onClick={() => {
-                      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+                      const nextDir = sortDir === 'asc' ? 'desc' : 'asc';
+                      setSortDir(nextDir);
                       setCurrentPage(1);
+                      toast(`Dirección: ${nextDir === 'asc' ? 'Ascendente (A-Z)' : 'Descendente (Z-A)'}`, { icon: '↕️', duration: 1500 });
                     }}
                     className="p-1 hover:bg-white/10 rounded-lg transition-colors flex items-center justify-center"
-                    title={`Orden: ${sortDir === 'asc' ? 'Ascendente (A-Z, Menor a Mayor)' : 'Descendente (Z-A, Mayor a Menor)'}`}
+                    title={`Dirección: ${sortDir === 'asc' ? 'Ascendente (A-Z, Menor a Mayor)' : 'Descendente (Z-A, Mayor a Menor)'}`}
                   >
-                    <ArrowUpDown className={`w-3.5 h-3.5 ${sortDir === 'desc' ? 'text-[#5d3cfe]' : 'text-[#52ffac]'}`} />
+                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${sortDir === 'asc' ? 'bg-[#52ffac]/20 text-[#52ffac]' : 'bg-[#5d3cfe]/20 text-[#5d3cfe]'}`}>
+                      {sortDir === 'asc' ? 'A-Z' : 'Z-A'}
+                    </span>
                   </button>
                 </div>
 
