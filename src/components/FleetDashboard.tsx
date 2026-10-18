@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Asset, MaintenanceReminder } from '../types';
 import {
   LayoutGrid, List, MapPin, AlertCircle, CheckCircle2, TrendingUp, Search, Filter, Mic, Radio, Volume2,
-  ChevronRight, Car, Wind, Cpu, Zap, Building2, Code, Phone, ShieldCheck, Download, Star, FileText, Globe, RefreshCw, ChevronLeft, Navigation, Pause, Clock, Flag, Droplets, Fuel, Trash2, Maximize, Activity, AlertTriangle, Pencil, Plus, Info, Settings, User as UserIcon
+  ChevronRight, Car, Wind, Cpu, Zap, Building2, Code, Phone, ShieldCheck, Download, Star, FileText, Globe, RefreshCw, ChevronLeft, Navigation, Pause, Clock, Flag, Droplets, Fuel, Trash2, Maximize, Activity, AlertTriangle, Pencil, Plus, Info, Settings, User as UserIcon,
+  X, SlidersHorizontal, ArrowUpDown, Truck, ChevronDown, ChevronUp, Eye, EyeOff
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -250,20 +251,85 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
   });
   const [showPriceSettings, setShowPriceSettings] = useState(false);
 
+  // Professional Telematics Filters & Sorting
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'optimal' | 'critical'>('all');
+  const [sortBy, setSortBy] = useState<'name' | 'mileage' | 'rol' | 'plate'>('name');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [mapSelectedAssetId, setMapSelectedAssetId] = useState<string | null>(null);
+  const [mapDrawerOpen, setMapDrawerOpen] = useState(true);
+
   const isNight = new Date().getHours() >= 18 || new Date().getHours() < 6;
 
-  const filteredAssets = assets.filter(a => locationFilter === 'Todas' || (a.location === locationFilter || (!a.location && locationFilter === 'Sede Principal')));
-  const totalPages = Math.ceil(filteredAssets.length / pageSize);
+  // Sensor Virtual MDM-V4: ROL (Remaining Operating Life) calculation
+  const getAssetRol = (asset: Asset) => {
+    const currentKm = asset.mileage || 0;
+    const lastServiceKm = currentKm - (currentKm % 5000);
+    const kmSinceService = currentKm - lastServiceKm;
+    const baseRol = Math.max(0, 100 - (kmSinceService / 5000) * 100);
+    return Math.max(0, Math.min(100, Math.round(baseRol)));
+  };
+
+  // Live filtered assets with multi-field search and sorting
+  const filteredAssets = assets
+    .filter(a => {
+      // Sede filter
+      if (locationFilter !== 'Todas') {
+        const matchesLocation = a.location === locationFilter || (!a.location && locationFilter === 'Sede Principal');
+        if (!matchesLocation) return false;
+      }
+
+      // Search keyword filter
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase();
+        const matchesSearch =
+          (a.name || '').toLowerCase().includes(q) ||
+          (a.licensePlate || '').toLowerCase().includes(q) ||
+          (a.driverName || '').toLowerCase().includes(q) ||
+          (a.details || '').toLowerCase().includes(q) ||
+          (a.location || '').toLowerCase().includes(q);
+        if (!matchesSearch) return false;
+      }
+
+      // Operational status filter
+      if (statusFilter !== 'all') {
+        const isUrgent = reminders.some(r => r.assetId === a.id && r.status === 'urgent');
+        const rol = getAssetRol(a);
+        const isActive = trackingAssetId === a.id || Boolean(a.currentRoute);
+
+        if (statusFilter === 'active' && !isActive) return false;
+        if (statusFilter === 'critical' && !(rol < 30 || isUrgent)) return false;
+        if (statusFilter === 'optimal' && (rol < 30 || isUrgent)) return false;
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      let comp = 0;
+      if (sortBy === 'name') comp = (a.name || '').localeCompare(b.name || '');
+      else if (sortBy === 'mileage') comp = (a.mileage || 0) - (b.mileage || 0);
+      else if (sortBy === 'rol') comp = getAssetRol(a) - getAssetRol(b);
+      else if (sortBy === 'plate') comp = (a.licensePlate || '').localeCompare(b.licensePlate || '');
+      return sortDir === 'asc' ? comp : -comp;
+    });
+
+  const totalPages = Math.max(1, Math.ceil(filteredAssets.length / pageSize));
   const paginatedAssets = filteredAssets.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const totalAssets = assets.length;
   const urgentCount = reminders.filter(r => r.status === 'urgent').length;
+  const criticalUnitsCount = assets.filter(a => getAssetRol(a) < 30 || reminders.some(r => r.assetId === a.id && r.status === 'urgent')).length;
+  const activeGpsCount = assets.filter(a => trackingAssetId === a.id || Boolean(a.currentRoute)).length;
+  const optimalUnitsCount = Math.max(0, totalAssets - criticalUnitsCount);
   const healthScore = totalAssets > 0 ? Math.round(((totalAssets - urgentCount) / totalAssets) * 100) : 100;
+  const avgFleetRol = totalAssets > 0
+    ? Math.round(assets.reduce((sum, a) => sum + getAssetRol(a), 0) / totalAssets)
+    : 100;
 
   // --- MOTOR DE CÁLCULO REAL (Consumo & Inversión) ---
   const totalGallonsReal = assets.reduce((sum, a) => {
     const assetGallons = (a.fuelLogs || []).reduce((s, log) => sum + (log.gallons || 0), 0);
-    return sum + (assetGallons > 0 ? assetGallons : ((a.mileage || 0) / 12)); // Fallback a estimación si no hay logs
+    return sum + (assetGallons > 0 ? assetGallons : ((a.mileage || 0) / 12));
   }, 0);
 
   const totalInvestmentReal = assets.reduce((sum, a) => {
@@ -272,8 +338,85 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
     return sum + (assetPrice > 0 ? assetPrice : (((a.mileage || 0) / 12) * price));
   }, 0);
 
-  // Eficiencia: Proporción de equipos sin fallos críticos
   const fleetEfficiency = healthScore;
+
+  // Auditoría Profesional Excel y CSV
+  const handleExportFleet = (format: 'xlsx' | 'csv' = 'xlsx') => {
+    if (filteredAssets.length === 0) {
+      toast.error("No hay unidades para exportar con los filtros actuales.");
+      return;
+    }
+
+    const exportRows = filteredAssets.map((a, idx) => {
+      const rol = getAssetRol(a);
+      const nextKm = (a.mileage || 0) + 5000;
+      const isUrgent = reminders.some(r => r.assetId === a.id && r.status === 'urgent');
+      return {
+        'No.': idx + 1,
+        'Unidad': a.name,
+        'Placa': a.licensePlate || 'N/A',
+        'Modelo / Detalles': a.details || 'N/A',
+        'Conductor Asignado': a.driverName || 'Sin Conductor',
+        'Sede Operativa': a.location || 'Sede Principal',
+        'Odómetro Actual (Km)': a.mileage || 0,
+        'Sensor Virtual ROL (%)': rol,
+        'Próximo Servicio (Km)': nextKm,
+        'Estado de Salud': isUrgent || rol < 30 ? 'CRÍTICO' : 'ÓPTIMO',
+        'Tipo Combustible': a.fuelType === 'gas91' ? 'Gasolina 91' : a.fuelType === 'gas95' ? 'Gasolina 95' : 'Diesel',
+        'GPS Latitud': a.latitude || 'N/A',
+        'GPS Longitud': a.longitude || 'N/A',
+        'Último Mantenimiento': a.lastMaintenanceDate || 'N/A',
+        'Próximo Mantenimiento': a.nextMaintenanceDate || 'N/A'
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportRows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Auditoria_Flota");
+    const dateStr = new Date().toISOString().split('T')[0];
+
+    if (format === 'csv') {
+      const csvStr = XLSX.utils.sheet_to_csv(ws);
+      const blob = new Blob([csvStr], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute("download", `Auditoria_Flota_Mantech_${dateStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Auditoría de flota exportada a CSV.");
+    } else {
+      downloadWorkbookAsExcel(wb, `Auditoria_Flota_Mantech_${dateStr}.xlsx`);
+      toast.success("Auditoría de flota exportada a Excel (.xlsx).");
+    }
+  };
+
+  const handleExportFuelReport = () => {
+    const fuelRows = assets.map((a, idx) => {
+      const gallons = (a.mileage || 0) / 12;
+      const price = a.fuelType === 'gas91' ? fuelPrices.gas91 : a.fuelType === 'gas95' ? fuelPrices.gas95 : fuelPrices.diesel;
+      const cost = gallons * price;
+      return {
+        'No.': idx + 1,
+        'Unidad': a.name,
+        'Placa': a.licensePlate || 'N/A',
+        'Conductor': a.driverName || 'No Asignado',
+        'Tipo de Combustible': a.fuelType === 'gas91' ? 'Gasolina 91' : a.fuelType === 'gas95' ? 'Gasolina 95' : 'Diesel',
+        'Kilometraje Acumulado': a.mileage || 0,
+        'Consumo Est. (Gal)': Number(gallons.toFixed(1)),
+        'Precio/Galón ($)': price,
+        'Inversión Total ($)': Number(cost.toFixed(2)),
+        'Rendimiento Base': '12 Km/Gal'
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(fuelRows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Costos_Combustible");
+    const dateStr = new Date().toISOString().split('T')[0];
+    downloadWorkbookAsExcel(wb, `Auditoria_Combustible_${dateStr}.xlsx`);
+    toast.success("Reporte de combustible exportado a Excel.");
+  };
 
   // --- LOCAL MODAL STATES (Para eliminar Toasts con fondo blanco) ---
   const [manualStopData, setManualStopData] = useState<{lat: number, lng: number} | null>(null);
@@ -490,137 +633,318 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
 
       {activeSubTab === 'fleet' && (
         <>
-          {/* Fleet Summary Header */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-[#5d3cfe] rounded-[1.5rem] p-5 text-white shadow-lg shadow-[#5d3cfe]/20">
-              <span className="text-[9px] font-black uppercase opacity-60">Total Activos Flota</span>
-              <p className="text-3xl font-black">{totalAssets}</p>
-              <div className="mt-2 flex items-center gap-1 text-[10px] font-bold">
-                <Building2 className="w-3 h-3" />
-                <span>Panamá / Sedes Múltiples</span>
+          {/* Fleet Summary Header - Enterprise Telematics Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Card 1: Total Fleet */}
+            <div className="bg-gradient-to-br from-[#1c1d24] to-[#121317] rounded-[1.5rem] p-5 text-white border border-white/10 shadow-xl relative overflow-hidden group">
+              <div className="flex justify-between items-start">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#c8c4d9]/70">Flota Registrada</span>
+                <div className="p-2 bg-[#5d3cfe]/20 text-[#5d3cfe] rounded-xl border border-[#5d3cfe]/30">
+                  <Truck className="w-4 h-4" />
+                </div>
+              </div>
+              <p className="text-3xl sm:text-4xl font-black tracking-tight mt-2">{totalAssets}</p>
+              <div className="mt-3 flex items-center justify-between text-[10px] font-bold border-t border-white/5 pt-3">
+                <div className="flex items-center gap-1.5 text-[#52ffac]">
+                  <span className="w-2 h-2 rounded-full bg-[#52ffac] animate-pulse" />
+                  <span>{activeGpsCount} en ruta activa</span>
+                </div>
+                <span className="text-white/40">{totalAssets - activeGpsCount} en base</span>
               </div>
             </div>
 
-            <div className="bg-[#1f1f24] rounded-[1.5rem] p-5 border border-[#474556]/30 shadow-sm">
-              <span className="text-[9px] font-black uppercase text-[#c8c4d9]">Atención Crítica</span>
-              <p className="text-3xl font-black text-rose-500">{urgentCount}</p>
-              <div className="mt-2 flex items-center gap-1 text-rose-500 font-bold text-[10px]">
-                <AlertCircle className="w-3 h-3" />
-                <span>Equipos requieren visita</span>
+            {/* Card 2: Critical Maintenance */}
+            <div
+              onClick={() => { setStatusFilter(statusFilter === 'critical' ? 'all' : 'critical'); setCurrentPage(1); }}
+              className={`cursor-pointer rounded-[1.5rem] p-5 border shadow-xl transition-all relative overflow-hidden group ${
+                statusFilter === 'critical'
+                  ? 'bg-rose-500/15 border-rose-500 ring-2 ring-rose-500/30'
+                  : 'bg-gradient-to-br from-[#1c1d24] to-[#121317] border-white/10 hover:border-rose-500/40'
+              }`}
+            >
+              <div className="flex justify-between items-start">
+                <span className="text-[10px] font-black uppercase tracking-widest text-rose-400">Atención Crítica</span>
+                <div className="p-2 bg-rose-500/20 text-rose-500 rounded-xl border border-rose-500/30">
+                  <AlertCircle className="w-4 h-4 animate-pulse" />
+                </div>
+              </div>
+              <p className="text-3xl sm:text-4xl font-black tracking-tight text-rose-500 mt-2">{criticalUnitsCount}</p>
+              <div className="mt-3 flex items-center justify-between text-[10px] font-bold border-t border-white/5 pt-3">
+                <span className="text-rose-400/80">ROL &lt; 30% o mtto pendiente</span>
+                <span className="text-[9px] uppercase px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-black">
+                  {statusFilter === 'critical' ? 'Filtrando' : 'Ver'}
+                </span>
               </div>
             </div>
 
-            <div className="bg-[#1f1f24] rounded-[1.5rem] p-5 border border-[#474556]/30 shadow-sm">
-              <span className="text-[9px] font-black uppercase text-[#c8c4d9]">Score de Salud Flota</span>
-              <p className="text-3xl font-black text-emerald-500">{healthScore}%</p>
-              <div className="w-full bg-[#1a1b20] h-1 rounded-full mt-3 overflow-hidden">
-                <div className="bg-emerald-500 h-full transition-all duration-1000" style={{ width: `${healthScore}%` }}></div>
+            {/* Card 3: ROL Health Score */}
+            <div className="bg-gradient-to-br from-[#1c1d24] to-[#121317] rounded-[1.5rem] p-5 text-white border border-white/10 shadow-xl relative overflow-hidden">
+              <div className="flex justify-between items-start">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#c8c4d9]/70">Salud de Flota (ROL)</span>
+                <div className={`p-2 rounded-xl border ${avgFleetRol >= 80 ? 'bg-[#52ffac]/20 text-[#52ffac] border-[#52ffac]/30' : avgFleetRol >= 50 ? 'bg-amber-500/20 text-amber-500 border-amber-500/30' : 'bg-rose-500/20 text-rose-500 border-rose-500/30'}`}>
+                  <Activity className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-2 mt-2">
+                <p className={`text-3xl sm:text-4xl font-black tracking-tight ${avgFleetRol >= 80 ? 'text-[#52ffac]' : avgFleetRol >= 50 ? 'text-amber-500' : 'text-rose-500'}`}>
+                  {avgFleetRol}%
+                </p>
+                <span className="text-xs font-bold text-white/40 uppercase">Promedio</span>
+              </div>
+              <div className="mt-3 space-y-1.5 border-t border-white/5 pt-3">
+                <div className="w-full bg-[#0d0e12] h-2 rounded-full overflow-hidden border border-white/5">
+                  <div
+                    className={`h-full transition-all duration-1000 ${avgFleetRol >= 80 ? 'bg-[#52ffac]' : avgFleetRol >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                    style={{ width: `${avgFleetRol}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-[9px] font-mono text-white/40">
+                  <span>Desgaste Operativo</span>
+                  <span>{optimalUnitsCount} en estado óptimo</span>
+                </div>
               </div>
             </div>
 
-            <div className="bg-[#343439] rounded-[1.5rem] p-5 text-white shadow-xl border border-[#474556]/30">
-              <span className="text-[9px] font-black uppercase opacity-60">Servicios Proyectados</span>
-              <p className="text-3xl font-black text-[#c7bfff]">
-                {assets.filter(a => {
-                  const nextKm = (a.mileage || 0) + 5000;
-                  return (a.mileage || 0) >= nextKm - 500;
-                }).length}
-              </p>
-              <div className="mt-2 flex items-center gap-2">
-                 <button
-                    onClick={() => {
-                      const data = assets.map(a => ({
-                        'Nombre/Unidad': a.name,
-                        'Placa': a.licensePlate || 'N/A',
-                        'Kilometraje': a.mileage || 0,
-                        'Estado': (a.mileage || 0) >= ((a.mileage || 0) + 5000 - 500) ? 'URGENTE' : 'ÓPTIMO'
-                      }));
-                      const ws = XLSX.utils.json_to_sheet(data);
-                      const wb = XLSX.utils.book_new();
-                      XLSX.utils.book_append_sheet(wb, ws, "Auditoria");
-                      downloadWorkbookAsExcel(wb, "Reporte_Flota.xlsx");
-                    }}
-                    className="flex-1 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-[8px] font-black uppercase flex items-center justify-center gap-1 transition-all"
-                 >
-                    <FileText className="w-2.5 h-2.5" /> Excel
-                 </button>
+            {/* Card 4: Projected Services & Audit Export */}
+            <div className="bg-gradient-to-br from-[#1c1d24] to-[#121317] rounded-[1.5rem] p-5 text-white border border-white/10 shadow-xl relative overflow-hidden flex flex-col justify-between">
+              <div>
+                <div className="flex justify-between items-start">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#c7bfff]">Auditoría Logística</span>
+                  <div className="p-2 bg-[#5d3cfe]/20 text-[#5d3cfe] rounded-xl border border-[#5d3cfe]/30">
+                    <Download className="w-4 h-4" />
+                  </div>
+                </div>
+                <p className="text-3xl sm:text-4xl font-black tracking-tight text-[#c7bfff] mt-2">
+                  {assets.filter(a => {
+                    const nextKm = (a.mileage || 0) + 5000;
+                    return (a.mileage || 0) >= nextKm - 500;
+                  }).length}
+                </p>
+                <p className="text-[10px] font-bold text-white/50 uppercase mt-0.5">Servicios próximos a vencer</p>
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2">
+                <button
+                  onClick={() => handleExportFleet('xlsx')}
+                  className="flex-1 py-2 px-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 border border-white/10"
+                  title="Descargar Auditoría en Excel"
+                >
+                  <FileText className="w-3 h-3 text-[#52ffac]" /> Excel (.xlsx)
+                </button>
+                <button
+                  onClick={() => handleExportFleet('csv')}
+                  className="py-2 px-3 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 border border-white/5"
+                  title="Descargar Datos en CSV"
+                >
+                  CSV
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Fleet Controls */}
-          <div className="bg-[#1f1f24] rounded-[1.5rem] border border-[#474556]/30 p-4 shadow-sm flex flex-wrap items-center justify-between gap-4">
-            <div className="flex-1 min-w-[250px] relative">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-[#c8c4d9]" />
-              <input
-                type="text"
-                placeholder="Filtrar flota por placa, ID o unidad..."
-                className="w-full pl-10 pr-4 py-2 bg-[#1a1b20] border border-[#474556]/30 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#5d3cfe] text-white"
-              />
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              {filteredAssets.length > 0 && (
-                <button
-                  onClick={() => {
-                    const allIds = filteredAssets.map(a => a.id);
-                    if (selectedIds.length === allIds.length && allIds.length > 0) {
-                      setSelectedIds([]);
-                    } else {
-                      setSelectedIds(allIds);
-                    }
+          {/* Fleet Controls Bar: Search, Filters, Sorter, Batch Actions, View Mode */}
+          <div className="bg-[#1f1f24] rounded-[1.5rem] border border-[#474556]/30 p-4 shadow-xl space-y-4">
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+              {/* Search bar with clear button */}
+              <div className="flex-1 relative min-w-[260px]">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#c8c4d9]" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
                   }}
-                  className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-2 ${
-                    selectedIds.length > 0
-                      ? 'bg-[#5d3cfe]/20 border-[#5d3cfe] text-white'
-                      : 'bg-[#1a1b20] border-[#474556]/40 text-[#c8c4d9] hover:border-white/30'
+                  placeholder="Buscar por placa, unidad, marca, sede o conductor..."
+                  className="w-full pl-10 pr-9 py-2.5 bg-[#121317] border border-[#474556]/40 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#5d3cfe] text-white placeholder:text-white/30"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => { setSearchTerm(''); setCurrentPage(1); }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white/40 hover:text-white transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Status Filter Chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+                <button
+                  onClick={() => { setStatusFilter('all'); setCurrentPage(1); }}
+                  className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all shrink-0 border ${
+                    statusFilter === 'all'
+                      ? 'bg-white text-black border-white shadow-md'
+                      : 'bg-[#121317] text-[#c8c4d9] border-[#474556]/40 hover:border-white/30'
                   }`}
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#52ffac]" />
-                  {selectedIds.length > 0 ? `Deseleccionar (${selectedIds.length})` : `Seleccionar Lote (${filteredAssets.length})`}
+                  Todos ({totalAssets})
                 </button>
-              )}
+                <button
+                  onClick={() => { setStatusFilter('active'); setCurrentPage(1); }}
+                  className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all shrink-0 flex items-center gap-1.5 border ${
+                    statusFilter === 'active'
+                      ? 'bg-[#52ffac] text-black border-[#52ffac] shadow-md shadow-[#52ffac]/20'
+                      : 'bg-[#121317] text-[#c8c4d9] border-[#474556]/40 hover:border-[#52ffac]/40'
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#52ffac] animate-pulse" />
+                  En Ruta ({activeGpsCount})
+                </button>
+                <button
+                  onClick={() => { setStatusFilter('optimal'); setCurrentPage(1); }}
+                  className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all shrink-0 border ${
+                    statusFilter === 'optimal'
+                      ? 'bg-emerald-500 text-black border-emerald-500 shadow-md'
+                      : 'bg-[#121317] text-[#c8c4d9] border-[#474556]/40 hover:border-emerald-500/40'
+                  }`}
+                >
+                  Óptimos ({optimalUnitsCount})
+                </button>
+                <button
+                  onClick={() => { setStatusFilter('critical'); setCurrentPage(1); }}
+                  className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all shrink-0 border ${
+                    statusFilter === 'critical'
+                      ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/20'
+                      : 'bg-[#121317] text-rose-400 border-rose-500/30 hover:border-rose-500/60'
+                  }`}
+                >
+                  Críticos ({criticalUnitsCount})
+                </button>
+              </div>
 
-              {selectedIds.length > 0 && (
-                <div className="flex items-center gap-2 animate-fade-in">
-                  <button
-                    onClick={() => {
-                      openModal('confirmation', {
-                        confTitle: "Mantenimiento Masivo",
-                        confMessage: `¿Deseas confirmar el mantenimiento masivo para ${selectedIds.length} equipos? Se actualizará la fecha de último servicio a hoy.`,
-                        confType: 'success',
-                        onConfConfirm: () => {
-                          onBulkUpdate?.(selectedIds, { lastMaintenanceDate: new Date().toISOString().split('T')[0] });
-                          setSelectedIds([]);
-                        }
-                      });
-                    }}
-                    className="px-4 py-2 bg-[#52ffac] text-black text-[9px] font-black rounded-xl uppercase shadow-lg shadow-[#52ffac]/20"
+              {/* Sorter and View Modes */}
+              <div className="flex items-center gap-2 self-end lg:self-auto">
+                <div className="flex items-center bg-[#121317] border border-[#474556]/40 rounded-xl px-2 py-1 gap-1">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-white/40 ml-1" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="bg-transparent text-white text-[9px] font-black uppercase outline-none py-1 pr-1 cursor-pointer"
                   >
-                    Mttos ({selectedIds.length})
-                  </button>
+                    <option value="name" className="bg-[#121317]">Nombre</option>
+                    <option value="mileage" className="bg-[#121317]">Kilometraje</option>
+                    <option value="rol" className="bg-[#121317]">Sensor ROL</option>
+                    <option value="plate" className="bg-[#121317]">Placa</option>
+                  </select>
                   <button
-                    onClick={() => {
-                      openModal('confirmation', {
-                        confTitle: "ELIMINACIÓN CRÍTICA",
-                        confMessage: `⚠️ ADVERTENCIA: ¿Seguro que deseas ELIMINAR ${selectedIds.length} unidades permanentemente del sistema? Esta acción no se puede deshacer.`,
-                        confType: 'danger',
-                        onConfConfirm: () => {
-                          onBulkDelete?.(selectedIds);
-                          setSelectedIds([]);
-                        }
-                      });
-                    }}
-                    className="px-4 py-2 bg-rose-600 text-white text-[9px] font-black rounded-xl uppercase shadow-lg shadow-rose-600/20 flex items-center gap-2 hover:bg-rose-700 transition-all"
+                    onClick={() => setSortDir(sortDir === 'asc' ? 'desc' : 'asc')}
+                    className="p-1 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors"
+                    title={`Orden: ${sortDir === 'asc' ? 'Ascendente' : 'Descendente'}`}
                   >
-                    <Trash2 className="w-3 h-3" /> Eliminar ({selectedIds.length})
+                    <ArrowUpDown className="w-3 h-3" />
                   </button>
                 </div>
-              )}
 
-              <div className="flex gap-2">
+                {/* View Mode Toggle */}
+                <div className="bg-[#121317] p-1 rounded-xl flex border border-[#474556]/40">
+                  <button
+                    onClick={() => setViewMode('map')}
+                    className={`p-2 rounded-lg transition-all ${viewMode === 'map' ? 'bg-[#5d3cfe] text-white shadow' : 'text-[#c8c4d9] hover:text-white'}`}
+                    title="Mapa en Vivo"
+                  >
+                    <Globe className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-[#5d3cfe] text-white shadow' : 'text-[#c8c4d9] hover:text-white'}`}
+                    title="Vista Cuadrícula"
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('table')}
+                    className={`p-2 rounded-lg transition-all ${viewMode === 'table' ? 'bg-[#5d3cfe] text-white shadow' : 'text-[#c8c4d9] hover:text-white'}`}
+                    title="Vista Lista Tabla"
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Secondary Toolbar: Batch Actions, Excel Carga, Location Filter */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#474556]/20">
+              <div className="flex flex-wrap items-center gap-2">
+                {filteredAssets.length > 0 && (
+                  <button
+                    onClick={() => {
+                      const allIds = filteredAssets.map(a => a.id);
+                      if (selectedIds.length === allIds.length && allIds.length > 0) {
+                        setSelectedIds([]);
+                      } else {
+                        setSelectedIds(allIds);
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider border transition-all flex items-center gap-1.5 ${
+                      selectedIds.length > 0
+                        ? 'bg-[#5d3cfe]/20 border-[#5d3cfe] text-white shadow-sm'
+                        : 'bg-[#121317] border-[#474556]/40 text-[#c8c4d9] hover:border-white/30'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#52ffac]" />
+                    {selectedIds.length > 0 ? `Deseleccionar (${selectedIds.length})` : `Seleccionar Lote (${filteredAssets.length})`}
+                  </button>
+                )}
+
+                {selectedIds.length > 0 && (
+                  <div className="flex items-center gap-2 animate-fade-in">
+                    <button
+                      onClick={() => {
+                        openModal('confirmation', {
+                          confTitle: "Mantenimiento Masivo",
+                          confMessage: `¿Deseas confirmar el mantenimiento masivo para ${selectedIds.length} equipos? Se actualizará la fecha de último servicio a hoy.`,
+                          confType: 'success',
+                          onConfConfirm: () => {
+                            onBulkUpdate?.(selectedIds, { lastMaintenanceDate: new Date().toISOString().split('T')[0] });
+                            setSelectedIds([]);
+                          }
+                        });
+                      }}
+                      className="px-3.5 py-1.5 bg-[#52ffac] text-black text-[9px] font-black rounded-xl uppercase shadow-md shadow-[#52ffac]/20 active:scale-95 transition-all"
+                    >
+                      Mttos ({selectedIds.length})
+                    </button>
+                    <button
+                      onClick={() => {
+                        openModal('confirmation', {
+                          confTitle: "ELIMINACIÓN CRÍTICA",
+                          confMessage: `⚠️ ADVERTENCIA: ¿Seguro que deseas ELIMINAR ${selectedIds.length} unidades permanentemente del sistema? Esta acción no se puede deshacer.`,
+                          confType: 'danger',
+                          onConfConfirm: () => {
+                            onBulkDelete?.(selectedIds);
+                            setSelectedIds([]);
+                          }
+                        });
+                      }}
+                      className="px-3.5 py-1.5 bg-rose-600 text-white text-[9px] font-black rounded-xl uppercase shadow-md shadow-rose-600/20 flex items-center gap-1.5 hover:bg-rose-700 transition-all active:scale-95"
+                    >
+                      <Trash2 className="w-3 h-3" /> Eliminar ({selectedIds.length})
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Location Chips + Excel Bulk Upload */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex gap-1 overflow-x-auto no-scrollbar py-0.5">
+                  {['Todas', 'Panamá Centro', 'Colón', 'Chiriquí', 'Chorrera'].map(loc => (
+                    <button
+                      key={loc}
+                      onClick={() => { setLocationFilter(loc); setCurrentPage(1); }}
+                      className={`px-3 py-1 rounded-full border text-[8px] font-black uppercase transition-all shrink-0 ${
+                        locationFilter === loc
+                          ? 'bg-white text-black border-white shadow-sm'
+                          : 'bg-[#121317] text-[#c8c4d9] border-[#474556]/30 hover:border-white/30'
+                      }`}
+                    >
+                      <Globe className="w-2.5 h-2.5 mr-1 inline opacity-60" /> {loc}
+                    </button>
+                  ))}
+                </div>
+
                 {mode === 'full' && (
-                  <>
+                  <div className="flex items-center gap-1.5 border-l border-[#474556]/30 pl-2">
                     <button
                       onClick={() => {
                         const templateData = [
@@ -632,7 +956,7 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                         downloadWorkbookAsExcel(wb, "PLANTILLA_CARGA_MASIVA.xlsx");
                         toast.success("Plantilla descargada.");
                       }}
-                      className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl text-[8px] font-black uppercase hover:bg-white/10 transition-all flex items-center gap-2"
+                      className="px-3 py-1.5 bg-white/5 border border-white/10 text-white rounded-xl text-[8px] font-black uppercase hover:bg-white/10 transition-all flex items-center gap-1.5"
                       title="Descargar Plantilla Excel"
                     >
                       <Download className="w-3 h-3" /> Plantilla
@@ -640,80 +964,59 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
 
                     <button
                       onClick={() => document.getElementById('bulk-upload-input')?.click()}
-                      className="px-4 py-2 bg-[#5d3cfe] text-white rounded-xl text-[9px] font-black uppercase flex items-center gap-2 hover:brightness-110 transition-all shadow-lg shadow-[#5d3cfe]/20"
+                      className="px-3 py-1.5 bg-[#5d3cfe] text-white rounded-xl text-[9px] font-black uppercase flex items-center gap-1.5 hover:brightness-110 transition-all shadow-md shadow-[#5d3cfe]/20"
                     >
-                      <Plus className="w-3 h-3" /> Carga Masiva (Excel)
+                      <Plus className="w-3 h-3" /> Carga Masiva
                     </button>
-                  </>
+                    <input
+                      type="file"
+                      id="bulk-upload-input"
+                      className="hidden"
+                      accept=".xlsx, .xls, .csv"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (evt) => {
+                          try {
+                            const bstr = evt.target?.result;
+                            const wb = XLSX.read(bstr, { type: 'binary' });
+                            const wsname = wb.SheetNames[0];
+                            const ws = wb.Sheets[wsname];
+                            const data = XLSX.utils.sheet_to_json(ws);
+
+                            const processed = data.map((item: any) => ({
+                              name: String(item.MARCA_UNIDAD || 'UNIDAD NUEVA').toUpperCase(),
+                              type: 'car',
+                              details: String(item.MODELO_DETALLES || 'MODELO BASE').toUpperCase(),
+                              licensePlate: String(item.PLACA || '---').toUpperCase(),
+                              mileage: Number(item.KILOMETRAJE_ACTUAL || 0),
+                              location: String(item.SEDE || 'Sede Principal'),
+                              lastMaintenanceDate: new Date().toISOString().split('T')[0],
+                              nextMaintenanceDate: new Date(Date.now() + 90*24*60*60*1000).toISOString().split('T')[0],
+                              routeHistory: []
+                            }));
+
+                            if (processed.length > 0) {
+                              onBulkRegister?.(processed);
+                              e.target.value = '';
+                            }
+                          } catch (err) {
+                            toast.error("Error al procesar el archivo Excel.");
+                          }
+                        };
+                        reader.readAsBinaryString(file);
+                      }}
+                    />
+                  </div>
                 )}
-                <input
-                  type="file"
-                  id="bulk-upload-input"
-                  className="hidden"
-                  accept=".xlsx, .xls, .csv"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (evt) => {
-                      try {
-                        const bstr = evt.target?.result;
-                        const wb = XLSX.read(bstr, { type: 'binary' });
-                        const wsname = wb.SheetNames[0];
-                        const ws = wb.Sheets[wsname];
-                        const data = XLSX.utils.sheet_to_json(ws);
-
-                        const processed = data.map((item: any) => ({
-                          name: String(item.MARCA_UNIDAD || 'UNIDAD NUEVA').toUpperCase(),
-                          type: 'car',
-                          details: String(item.MODELO_DETALLES || 'MODELO BASE').toUpperCase(),
-                          licensePlate: String(item.PLACA || '---').toUpperCase(),
-                          mileage: Number(item.KILOMETRAJE_ACTUAL || 0),
-                          location: String(item.SEDE || 'Sede Principal'),
-                          lastMaintenanceDate: new Date().toISOString().split('T')[0],
-                          nextMaintenanceDate: new Date(Date.now() + 90*24*60*60*1000).toISOString().split('T')[0],
-                          routeHistory: []
-                        }));
-
-                        if (processed.length > 0) {
-                          onBulkRegister?.(processed);
-                          e.target.value = '';
-                        }
-                      } catch (err) {
-                        toast.error("Error al procesar el archivo Excel.");
-                      }
-                    };
-                    reader.readAsBinaryString(file);
-                  }}
-                />
-              </div>
-
-              <div className="bg-[#1a1b20] p-1 rounded-xl flex border border-[#474556]/30">
-                <button onClick={() => setViewMode('map')} className={`p-2 rounded-lg ${viewMode === 'map' ? 'bg-[#5d3cfe] text-white' : 'text-[#c8c4d9]'}`} title="Mapa de Flota en Vivo"><Globe className="w-4 h-4" /></button>
-                <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-[#5d3cfe] text-white' : 'text-[#c8c4d9]'}`} title="Vista Cuadrícula"><LayoutGrid className="w-4 h-4" /></button>
-                <button onClick={() => setViewMode('table')} className={`p-2 rounded-lg ${viewMode === 'table' ? 'bg-[#5d3cfe] text-white' : 'text-[#c8c4d9]'}`} title="Vista Lista"><List className="w-4 h-4" /></button>
               </div>
             </div>
           </div>
 
-          {/* Location Bar */}
-          {mode === 'full' && (
-            <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
-              {['Todas', 'Panamá Centro', 'Colón', 'Chiriquí', 'Chorrera'].map(loc => (
-                <button
-                  key={loc}
-                  onClick={() => { setLocationFilter(loc); setCurrentPage(1); }}
-                  className={`px-4 py-1.5 rounded-full border text-[8px] font-black uppercase transition-all flex-shrink-0 ${locationFilter === loc ? 'bg-white text-black border-white' : 'bg-[#1f1f24] text-[#c8c4d9] border-[#474556]/30 hover:border-white/40'}`}
-                >
-                  <Globe className="w-2.5 h-2.5 mr-2 inline" /> {loc}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* View Mode Logic */}
+          {/* View Mode Logic: Enterprise Telematics Live Map */}
           {viewMode === 'map' && (
-            <div className="bg-[#1f1f24] rounded-[1.5rem] border border-[#474556]/30 overflow-hidden shadow-xl animate-fade-in h-[400px] sm:h-[600px] relative">
+            <div className="bg-[#1f1f24] rounded-[1.5rem] border border-[#474556]/30 overflow-hidden shadow-2xl animate-fade-in h-[520px] sm:h-[640px] md:h-[680px] relative">
                <MapContainer
                   center={[8.9833, -79.5167]}
                   zoom={12}
@@ -735,25 +1038,86 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
 
                   {filteredAssets.map(asset => {
                     if (!asset.latitude) return null;
+                    const rol = getAssetRol(asset);
+                    const isUrgent = reminders.some(r => r.assetId === asset.id && r.status === 'urgent');
+
                     return (
                       <Marker
                         key={asset.id}
                         position={[asset.latitude, asset.longitude || 0]}
                         icon={getTruckIcon(asset.name, asset.licensePlate || '---', '')}
                       >
-                         <Popup>
-                            <div className="p-2 min-w-[150px]">
-                               <h4 className="text-xs font-black uppercase text-[#0d0e12] mb-1">{asset.name}</h4>
-                               <p className="text-[10px] text-[#5d3cfe] font-bold uppercase mb-2">{asset.licensePlate}</p>
-                               <div className="space-y-1 pt-2 border-t border-gray-100">
-                                  <p className="text-[8px] font-black text-gray-400 uppercase">Conductor: {asset.driverName || 'N/A'}</p>
-                                  <p className="text-[8px] font-black text-gray-400 uppercase">Sede: {asset.location || 'Sede Principal'}</p>
-                               </div>
+                         <Popup className="telematics-custom-popup">
+                            <div className="p-3 min-w-[220px] max-w-[280px] bg-[#121317] text-white rounded-xl space-y-2.5">
+                               <div className="flex justify-between items-start border-b border-white/10 pb-2">
+                                  <div>
+                                     <h4 className="text-xs font-black uppercase text-white tracking-tight">{asset.name}</h4>
+                                     <p className="text-[9px] text-[#c8c4d9]/60 uppercase">{asset.details || 'Vehículo de Flota'}</p>
+                                  </div>
+                                  <span className="font-mono text-[9px] font-black text-[#52ffac] bg-black px-2 py-0.5 rounded border border-[#52ffac]/30">
+                                     {asset.licensePlate || '---'}
+                                  </span>
+                                </div>
+
+                                <div className="space-y-1 text-[9px]">
+                                   <div className="flex justify-between text-white/70">
+                                      <span>Conductor:</span>
+                                      <span className="font-bold text-white uppercase">{asset.driverName || 'Sin Conductor'}</span>
+                                   </div>
+                                   <div className="flex justify-between text-white/70">
+                                      <span>Sede:</span>
+                                      <span className="font-bold text-white uppercase">{asset.location || 'Sede Principal'}</span>
+                                   </div>
+                                   <div className="flex justify-between text-white/70">
+                                      <span>Odómetro:</span>
+                                      <span className="font-mono font-bold text-white">{asset.mileage?.toLocaleString() || 0} Km</span>
+                                   </div>
+                                </div>
+
+                                {/* ROL Wear Progress Bar */}
+                                <div className="pt-1.5 border-t border-white/5 space-y-1">
+                                   <div className="flex justify-between text-[8px] font-mono">
+                                      <span className="text-white/50">Sensor Virtual (ROL)</span>
+                                      <span className={`font-black ${rol < 30 ? 'text-rose-400' : 'text-[#52ffac]'}`}>{rol}%</span>
+                                   </div>
+                                   <div className="w-full bg-[#0d0e12] h-1.5 rounded-full overflow-hidden border border-white/10">
+                                      <div
+                                         className={`h-full ${rol < 30 ? 'bg-rose-500' : rol < 60 ? 'bg-amber-500' : 'bg-[#52ffac]'}`}
+                                         style={{ width: `${rol}%` }}
+                                      />
+                                   </div>
+                                </div>
+
+                                {/* Popup Action Buttons */}
+                                <div className="pt-2 border-t border-white/10 flex gap-1.5">
+                                   <button
+                                      onClick={() => {
+                                         setHistoryAssetId(asset.id);
+                                         setViewMode('history');
+                                      }}
+                                      className="flex-1 py-1.5 bg-[#5d3cfe] hover:bg-[#4d2ee6] text-white rounded-lg text-[8px] font-black uppercase tracking-wider text-center transition-all"
+                                   >
+                                      Historial Ruta
+                                   </button>
+                                   <button
+                                      onClick={() => openModal('engineeringReport', { asset })}
+                                      className="py-1.5 px-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[8px] font-black uppercase transition-all"
+                                      title="Diagnóstico NASA MDM"
+                                   >
+                                      MDM
+                                   </button>
+                                </div>
                             </div>
                          </Popup>
                       </Marker>
                     );
                   })}
+
+                  {/* Fly camera to selected asset if chosen from drawer */}
+                  {(() => {
+                    const sel = filteredAssets.find(a => a.id === mapSelectedAssetId);
+                    return sel && sel.latitude && sel.longitude ? <FlyToAsset coords={[sel.latitude, sel.longitude]} /> : null;
+                  })()}
 
                   {/* Auto-Zoom a la sede seleccionada */}
                   {(() => {
@@ -774,246 +1138,552 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                   />
                </MapContainer>
 
-               <div className="absolute top-4 left-4 z-[400] flex flex-col gap-2">
-                  <div className="bg-black/80 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 shadow-2xl">
-                     <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-[#52ffac] rounded-full animate-pulse"></div>
-                        <span className="text-[9px] font-black text-white uppercase tracking-widest">Monitoreo {locationFilter.toUpperCase()}</span>
+               {/* Top-Left HUD Badge */}
+               <div className="absolute top-4 left-4 z-[400] flex flex-col gap-2 pointer-events-none">
+                  <div className="bg-[#121317]/90 backdrop-blur-md px-4 py-2 rounded-xl border border-white/15 shadow-2xl flex items-center gap-3 pointer-events-auto">
+                     <div className="w-2.5 h-2.5 bg-[#52ffac] rounded-full animate-pulse shadow-[0_0_8px_#52ffac]" />
+                     <div>
+                        <span className="text-[10px] font-black text-white uppercase tracking-wider block leading-none">Sat-Link Telemetría</span>
+                        <span className="text-[8px] font-mono text-[#52ffac] mt-0.5 block">{filteredAssets.filter(a => a.latitude).length} unidades en radar</span>
                      </div>
                   </div>
                </div>
+
+               {/* Collapsible Telematics Drawer on Right */}
+               {mapDrawerOpen ? (
+                  <div className="hidden sm:flex absolute top-4 right-4 bottom-4 w-72 md:w-80 bg-[#121317]/95 backdrop-blur-xl border border-white/15 rounded-2xl shadow-2xl z-[400] flex-col overflow-hidden animate-fade-in">
+                     <div className="p-3.5 bg-black/50 border-b border-white/10 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                           <Truck className="w-4 h-4 text-[#52ffac]" />
+                           <span className="text-[10px] font-black uppercase text-white tracking-wider">Unidades ({filteredAssets.length})</span>
+                        </div>
+                        <button
+                           onClick={() => setMapDrawerOpen(false)}
+                           className="p-1 hover:bg-white/10 rounded text-white/50 hover:text-white transition-colors"
+                           title="Ocultar Panel de Flota"
+                        >
+                           <X className="w-3.5 h-3.5" />
+                        </button>
+                     </div>
+
+                     <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1.5">
+                        {filteredAssets.length === 0 ? (
+                           <div className="p-6 text-center text-white/40 text-[10px]">
+                              No hay unidades con los filtros seleccionados.
+                           </div>
+                        ) : (
+                           filteredAssets.map(asset => {
+                              const rol = getAssetRol(asset);
+                              const isSelected = mapSelectedAssetId === asset.id;
+                              const isTracking = trackingAssetId === asset.id;
+
+                              return (
+                                 <div
+                                    key={asset.id}
+                                    onClick={() => {
+                                       setMapSelectedAssetId(asset.id);
+                                       if (!asset.latitude) {
+                                          toast("Esta unidad no tiene coordenadas GPS registradas.", { icon: '📍' });
+                                       }
+                                    }}
+                                    className={`p-2.5 rounded-xl border transition-all cursor-pointer flex flex-col gap-1.5 ${
+                                       isSelected
+                                          ? 'bg-[#5d3cfe]/20 border-[#5d3cfe] shadow-lg shadow-[#5d3cfe]/20'
+                                          : 'bg-[#18191f]/90 border-white/5 hover:border-white/20 hover:bg-white/[0.04]'
+                                    }`}
+                                 >
+                                    <div className="flex justify-between items-center">
+                                       <span className="text-xs font-black text-white uppercase tracking-tight">{asset.name}</span>
+                                       <span className="font-mono text-[9px] font-bold text-[#52ffac] bg-black/60 px-1.5 py-0.5 rounded border border-white/10">
+                                          {asset.licensePlate || '---'}
+                                       </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-[9px] text-white/60">
+                                       <span className="truncate max-w-[140px]">{asset.driverName || 'Sin Conductor'}</span>
+                                       <span className={`font-mono font-bold ${rol < 30 ? 'text-rose-400' : 'text-[#52ffac]'}`}>ROL: {rol}%</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-[8px] text-white/40 pt-1 border-t border-white/5">
+                                       <span>{asset.mileage?.toLocaleString() || 0} Km</span>
+                                       <span className="flex items-center gap-1 text-[#c7bfff]">
+                                          {isTracking && <span className="w-1.5 h-1.5 rounded-full bg-[#52ffac] animate-pulse" />}
+                                          {asset.location || 'Sede Principal'}
+                                       </span>
+                                    </div>
+                                 </div>
+                              );
+                           })
+                        )}
+                     </div>
+                  </div>
+               ) : (
+                  <button
+                     onClick={() => setMapDrawerOpen(true)}
+                     className="hidden sm:flex absolute top-4 right-4 z-[400] px-3.5 py-2 bg-[#121317]/90 backdrop-blur-md border border-white/15 hover:border-white/30 rounded-xl text-white text-[9px] font-black uppercase tracking-wider items-center gap-2 shadow-2xl transition-all"
+                  >
+                     <Eye className="w-3.5 h-3.5 text-[#52ffac]" /> Ver Lista ({filteredAssets.length})
+                  </button>
+               )}
             </div>
           )}
 
+          {/* View Mode Logic: Enterprise Table View */}
           {viewMode === 'table' && (
-             <div className="bg-[#1f1f24] rounded-[1.5rem] border border-[#474556]/30 overflow-x-auto shadow-xl animate-fade-in">
-                <table className="w-full text-left border-collapse min-w-[800px]">
-                   <thead>
-                      <tr className="bg-[#1a1b20] border-b border-[#474556]/30">
-                         <th className="p-4 w-10 text-center"><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? filteredAssets.map(a => a.id) : [])} className="rounded border-[#474556]/30 bg-[#0d0e12] text-[#5d3cfe]" /></th>
-                         <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest">Unidad / Marca</th>
-                         <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Conductor</th>
-                         <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Placa</th>
-                         <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Kilometraje</th>
-                         <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Vida Útil (ROL)</th>
-                         <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest text-center">Próximo Mtto</th>
-                         <th className="p-4 text-[9px] font-black text-[#c8c4d9] uppercase tracking-widest">Estado</th>
-                         <th className="p-4"></th>
-                      </tr>
-                   </thead>
-                   <tbody className="text-[11px] font-bold text-white">
-                      {paginatedAssets.map((asset) => {
-                         const nextKm = (asset.mileage || 0) + 5000;
-                         const isCritical = (asset.mileage || 0) >= nextKm - 500;
-
-                         // Sensor Virtual MDM-V4
-                         const currentKm = asset.mileage || 0;
-                         const lastServiceKm = currentKm - (currentKm % 5000);
-                         const kmSinceService = currentKm - lastServiceKm;
-                         const baseRol = Math.max(0, 100 - (kmSinceService / 5000) * 100);
-
-                         // ROL Operativo real basado en odómetro y ciclo preventivo (5,000 km)
-                          const rol = Math.max(0, Math.min(100, Math.round(baseRol)));
-
-                         return (
-                            <tr key={asset.id} className="border-b border-[#474556]/10 hover:bg-white/[0.02] transition-colors">
-                               <td className="p-4 text-center"><input type="checkbox" checked={selectedIds.includes(asset.id)} onChange={(e) => { if(e.target.checked) setSelectedIds([...selectedIds, asset.id]); else setSelectedIds(selectedIds.filter(id => id !== asset.id)); }} className="rounded border-[#474556]/30 bg-[#0d0e12] text-[#5d3cfe]" /></td>
-                               <td className="p-4 flex items-center gap-3">
-                                  <div className="p-2 bg-[#1a1b20] rounded-lg border border-[#474556]/30"><Car className="w-3.5 h-3.5 text-[#c7bfff]" /></div>
-                                  <div><p className="font-black uppercase tracking-tight">{asset.name}</p><p className="text-[9px] text-[#c8c4d9] opacity-40 uppercase">{asset.details}</p></div>
-                               </td>
-                               <td className="p-4 text-center">
-                                  <div className="flex flex-col items-center">
-                                     <span className="text-[10px] font-black text-white uppercase tracking-tight">{asset.driverName || 'No Asignado'}</span>
-                                     <p className="text-[7px] text-[#474556] font-bold uppercase tracking-widest">Operador Logístico</p>
-                                  </div>
-                               </td>
-                               <td className="p-4 text-center font-mono tracking-widest text-[#52ffac]">{asset.licensePlate || '---'}</td>
-                               <td className="p-4 text-center font-black relative group/km">
-                                  {editingKmId === asset.id ? (
-                                     <input
-                                       autoFocus
-                                       type="number"
-                                       className="w-20 bg-[#0d0e12] border border-[#5d3cfe] rounded px-2 py-1 text-center text-white"
-                                       value={tempKm}
-                                       onChange={(e) => setTempKm(e.target.value)}
-                                       onBlur={() => handleManualKmSave(asset.id)}
-                                       onKeyDown={(e) => e.key === 'Enter' && handleManualKmSave(asset.id)}
-                                     />
-                                  ) : (
-                                     <div
-                                       onClick={() => { setEditingKmId(asset.id); setTempKm(asset.mileage?.toString() || '0'); }}
-                                       className="cursor-pointer hover:text-[#5d3cfe] transition-colors flex items-center justify-center gap-1"
-                                     >
-                                        {asset.mileage?.toLocaleString()} Km
-                                        <Pencil className="w-2.5 h-2.5 opacity-0 group-hover/km:opacity-100" />
+             <div className="bg-[#1f1f24] rounded-[1.5rem] border border-[#474556]/30 overflow-hidden shadow-2xl animate-fade-in flex flex-col">
+                <div className="overflow-x-auto custom-scrollbar">
+                   <table className="w-full text-left border-collapse min-w-[900px]">
+                      <thead>
+                         <tr className="bg-[#14151a] border-b border-[#474556]/30 text-[9px] font-black text-[#c8c4d9] uppercase tracking-wider">
+                            <th className="p-4 w-12 text-center">
+                               <input
+                                  type="checkbox"
+                                  checked={selectedIds.length > 0 && selectedIds.length === filteredAssets.length}
+                                  onChange={(e) => setSelectedIds(e.target.checked ? filteredAssets.map(a => a.id) : [])}
+                                  className="rounded border-[#474556]/50 bg-[#0d0e12] text-[#5d3cfe] focus:ring-0 cursor-pointer"
+                               />
+                            </th>
+                            <th
+                               onClick={() => {
+                                  if (sortBy === 'name') setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+                                  else { setSortBy('name'); setSortDir('asc'); }
+                               }}
+                               className="p-4 cursor-pointer hover:text-white transition-colors"
+                            >
+                               <div className="flex items-center gap-1.5">
+                                  <span>Unidad / Modelo</span>
+                                  {sortBy === 'name' && <ArrowUpDown className="w-3 h-3 text-[#5d3cfe]" />}
+                               </div>
+                            </th>
+                            <th className="p-4 text-center">Conductor</th>
+                            <th
+                               onClick={() => {
+                                  if (sortBy === 'plate') setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+                                  else { setSortBy('plate'); setSortDir('asc'); }
+                               }}
+                               className="p-4 text-center cursor-pointer hover:text-white transition-colors"
+                            >
+                               <div className="flex items-center justify-center gap-1.5">
+                                  <span>Placa</span>
+                                  {sortBy === 'plate' && <ArrowUpDown className="w-3 h-3 text-[#5d3cfe]" />}
+                               </div>
+                            </th>
+                            <th
+                               onClick={() => {
+                                  if (sortBy === 'mileage') setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+                                  else { setSortBy('mileage'); setSortDir('asc'); }
+                               }}
+                               className="p-4 text-center cursor-pointer hover:text-white transition-colors"
+                            >
+                               <div className="flex items-center justify-center gap-1.5">
+                                  <span>Odómetro (Km)</span>
+                                  {sortBy === 'mileage' && <ArrowUpDown className="w-3 h-3 text-[#5d3cfe]" />}
+                               </div>
+                            </th>
+                            <th
+                               onClick={() => {
+                                  if (sortBy === 'rol') setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+                                  else { setSortBy('rol'); setSortDir('asc'); }
+                               }}
+                               className="p-4 text-center cursor-pointer hover:text-white transition-colors"
+                            >
+                               <div className="flex items-center justify-center gap-1.5">
+                                  <span>Sensor ROL (%)</span>
+                                  {sortBy === 'rol' && <ArrowUpDown className="w-3 h-3 text-[#5d3cfe]" />}
+                               </div>
+                            </th>
+                            <th className="p-4 text-center">Próximo Mtto</th>
+                            <th className="p-4 text-center">Estado</th>
+                            <th className="p-4 text-right pr-6">Acciones</th>
+                         </tr>
+                      </thead>
+                      <tbody className="text-[11px] font-bold text-white divide-y divide-white/5">
+                         {paginatedAssets.length === 0 ? (
+                            <tr>
+                               <td colSpan={9} className="p-12 text-center">
+                                  <div className="flex flex-col items-center justify-center gap-3">
+                                     <div className="p-4 rounded-2xl bg-white/5 text-white/40">
+                                        <Search className="w-8 h-8" />
                                      </div>
-                                  )}
-                               </td>
-                               <td className="p-4 text-center">
-                                  <div className="flex flex-col items-center gap-1">
-                                     <div className="flex items-center gap-2">
-                                        <span className={`text-xs font-black ${rol < 20 ? 'text-rose-500' : rol < 50 ? 'text-amber-500' : 'text-[#52ffac]'}`}>{rol}%</span>
-                                        <Activity className={`w-3 h-3 ${rol < 20 ? 'text-rose-500 animate-pulse' : 'text-[#474556]'}`} />
-                                     </div>
-                                     <div className="w-16 bg-[#0d0e12] h-1 rounded-full overflow-hidden border border-white/5">
-                                        <div
-                                          className={`h-full transition-all duration-1000 ${rol < 20 ? 'bg-rose-500' : rol < 50 ? 'bg-amber-500' : 'bg-[#52ffac]'}`}
-                                          style={{ width: `${rol}%` }}
-                                        ></div>
-                                     </div>
-                                  </div>
-                               </td>
-                               <td className="p-4 text-center font-black text-[#c7bfff]">{nextKm.toLocaleString()} Km</td>
-                               <td className="p-4"><span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase ${isCritical ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'}`}>{isCritical ? 'URGENTE' : 'ÓPTIMO'}</span></td>
-                               <td className="p-4 text-right">
-                                  <div className="flex gap-2 justify-end items-center">
-                                     {trackingAssetId === asset.id && (
-                                       <>
-                                         <button onClick={() => handleAddCheckpoint(asset)} className="p-2 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-lg" title="Marcar Parada"><Flag className="w-4 h-4" /></button>
-                                         <button onClick={onTogglePause} className={`p-2 rounded-lg ${tripStatus === 'paused' ? 'bg-amber-500 text-black' : 'bg-amber-500/10 text-amber-500'}`}>{tripStatus === 'paused' ? <Zap className="w-4 h-4 fill-current" /> : <Clock className="w-4 h-4" />}</button>
-                                       </>
-                                     )}
+                                     <p className="text-sm font-black uppercase text-white/80">No se encontraron unidades</p>
+                                     <p className="text-xs text-white/40 max-w-sm">No existen vehículos que coincidan con los criterios de búsqueda o filtros seleccionados.</p>
                                      <button
-                                       onClick={() => openModal('engineeringReport', { asset })}
-                                       className="p-2 bg-white/5 text-[#5d3cfe] border border-[#5d3cfe]/20 hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"
-                                       title="Reporte NASA MDM-V4"
+                                        onClick={() => {
+                                           setSearchTerm('');
+                                           setStatusFilter('all');
+                                           setLocationFilter('Todas');
+                                           setCurrentPage(1);
+                                        }}
+                                        className="mt-2 px-4 py-2 bg-[#5d3cfe] hover:bg-[#4c2fd6] text-white rounded-xl text-[9px] font-black uppercase transition-all shadow-md shadow-[#5d3cfe]/20"
                                      >
-                                        <Cpu className="w-4 h-4" />
+                                        Restablecer Filtros
                                      </button>
-                                     <button onClick={() => { setHistoryAssetId(asset.id); setViewMode('history'); }} className="p-2 bg-[#1a1b20] text-[#c7bfff] hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"><FileText className="w-4 h-4" /></button>
-                                     <button
-                                       onMouseDown={() => startRecording(asset.id)}
-                                       onMouseUp={() => stopRecording(asset.id)}
-                                       onMouseLeave={() => stopRecording(asset.id)}
-                                       className={`p-2 rounded-xl transition-all relative ${transmittingId === asset.id ? 'bg-[#5d3cfe] text-white scale-110 shadow-[0_0_20px_#5d3cfe]' : 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20'}`}
-                                       title="Walkie-Talkie (Push-to-Talk)"
-                                     >
-                                        {transmittingId === asset.id ? <Volume2 className="w-4 h-4 animate-bounce" /> : <Radio className="w-4 h-4" />}
-                                        {transmittingId === asset.id && (
-                                          <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"></div>
-                                        )}
-                                     </button>
-                                     <button onClick={() => onStartGps?.(asset.id)} className={`p-2 rounded-lg transition-all ${trackingAssetId === asset.id ? 'bg-rose-500 text-white animate-pulse' : 'bg-[#1a1b20] text-[#52ffac] hover:bg-[#52ffac] hover:text-black'}`}><MapPin className="w-4 h-4" /></button>
                                   </div>
                                </td>
                             </tr>
-                         );
-                      })}
-                   </tbody>
-                </table>
-                <div className="bg-[#1a1b20] p-4 flex items-center justify-between border-t border-[#474556]/30 md:pr-20">
-                   <p className="text-[9px] font-black text-[#474556] uppercase hidden sm:block">Mostrando {paginatedAssets.length} unidades</p>
-                   <div className="flex gap-2 w-full sm:w-auto justify-between sm:justify-end">
-                      <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-2 bg-[#121317] border border-[#474556]/30 rounded-lg text-[#c8c4d9]"><ChevronLeft className="w-4 h-4" /></button>
-                      <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-2 bg-[#121317] border border-[#474556]/30 rounded-lg text-[#c8c4d9]"><ChevronRight className="w-4 h-4" /></button>
+                         ) : (
+                            paginatedAssets.map((asset) => {
+                               const nextKm = (asset.mileage || 0) + 5000;
+                               const isUrgent = reminders.some(r => r.assetId === asset.id && r.status === 'urgent');
+                               const rol = getAssetRol(asset);
+                               const isCritical = isUrgent || rol < 30;
+                               const isTracking = trackingAssetId === asset.id;
+
+                               return (
+                                  <tr key={asset.id} className="hover:bg-white/[0.03] transition-colors group">
+                                     <td className="p-4 text-center">
+                                        <input
+                                           type="checkbox"
+                                           checked={selectedIds.includes(asset.id)}
+                                           onChange={(e) => {
+                                              if (e.target.checked) setSelectedIds([...selectedIds, asset.id]);
+                                              else setSelectedIds(selectedIds.filter(id => id !== asset.id));
+                                           }}
+                                           className="rounded border-[#474556]/50 bg-[#0d0e12] text-[#5d3cfe] focus:ring-0 cursor-pointer"
+                                        />
+                                     </td>
+                                     <td className="p-4">
+                                        <div className="flex items-center gap-3">
+                                           <div className={`p-2.5 rounded-xl border ${isCritical ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' : 'bg-[#121317] border-white/10 text-[#c7bfff]'}`}>
+                                              <Car className="w-4 h-4" />
+                                           </div>
+                                           <div>
+                                              <p className="font-black uppercase tracking-tight text-white">{asset.name}</p>
+                                              <p className="text-[9px] text-[#c8c4d9]/50 uppercase">{asset.details || 'Vehículo de Flota'}</p>
+                                           </div>
+                                        </div>
+                                     </td>
+                                     <td className="p-4 text-center">
+                                        <div className="flex flex-col items-center">
+                                           <span className="text-[10px] font-black text-white uppercase tracking-tight">{asset.driverName || 'Sin Conductor'}</span>
+                                           <p className="text-[7px] text-[#52ffac] font-bold uppercase tracking-widest">{asset.location || 'Sede Principal'}</p>
+                                        </div>
+                                     </td>
+                                     <td className="p-4 text-center font-mono font-bold tracking-wider text-[#52ffac]">
+                                        <span className="bg-black/40 px-2 py-0.5 rounded border border-[#52ffac]/20">
+                                           {asset.licensePlate || '---'}
+                                        </span>
+                                     </td>
+                                     <td className="p-4 text-center font-black relative group/km">
+                                        {editingKmId === asset.id ? (
+                                           <input
+                                              autoFocus
+                                              type="number"
+                                              className="w-24 bg-[#0d0e12] border-2 border-[#5d3cfe] rounded-lg px-2 py-1 text-center text-white font-mono text-xs outline-none"
+                                              value={tempKm}
+                                              onChange={(e) => setTempKm(e.target.value)}
+                                              onBlur={() => handleManualKmSave(asset.id)}
+                                              onKeyDown={(e) => e.key === 'Enter' && handleManualKmSave(asset.id)}
+                                           />
+                                        ) : (
+                                           <div
+                                              onClick={() => { setEditingKmId(asset.id); setTempKm(asset.mileage?.toString() || '0'); }}
+                                              className="cursor-pointer hover:text-[#5d3cfe] transition-colors flex items-center justify-center gap-1.5"
+                                              title="Clic para editar odómetro"
+                                           >
+                                              <span>{asset.mileage?.toLocaleString() || 0} Km</span>
+                                              <Pencil className="w-3 h-3 opacity-0 group-hover/km:opacity-80 text-[#5d3cfe]" />
+                                           </div>
+                                        )}
+                                     </td>
+                                     <td className="p-4 text-center">
+                                        <div className="flex flex-col items-center gap-1.5">
+                                           <div className="flex items-center gap-1.5">
+                                              <span className={`text-xs font-mono font-black ${rol < 30 ? 'text-rose-500' : rol < 60 ? 'text-amber-500' : 'text-[#52ffac]'}`}>
+                                                 {rol}%
+                                              </span>
+                                              <Activity className={`w-3 h-3 ${rol < 30 ? 'text-rose-500 animate-pulse' : 'text-[#474556]'}`} />
+                                           </div>
+                                           <div className="w-16 bg-[#0d0e12] h-1.5 rounded-full overflow-hidden border border-white/10">
+                                              <div
+                                                 className={`h-full transition-all duration-700 ${rol < 30 ? 'bg-rose-500' : rol < 60 ? 'bg-amber-500' : 'bg-[#52ffac]'}`}
+                                                 style={{ width: `${rol}%` }}
+                                              />
+                                           </div>
+                                        </div>
+                                     </td>
+                                     <td className="p-4 text-center font-mono font-black text-[#c7bfff]">{nextKm.toLocaleString()} Km</td>
+                                     <td className="p-4 text-center">
+                                        <span className={`px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase border ${
+                                           isCritical
+                                              ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                                              : 'bg-[#52ffac]/10 text-[#52ffac] border-[#52ffac]/30'
+                                        }`}>
+                                           {isCritical ? 'CRÍTICO' : 'ÓPTIMO'}
+                                        </span>
+                                     </td>
+                                     <td className="p-4 text-right pr-6">
+                                        <div className="flex gap-1.5 justify-end items-center">
+                                           <button
+                                              onClick={() => openModal('engineeringReport', { asset })}
+                                              className="p-2 bg-white/5 text-[#5d3cfe] border border-[#5d3cfe]/20 hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"
+                                              title="Reporte NASA MDM-V4"
+                                           >
+                                              <Cpu className="w-3.5 h-3.5" />
+                                           </button>
+                                           <button
+                                              onClick={() => { setHistoryAssetId(asset.id); setViewMode('history'); }}
+                                              className="p-2 bg-[#121317] text-[#c7bfff] hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all border border-white/5"
+                                              title="Timeline e Historial de Ruta"
+                                           >
+                                              <FileText className="w-3.5 h-3.5" />
+                                           </button>
+                                           <button
+                                              onMouseDown={() => startRecording(asset.id)}
+                                              onMouseUp={() => stopRecording(asset.id)}
+                                              onMouseLeave={() => stopRecording(asset.id)}
+                                              className={`p-2 rounded-xl transition-all relative ${transmittingId === asset.id ? 'bg-[#5d3cfe] text-white scale-110 shadow-lg shadow-[#5d3cfe]/30' : 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 border border-indigo-500/20'}`}
+                                              title="Walkie-Talkie Push-to-Talk"
+                                           >
+                                              {transmittingId === asset.id ? <Volume2 className="w-3.5 h-3.5 animate-bounce" /> : <Radio className="w-3.5 h-3.5" />}
+                                              {transmittingId === asset.id && (
+                                                 <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping" />
+                                              )}
+                                           </button>
+                                           <button
+                                              onClick={() => onStartGps?.(asset.id)}
+                                              className={`p-2 rounded-xl transition-all border ${isTracking ? 'bg-rose-500 border-rose-500 text-white animate-pulse' : 'bg-[#121317] border-white/5 text-[#52ffac] hover:bg-[#52ffac] hover:text-black'}`}
+                                              title={isTracking ? 'Detener GPS' : 'Iniciar GPS en Vivo'}
+                                           >
+                                              <MapPin className="w-3.5 h-3.5" />
+                                           </button>
+                                           <button
+                                              onClick={() => onManageAsset?.(asset)}
+                                              className="p-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-xl transition-all border border-white/5"
+                                              title="Gestionar Unidad"
+                                           >
+                                              <ChevronRight className="w-3.5 h-3.5" />
+                                           </button>
+                                        </div>
+                                     </td>
+                                  </tr>
+                               );
+                            })
+                         )}
+                      </tbody>
+                   </table>
+                </div>
+
+                {/* Table Pagination Bar */}
+                <div className="bg-[#14151a] p-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#474556]/30">
+                   <p className="text-[10px] font-black text-white/50 uppercase tracking-widest">
+                      Mostrando {paginatedAssets.length} de {filteredAssets.length} unidades (Pág. {currentPage} de {totalPages})
+                   </p>
+                   <div className="flex items-center gap-2">
+                      <button
+                         disabled={currentPage === 1}
+                         onClick={() => { setCurrentPage(p => p - 1); }}
+                         className="p-2 bg-[#121317] border border-[#474556]/40 rounded-xl text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                         title="Página Anterior"
+                      >
+                         <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <span className="text-[10px] font-mono font-black text-white px-3 py-1.5 bg-[#121317] rounded-xl border border-[#474556]/30">
+                         {currentPage} / {totalPages}
+                      </span>
+                      <button
+                         disabled={currentPage === totalPages}
+                         onClick={() => { setCurrentPage(p => p + 1); }}
+                         className="p-2 bg-[#121317] border border-[#474556]/40 rounded-xl text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                         title="Página Siguiente"
+                      >
+                         <ChevronRight className="w-4 h-4" />
+                      </button>
                    </div>
                 </div>
              </div>
           )}
 
+          {/* View Mode Logic: Enterprise Grid View */}
           {viewMode === 'grid' && (
-            <div className="space-y-8 animate-fade-in">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {paginatedAssets.map((asset) => {
-                  const isUrgent = reminders.some(r => r.assetId === asset.id && r.status === 'urgent');
+            <div className="space-y-6 animate-fade-in">
+              {paginatedAssets.length === 0 ? (
+                <div className="bg-[#1f1f24] rounded-[1.5rem] border border-[#474556]/30 p-12 text-center">
+                   <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="p-4 rounded-2xl bg-white/5 text-white/40">
+                         <Search className="w-8 h-8" />
+                      </div>
+                      <p className="text-sm font-black uppercase text-white/80">No se encontraron unidades</p>
+                      <p className="text-xs text-white/40 max-w-sm">No existen vehículos que coincidan con los criterios de búsqueda o filtros seleccionados.</p>
+                      <button
+                         onClick={() => {
+                            setSearchTerm('');
+                            setStatusFilter('all');
+                            setLocationFilter('Todas');
+                            setCurrentPage(1);
+                         }}
+                         className="mt-2 px-4 py-2 bg-[#5d3cfe] hover:bg-[#4c2fd6] text-white rounded-xl text-[9px] font-black uppercase transition-all shadow-md shadow-[#5d3cfe]/20"
+                      >
+                         Restablecer Filtros
+                      </button>
+                   </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {paginatedAssets.map((asset) => {
+                    const isUrgent = reminders.some(r => r.assetId === asset.id && r.status === 'urgent');
+                    const rol = getAssetRol(asset);
+                    const isCritical = isUrgent || rol < 30;
+                    const isTracking = trackingAssetId === asset.id;
 
-                  // Sensor Virtual MDM-V4 logic
-                  const currentKm = asset.mileage || 0;
-                  const lastServiceKm = currentKm - (currentKm % 5000);
-                  const kmSinceService = currentKm - lastServiceKm;
-                  const baseRol = Math.max(0, 100 - (kmSinceService / 5000) * 100);
-                  const rol = Math.max(0, Math.min(100, Math.round(baseRol))); // Desgaste operativo real basado en odómetro
+                    return (
+                      <div
+                        key={asset.id}
+                        className={`bg-[#1f1f24] rounded-2xl border transition-all p-5 hover:shadow-2xl group relative overflow-hidden flex flex-col justify-between ${
+                          isCritical
+                            ? 'border-rose-500/50 bg-rose-500/5'
+                            : 'border-[#474556]/30 hover:border-white/20'
+                        }`}
+                      >
+                        <div>
+                           {/* Card Top: Avatar and Status Badge */}
+                           <div className="flex justify-between items-start mb-4">
+                             <div className={`p-2.5 rounded-xl border ${isCritical ? 'bg-rose-500/20 text-rose-500 border-rose-500/30' : 'bg-[#5d3cfe]/20 text-[#c7bfff] border-[#5d3cfe]/30'}`}>
+                               <Car className="w-5 h-5" />
+                             </div>
+                             <div className="flex flex-col items-end gap-1">
+                               <span className={`text-[8px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                                 isCritical
+                                   ? 'bg-rose-500/10 text-rose-500 border-rose-500/30'
+                                   : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/30'
+                               }`}>
+                                 {isCritical ? 'URGENTE' : 'ÓPTIMO'}
+                               </span>
+                               {asset.currentRoute && isTracking && (
+                                  <div className="px-2 py-0.5 bg-[#52ffac] text-[#0d0e12] rounded-md text-[7px] font-black uppercase flex items-center gap-1 animate-pulse shadow-md">
+                                     <Navigation className="w-2 h-2 fill-current" /> {asset.currentRoute}
+                                  </div>
+                               )}
+                             </div>
+                           </div>
 
-                  return (
-                    <div key={asset.id} className={`bg-[#1f1f24] rounded-2xl border transition-all p-5 hover:shadow-xl group relative overflow-hidden ${isUrgent ? 'border-rose-500/50 bg-rose-500/5' : 'border-[#474556]/30'}`}>
-                      <div className="flex justify-between items-start mb-4">
-                        <div className={`p-2 rounded-xl ${isUrgent ? 'bg-rose-500/20 text-rose-500' : 'bg-[#5d3cfe]/20 text-[#c7bfff]'}`}>{asset.type === 'car' ? <Car className="w-5 h-5" /> : <Wind className="w-5 h-5" />}</div>
-                        <div className="flex flex-col items-end gap-1">
-                          <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full border ${isUrgent ? 'bg-rose-500/10 text-rose-500 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/30'}`}>{isUrgent ? 'URGENTE' : 'ÓPTIMO'}</span>
-                          {asset.currentRoute && trackingAssetId === asset.id && (
-                             <div className="px-2 py-0.5 bg-[#52ffac] text-[#0d0e12] rounded-md text-[7px] font-black uppercase flex items-center gap-1 animate-pulse shadow-lg"><Navigation className="w-2 h-2 fill-current" /> {asset.currentRoute}</div>
-                          )}
+                           <div className="flex justify-between items-start">
+                             <div>
+                               <h4 className="font-black text-white text-base tracking-tight uppercase">{asset.name}</h4>
+                               <p className="text-[10px] text-[#c8c4d9]/60 uppercase mt-0.5">{asset.details || 'Vehículo de Flota'}</p>
+                             </div>
+                             <span className="font-mono text-[9px] font-bold text-[#52ffac] bg-black/50 px-2 py-0.5 rounded border border-[#52ffac]/20">
+                               {asset.licensePlate || '---'}
+                             </span>
+                           </div>
+
+                           <div className="flex items-center gap-1.5 px-2.5 py-1 bg-black/30 rounded-lg border border-white/5 my-3 w-fit">
+                             <UserIcon className="w-3 h-3 text-[#5d3cfe]" />
+                             <span className="text-[9px] font-black text-[#c8c4d9] uppercase">{asset.driverName || 'Sin Conductor'}</span>
+                             <span className="text-white/20">·</span>
+                             <span className="text-[8px] text-[#52ffac] font-bold uppercase">{asset.location || 'Sede Principal'}</span>
+                           </div>
+
+                           {/* Sensor Virtual ROL Progress Bar */}
+                           <div className="mb-4 p-3 bg-black/40 rounded-xl border border-white/5 space-y-2">
+                              <div className="flex justify-between items-center">
+                                 <span className="text-[8px] font-black text-[#c8c4d9]/50 uppercase tracking-wider flex items-center gap-1">
+                                    <Cpu className="w-3 h-3 text-[#5d3cfe]" /> Sensor Virtual (ROL)
+                                 </span>
+                                 <span className={`text-[10px] font-mono font-black ${rol < 30 ? 'text-rose-500' : rol < 60 ? 'text-amber-500' : 'text-[#52ffac]'}`}>
+                                    {rol}%
+                                 </span>
+                              </div>
+                              <div className="w-full bg-[#1a1b20] h-1.5 rounded-full overflow-hidden border border-white/5">
+                                 <div
+                                    className={`h-full transition-all duration-700 ${rol < 30 ? 'bg-rose-500' : rol < 60 ? 'bg-amber-500' : 'bg-[#52ffac]'}`}
+                                    style={{ width: `${rol}%` }}
+                                 />
+                              </div>
+                           </div>
+
+                           {/* Mileage stats */}
+                           <div className="grid grid-cols-2 gap-3 border-t border-[#474556]/20 pt-3">
+                              <div>
+                                 <p className="text-[8px] font-black text-[#c8c4d9]/40 uppercase tracking-widest">Odómetro</p>
+                                 <p className="text-xs font-mono font-black text-white">{asset.mileage?.toLocaleString() || 0} Km</p>
+                              </div>
+                              <div>
+                                 <p className="text-[8px] font-black text-[#c8c4d9]/40 uppercase tracking-widest">Próximo Mtto</p>
+                                 <p className="text-xs font-mono font-black text-[#5d3cfe]">{( (asset.mileage || 0) + 5000 ).toLocaleString()} Km</p>
+                              </div>
+                           </div>
+                        </div>
+
+                        {/* Card Action Buttons */}
+                        <div className="flex gap-1.5 mt-4 pt-3 border-t border-[#474556]/20">
+                           <button
+                             onClick={() => onStartGps?.(asset.id)}
+                             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all border ${
+                               isTracking
+                                 ? 'bg-rose-500 border-rose-500 text-white animate-pulse'
+                                 : 'bg-[#121317] border-[#474556]/40 text-[#52ffac] hover:bg-[#52ffac] hover:text-black'
+                             }`}
+                           >
+                             <MapPin className="w-3.5 h-3.5" />
+                             {isTracking ? 'Finalizar' : 'Iniciar'}
+                           </button>
+                           <button
+                             onClick={() => openModal('engineeringReport', { asset })}
+                             className="p-2.5 bg-white/5 border border-[#5d3cfe]/20 text-[#5d3cfe] hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"
+                             title="Reporte NASA MDM-V4"
+                           >
+                              <Cpu className="w-3.5 h-3.5" />
+                           </button>
+                           <button
+                             onClick={() => { setHistoryAssetId(asset.id); setViewMode('history'); }}
+                             className="p-2.5 bg-[#121317] border border-[#474556]/40 text-[#c7bfff] hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"
+                             title="Historial de Ruta"
+                           >
+                              <FileText className="w-3.5 h-3.5" />
+                           </button>
+                           <button
+                             onMouseDown={() => startRecording(asset.id)}
+                             onMouseUp={() => stopRecording(asset.id)}
+                             onMouseLeave={() => stopRecording(asset.id)}
+                             className={`p-2.5 rounded-xl transition-all relative border ${
+                               transmittingId === asset.id
+                                 ? 'bg-[#5d3cfe] border-[#5d3cfe] text-white scale-105 shadow-lg shadow-[#5d3cfe]/30'
+                                 : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400 hover:bg-indigo-600 hover:text-white'
+                             }`}
+                             title="Radio PTT"
+                           >
+                              {transmittingId === asset.id ? <Volume2 className="w-3.5 h-3.5 animate-bounce" /> : <Mic className="w-3.5 h-3.5" />}
+                              {transmittingId === asset.id && (
+                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping" />
+                              )}
+                           </button>
+                           <button
+                             onClick={() => onManageAsset?.(asset)}
+                             className="p-2.5 bg-[#121317] border border-[#474556]/40 text-white hover:bg-white/10 rounded-xl transition-all"
+                             title="Administrar Unidad"
+                           >
+                              <ChevronRight className="w-3.5 h-3.5" />
+                           </button>
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+              )}
 
-                      <h4 className="font-black text-white text-sm tracking-tight uppercase">{asset.name}</h4>
-                      <div className="flex justify-between items-center mb-4">
-                         <p className="text-[10px] text-[#c8c4d9] opacity-60 uppercase">{asset.details}</p>
-                         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-black/30 rounded-md border border-white/5">
-                            <UserIcon className="w-2.5 h-2.5 text-[#5d3cfe]" />
-                            <span className="text-[8px] font-black text-[#c8c4d9] uppercase">{asset.driverName || 'Sin Conductor'}</span>
-                         </div>
-                      </div>
-
-                      {/* MDM Health Progress Bar */}
-                      <div className="mb-4 p-3 bg-black/40 rounded-xl border border-white/5 space-y-2">
-                         <div className="flex justify-between items-center">
-                            <span className="text-[7px] font-black text-[#474556] uppercase tracking-widest flex items-center gap-1">
-                               <Cpu className="w-2.5 h-2.5" /> Sensor Virtual (ROL)
-                            </span>
-                            <span className={`text-[9px] font-black ${rol < 20 ? 'text-rose-500' : 'text-[#52ffac]'}`}>{rol}%</span>
-                         </div>
-                         <div className="w-full bg-[#1a1b20] h-1.5 rounded-full overflow-hidden border border-white/5">
-                            <div
-                               className={`h-full transition-all duration-1000 ${rol < 20 ? 'bg-rose-500' : rol < 50 ? 'bg-amber-500' : 'bg-[#52ffac]'}`}
-                               style={{ width: `${rol}%` }}
-                            ></div>
-                         </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 border-t border-[#474556]/20 pt-4">
-                         <div><p className="text-[8px] font-black text-[#474556] uppercase">Km Actual</p><p className="text-xs font-black text-white">{asset.mileage?.toLocaleString()} Km</p></div>
-                         <div><p className="text-[8px] font-black text-[#474556] uppercase">Próximo</p><p className="text-xs font-black text-[#5d3cfe]">{( (asset.mileage || 0) + 5000 ).toLocaleString()} Km</p></div>
-                      </div>
-                      <div className="flex gap-2 mt-4">
-                         <button onClick={() => onStartGps?.(asset.id)} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[9px] font-black uppercase transition-all border ${trackingAssetId === asset.id ? 'bg-rose-500 border-rose-500 text-white animate-pulse' : 'bg-[#1a1b20] border-[#474556]/30 text-[#52ffac] hover:bg-[#52ffac] hover:text-black'}`}><MapPin className="w-3.5 h-3.5" /> {trackingAssetId === asset.id ? 'Finalizar' : 'Iniciar'}</button>
-                         <button
-                           onClick={() => openModal('engineeringReport', { asset })}
-                           className="p-3 bg-white/5 border border-[#5d3cfe]/20 text-[#5d3cfe] hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"
-                           title="Reporte NASA MDM-V4"
-                         >
-                            <Cpu className="w-4 h-4" />
-                         </button>
-                         <button onClick={() => { setHistoryAssetId(asset.id); setViewMode('history'); }} className="p-3 bg-[#1a1b20] border border-[#474556]/30 text-[#c7bfff] hover:bg-[#5d3cfe] hover:text-white rounded-xl transition-all"><FileText className="w-4 h-4" /></button>
-                         <button
-                           onMouseDown={() => startRecording(asset.id)}
-                           onMouseUp={() => stopRecording(asset.id)}
-                           onMouseLeave={() => stopRecording(asset.id)}
-                           className={`p-3 rounded-xl transition-all relative ${transmittingId === asset.id ? 'bg-[#5d3cfe] text-white scale-110 shadow-[0_0_30px_#5d3cfe]' : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-600 hover:text-white'}`}
-                           title="Radio PTT"
-                         >
-                            {transmittingId === asset.id ? <Volume2 className="w-4 h-4 animate-bounce" /> : <Mic className="w-4 h-4" />}
-                            {transmittingId === asset.id && (
-                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
-                            )}
-                         </button>
-                         <button onClick={() => onManageAsset?.(asset)} className="p-3 bg-[#1a1b20] border border-[#474556]/30 text-white hover:bg-white/10 rounded-xl transition-all"><ChevronRight className="w-4 h-4" /></button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              {/* Paginación para Modo Grid (Protección contra overlap de Chatbot) */}
-              <div className="bg-[#1a1b20] p-4 rounded-2xl flex items-center justify-between border border-[#474556]/30 shadow-lg md:pr-20">
-                 <p className="text-[10px] font-black text-[#474556] uppercase tracking-widest hidden sm:block">Mostrando {paginatedAssets.length} de {filteredAssets.length} unidades</p>
-                 <div className="flex gap-3 w-full sm:w-auto justify-between sm:justify-end">
+              {/* Grid Pagination Bar */}
+              <div className="bg-[#1f1f24] p-4 rounded-2xl flex items-center justify-between border border-[#474556]/30 shadow-xl">
+                 <p className="text-[10px] font-black text-white/50 uppercase tracking-widest hidden sm:block">
+                    Mostrando {paginatedAssets.length} de {filteredAssets.length} unidades
+                 </p>
+                 <div className="flex gap-2 w-full sm:w-auto justify-between sm:justify-end">
                     <button
                       disabled={currentPage === 1}
                       onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                      className="p-3 bg-[#121317] border border-[#474556]/30 rounded-xl text-[#c8c4d9] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      className="p-2.5 bg-[#121317] border border-[#474556]/40 rounded-xl text-[#c8c4d9] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Página Anterior"
                     >
-                      <ChevronLeft className="w-5 h-5" />
+                      <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <div className="flex items-center px-4 bg-[#121317] border border-[#474556]/30 rounded-xl text-[10px] font-black text-white">
+                    <div className="flex items-center px-4 bg-[#121317] border border-[#474556]/40 rounded-xl text-[10px] font-mono font-black text-white">
                       PÁGINA {currentPage} / {totalPages}
                     </div>
                     <button
                       disabled={currentPage === totalPages}
                       onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                      className="p-3 bg-[#121317] border border-[#474556]/30 rounded-xl text-[#c8c4d9] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      className="p-2.5 bg-[#121317] border border-[#474556]/40 rounded-xl text-[#c8c4d9] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Página Siguiente"
                     >
-                      <ChevronRight className="w-5 h-5" />
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                  </div>
               </div>
@@ -1652,12 +2322,15 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                        <Settings className="w-4 h-4" />
                        <span className="text-[8px] font-black uppercase tracking-widest">Editar Precios</span>
                     </button>
-                    <button onClick={() => toast.success("Exportando reporte de costos...")} className="p-3 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-white/10 transition-all"><FileText className="w-5 h-5" /></button>
+                    <button onClick={handleExportFuelReport} className="p-3 bg-white/5 border border-white/10 rounded-xl text-[#52ffac] hover:bg-[#52ffac]/10 hover:border-[#52ffac]/30 transition-all flex items-center gap-1.5" title="Exportar Reporte Completo a Excel">
+                       <FileText className="w-5 h-5" />
+                       <span className="text-[8px] font-black uppercase tracking-widest hidden sm:inline">Exportar Excel</span>
+                    </button>
                  </div>
               </header>
 
               <div className="space-y-4">
-                 {assets.slice(0, 10).map(asset => {
+                 {assets.map(asset => {
                     const gallons = (asset.mileage || 0) / 12;
                     const price = asset.fuelType === 'gas91' ? fuelPrices.gas91 : asset.fuelType === 'gas95' ? fuelPrices.gas95 : fuelPrices.diesel;
                     const cost = gallons * price;
@@ -1816,7 +2489,12 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
 
               <div className="bg-[#121317] rounded-3xl p-6 border border-[#474556]/30 shadow-inner space-y-4 text-center flex flex-col justify-center">
                  <p className="text-[10px] font-black text-white/50 uppercase tracking-widest">¿Necesita una integración a medida?</p>
-                 <button className="mt-4 px-6 py-2 bg-[#5d3cfe] text-white rounded-xl text-[9px] font-black uppercase hover:bg-[#4c2fd6] transition-all">Solicitar Token de Desarrollador</button>
+                 <button
+                    onClick={() => toast.success("Solicitud de API Token enviada. Un ingeniero de soporte se contactará en breve.")}
+                    className="mt-4 px-6 py-2 bg-[#5d3cfe] hover:bg-[#4c2fd6] text-white rounded-xl text-[9px] font-black uppercase transition-all shadow-md shadow-[#5d3cfe]/20 active:scale-95"
+                 >
+                    Solicitar Token de Desarrollador
+                 </button>
               </div>
            </div>
         </div>
@@ -1891,6 +2569,16 @@ function MapResizer() {
       clearTimeout(t3);
     };
   }, [map]);
+  return null;
+}
+
+function FlyToAsset({ coords }: { coords: [number, number] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (coords && coords[0] !== 0 && coords[1] !== 0) {
+      map.flyTo(coords, 15, { duration: 1.2 });
+    }
+  }, [coords, map]);
   return null;
 }
 
