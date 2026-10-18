@@ -815,24 +815,31 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
 
               {/* Sorter and View Modes */}
               <div className="flex items-center gap-2 self-end lg:self-auto">
-                <div className="flex items-center bg-[#121317] border border-[#474556]/40 rounded-xl px-2 py-1 gap-1">
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-white/40 ml-1" />
+                <div className="flex items-center bg-[#121317] border border-[#474556]/40 rounded-xl px-2.5 py-1 gap-1.5 shadow-sm" title="Ordenar lista de unidades">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-[#5d3cfe] shrink-0" />
+                  <span className="text-[8px] font-black text-white/40 uppercase hidden sm:inline tracking-wider">Ordenar:</span>
                   <select
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
-                    className="bg-transparent text-white text-[9px] font-black uppercase outline-none py-1 pr-1 cursor-pointer"
+                    onChange={(e) => {
+                      setSortBy(e.target.value as any);
+                      setCurrentPage(1);
+                    }}
+                    className="bg-transparent text-white text-[9px] font-black uppercase outline-none py-1 pr-1 cursor-pointer hover:text-[#52ffac] transition-colors"
                   >
-                    <option value="name" className="bg-[#121317]">Nombre</option>
-                    <option value="mileage" className="bg-[#121317]">Kilometraje</option>
-                    <option value="rol" className="bg-[#121317]">Sensor ROL</option>
-                    <option value="plate" className="bg-[#121317]">Placa</option>
+                    <option value="name" className="bg-[#121317] text-white">Nombre</option>
+                    <option value="mileage" className="bg-[#121317] text-white">Kilometraje</option>
+                    <option value="rol" className="bg-[#121317] text-white">Sensor ROL</option>
+                    <option value="plate" className="bg-[#121317] text-white">Placa</option>
                   </select>
                   <button
-                    onClick={() => setSortDir(sortDir === 'asc' ? 'desc' : 'asc')}
-                    className="p-1 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors"
-                    title={`Orden: ${sortDir === 'asc' ? 'Ascendente' : 'Descendente'}`}
+                    onClick={() => {
+                      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+                      setCurrentPage(1);
+                    }}
+                    className="p-1 hover:bg-white/10 rounded-lg transition-colors flex items-center justify-center"
+                    title={`Orden: ${sortDir === 'asc' ? 'Ascendente (A-Z, Menor a Mayor)' : 'Descendente (Z-A, Mayor a Menor)'}`}
                   >
-                    <ArrowUpDown className="w-3 h-3" />
+                    <ArrowUpDown className={`w-3.5 h-3.5 ${sortDir === 'desc' ? 'text-[#5d3cfe]' : 'text-[#52ffac]'}`} />
                   </button>
                 </div>
 
