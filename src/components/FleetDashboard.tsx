@@ -478,6 +478,62 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
     }
   };
 
+  const PANAMA_FREQUENT_DESTINATIONS = [
+    { name: 'Bodega Central Mantech', lat: 8.9833, lng: -79.5167 },
+    { name: 'Puerto Balboa', lat: 8.9567, lng: -79.5667 },
+    { name: 'Aeropuerto Tocumen (Carga)', lat: 9.0714, lng: -79.3834 },
+    { name: 'Panamá Pacífico', lat: 8.9416, lng: -79.5997 },
+    { name: 'Zona Libre de Colón', lat: 9.3547, lng: -79.8821 },
+    { name: 'Centro Logístico Milla 8', lat: 9.0621, lng: -79.5213 }
+  ];
+
+  const handleLoadDemoRoute = (asset: Asset) => {
+    const baseLat = asset.latitude || 8.9833;
+    const baseLng = asset.longitude || -79.5167;
+    const now = Date.now();
+
+    const demoPoints = [
+      {
+        lat: baseLat,
+        lng: baseLng,
+        timestamp: new Date(now - 7200000).toISOString(),
+        locationName: 'SALIDA DE BODEGA CENTRAL',
+        type: 'checkpoint' as const
+      },
+      {
+        lat: baseLat + 0.012,
+        lng: baseLng + 0.018,
+        timestamp: new Date(now - 3600000).toISOString(),
+        locationName: 'ENTREGA CLIENTE (VÍA ESPAÑA)',
+        type: 'checkpoint' as const
+      },
+      {
+        lat: baseLat + 0.024,
+        lng: baseLng + 0.035,
+        timestamp: new Date(now).toISOString(),
+        locationName: 'CENTRO LOGÍSTICO (COSTA DEL ESTE)',
+        type: 'checkpoint' as const
+      }
+    ];
+
+    onBulkUpdate?.([asset.id], { routeHistory: demoPoints });
+    toast.success("Ruta de prueba de 3 paradas generada exitosamente.", { icon: '🚛' });
+  };
+
+  const handleAddFrequentDestination = (asset: Asset, dest: { name: string, lat: number, lng: number }) => {
+    const newPoint = {
+      lat: dest.lat,
+      lng: dest.lng,
+      timestamp: new Date().toISOString(),
+      locationName: dest.name.toUpperCase(),
+      type: 'checkpoint' as const
+    };
+    onBulkUpdate?.([asset.id], {
+      routeHistory: [...(asset.routeHistory || []), newPoint]
+    });
+    toast.success(`Parada "${dest.name}" agregada a la ruta.`, { icon: '📍' });
+  };
+
   const handleClearPlannedRoute = () => {
     setPlannedRoute([]);
     setRouteSteps([]);
@@ -2067,16 +2123,19 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
 
                   {/* INDICADORES DE ESQUINA (LIMPIOS) */}
                   <div className="absolute top-4 left-4 flex flex-col gap-2 z-[400] pointer-events-none">
-                    <div className="bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-2xl flex items-center gap-2 w-fit">
+                    <div className="bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-2xl flex items-center gap-2 w-fit">
                        <div className="w-1.5 h-1.5 bg-[#52ffac] rounded-full animate-ping"></div>
                        <p className="text-[7px] font-black text-white/80 uppercase tracking-[0.2em]">Sat-Link v4</p>
                     </div>
-                    {isNight && (
-                      <div className="bg-[#5d3cfe]/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#5d3cfe]/30 flex items-center gap-2 shadow-2xl w-fit">
-                         <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
-                         <span className="text-[7px] font-black text-white uppercase tracking-widest italic">Vigilancia Real</span>
-                      </div>
-                    )}
+                  </div>
+
+                  {/* BANNER GUÍA: CÓMO TRAZAR RUTA EN EL MAPA */}
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[400] bg-[#121317]/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/15 shadow-2xl flex items-center gap-2.5 text-white pointer-events-auto">
+                    <span className="w-2 h-2 rounded-full bg-[#52ffac] animate-ping shrink-0" />
+                    <MapPin className="w-3.5 h-3.5 text-[#52ffac] shrink-0" />
+                    <span className="text-[9px] font-bold tracking-wide whitespace-nowrap">
+                      Haz clic en cualquier punto del mapa para fijar una parada
+                    </span>
                   </div>
                </div>
 
@@ -2105,7 +2164,17 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                            </div>
                         </div>
                      </div>
-                     <div className="flex items-center gap-3">
+                     <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            toast("Haz clic en el mapa de la izquierda para situar la parada.", { icon: '📍', duration: 4000 });
+                          }}
+                          className="p-2.5 bg-[#52ffac]/15 hover:bg-[#52ffac] text-[#52ffac] hover:text-black border border-[#52ffac]/30 rounded-xl transition-all shadow-lg flex items-center gap-1.5 active:scale-95"
+                          title="Añadir Parada en el Mapa"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span className="text-[9px] font-black uppercase">Nueva Parada</span>
+                        </button>
                         <button onClick={() => {
                            const history = assets.find(a => a.id === historyAssetId)?.routeHistory;
                            if (history && history.length > 0) {
@@ -2236,7 +2305,83 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                          );
                        })
                      )}
-                     {(!assets.find(a => a.id === historyAssetId)?.routeHistory || assets.find(a => a.id === historyAssetId)?.routeHistory?.length === 0) && (<div className="py-20 text-center opacity-20"><Navigation className="w-12 h-12 mx-auto mb-4" /><p className="text-[10px] font-black uppercase">Sin actividad detectada</p></div>)}
+                     {(() => {
+                        const currentAsset = assets.find(a => a.id === historyAssetId);
+                        const hasNoHistory = !currentAsset?.routeHistory || currentAsset.routeHistory.length === 0;
+                        if (!hasNoHistory) return null;
+
+                        return (
+                          <div className="py-6 px-2 text-center space-y-5 animate-enter">
+                            <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#5d3cfe]/20 to-[#52ffac]/20 border border-white/10 mx-auto flex items-center justify-center text-[#52ffac] shadow-xl">
+                              <MapPin className="w-8 h-8 animate-bounce" />
+                            </div>
+
+                            <div className="space-y-1">
+                              <h5 className="text-sm font-black text-white uppercase tracking-tight">Comienza a Trazar tu Ruta</h5>
+                              <p className="text-[11px] text-[#c8c4d9]/70 max-w-xs mx-auto leading-relaxed">
+                                Esta unidad no tiene paradas registradas hoy. Elige cómo deseas comenzar:
+                              </p>
+                            </div>
+
+                            {/* Guía interactiva de 3 pasos */}
+                            <div className="bg-[#121317] border border-white/10 rounded-2xl p-4 text-left space-y-2.5 shadow-inner">
+                              <div className="flex items-start gap-2.5">
+                                <span className="w-5 h-5 rounded-full bg-[#5d3cfe] text-white text-[9px] font-black flex items-center justify-center shrink-0 mt-0.5">1</span>
+                                <p className="text-[10px] text-white/80 leading-snug"><strong className="text-white">Haz clic en el mapa</strong> de la izquierda en cualquier punto para fijar una parada o cliente.</p>
+                              </div>
+                              <div className="flex items-start gap-2.5">
+                                <span className="w-5 h-5 rounded-full bg-[#52ffac] text-black text-[9px] font-black flex items-center justify-center shrink-0 mt-0.5">2</span>
+                                <p className="text-[10px] text-white/80 leading-snug"><strong className="text-white">Asigna el nombre</strong> (ej: Bodega Central, Cliente VIP, Taller).</p>
+                              </div>
+                              <div className="flex items-start gap-2.5">
+                                <span className="w-5 h-5 rounded-full bg-[#00d2ff] text-black text-[9px] font-black flex items-center justify-center shrink-0 mt-0.5">3</span>
+                                <p className="text-[10px] text-white/80 leading-snug"><strong className="text-white">Presiona Navegar</strong> para ver la ruta por calles, kilometraje y costo de combustible.</p>
+                              </div>
+                            </div>
+
+                            {/* Botones de Acción Inmediata */}
+                            <div className="space-y-2.5 pt-1">
+                              <button
+                                onClick={() => {
+                                  toast("Haz clic en cualquier punto del mapa para ubicar la parada.", { icon: '📍', duration: 4000 });
+                                }}
+                                className="w-full py-3 px-4 bg-[#52ffac] hover:bg-[#43e699] text-black rounded-xl font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#52ffac]/20 transition-all active:scale-95"
+                              >
+                                <MapPin className="w-4 h-4" /> Marcar Parada en el Mapa
+                              </button>
+
+                              {currentAsset && (
+                                <button
+                                  onClick={() => handleLoadDemoRoute(currentAsset)}
+                                  className="w-full py-2.5 px-4 bg-[#5d3cfe]/20 hover:bg-[#5d3cfe]/30 border border-[#5d3cfe]/40 text-white rounded-xl font-black text-[9px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95"
+                                >
+                                  <Zap className="w-3.5 h-3.5 text-[#52ffac]" /> Cargar Ruta Sugerida (3 Paradas)
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Destinos Clave de Panamá */}
+                            {currentAsset && (
+                              <div className="pt-3 border-t border-white/5 space-y-2 text-left">
+                                <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">O agregar destino frecuente con 1 clic:</p>
+                                <div className="grid grid-cols-2 gap-1.5">
+                                  {PANAMA_FREQUENT_DESTINATIONS.slice(0, 4).map(dest => (
+                                    <button
+                                      key={dest.name}
+                                      onClick={() => handleAddFrequentDestination(currentAsset, dest)}
+                                      className="py-1.5 px-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[8px] font-bold text-white/80 hover:text-white truncate text-left transition-all flex items-center gap-1.5"
+                                      title={dest.name}
+                                    >
+                                      <Plus className="w-3 h-3 text-[#52ffac] shrink-0" />
+                                      <span className="truncate">{dest.name}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                   </div>
                </div>
             </div>
