@@ -2078,40 +2078,39 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                         )}
 
                         {etaInfo && plannedRoute.length > 0 && (
-                          <div className="absolute top-6 right-6 bg-[#00d2ff] text-black p-5 rounded-[2rem] shadow-[0_20px_50px_rgba(0,210,255,0.4)] z-[500] animate-enter border-4 border-[#0d0e12] flex flex-col gap-3 min-w-[220px]">
-                             <div className="flex flex-col gap-0.5">
-                                <p className="text-[8px] font-black uppercase tracking-[0.2em] opacity-60">Logística de Arribo</p>
-                                <p className="text-2xl font-black uppercase tracking-tighter leading-none">Vía en curso</p>
+                          <div className="absolute top-4 right-4 bg-[#121317]/95 backdrop-blur-xl text-white p-3.5 rounded-2xl shadow-2xl z-[500] animate-enter border border-[#00d2ff]/40 flex flex-col gap-2.5 min-w-[190px] max-w-[230px]">
+                             <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                                <div className="flex items-center gap-1.5">
+                                   <div className="w-2 h-2 rounded-full bg-[#00d2ff] animate-ping" />
+                                   <span className="text-[10px] font-black uppercase text-white tracking-wider">Vía en curso</span>
+                                </div>
+                                <button
+                                   onClick={handleClearPlannedRoute}
+                                   className="p-1 text-white/50 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                   title="Cerrar y Limpiar Guía"
+                                >
+                                   <X className="w-3.5 h-3.5" />
+                                </button>
                              </div>
 
-                             <div className="space-y-2 py-3 border-y border-black/10">
-                                <div className="flex items-center justify-between gap-4">
-                                   <div className="flex items-center gap-2">
-                                      <Clock className="w-4 h-4 fill-current" />
-                                      <span className="text-[10px] font-black uppercase">Tiempo Total</span>
-                                   </div>
-                                   <span className="text-sm font-black italic">{etaInfo.duration}</span>
+                             <div className="space-y-1.5 text-[9px]">
+                                <div className="flex items-center justify-between text-white/70">
+                                   <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-[#00d2ff]" /> Tiempo:</span>
+                                   <span className="font-bold text-white">{etaInfo.duration}</span>
                                 </div>
-                                <div className="flex items-center justify-between gap-4">
-                                   <div className="flex items-center gap-2 opacity-70">
-                                      <Navigation className="w-4 h-4 fill-current" />
-                                      <span className="text-[10px] font-black uppercase tracking-tight">Recorrido vial</span>
-                                   </div>
-                                   <span className="text-sm font-black italic opacity-70">{etaInfo.distance}</span>
+                                <div className="flex items-center justify-between text-white/70">
+                                   <span className="flex items-center gap-1"><Navigation className="w-3 h-3 text-[#00d2ff]" /> Distancia:</span>
+                                   <span className="font-bold text-white">{etaInfo.distance}</span>
                                 </div>
-                             </div>
-
-                             <div className="flex items-center justify-between bg-black/10 p-3 rounded-xl">
-                                <div className="flex items-center gap-2 text-rose-600">
-                                   <Fuel className="w-4 h-4 fill-current" />
-                                   <span className="text-[10px] font-black uppercase">Presupuesto Gasolina</span>
+                                <div className="flex items-center justify-between text-white/70">
+                                   <span className="flex items-center gap-1"><Fuel className="w-3 h-3 text-rose-400" /> Combustible:</span>
+                                   <span className="font-bold text-rose-400 font-mono">${etaInfo.fuelCost}</span>
                                 </div>
-                                <span className="text-sm font-black text-rose-600">${etaInfo.fuelCost}</span>
                              </div>
 
                              <button
                                 onClick={handleClearPlannedRoute}
-                                className="w-full py-2 bg-black text-white rounded-xl text-[8px] font-black uppercase hover:bg-gray-900 transition-all mt-1"
+                                className="w-full py-1.5 bg-rose-600/20 hover:bg-rose-600 border border-rose-500/30 text-rose-300 hover:text-white rounded-xl text-[8px] font-black uppercase transition-all"
                              >
                                 Limpiar Guía
                              </button>
@@ -2129,27 +2128,29 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                     </div>
                   </div>
 
-                  {/* BANNER GUÍA: CÓMO TRAZAR RUTA EN EL MAPA */}
-                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[400] bg-[#121317]/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/15 shadow-2xl flex items-center gap-2.5 text-white pointer-events-auto">
-                    <span className="w-2 h-2 rounded-full bg-[#52ffac] animate-ping shrink-0" />
-                    <MapPin className="w-3.5 h-3.5 text-[#52ffac] shrink-0" />
-                    <span className="text-[9px] font-bold tracking-wide whitespace-nowrap">
-                      Haz clic en cualquier punto del mapa para fijar una parada
-                    </span>
-                  </div>
+                  {/* BANNER GUÍA: CÓMO TRAZAR RUTA EN EL MAPA (Visible solo cuando no hay ruta trazada) */}
+                  {plannedRoute.length === 0 && (
+                    <div className="hidden sm:flex absolute top-4 left-1/2 -translate-x-1/2 z-[400] bg-[#121317]/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/15 shadow-2xl items-center gap-2.5 text-white pointer-events-auto">
+                      <span className="w-2 h-2 rounded-full bg-[#52ffac] animate-ping shrink-0" />
+                      <MapPin className="w-3.5 h-3.5 text-[#52ffac] shrink-0" />
+                      <span className="text-[9px] font-bold tracking-wide whitespace-nowrap">
+                        Haz clic en cualquier punto del mapa para fijar una parada
+                      </span>
+                    </div>
+                  )}
                </div>
 
                <div className="w-full lg:w-[450px] bg-[#1a1b20] border-l border-[#474556]/30 flex flex-col shadow-2xl">
-                  <header className="p-8 border-b border-[#474556]/30 flex justify-between items-center bg-[#1c1d24]">
-                     <div className="flex items-center gap-4">
-                        <button onClick={() => { handleClearPlannedRoute(); setViewMode('table'); }} className="p-3 hover:bg-white/5 rounded-xl text-[#c8c4d9] transition-all"><ChevronLeft className="w-5 h-5" /></button>
-                        <div>
-                           <h4 className="text-sm font-black text-white uppercase tracking-tight">Timeline Logístico</h4>
-                           <div className="flex flex-wrap items-center gap-3 mt-1">
-                              <p className="text-[8px] text-[#52ffac] font-black uppercase tracking-[0.2em]">Conductor: {assets.find(a => a.id === historyAssetId)?.driverName || 'No Asignado'}</p>
+                  <header className="px-4 py-3 sm:px-5 sm:py-4 border-b border-[#474556]/30 flex justify-between items-center bg-[#1c1d24] gap-2">
+                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <button onClick={() => { handleClearPlannedRoute(); setViewMode('table'); }} className="p-2 hover:bg-white/5 rounded-xl text-[#c8c4d9] transition-all shrink-0"><ChevronLeft className="w-4 h-4" /></button>
+                        <div className="min-w-0">
+                           <h4 className="text-xs font-black text-white uppercase tracking-tight truncate">Timeline Logístico</h4>
+                           <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                              <p className="text-[8px] text-[#52ffac] font-black uppercase tracking-wider truncate">Conductor: {assets.find(a => a.id === historyAssetId)?.driverName || 'No Asignado'}</p>
                               <span className="text-white/20">|</span>
-                              <p className="text-[8px] text-[#00d2ff] font-black uppercase tracking-[0.2em] flex items-center gap-1">
-                                 <Navigation className="w-2.5 h-2.5" /> Total: {
+                              <p className="text-[8px] text-[#00d2ff] font-black uppercase tracking-wider flex items-center gap-1">
+                                 <Navigation className="w-2.5 h-2.5 shrink-0" /> Total: {
                                    (() => {
                                       const history = assets.find(a => a.id === historyAssetId)?.routeHistory || [];
                                       const checkpoints = history.filter(p => p.type === 'checkpoint');
@@ -2164,23 +2165,22 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                            </div>
                         </div>
                      </div>
-                     <div className="flex items-center gap-2">
+                     <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           onClick={() => {
                             toast("Haz clic en el mapa de la izquierda para situar la parada.", { icon: '📍', duration: 4000 });
                           }}
-                          className="p-2.5 bg-[#52ffac]/15 hover:bg-[#52ffac] text-[#52ffac] hover:text-black border border-[#52ffac]/30 rounded-xl transition-all shadow-lg flex items-center gap-1.5 active:scale-95"
+                          className="p-2 bg-[#52ffac]/15 hover:bg-[#52ffac] text-[#52ffac] hover:text-black border border-[#52ffac]/30 rounded-xl transition-all shadow-md flex items-center gap-1 active:scale-95 shrink-0"
                           title="Añadir Parada en el Mapa"
                         >
-                          <Plus className="w-4 h-4" />
-                          <span className="text-[9px] font-black uppercase">Nueva Parada</span>
+                          <Plus className="w-3.5 h-3.5" />
+                          <span className="text-[8px] font-black uppercase hidden sm:inline">Parada</span>
                         </button>
                         <button onClick={() => {
                            const history = assets.find(a => a.id === historyAssetId)?.routeHistory;
                            if (history && history.length > 0) {
                               const validPoints = history.filter(p => p.lat !== 0);
                               if (validPoints.length > 0) {
-                                 // Crear URL con origen, destino y waypoints para recorrido completo
                                  const origin = `${validPoints[0].lat},${validPoints[0].lng}`;
                                  const destination = `${validPoints[validPoints.length-1].lat},${validPoints[validPoints.length-1].lng}`;
                                  const waypoints = validPoints.slice(1, -1).map(p => `${p.lat},${p.lng}`).join('|');
@@ -2190,11 +2190,13 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                            } else {
                               toast.error("Sin datos para trazar recorrido.");
                            }
-                        }} className="p-3 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-xl hover:bg-emerald-500 hover:text-black transition-all shadow-lg flex items-center gap-2">
-                           <Globe className="w-4 h-4" />
-                           <span className="text-[9px] font-black uppercase">Recorrido Full</span>
+                        }} className="p-2 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-black border border-emerald-500/20 rounded-xl transition-all shadow-md flex items-center gap-1 shrink-0" title="Ver Recorrido en Google Maps">
+                           <Globe className="w-3.5 h-3.5" />
+                           <span className="text-[8px] font-black uppercase hidden sm:inline">Recorrido</span>
                         </button>
-                        <button onClick={() => { const asset = assets.find(a => a.id === historyAssetId); if (asset) handleExportRoute(asset); }} className="p-3 bg-[#5d3cfe]/10 text-[#c7bfff] border border-[#5d3cfe]/20 rounded-xl hover:bg-[#5d3cfe] hover:text-white transition-all shadow-lg"><FileText className="w-5 h-5" /></button>
+                        <button onClick={() => { const asset = assets.find(a => a.id === historyAssetId); if (asset) handleExportRoute(asset); }} className="p-2 bg-[#5d3cfe]/10 text-[#c7bfff] hover:bg-[#5d3cfe] hover:text-white border border-[#5d3cfe]/20 rounded-xl transition-all shadow-md shrink-0" title="Exportar Bitácora a Excel">
+                           <FileText className="w-3.5 h-3.5" />
+                        </button>
                      </div>
                   </header>
 
@@ -2842,14 +2844,7 @@ function MapActionButtons({ onAdjust, onClear, hasPoints, hasPlannedRoute, onCle
        >
           <Maximize className="w-5 h-5" /> Ajustar Vista
        </button>
-       {hasPlannedRoute && (
-         <button
-           onClick={onClearPlannedRoute}
-           className="p-5 bg-[#00d2ff] hover:bg-[#00b8e6] text-black rounded-[1.5rem] shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3 font-black text-[11px] uppercase border-4 border-[#0d0e12] min-w-[160px] animate-pulse"
-         >
-            <X className="w-5 h-5" /> Quitar Guía
-         </button>
-       )}
+
        {hasPoints && (
          <button
            onClick={onClear}
@@ -2863,19 +2858,57 @@ function MapActionButtons({ onAdjust, onClear, hasPoints, hasPlannedRoute, onCle
 }
 
 
-const getFlagIcon = (label: string, isSelected: boolean) => L.divIcon({
-  className: 'custom-div-icon',
-  html: `
-    <div class="relative group">
-      <div class="flex items-center gap-2 px-3 py-1.5 ${isSelected ? 'bg-[#52ffac] text-black scale-110' : 'bg-[#0d0e12] text-white'} rounded-full border-2 border-white shadow-2xl transition-all">
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
-        <span class="text-[9px] font-black uppercase whitespace-nowrap">${label}</span>
+const getFlagIcon = (label: string, isSelected: boolean) => {
+  const isBodega = label.toUpperCase().includes('BODEGA') || label.toUpperCase().includes('ORIGEN');
+  const accentGradient = isSelected
+    ? 'bg-gradient-to-br from-[#52ffac] to-[#38d489]'
+    : isBodega
+      ? 'bg-gradient-to-br from-indigo-500 to-[#5d3cfe]'
+      : 'bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600';
+  const dotColor = isSelected ? 'bg-black' : isBodega ? 'bg-[#5d3cfe]' : 'bg-amber-400';
+  const borderColor = isSelected ? 'border-[#52ffac]' : isBodega ? 'border-[#5d3cfe]/50' : 'border-amber-400/50';
+
+  return L.divIcon({
+    className: 'custom-div-icon',
+    html: `
+      <div class="flex flex-col items-center select-none cursor-pointer group" style="filter: drop-shadow(0 6px 14px rgba(0,0,0,0.6));">
+        <!-- Floating Glassmorphic Label -->
+        <div class="px-2.5 py-1 rounded-xl ${isSelected ? 'bg-[#52ffac] text-black shadow-[0_0_20px_#52ffac] border-2 border-black' : `bg-[#181920]/95 text-white border ${borderColor} shadow-2xl`} mb-1 flex items-center gap-1.5 whitespace-nowrap backdrop-blur-md">
+          <span class="w-1.5 h-1.5 rounded-full ${dotColor} ${isSelected ? 'animate-ping' : 'animate-pulse'} shrink-0"></span>
+          <span class="text-[9px] font-black uppercase tracking-wider">${label}</span>
+        </div>
+
+        <!-- 3D Waypoint Pin -->
+        <div class="relative flex flex-col items-center">
+          <div class="w-8 h-8 ${accentGradient} rounded-full border-2 border-white shadow-xl flex items-center justify-center ${isSelected ? 'text-black' : 'text-white'} transition-transform group-hover:scale-110">
+            ${isBodega ? `
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path>
+                <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path>
+                <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path>
+                <path d="M10 6h4"></path>
+                <path d="M10 10h4"></path>
+                <path d="M10 14h4"></path>
+                <path d="M10 18h4"></path>
+              </svg>
+            ` : `
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2.5"></line>
+              </svg>
+            `}
+          </div>
+          <!-- Pin Pointer Needle Tip -->
+          <div class="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[6px] border-t-white -mt-0.5"></div>
+          <!-- Ground GPS Contact Shadow -->
+          <div class="w-2.5 h-1 bg-black/60 rounded-full mt-0.5 blur-[0.5px]"></div>
+        </div>
       </div>
-    </div>
-  `,
-  iconSize: [30, 30],
-  iconAnchor: [15, 30]
-});
+    `,
+    iconSize: [140, 64],
+    iconAnchor: [70, 62]
+  });
+};
 
 const getTruckIcon = (name: string, plate: string, street: string) => L.divIcon({
   className: 'custom-div-icon',
