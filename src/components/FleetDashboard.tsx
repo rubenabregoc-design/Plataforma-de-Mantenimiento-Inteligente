@@ -32,6 +32,10 @@ interface FleetDashboardProps {
   mode?: 'lite' | 'full';
 }
 
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '';
+const MAPBOX_DARK_URL = `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/512/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`;
+const MAPBOX_ATTRIBUTION = '&copy; <a href="https://www.mapbox.com/">Mapbox</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+
 export default function FleetDashboard({ assets, reminders, onManageAsset, onBulkUpdate, onBulkDelete, onBulkRegister, onStartGps, onTogglePause, onAddCheckpoint, onContactSupport, trackingAssetId, tripStatus = 'idle', mode = 'lite' }: FleetDashboardProps) {
   const { openModal } = useUI();
   const [viewMode, setViewMode] = useState<'grid' | 'table' | 'history' | 'map'>(mode === 'full' ? 'map' : 'grid');
@@ -715,8 +719,11 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                   zoomControl={false}
                >
                   <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    url={MAPBOX_DARK_URL}
+                    attribution={MAPBOX_ATTRIBUTION}
+                    tileSize={512}
+                    zoomOffset={-1}
+                    maxZoom={20}
                   />
                   {showTraffic && (
                     <TileLayer url="https://mt1.google.com/vt?lyrs=h@159000000,traffic|seconds_into_week:-1&style=3&x={x}&y={y}&z={z}" opacity={0.8} zIndex={1000} />
@@ -1034,8 +1041,11 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                           zoomControl={false}
                         >
                           <TileLayer
-                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                            url={MAPBOX_DARK_URL}
+                            attribution={MAPBOX_ATTRIBUTION}
+                            tileSize={512}
+                            zoomOffset={-1}
+                            maxZoom={20}
                           />
 
                           {showTraffic && (

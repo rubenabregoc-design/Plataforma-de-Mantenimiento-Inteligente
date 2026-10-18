@@ -29,6 +29,10 @@ function MapRecenter({ coords, zoom }: { coords: [number, number]; zoom?: number
   return null;
 }
 
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '';
+const MAPBOX_DARK_URL = `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/512/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`;
+const MAPBOX_ATTRIBUTION = '&copy; <a href="https://www.mapbox.com/">Mapbox</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+
 // Coordenadas conocidas en Panamá para destinos habituales
 const PANAMA_LOCATIONS: Record<string, [number, number]> = {
   'Base Central': [8.9833, -79.5167],
@@ -476,8 +480,11 @@ export default function DriverRouteMap({ asset, driverName, userId, onBackToCock
             <MapRecenter coords={mapCenter} zoom={mapZoom} />
 
             <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+              url={MAPBOX_DARK_URL}
+              attribution={MAPBOX_ATTRIBUTION}
+              tileSize={512}
+              zoomOffset={-1}
+              maxZoom={20}
             />
 
             {showTraffic && (
