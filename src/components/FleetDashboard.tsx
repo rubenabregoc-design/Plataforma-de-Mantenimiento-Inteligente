@@ -1930,99 +1930,6 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
                           />
                         </MapContainer>
 
-                        {/* MODAL DE PANICO (LOCAL) */}
-                        {panicAsset && (
-                          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-                             <div className="max-w-md w-full bg-[#121317] shadow-[0_0_80px_rgba(225,29,72,0.5)] rounded-[2.5rem] flex ring-4 ring-rose-600 ring-inset overflow-hidden border border-white/10 animate-enter">
-                                <div className="flex-1 w-0 p-8">
-                                  <div className="flex items-start">
-                                    <div className="flex-shrink-0 pt-0.5">
-                                      <div className="bg-rose-600 p-4 rounded-2xl animate-pulse">
-                                        <AlertTriangle className="h-8 w-8 text-white fill-white" />
-                                      </div>
-                                    </div>
-                                    <div className="ml-6 flex-1">
-                                      <p className="text-[10px] font-black text-rose-500 uppercase tracking-[0.3em] mb-1">Critical Security Protocol</p>
-                                      <p className="text-xl font-black text-white uppercase tracking-tighter leading-tight mb-2">
-                                        Protocolo de Desviación: <span className="text-rose-500">{panicAsset.name}</span>
-                                      </p>
-                                      <p className="text-[11px] font-bold text-white/50 leading-relaxed uppercase italic">
-                                        Señal SOS enviada a Central MantechPro. Coordenadas bloqueadas para auditoría técnica inmediata.
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex border-l border-white/5">
-                                  <button
-                                    onClick={() => setPanicAsset(null)}
-                                    className="w-full border border-transparent rounded-none rounded-r-[2rem] p-6 flex items-center justify-center text-xs font-black text-rose-500 hover:text-white uppercase transition-colors px-8"
-                                  >
-                                    Enterado
-                                  </button>
-                                </div>
-                             </div>
-                          </div>
-                        )}
-
-                        {/* MODAL DE PARADA MANUAL (LOCAL - CERO FONDO BLANCO) */}
-                        {manualStopData && (
-                          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
-                            <div className="flex flex-col gap-4 p-8 bg-[#121317] border border-white/10 rounded-[3rem] shadow-2xl min-w-[340px] animate-enter">
-                              <div className="flex items-center gap-4">
-                                <div className="p-3 bg-amber-500/20 text-amber-500 rounded-2xl">
-                                  <MapPin className="w-7 h-7" />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-black text-white uppercase tracking-tight leading-none">Nueva Parada Logística</p>
-                                  <p className="text-[9px] text-white/40 font-bold uppercase tracking-widest mt-1.5">GPS: {manualStopData.lat.toFixed(5)}, {manualStopData.lng.toFixed(5)}</p>
-                                </div>
-                              </div>
-                              <div className="space-y-2 mt-4">
-                                <label className="text-[8px] font-black text-[#474556] uppercase tracking-[0.2em] ml-1">Etiqueta de Destino</label>
-                                <input
-                                  id="manual-stop-name-local"
-                                  type="text"
-                                  placeholder="Ej: Bodega Central, Cliente VIP..."
-                                  className="w-full bg-black border border-white/10 rounded-2xl py-4 px-5 text-xs font-bold text-white focus:border-[#5d3cfe] outline-none transition-all shadow-inner"
-                                  autoFocus
-                                />
-                              </div>
-                              <div className="flex gap-3 mt-6">
-                                <button
-                                  onClick={() => setManualStopData(null)}
-                                  className="flex-1 py-4 bg-white/5 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
-                                >
-                                  Cancelar
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    const input = document.getElementById('manual-stop-name-local') as HTMLInputElement;
-                                    const name = input?.value || 'PUNTO MANUAL';
-                                    const asset = assets.find(a => a.id === historyAssetId);
-                                    if (asset) {
-                                      const newPoint = {
-                                        lat: manualStopData.lat,
-                                        lng: manualStopData.lng,
-                                        timestamp: new Date().toISOString(),
-                                        locationName: name.toUpperCase(),
-                                        type: 'checkpoint' as const
-                                      };
-                                      onBulkUpdate?.([asset.id], {
-                                        routeHistory: [...(asset.routeHistory || []), newPoint]
-                                      });
-                                      toast.success(`Parada "${name}" registrada.`);
-                                    }
-                                    setManualStopData(null);
-                                  }}
-                                  className="flex-[1.5] py-4 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#52ffac]/20 hover:brightness-110 active:scale-95 transition-all"
-                                >
-                                  Confirmar Parada
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
                         <MapActionButtons
                            onAdjust={() => setSelectedPointIndex(-1)}
                            hasPlannedRoute={plannedRoute.length > 0}
@@ -2736,6 +2643,128 @@ export default function FleetDashboard({ assets, reminders, onManageAsset, onBul
            </div>
         </div>
       )}
+      {/* GLOBAL PANIC SOS MODAL (ROOT LEVEL - FULL VIEWPORT OVERLAY) */}
+      {panicAsset && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+          <div className="max-w-md w-full bg-[#121317] shadow-[0_0_80px_rgba(225,29,72,0.6)] rounded-[2.5rem] border-2 border-rose-600 overflow-hidden animate-enter">
+            <div className="p-8 space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="p-4 bg-rose-600 rounded-2xl shadow-xl shadow-rose-600/40 shrink-0 animate-pulse">
+                  <AlertTriangle className="w-8 h-8 text-white" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black text-rose-500 uppercase tracking-[0.25em] block">Critical Security Protocol</span>
+                  <h3 className="text-lg font-black text-white uppercase tracking-tight leading-snug">
+                    Protocolo de Desviación: <span className="text-rose-400">{panicAsset.name}</span>
+                  </h3>
+                  <p className="text-[10px] font-bold text-white/60 leading-relaxed uppercase">
+                    Señal SOS enviada a Central MantechPro. Coordenadas bloqueadas para auditoría técnica inmediata.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-black/50 border border-white/10 rounded-2xl flex items-center justify-between text-[10px]">
+                <div>
+                  <span className="text-white/40 uppercase block text-[8px] font-bold">Unidad / Placa</span>
+                  <span className="font-mono font-bold text-white">{panicAsset.licensePlate || panicAsset.name}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-white/40 uppercase block text-[8px] font-bold">Conductor Asignado</span>
+                  <span className="font-bold text-rose-300 uppercase">{panicAsset.driverName || 'No Asignado'}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setPanicAsset(null)}
+                className="w-full py-4 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-rose-600/30 transition-all active:scale-95"
+              >
+                Enterado
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GLOBAL MANUAL STOP MODAL (ROOT LEVEL - FULL VIEWPORT OVERLAY) */}
+      {manualStopData && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+          <div className="flex flex-col gap-4 p-8 bg-[#121317] border border-white/15 rounded-[2.5rem] shadow-2xl min-w-[340px] max-w-sm w-full animate-enter">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-amber-500/20 text-amber-500 rounded-2xl">
+                <MapPin className="w-7 h-7" />
+              </div>
+              <div>
+                <p className="text-sm font-black text-white uppercase tracking-tight leading-none">Nueva Parada Logística</p>
+                <p className="text-[9px] text-white/40 font-bold uppercase tracking-widest mt-1.5">GPS: {manualStopData.lat.toFixed(5)}, {manualStopData.lng.toFixed(5)}</p>
+              </div>
+            </div>
+            <div className="space-y-2 mt-2">
+              <label className="text-[8px] font-black text-white/50 uppercase tracking-[0.2em] ml-1">Etiqueta de Destino</label>
+              <input
+                id="manual-stop-name-local"
+                type="text"
+                placeholder="Ej: Bodega Central, Cliente VIP..."
+                className="w-full bg-black border border-white/10 rounded-2xl py-3.5 px-4 text-xs font-bold text-white focus:border-[#52ffac] outline-none transition-all shadow-inner"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const input = document.getElementById('manual-stop-name-local') as HTMLInputElement;
+                    const name = input?.value.trim() || 'PUNTO LOGÍSTICO';
+                    const asset = assets.find(a => a.id === historyAssetId);
+                    if (asset) {
+                      const newPoint = {
+                        lat: manualStopData.lat,
+                        lng: manualStopData.lng,
+                        timestamp: new Date().toISOString(),
+                        locationName: name.toUpperCase(),
+                        type: 'checkpoint' as const
+                      };
+                      onBulkUpdate?.([asset.id], {
+                        routeHistory: [...(asset.routeHistory || []), newPoint]
+                      });
+                      toast.success(`Parada "${name}" registrada.`);
+                    }
+                    setManualStopData(null);
+                  }
+                }}
+              />
+            </div>
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => setManualStopData(null)}
+                className="flex-1 py-3.5 bg-white/5 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  const input = document.getElementById('manual-stop-name-local') as HTMLInputElement;
+                  const name = input?.value.trim() || 'PUNTO LOGÍSTICO';
+                  const asset = assets.find(a => a.id === historyAssetId);
+                  if (asset) {
+                    const newPoint = {
+                      lat: manualStopData.lat,
+                      lng: manualStopData.lng,
+                      timestamp: new Date().toISOString(),
+                      locationName: name.toUpperCase(),
+                      type: 'checkpoint' as const
+                    };
+                    onBulkUpdate?.([asset.id], {
+                      routeHistory: [...(asset.routeHistory || []), newPoint]
+                    });
+                    toast.success(`Parada "${name}" registrada.`);
+                  }
+                  setManualStopData(null);
+                }}
+                className="flex-[1.5] py-3.5 bg-[#52ffac] text-black rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#52ffac]/20 hover:brightness-110 active:scale-95 transition-all"
+              >
+                Confirmar Parada
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
